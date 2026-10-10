@@ -4,7 +4,7 @@ Milestones 1–4 produce **MacroSIP Lite**. Milestones 5–6 produce **MacroSIP*
 Owner's rule: work on milestones 5–6 starts only after Lite is released (`v0.1-lite` tagged).
 A milestone is done only when every item in its "Done when" list holds.
 
-## 1. Skeleton, PJSIP, mockups
+## 1. Skeleton, PJSIP, mockups — DONE 2026-10-10
 - Repo, license, docs (this file, AGENTS, GLOSSARY, ADRs, CLAUDE.md).
 - `scripts/build-pjsip.sh`: PJSIP 2.17 static arm64 with OpenSSL, Opus, SRTP, WebRTC AEC, no video. Also the `pjsua` CLI for tests.
 - `CPJSUA` target and `pjsip-smoke` executable prove Swift links and runs pjsua.
@@ -13,7 +13,7 @@ A milestone is done only when every item in its "Done when" list holds.
 - `docs/design/SCREENS.md`: text spec derived from the approved mockups — per screen: elements, states (empty, loading, error, Lite/Full), control behaviour, shortcuts, and every UI string for localization. Written by the technical writer; it is the UI engineer's primary input.
 - Done when: `swift build` passes, smoke test prints codecs and devices, both `.app` bundles launch, mockups approved, SCREENS.md matches them, pushed to `main`.
 
-## 2. Engine: registration and a call
+## 2. Engine: registration and a call — IN PROGRESS
 - `Engine` actor owns the pjsua instance; thread-safe event stream to the UI.
 - Account model, Keychain-backed credentials, simultaneous registration of enabled accounts.
 - Outgoing and incoming calls, answer, hang up, mute, hold, DTMF. Audio device selection.
