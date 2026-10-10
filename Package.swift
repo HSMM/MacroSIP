@@ -21,13 +21,13 @@ let pjsipLibraries = [
 let pjsipLinkerSettings: [LinkerSetting] = [
     .unsafeFlags(
         ["-L\(pjsipLib)"] + pjsipLibraries.map { "-l\($0)" } + [
-            "-L/opt/homebrew/opt/openssl@3/lib",
-            "-L/opt/homebrew/opt/opus/lib",
+            // Static archives from Homebrew so the .app has no /opt/homebrew dylib dependencies
+            // (hardened runtime rejects them: different Team ID) and runs on machines without Homebrew.
+            "/opt/homebrew/opt/opus/lib/libopus.a",
+            "/opt/homebrew/opt/openssl@3/lib/libssl.a",
+            "/opt/homebrew/opt/openssl@3/lib/libcrypto.a",
         ]
     ),
-    .linkedLibrary("opus"),
-    .linkedLibrary("ssl"),
-    .linkedLibrary("crypto"),
     .linkedLibrary("c++"),          // libwebrtc contains C++ objects
     .linkedLibrary("m"),
     .linkedLibrary("pthread"),
