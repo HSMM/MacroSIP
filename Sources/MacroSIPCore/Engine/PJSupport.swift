@@ -32,6 +32,13 @@ enum PJ {
         EngineBridge.shared.emit(.log(level: 2, "engine: \(text)"))
     }
 
+    /// Logs a non-fatal error of a best-effort step.
+    static func warn(_ error: Error, _ what: String) {
+        let text = "\(what): \(error)"
+        EngineBridge.shared.engineLogger.error("\(text, privacy: .public)")
+        EngineBridge.shared.emit(.log(level: 2, "engine: \(text)"))
+    }
+
     /// Registers the calling thread with pjlib (idempotent, thread-local descriptor in C).
     /// Returns false when pjsua does not exist.
     @discardableResult

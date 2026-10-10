@@ -98,8 +98,8 @@ final class Interactive {
         switch cmd {
         case "help":
             print("""
-            acc add <name> <user> <domain> <password> [udp|tcp|tls] [disabled|optional|mandatory]
-                                            add account (not registered); last arg = SRTP
+            acc add <name> <user> <domain> <password> [udp|tcp|tls] [disabled|optional|mandatory] [noverify]
+                                            add account (not registered); SRTP mode; noverify = no TLS cert check
             acc list | acc use <name> | acc del <name>
             reg | unreg                     register / unregister the current account
             call <dial>                     number, user@host or sip: URI
@@ -181,8 +181,10 @@ final class Interactive {
     func handleAccount(_ args: [String]) async throws {
         switch args.first {
         case "add":
+            let verify = !args.contains("noverify")
+            let args = args.filter { $0 != "noverify" }
             guard args.count >= 5 else {
-                throw CLIError("acc add <name> <user> <domain> <password> [udp|tcp|tls] [disabled|optional|mandatory]")
+                throw CLIError("acc add <name> <user> <domain> <password> [udp|tcp|tls] [disabled|optional|mandatory] [noverify]")
             }
             let transport = args.count > 5 ? TransportKind(rawValue: args[5].lowercased()) : .udp
             guard let transport else { throw CLIError("transport must be udp, tcp or tls") }
@@ -190,7 +192,7 @@ final class Interactive {
             guard let srtp else { throw CLIError("SRTP must be disabled, optional or mandatory") }
             let cfg = AccountConfig(displayName: args[1], username: args[2], domain: args[3],
                                     transport: transport, srtp: srtp, enabled: false,
-                                    isDefaultOutgoing: accounts.isEmpty)
+                                    isDefaultOutgoing: accounts.isEmpty, verifyTLSCertificate: verify)
             try await engine.addAccount(cfg, password: args[4])
             accounts.append((args[1], cfg))
             currentAccount = cfg

@@ -120,6 +120,33 @@ pj_status_t cpjsua_transport_create2(pjsip_transport_type_e type,
     return status;
 }
 
+pj_status_t cpjsua_tls_transport_create(unsigned port,
+                                        const char *address,
+                                        int verify_server,
+                                        const char *ca_file,
+                                        pjsua_transport_id *out_id)
+{
+    pjsua_transport_config cfg;
+    pjsua_transport_id tid = PJSUA_INVALID_ID;
+    pj_status_t status;
+
+    pjsua_transport_config_default(&cfg);
+    cfg.port = port;
+    if (address && *address) {
+        cfg.bound_addr = cpjsua_str(address);
+        cfg.public_addr = cpjsua_str(address);
+    }
+    cfg.tls_setting.verify_server = verify_server ? PJ_TRUE : PJ_FALSE;
+    cfg.tls_setting.verify_client = PJ_FALSE;
+    cfg.tls_setting.require_client_cert = PJ_FALSE;
+    if (ca_file && *ca_file)
+        cfg.tls_setting.ca_list_file = cpjsua_str(ca_file);
+    status = pjsua_transport_create(PJSIP_TRANSPORT_TLS, &cfg, &tid);
+    if (out_id)
+        *out_id = tid;
+    return status;
+}
+
 unsigned cpjsua_transport_port(pjsua_transport_id id)
 {
     pjsua_transport_info info;
@@ -508,3 +535,11 @@ pj_status_t cpjsua_set_snd_devs(int capture_dev, int playback_dev)
 
 pj_status_t cpjsua_err_no_rfc2833(void) { return PJMEDIA_RTP_EREMNORFC2833; }
 pj_status_t cpjsua_err_not_found(void)  { return PJ_ENOTFOUND; }
+pj_status_t cpjsua_err_invalid_op(void)  { return PJ_EINVALIDOP; }
+pj_status_t cpjsua_err_pj_busy(void)     { return PJ_EBUSY; }
+pj_status_t cpjsua_err_sip_busy(void)    { return PJSIP_EBUSY; }
+
+unsigned cpjsua_regc_expiration_not_specified(void)
+{
+    return (unsigned)PJSIP_REGC_EXPIRATION_NOT_SPECIFIED;
+}

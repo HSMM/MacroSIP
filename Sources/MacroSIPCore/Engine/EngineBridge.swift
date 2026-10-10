@@ -12,8 +12,9 @@ import os
 // Rules for every callback (they run on PJSIP worker / media threads):
 //  1. copy what is needed out of PJSIP (CallSnapshot, reg info) right away;
 //  2. update the registry under the lock (short critical sections, never calling pjsua
-//     while holding it);
-//  3. `yield` an EngineEvent to the AsyncStream continuation (non-blocking, unbounded);
+//     while holding it). Call events are yielded inside the same critical section as the
+//     record update, so `.callChanged` can never be ordered after the call's `.callEnded`;
+//  3. `yield` is non-blocking (unbounded AsyncStream) and never re-enters our code;
 //  4. if the Engine must act (conference wiring, ringtone), schedule it with
 //     `Task { await engine.... }` - asynchronous, never a synchronous call into the actor.
 
@@ -32,15 +33,35 @@ struct CallRecord: Sendable {
     var lastSecure = false
 }
 
+/// How `EngineBridge.updateCall` treats the call's record.
+enum RecordMode: Sendable {
+    /// PJSIP callbacks: create the record for a new call, refresh an existing one.
+    case createOrUpdate
+    /// Engine-originated updates: touch only an existing record of the same call; never
+    /// create one (a call that ended in the meantime must not come back as a ghost).
+    case updateOnly
+    /// The call is over: report it and drop the record.
+    case remove
+}
+
 final class EngineBridge: Sendable {
     static let shared = EngineBridge()
+
+    struct AccountSlot: Sendable {
+        var id: AccountID
+        var registrationInterval: Int
+    }
 
     struct State: Sendable {
         var sink: AsyncStream<EngineEvent>.Continuation?
         var engine: Engine?
-        var accounts: [Int32: AccountID] = [:]                  // pjsua_acc_id -> AccountID
+        var accounts: [Int32: AccountSlot] = [:]                // pjsua_acc_id -> account
         var registration: [AccountID: RegistrationState] = [:]
+        /// Registration switch requested while a REGISTER transaction was in flight
+        /// (PJSIP answered EBUSY); applied when that transaction completes.
+        var pendingRegistration: [AccountID: Bool] = [:]
         var calls: [Int32: CallRecord] = [:]                    // pjsua_call_id -> record
+        /// Never reset, so CallIDs stay unique across engine restarts in one process.
         var nextSerial: UInt64 = 1
     }
 
@@ -53,7 +74,9 @@ final class EngineBridge: Sendable {
     func attach(_ engine: Engine, sink: AsyncStream<EngineEvent>.Continuation) throws {
         let ok = state.withLock { st -> Bool in
             guard st.engine == nil else { return false }
+            let serial = st.nextSerial
             st = State()
+            st.nextSerial = serial
             st.engine = engine
             st.sink = sink
             return true
@@ -85,17 +108,22 @@ final class EngineBridge: Sendable {
 
     // MARK: accounts
 
-    func setAccount(_ index: Int32, _ id: AccountID?) {
+    func setAccount(_ index: Int32, _ id: AccountID, registrationInterval: Int) {
         state.withLock { st in
-            if let id {
-                st.accounts[index] = id
-            } else if let old = st.accounts.removeValue(forKey: index) {
-                st.registration[old] = nil
+            st.accounts[index] = AccountSlot(id: id, registrationInterval: registrationInterval)
+        }
+    }
+
+    func removeAccount(_ index: Int32) {
+        state.withLock { st in
+            if let old = st.accounts.removeValue(forKey: index) {
+                st.registration[old.id] = nil
+                st.pendingRegistration[old.id] = nil
             }
         }
     }
 
-    func accountID(for index: Int32) -> AccountID? {
+    func account(for index: Int32) -> AccountSlot? {
         state.withLock { $0.accounts[index] }
     }
 
@@ -103,15 +131,26 @@ final class EngineBridge: Sendable {
         state.withLock { $0.registration[id] ?? .unregistered }
     }
 
-    /// Stores and emits a registration state (only when it changed).
+    /// Stores and emits a registration state (only when it changed, unless `force`).
     func setRegistration(_ id: AccountID, _ new: RegistrationState, force: Bool = false) {
-        let changed = state.withLock { st -> Bool in
-            guard st.accounts.values.contains(id) else { return false }
+        state.withLock { st in
+            guard st.accounts.values.contains(where: { $0.id == id }) else { return }
             let old = st.registration[id]
             st.registration[id] = new
-            return force || old != new
+            if force || old != new { st.sink?.yield(.registration(id, new)) }
         }
-        if changed { emit(.registration(id, new)) }
+    }
+
+    func setPendingRegistration(_ id: AccountID, _ on: Bool?) {
+        state.withLock { $0.pendingRegistration[id] = on }
+    }
+
+    func pendingRegistration(_ id: AccountID) -> Bool? {
+        state.withLock { $0.pendingRegistration[id] }
+    }
+
+    func takePendingRegistration(_ id: AccountID) -> Bool? {
+        state.withLock { $0.pendingRegistration.removeValue(forKey: id) }
     }
 
     // MARK: calls
@@ -127,39 +166,47 @@ final class EngineBridge: Sendable {
         state.withLock { $0.calls[slot] }
     }
 
-    /// Builds the public CallInfo for a snapshot, creating or refreshing the slot's record.
-    ///
-    /// - `mutate` edits the record under the lock (mute/hold flags, announcement).
-    /// - `remove` drops the record afterwards (the call is over).
-    /// A disconnected call never gets a new record, so late readers cannot resurrect it.
-    func callInfo(
+    /// Updates the slot's record from a fresh snapshot and, in the same critical section,
+    /// yields the event built by `event` (if any). Returns nil when `mode == .updateOnly`
+    /// and the call has no record of the same serial (it ended or never was announced).
+    @discardableResult
+    func updateCall(
         _ snap: CallSnapshot,
-        remove: Bool = false,
-        mutate: (@Sendable (inout CallRecord) -> Void)? = nil
-    ) -> (CallInfo, CallRecord) {
+        mode: RecordMode,
+        mutate: (@Sendable (inout CallRecord) -> Void)? = nil,
+        event: (@Sendable (CallInfo, CallRecord) -> EngineEvent?)? = nil
+    ) -> (CallInfo, CallRecord)? {
         let now = Date()
-        let (record, newSerial) = state.withLock { st -> (CallRecord, UInt64?) in
+        let result = state.withLock { st -> (CallInfo, CallRecord, UInt64?)? in
             var serial = snap.serial
             var newSerial: UInt64?
             let existing = st.calls[snap.slot]
-            let clash = st.calls.contains { $0.key != snap.slot && $0.value.serial == serial }
-            if serial == 0 || (existing?.serial != serial && clash) {
-                // pjsua created this call itself (REFER, Replaces) and copied or left user_data.
-                serial = st.nextSerial
-                st.nextSerial += 1
-                newSerial = serial
-            }
             var rec: CallRecord
-            if let existing, existing.serial == serial {
+
+            switch mode {
+            case .updateOnly:
+                guard let existing, existing.serial == serial, snap.serial != 0 else { return nil }
                 rec = existing
-            } else {
-                rec = CallRecord(
-                    serial: serial,
-                    accountID: st.accounts[snap.accIndex] ?? .unknown,
-                    direction: snap.isOutgoing ? .outgoing : .incoming,
-                    announced: snap.isOutgoing
-                )
+            case .createOrUpdate, .remove:
+                let clash = st.calls.contains { $0.key != snap.slot && $0.value.serial == serial }
+                if mode == .createOrUpdate, serial == 0 || (existing?.serial != serial && clash) {
+                    // pjsua created this call itself (REFER, Replaces) and copied or left user_data.
+                    serial = st.nextSerial
+                    st.nextSerial += 1
+                    newSerial = serial
+                }
+                if let existing, existing.serial == serial {
+                    rec = existing
+                } else {
+                    rec = CallRecord(
+                        serial: serial,
+                        accountID: st.accounts[snap.accIndex]?.id ?? .unknown,
+                        direction: snap.isOutgoing ? .outgoing : .incoming,
+                        announced: snap.isOutgoing
+                    )
+                }
             }
+
             mutate?(&rec)
             if let codec = snap.codec {
                 rec.lastCodec = codec
@@ -168,17 +215,29 @@ final class EngineBridge: Sendable {
             if snap.state == .confirmed, rec.startedAt == nil {
                 rec.startedAt = now.addingTimeInterval(-snap.connectDuration)
             }
-            if remove {
+
+            switch mode {
+            case .remove:
                 if st.calls[snap.slot]?.serial == serial { st.calls[snap.slot] = nil }
-            } else if snap.state != .disconnected || existing?.serial == serial {
+            case .createOrUpdate:
+                // A disconnected call never gets a new record.
+                if snap.state != .disconnected || existing?.serial == serial { st.calls[snap.slot] = rec }
+            case .updateOnly:
                 st.calls[snap.slot] = rec
             }
-            return (rec, newSerial)
+
+            let info = EngineBridge.makeInfo(snap, rec)
+            // A late callback for a call whose record is already gone (its .callEnded was
+            // emitted) must not produce a ghost event.
+            let gone = mode == .createOrUpdate && snap.state == .disconnected && existing?.serial != serial
+            if !gone, let e = event?(info, rec) { st.sink?.yield(e) }
+            return (info, rec, newSerial)
         }
-        if let newSerial {
+        guard let result else { return nil }
+        if let newSerial = result.2 {
             PJ.warn(cpjsua_call_set_serial(snap.slot, newSerial), "store call serial")
         }
-        return (EngineBridge.makeInfo(snap, record), record)
+        return (result.0, result.1)
     }
 
     static func makeInfo(_ s: CallSnapshot, _ r: CallRecord) -> CallInfo {
@@ -213,6 +272,26 @@ final class EngineBridge: Sendable {
             codec: s.state == .disconnected ? (s.codec ?? r.lastCodec) : s.codec,
             isSecure: s.state == .disconnected ? (s.codec != nil ? s.isSecure : r.lastSecure) : s.isSecure
         )
+    }
+}
+
+// MARK: - Registration result mapping
+
+enum RegistrationMapping {
+    /// Maps an on_reg_state2 result. `renew == false` is the answer to an un-REGISTER:
+    /// the user switched the account off, whatever the server said.
+    static func state(renew: Bool, status: Int32, code: Int, reason: String, expiration: UInt32,
+                      notSpecified: UInt32, interval: Int) -> RegistrationState {
+        guard renew else { return .unregistered }
+        if status != PJ.success {
+            return .failed(code: code, reason: reason.isEmpty ? PJ.errorText(status) : reason)
+        }
+        guard code / 100 == 2 else {
+            return .failed(code: code, reason: reason.isEmpty ? "Registration failed" : reason)
+        }
+        // 2xx without an Expires value: the binding lasts for what we asked for.
+        if expiration == notSpecified { return .registered(expires: max(1, interval)) }
+        return expiration > 0 ? .registered(expires: Int(min(expiration, UInt32(Int32.max)))) : .unregistered
     }
 }
 
@@ -255,11 +334,10 @@ private func pjOnCallState(_ callID: pjsua_call_id, _ event: UnsafeMutablePointe
     guard let snap = CallSnapshot.read(callID) else { return }
     let bridge = EngineBridge.shared
     if snap.state == .disconnected {
-        let (info, _) = bridge.callInfo(snap, remove: true)
-        bridge.emit(.callEnded(info, duration: snap.connectDuration))
+        let duration = snap.connectDuration
+        bridge.updateCall(snap, mode: .remove, event: { info, _ in .callEnded(info, duration: duration) })
     } else {
-        let (info, record) = bridge.callInfo(snap)
-        if record.announced { bridge.emit(.callChanged(info)) }
+        bridge.updateCall(snap, mode: .createOrUpdate, event: { info, rec in rec.announced ? .callChanged(info) : nil })
     }
     bridge.hop { await $0.handleCallStateChanged() }
 }
@@ -272,7 +350,7 @@ private func pjOnIncomingCall(_ accID: pjsua_acc_id, _ callID: pjsua_call_id, _ 
     // Too many calls: reject with 486 Busy Here. The DISCONNECTED state that follows
     // produces `.callEnded(... .disconnected(code: 486 ...))`, which is the event the UI sees.
     if cpjsua_active_call_count() > UInt32(Engine.maxConcurrentCalls) {
-        if let snap = CallSnapshot.read(callID) { _ = bridge.callInfo(snap) }
+        if let snap = CallSnapshot.read(callID) { bridge.updateCall(snap, mode: .createOrUpdate) }
         bridge.engineLogger.notice("call \(callID): rejecting, more than \(Engine.maxConcurrentCalls) calls")
         if cpjsua_call_answer(callID, 486) != PJ.success {
             PJ.warn(pjsua_call_hangup(callID, 486, nil, nil), "reject call \(callID) with 486")
@@ -281,14 +359,12 @@ private func pjOnIncomingCall(_ accID: pjsua_acc_id, _ callID: pjsua_call_id, _ 
     }
 
     // Ring: 180 Ringing goes out now; the call waits in EARLY until answer()/reject().
-    let status = cpjsua_call_answer(callID, 180)
-    if status != PJ.success {
-        bridge.engineLogger.error("call \(callID): 180 Ringing failed: \(PJ.errorText(status), privacy: .public)")
-    }
+    PJ.warn(cpjsua_call_answer(callID, 180), "call \(callID): 180 Ringing")
     guard let snap = CallSnapshot.read(callID) else { return }
-    let (info, _) = bridge.callInfo(snap) { $0.announced = true }
-    if case .disconnected = info.state { return }
-    bridge.emit(.incomingCall(info))
+    bridge.updateCall(snap, mode: .createOrUpdate, mutate: { $0.announced = true }, event: { info, _ in
+        if case .disconnected = info.state { return nil }
+        return .incomingCall(info)
+    })
     bridge.hop { await $0.handleCallStateChanged() }
 }
 
@@ -296,8 +372,7 @@ private func pjOnCallMediaState(_ callID: pjsua_call_id) {
     PJ.registerThread()
     guard let snap = CallSnapshot.read(callID) else { return }
     let bridge = EngineBridge.shared
-    let (info, record) = bridge.callInfo(snap)
-    if record.announced { bridge.emit(.callChanged(info)) }
+    bridge.updateCall(snap, mode: .createOrUpdate, event: { info, rec in rec.announced ? .callChanged(info) : nil })
     let slot = callID
     bridge.hop { engine in
         await engine.handleMediaStateChanged(slot)
@@ -307,16 +382,15 @@ private func pjOnCallMediaState(_ callID: pjsua_call_id) {
 private func pjOnCallReplaced(_ oldCallID: pjsua_call_id, _ newCallID: pjsua_call_id) {
     PJ.registerThread()
     guard let snap = CallSnapshot.read(newCallID) else { return }
-    let bridge = EngineBridge.shared
     // The replacing call is auto-answered by pjsua; show it as a regular call.
-    let (info, _) = bridge.callInfo(snap) { $0.announced = true }
-    bridge.emit(.callChanged(info))
+    EngineBridge.shared.updateCall(snap, mode: .createOrUpdate, mutate: { $0.announced = true },
+                                   event: { info, _ in .callChanged(info) })
 }
 
 private func pjOnRegStarted2(_ accID: pjsua_acc_id, _ info: UnsafeMutablePointer<pjsua_reg_info>?) {
     guard let info, info.pointee.renew != 0 else { return }
     let bridge = EngineBridge.shared
-    guard let id = bridge.accountID(for: accID) else { return }
+    guard let id = bridge.account(for: accID)?.id else { return }
     // Refreshes of a working registration do not flicker the UI through "registering".
     if case .registered = bridge.registration(of: id) { return }
     bridge.setRegistration(id, .registering)
@@ -324,28 +398,35 @@ private func pjOnRegStarted2(_ accID: pjsua_acc_id, _ info: UnsafeMutablePointer
 
 private func pjOnRegState2(_ accID: pjsua_acc_id, _ info: UnsafeMutablePointer<pjsua_reg_info>?) {
     let bridge = EngineBridge.shared
-    guard let id = bridge.accountID(for: accID) else { return }
+    guard let account = bridge.account(for: accID) else { return }
+    let id = account.id
     let new: RegistrationState
-    if let info, info.pointee.renew == 0 {
-        // Result of an un-REGISTER: the user switched the account off, whatever the server said.
-        new = .unregistered
-    } else if let info, let param = info.pointee.cbparam {
+    if let info, let param = info.pointee.cbparam {
         let p = param.pointee
-        let code = Int(p.code)
-        let reason = PJ.string(p.reason)
-        if p.status != PJ.success {
-            new = .failed(code: code, reason: reason.isEmpty ? PJ.errorText(p.status) : reason)
-        } else if code / 100 == 2 {
-            // PJSIP reports "expires not specified" as UInt32.max.
-            let expires = p.expiration >= UInt32(Int32.max) ? 0 : Int(p.expiration)
-            new = expires > 0 ? .registered(expires: expires) : .unregistered
-        } else {
-            new = .failed(code: code, reason: reason.isEmpty ? "Registration failed" : reason)
-        }
+        new = RegistrationMapping.state(
+            renew: info.pointee.renew != 0, status: p.status, code: Int(p.code),
+            reason: PJ.string(p.reason), expiration: p.expiration,
+            notSpecified: cpjsua_regc_expiration_not_specified(),
+            interval: account.registrationInterval)
+    } else if let info, info.pointee.renew == 0 {
+        new = .unregistered
     } else {
         new = .failed(code: 0, reason: "Registration failed")
     }
-    bridge.setRegistration(id, new)
+
+    switch bridge.takePendingRegistration(id) {
+    case false?:
+        // Switched off while this transaction was in flight: its result no longer matters
+        // (the UI already shows "unregistered"); send the un-REGISTER now.
+        bridge.hop { await $0.applyPendingRegistration(id, false) }
+    case true?:
+        bridge.setRegistration(id, new)
+        if case .registered = new {} else {
+            bridge.hop { await $0.applyPendingRegistration(id, true) }
+        }
+    case nil:
+        bridge.setRegistration(id, new)
+    }
 }
 
 private func pjOnCallTransferStatus(

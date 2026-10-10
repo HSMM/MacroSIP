@@ -29,15 +29,41 @@ struct PJAccountSettings: Equatable, Sendable {
     var bindAddress: String?
 }
 
+/// SIP transports created at engine start. TLS exists twice: a listener that verifies the
+/// server certificate (default) and one that does not (accounts with
+/// `verifyTLSCertificate == false`). PJSIP never reuses a connection across listeners.
+struct TransportIDs: Equatable, Sendable {
+    var udp: Int32?
+    var tcp: Int32?
+    var tls: Int32?
+    var tlsNoVerify: Int32?
+
+    func id(for account: AccountConfig) -> Int32? {
+        switch account.transport {
+        case .udp: return udp
+        case .tcp: return tcp
+        case .tls: return account.verifyTLSCertificate ? tls : tlsNoVerify
+        }
+    }
+
+    func id(for kind: TransportKind) -> Int32? {
+        switch kind {
+        case .udp: return udp
+        case .tcp: return tcp
+        case .tls: return tls
+        }
+    }
+}
+
 enum AccountMapping {
     static func settings(
         for account: AccountConfig,
         password: String,
         network: NetworkSettings,
-        transports: [TransportKind: Int32],
+        transports: TransportIDs,
         bindAddress: String? = nil
     ) throws -> PJAccountSettings {
-        guard let transportID = transports[account.transport] else {
+        guard let transportID = transports.id(for: account) else {
             throw EngineError.transportUnavailable(account.transport)
         }
         let proxy = account.outboundProxy?.trimmingCharacters(in: .whitespaces) ?? ""

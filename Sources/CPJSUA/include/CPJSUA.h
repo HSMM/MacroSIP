@@ -74,6 +74,16 @@ pj_status_t cpjsua_transport_create2(pjsip_transport_type_e type,
                                      const char *address,
                                      pjsua_transport_id *out_id);
 
+/** TLS listener (also used for outgoing TLS connections of accounts bound to it).
+ *  verify_server != 0: the server certificate must chain to a CA in `ca_file` (PEM) and
+ *  match the destination host name (PJSIP sets SNI and checks CN/SAN per connection).
+ *  verify_client is always off; no client certificate is presented. */
+pj_status_t cpjsua_tls_transport_create(unsigned port,
+                                        const char *address,
+                                        int verify_server,
+                                        const char *ca_file,
+                                        pjsua_transport_id *out_id);
+
 /** Bound port of a transport, or 0 if unknown. */
 unsigned cpjsua_transport_port(pjsua_transport_id id);
 
@@ -203,5 +213,11 @@ pj_status_t cpjsua_set_snd_devs(int capture_dev, int playback_dev);
 
 pj_status_t cpjsua_err_no_rfc2833(void);   /* PJMEDIA_RTP_EREMNORFC2833 */
 pj_status_t cpjsua_err_not_found(void);    /* PJ_ENOTFOUND */
+pj_status_t cpjsua_err_invalid_op(void);   /* PJ_EINVALIDOP */
+pj_status_t cpjsua_err_pj_busy(void);      /* PJ_EBUSY */
+pj_status_t cpjsua_err_sip_busy(void);     /* PJSIP_EBUSY (transaction in progress) */
+
+/** PJSIP_REGC_EXPIRATION_NOT_SPECIFIED (0xFFFFFFFF): 2xx without an Expires value. */
+unsigned cpjsua_regc_expiration_not_specified(void);
 
 #endif /* CPJSUA_H */

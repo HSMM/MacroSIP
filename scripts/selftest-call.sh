@@ -5,7 +5,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 WORK="${TMPDIR:-/tmp}/macrosip-selftest.$$"
 mkdir -p "$WORK"
-trap 'kill ${PJ:-} 2>/dev/null || true; rm -rf "$WORK"' EXIT
+trap 'kill ${PJ:-} 2>/dev/null || true; wait ${PJ:-} 2>/dev/null || true; rm -rf "$WORK"' EXIT
 
 # 3 s 600 Hz 16 kHz mono WAV for pjsua to play.
 python3 -I - "$WORK/tone600.wav" <<'PY'
@@ -17,9 +17,14 @@ open(sys.argv[1], 'wb').write(hdr + pcm)
 PY
 
 swift build --product macrosip-cli >/dev/null
-third_party/pjsip/bin/pjsua --null-audio --auto-answer 200 --local-port 5080 --no-tcp \
+# --use-cli --no-cli-console: pjsua must not read stdin; a background job of a
+# non-interactive shell gets /dev/null and the classic console quits on EOF at once.
+third_party/pjsip/bin/pjsua --use-cli --no-cli-console \
+  --null-audio --auto-answer 200 --local-port 5080 --no-tcp \
   --ip-addr 127.0.0.1 --bound-addr 127.0.0.1 \
   --play-file "$WORK/tone600.wav" --auto-play --auto-loop > "$WORK/pjsua.log" 2>&1 &
 PJ=$!
 sleep 2
-"$(swift build --product macrosip-cli --show-bin-path)/macrosip-cli" --selftest 2>&1 | grep -vE '^\s*(pj[0-9]\||[0-9]{2}:[0-9]{2}:[0-9]{2}\.)'
+# Show the summary (or the "SELFTEST FAILED" line); hide PJSIP logs, events and step lines.
+"$(swift build --product macrosip-cli --show-bin-path)/macrosip-cli" --selftest 2>&1 \
+  | grep -vE '^\s*(pj[0-9]\||[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]+ (\[|===))'
