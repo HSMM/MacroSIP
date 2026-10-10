@@ -1,6 +1,7 @@
 # Roadmap
 
 Milestones 1–4 produce **MacroSIP Lite**. Milestones 5–6 produce **MacroSIP** (Full).
+Owner's rule: work on milestones 5–6 starts only after Lite is released (`v0.1-lite` tagged).
 A milestone is done only when every item in its "Done when" list holds.
 
 ## 1. Skeleton, PJSIP, mockups

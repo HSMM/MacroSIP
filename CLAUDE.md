@@ -19,6 +19,7 @@ SwiftPM only (no Xcode project), PJSIP 2.17 linked statically through the `CPJSU
 
 ## Rules
 - Two editions, one codebase: Lite is the default build; Full adds `-D FULL`. Never fork UI files per edition.
+- Owner's rule (2026-10-10): no Full-only code is written until Lite is released and tagged `v0.1-lite`. Until then `#if FULL` blocks may exist only as empty stubs needed to compile.
 - PJSIP callbacks arrive on PJSIP worker threads. Hop to the main actor before touching app state; never block a PJSIP thread on the main actor.
 - Every `pjsua_*` call that can fail returns `pj_status_t`; check it and surface the error text via `pj_strerror`.
 - Passwords live only in Keychain. Everything else is JSON in `~/Library/Application Support/MacroSIP/`.
