@@ -1,0 +1,1359 @@
+<title>MacroSIP Mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: a review desk. Left rail lists screens; the stage shows one macOS mock at true size,
+   with an annotation card beside it (stacked below on narrow widths). Page chrome stays cool and quiet
+   so the native-looking mocks carry the colour. "Full" additions are marked in amber. */
+:root{
+  /* page chrome */
+  --desk:#e9ecf1; --panel:#ffffff; --ink:#1a1e25; --ink-2:#596272; --ink-3:#8a93a2; --line:#d6dbe3;
+  --full:#b8580a; --full-bg:#fff0de; --full-ink:#ffffff; --q:#1d5fbf;
+  --font-ui:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro",system-ui,"Helvetica Neue",Helvetica,Arial,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  /* macOS mock tokens (light) */
+  --m-desktop-a:#9fb3cf; --m-desktop-b:#d7c9df; --m-desktop-c:#b9d3cf;
+  --m-win:#f3f3f5; --m-content:#ffffff; --m-group:#ffffff; --m-groupbg:#ececee;
+  --m-winborder:rgba(0,0,0,.18); --m-shadow:0 22px 50px rgba(15,25,45,.22),0 2px 8px rgba(15,25,45,.12);
+  --m-ctl:#ffffff; --m-ctl-border:rgba(0,0,0,.14); --m-sep:rgba(0,0,0,.1);
+  --m-label:#1d1d1f; --m-label2:rgba(0,0,0,.56); --m-label3:rgba(0,0,0,.3);
+  --m-fill:rgba(0,0,0,.05); --m-fill2:rgba(0,0,0,.09); --m-fill3:rgba(0,0,0,.14);
+  --m-seg-bg:rgba(0,0,0,.065); --m-seg-sel:#ffffff;
+  --m-blue:#007aff; --m-blue-tint:rgba(0,122,255,.11); --m-green:#28cd41; --m-red:#ff3b30; --m-orange:#ff9500; --m-yellow:#ffcc00; --m-gray:#8e8e93;
+  --m-on-accent:#ffffff;
+  --m-menu:rgba(244,244,246,.94); --m-menubar:rgba(246,246,248,.82);
+  --m-tl-red:#ff5f57; --m-tl-yellow:#febc2e; --m-tl-green:#28c840; --m-tl-off:rgba(0,0,0,.14);
+  --m-icon-a:#2c6bed; --m-icon-b:#14a3a0;
+  --m-scrim:rgba(0,0,0,.18);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --desk:#131519; --panel:#1c1f25; --ink:#e7eaf0; --ink-2:#a0a8b6; --ink-3:#6e7686; --line:#2d323b;
+  --full:#ffa54a; --full-bg:#3a2612; --full-ink:#1b1108; --q:#7fb0ff;
+  --m-desktop-a:#1f2c44; --m-desktop-b:#3a2b45; --m-desktop-c:#1d3a3a;
+  --m-win:#232325; --m-content:#1c1c1e; --m-group:#2b2b2e; --m-groupbg:#1e1e20;
+  --m-winborder:rgba(255,255,255,.14); --m-shadow:0 22px 50px rgba(0,0,0,.55),0 2px 8px rgba(0,0,0,.4);
+  --m-ctl:#3a3a3d; --m-ctl-border:rgba(255,255,255,.1); --m-sep:rgba(255,255,255,.1);
+  --m-label:#f2f2f4; --m-label2:rgba(255,255,255,.58); --m-label3:rgba(255,255,255,.28);
+  --m-fill:rgba(255,255,255,.07); --m-fill2:rgba(255,255,255,.12); --m-fill3:rgba(255,255,255,.18);
+  --m-seg-bg:rgba(255,255,255,.08); --m-seg-sel:#5c5c60;
+  --m-blue:#0a84ff; --m-blue-tint:rgba(10,132,255,.2); --m-green:#32d74b; --m-red:#ff453a; --m-orange:#ff9f0a; --m-yellow:#ffd60a; --m-gray:#98989d;
+  --m-menu:rgba(44,44,47,.94); --m-menubar:rgba(30,30,32,.8); --m-tl-off:rgba(255,255,255,.16);
+  --m-scrim:rgba(0,0,0,.42);
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --desk:#131519; --panel:#1c1f25; --ink:#e7eaf0; --ink-2:#a0a8b6; --ink-3:#6e7686; --line:#2d323b;
+  --full:#ffa54a; --full-bg:#3a2612; --full-ink:#1b1108; --q:#7fb0ff;
+  --m-desktop-a:#1f2c44; --m-desktop-b:#3a2b45; --m-desktop-c:#1d3a3a;
+  --m-win:#232325; --m-content:#1c1c1e; --m-group:#2b2b2e; --m-groupbg:#1e1e20;
+  --m-winborder:rgba(255,255,255,.14); --m-shadow:0 22px 50px rgba(0,0,0,.55),0 2px 8px rgba(0,0,0,.4);
+  --m-ctl:#3a3a3d; --m-ctl-border:rgba(255,255,255,.1); --m-sep:rgba(255,255,255,.1);
+  --m-label:#f2f2f4; --m-label2:rgba(255,255,255,.58); --m-label3:rgba(255,255,255,.28);
+  --m-fill:rgba(255,255,255,.07); --m-fill2:rgba(255,255,255,.12); --m-fill3:rgba(255,255,255,.18);
+  --m-seg-bg:rgba(255,255,255,.08); --m-seg-sel:#5c5c60;
+  --m-blue:#0a84ff; --m-blue-tint:rgba(10,132,255,.2); --m-green:#32d74b; --m-red:#ff453a; --m-orange:#ff9f0a; --m-yellow:#ffd60a; --m-gray:#98989d;
+  --m-menu:rgba(44,44,47,.94); --m-menubar:rgba(30,30,32,.8); --m-tl-off:rgba(255,255,255,.16);
+  --m-scrim:rgba(0,0,0,.42);
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--desk);color:var(--ink);font:14px/1.45 var(--font-ui);-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--q);outline-offset:2px}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.mono{font-family:var(--font-mono)}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* ---------- page shell ---------- */
+.app{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100%}
+.rail{position:sticky;top:env(safe-area-inset-top,0px);align-self:start;height:100vh;overflow:auto;border-right:1px solid var(--line);background:var(--panel);padding:20px 14px 24px;display:flex;flex-direction:column;gap:18px}
+.brand{display:flex;align-items:center;gap:10px;padding:0 6px}
+.brand b{font-size:15px;letter-spacing:-.01em}
+.brand small{display:block;color:var(--ink-2);font-size:12px;font-weight:400}
+.ctl-group{display:flex;flex-direction:column;gap:6px;padding:0 6px}
+.ctl-label{font:500 10.5px/1 var(--font-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3)}
+.pseg{display:flex;background:var(--desk);border:1px solid var(--line);border-radius:8px;padding:2px;gap:2px}
+.pseg button{flex:1;border:0;background:transparent;border-radius:6px;padding:5px 6px;font-size:12.5px;cursor:pointer;color:var(--ink-2)}
+.pseg button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12);font-weight:600}
+.pseg.ed button[data-ed="full"][aria-pressed="true"]{color:var(--full)}
+.chk{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-2);cursor:pointer}
+.chk input{accent-color:var(--full);margin:0}
+nav.screens{display:flex;flex-direction:column;gap:1px}
+nav.screens a{display:grid;grid-template-columns:22px 1fr auto;align-items:center;gap:6px;padding:6px 8px;border-radius:7px;color:var(--ink);text-decoration:none;font-size:13px}
+nav.screens a .n{font:500 11px var(--font-mono);color:var(--ink-3)}
+nav.screens a:hover{background:var(--desk)}
+nav.screens a[aria-current="true"]{background:var(--ink);color:var(--panel)}
+nav.screens a[aria-current="true"] .n{color:inherit;opacity:.7}
+nav.screens a.sub{padding-left:30px;font-size:12.5px;color:var(--ink-2)}
+nav.screens a.sub[aria-current="true"]{color:var(--panel)}
+.ftag{font:600 9.5px/1 var(--font-mono);letter-spacing:.04em;text-transform:uppercase;color:var(--full);background:var(--full-bg);border:1px solid var(--full);border-radius:4px;padding:2px 4px}
+.legend{font-size:12px;color:var(--ink-2);padding:0 6px;display:flex;flex-direction:column;gap:6px;margin-top:auto}
+.legend .row{display:flex;gap:8px;align-items:flex-start}
+.swatch{width:18px;height:12px;border:1.5px dashed var(--full);border-radius:3px;flex:none;margin-top:3px}
+
+main{min-width:0;padding-inline:clamp(16px,3vw,40px);padding-block:28px 64px}
+.screen{display:none}
+.screen.on{display:block}
+.screen-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin-bottom:20px}
+.screen-head h1{margin:0;font-size:22px;letter-spacing:-.015em;text-wrap:balance}
+.screen-head .n{font:500 13px var(--font-mono);color:var(--ink-3)}
+.screen-head .meta{font:12px var(--font-mono);color:var(--ink-2)}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:28px;align-items:start}
+.stage{min-width:0;overflow-x:auto;padding:28px 24px 36px;border-radius:14px;background:
+  radial-gradient(circle at 1px 1px,var(--line) 1px,transparent 1.2px) 0 0/16px 16px, var(--desk);border:1px solid var(--line)}
+.stage-inner{display:flex;flex-wrap:wrap;gap:36px;align-items:flex-start;justify-content:center;min-width:min-content}
+.cap{font:500 11px/1.3 var(--font-mono);color:var(--ink-2);margin:0 0 10px;letter-spacing:.02em}
+.cap b{color:var(--ink);font-weight:600}
+.notes{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;font-size:13px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.notes h3{margin:0 0 4px;font:600 10.5px/1 var(--font-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3)}
+.notes p,.notes ul,.notes ol{margin:0}
+.notes ul{padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.notes ol.qs{list-style:none;padding:0;display:flex;flex-direction:column;gap:8px}
+.notes ol.qs li{display:grid;grid-template-columns:40px 1fr;gap:6px}
+.notes ol.qs .qid{font:600 11.5px/1.5 var(--font-mono);color:var(--q)}
+.notes .fnote{border-left:2px solid var(--full);padding-left:10px;color:var(--ink-2)}
+kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 4px;background:var(--desk)}
+
+/* ---------- edition gating ---------- */
+body[data-edition="lite"] .f, body[data-edition="lite"] .f-plain{display:none!important}
+body[data-edition="full"] .l-plain{display:none!important}
+body[data-edition="full"][data-mark="on"] .f{outline:1.5px dashed var(--full);outline-offset:2px;position:relative}
+body[data-edition="full"][data-mark="on"] .f::after{content:"Full";position:absolute;top:-8px;right:-6px;z-index:20;font:600 8.5px/1 var(--font-mono);letter-spacing:.04em;text-transform:uppercase;background:var(--full);color:var(--full-ink);padding:2px 4px;border-radius:3px;pointer-events:none}
+
+/* ---------- macOS mock primitives ---------- */
+.mac{font:13px/1.35 var(--font-ui);color:var(--m-label);letter-spacing:-.003em;text-align:left}
+.win{background:var(--m-win);border-radius:11px;box-shadow:var(--m-shadow);outline:.5px solid var(--m-winborder);position:relative}
+.titlebar{height:30px;display:flex;align-items:center;padding:0 10px;position:relative}
+.lights{display:flex;gap:8px}
+.lights i{width:12px;height:12px;border-radius:50%;background:var(--m-tl-red);box-shadow:inset 0 0 0 .5px rgba(0,0,0,.12)}
+.lights i:nth-child(2){background:var(--m-tl-yellow)} .lights i:nth-child(3){background:var(--m-tl-green)}
+.lights.dim i{background:var(--m-tl-off)}
+.titlebar .t{position:absolute;left:0;right:0;text-align:center;font-weight:600;font-size:13px;color:var(--m-label);pointer-events:none}
+.titlebar .t .sub{font-weight:400;color:var(--m-label2)}
+.field{display:flex;align-items:center;gap:6px;background:var(--m-ctl);border-radius:6px;box-shadow:0 0 0 .5px var(--m-ctl-border),0 .5px 1px rgba(0,0,0,.06);padding:3px 7px;min-height:24px;color:var(--m-label)}
+.field .ph{color:var(--m-label3)}
+.field.focus{box-shadow:0 0 0 3px var(--m-blue-tint),0 0 0 1px var(--m-blue)}
+.field.dis{opacity:.5}
+.popup{display:inline-flex;align-items:center;gap:6px;background:var(--m-ctl);border-radius:6px;box-shadow:0 0 0 .5px var(--m-ctl-border),0 1px 1.5px rgba(0,0,0,.08);padding:3px 4px 3px 8px;min-height:24px;white-space:nowrap;color:var(--m-label)}
+.popup .chev{display:grid;place-items:center;width:16px;height:16px;border-radius:4px;background:var(--m-blue);color:var(--m-on-accent)}
+.popup .chev svg{width:10px;height:10px;stroke-width:2}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;background:var(--m-ctl);border-radius:6px;box-shadow:0 0 0 .5px var(--m-ctl-border),0 1px 1.5px rgba(0,0,0,.08);padding:3px 12px;min-height:24px;font-size:13px;white-space:nowrap;border:0;color:var(--m-label)}
+.btn.primary{background:var(--m-blue);color:var(--m-on-accent);box-shadow:none}
+.btn.danger{color:var(--m-red)}
+.btn.sm{font-size:11.5px;padding:2px 8px;min-height:20px}
+.seg{display:inline-flex;background:var(--m-seg-bg);border-radius:7px;padding:2px;gap:0}
+.seg span{padding:3px 12px;border-radius:5px;font-size:12.5px;white-space:nowrap;color:var(--m-label);cursor:default;text-align:center}
+.seg span.on{background:var(--m-seg-sel);box-shadow:0 1px 2px rgba(0,0,0,.18),0 0 0 .5px rgba(0,0,0,.05)}
+.seg.full{display:flex} .seg.full span{flex:1}
+.switch{width:32px;height:19px;border-radius:10px;background:var(--m-fill3);position:relative;flex:none}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.switch.on{background:var(--m-blue)} .switch.on::after{left:15px}
+.check{width:14px;height:14px;border-radius:4px;background:var(--m-ctl);box-shadow:0 0 0 .5px var(--m-ctl-border);display:grid;place-items:center;flex:none}
+.check.on{background:var(--m-blue);box-shadow:none;color:var(--m-on-accent)}
+.check svg{width:10px;height:10px;stroke-width:2.4}
+.radio{width:14px;height:14px;border-radius:50%;background:var(--m-ctl);box-shadow:0 0 0 .5px var(--m-ctl-border);flex:none;position:relative}
+.radio.on{background:var(--m-blue);box-shadow:none}
+.radio.on::after{content:"";position:absolute;inset:4.5px;border-radius:50%;background:#fff}
+.dot{width:8px;height:8px;border-radius:50%;flex:none;display:inline-block}
+.dot.ok{background:var(--m-green)} .dot.warn{background:var(--m-orange)} .dot.err{background:var(--m-red)} .dot.off{background:transparent;box-shadow:inset 0 0 0 1.5px var(--m-gray)} .dot.busy{background:var(--m-red)} .dot.away{background:var(--m-yellow)}
+.sep{height:1px;background:var(--m-sep)}
+.avatar{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:600;color:#fff;flex:none;background:linear-gradient(180deg,#a3a9b5,#7f8794)}
+.avatar.b{background:linear-gradient(180deg,#6fa3f7,#3d74d9)} .avatar.g{background:linear-gradient(180deg,#6fd39b,#2fa368)} .avatar.o{background:linear-gradient(180deg,#f8b26a,#e07b2f)} .avatar.p{background:linear-gradient(180deg,#c99cf0,#9a62d6)} .avatar.r{background:linear-gradient(180deg,#f58b8b,#d9534f)}
+.av-wrap{position:relative;flex:none}
+.av-wrap .pres{position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border-radius:50%;box-shadow:0 0 0 2px var(--m-content)}
+.appicon{width:28px;height:28px;flex:none}
+
+/* ---------- main window ---------- */
+.mw{width:340px}
+.mw .numrow{display:flex;gap:6px;padding:4px 10px 10px;align-items:center}
+.mw .numrow .field{flex:1;font-size:17px;min-height:30px;padding:4px 8px}
+.acct-pop{padding:3px 4px 3px 7px;min-height:30px;max-width:112px}
+.acct-pop .nm{overflow:hidden;text-overflow:ellipsis;font-size:12.5px}
+.mw .tabs{padding:0 10px 8px}
+.mw .body{background:var(--m-content);border-top:.5px solid var(--m-sep);border-bottom:.5px solid var(--m-sep)}
+.statusbar{display:flex;align-items:center;gap:12px;padding:0 10px;height:26px;font-size:11.5px;color:var(--m-label2);border-radius:0 0 11px 11px;white-space:nowrap;overflow:hidden}
+.statusbar .acc{display:inline-flex;align-items:center;gap:5px}
+.statusbar .acc .dot{width:7px;height:7px}
+.statusbar .right{margin-left:auto;display:inline-flex;gap:6px;align-items:center}
+.dialpad{padding:16px 22px 14px;display:flex;flex-direction:column;gap:12px}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.key{height:50px;border-radius:12px;background:var(--m-fill);border:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;cursor:pointer;color:var(--m-label)}
+.key:hover{background:var(--m-fill2)} .key:active{background:var(--m-fill3)}
+.key b{font-size:22px;font-weight:400;line-height:1}
+.key small{font-size:8.5px;letter-spacing:.14em;color:var(--m-label2);height:10px;margin-top:2px}
+.dial-actions{display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
+.callbtn{width:58px;height:58px;border-radius:50%;background:var(--m-green);color:#fff;display:grid;place-items:center;border:0;box-shadow:0 2px 6px rgba(40,160,70,.35)}
+.callbtn svg{width:24px;height:24px;fill:currentColor;stroke:none}
+.ghost{justify-self:center;display:grid;place-items:center;width:36px;height:36px;border-radius:50%;color:var(--m-label2);border:0;background:transparent}
+.ghost svg{width:20px;height:20px}
+.hint{font-size:11px;color:var(--m-label2);text-align:center}
+
+/* ---------- lists (contacts, call log) ---------- */
+.searchrow{padding:8px 10px;display:flex;gap:6px;align-items:center;border-bottom:.5px solid var(--m-sep)}
+.searchrow .field{flex:1;min-height:24px;background:var(--m-fill);box-shadow:none;color:var(--m-label2)}
+.searchrow .field svg{width:13px;height:13px}
+.list{height:330px;overflow:hidden;position:relative}
+.list.tall{height:356px}
+.row{display:flex;align-items:center;gap:9px;padding:6px 10px;margin:0 5px;border-radius:6px;position:relative}
+.row .tx{min-width:0;flex:1;display:flex;flex-direction:column}
+.row .tx b{font-weight:500;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .tx span{font-size:11.5px;color:var(--m-label2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row.sel{background:var(--m-blue);color:var(--m-on-accent)}
+.row.sel .tx span{color:rgba(255,255,255,.8)}
+.row.ctx{box-shadow:inset 0 0 0 2px var(--m-blue)}
+.row .rbtn{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--m-fill);color:var(--m-green)}
+.row .rbtn svg{width:13px;height:13px;fill:currentColor;stroke:none}
+.secthead{font-size:11px;font-weight:600;color:var(--m-label2);padding:8px 15px 3px}
+.bottombar{display:flex;align-items:center;gap:0;padding:5px 8px;border-top:.5px solid var(--m-sep)}
+.bb{width:26px;height:22px;display:grid;place-items:center;color:var(--m-label2)}
+.bb svg{width:14px;height:14px}
+.bb + .bb{border-left:.5px solid var(--m-sep)}
+.bottombar .txt{margin-left:auto;font-size:11px;color:var(--m-label2)}
+.ctxmenu{position:absolute;z-index:30;width:206px;background:var(--m-menu);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:8px;outline:.5px solid var(--m-winborder);box-shadow:0 10px 30px rgba(0,0,0,.25);padding:5px;font-size:13px}
+.mi{display:flex;align-items:center;gap:8px;padding:3px 9px;border-radius:5px;min-height:22px;white-space:nowrap}
+.mi .sc{margin-left:auto;color:var(--m-label2);font-size:12.5px;padding-left:16px}
+.mi.hl{background:var(--m-blue);color:var(--m-on-accent)} .mi.hl .sc{color:rgba(255,255,255,.85)}
+.mi.dis{color:var(--m-label3)}
+.mi.danger{color:var(--m-red)}
+.mi svg.i{width:14px;height:14px}
+.mi .chk-sp{width:12px;flex:none;display:grid;place-items:center}
+.msep{height:1px;background:var(--m-sep);margin:5px 9px}
+.mhead{font-size:11px;font-weight:600;color:var(--m-label2);padding:4px 9px 2px}
+.dir{width:18px;display:grid;place-items:center;flex:none;color:var(--m-label2)}
+.dir svg{width:13px;height:13px;stroke-width:1.8}
+.dir.missed{color:var(--m-red)}
+.row.missed .tx b{color:var(--m-red)}
+.row .when{font-size:11.5px;color:var(--m-label2);text-align:right;display:flex;flex-direction:column;align-items:flex-end;white-space:nowrap}
+.acctag{font-size:10px;padding:0 5px;border-radius:4px;background:var(--m-fill);color:var(--m-label2);line-height:15px}
+[data-log="missed"] .row:not(.missed){display:none}
+[data-log="missed"] .secthead.nomiss{display:none}
+.toolrow{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:.5px solid var(--m-sep)}
+.toolrow .seg{flex:none}
+.toolrow .btn{margin-left:auto}
+
+/* ---------- call panel ---------- */
+.callp{margin:0 10px 10px;background:var(--m-content);border-radius:10px;box-shadow:0 0 0 .5px var(--m-sep),0 1px 3px rgba(0,0,0,.06);padding:12px 12px 12px;display:flex;flex-direction:column;gap:10px}
+.ch{display:flex;gap:10px;align-items:center}
+.ch .avatar{width:40px;height:40px;font-size:14px}
+.ch .who{min-width:0;flex:1;display:flex;flex-direction:column}
+.ch .who b{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ch .who span{font-size:12px;color:var(--m-label2)}
+.ch .tm{text-align:right;display:flex;flex-direction:column;align-items:flex-end}
+.ch .tm b{font-size:16px;font-weight:500;font-variant-numeric:tabular-nums}
+.ch .tm span{font-size:11px;color:var(--m-green);font-weight:500}
+.cmeta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:11px;color:var(--m-label2)}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:1px 6px;border-radius:5px;background:var(--m-fill);line-height:17px;white-space:nowrap}
+.chip svg{width:11px;height:11px}
+.chip.rec{background:var(--m-red);color:#fff;font-weight:600}
+.chip.rec::before{content:"";width:6px;height:6px;border-radius:50%;background:#fff}
+.bars{display:inline-flex;gap:1.5px;align-items:flex-end;height:10px}
+.bars i{width:2.5px;background:var(--m-green);border-radius:1px}
+.bars i:nth-child(1){height:3px}.bars i:nth-child(2){height:5px}.bars i:nth-child(3){height:7.5px}.bars i:nth-child(4){height:10px;background:var(--m-fill3)}
+.cbtns{display:flex;justify-content:space-around;gap:2px}
+.cb{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10.5px;color:var(--m-label);width:48px;text-align:center;line-height:1.15}
+.cb .c{width:38px;height:38px;border-radius:50%;background:var(--m-fill2);display:grid;place-items:center}
+.cb .c svg{width:17px;height:17px}
+.cb.on .c{background:var(--m-label);color:var(--m-content)}
+.cb.rec .c{background:var(--m-red);color:#fff}
+.cb.dis{opacity:.4}
+.endcall{display:flex;align-items:center;justify-content:center;gap:7px;height:30px;border-radius:8px;background:var(--m-red);color:#fff;font-weight:500;font-size:13px}
+.endcall svg{width:18px;height:18px;fill:currentColor;stroke:none}
+.dialpad.compact{padding:10px 22px 10px;gap:8px}
+.dialpad.compact .key{height:36px;border-radius:9px}
+.dialpad.compact .key b{font-size:17px}
+.dialpad.compact .key small{display:none}
+.dialpad.compact .callbtn{width:42px;height:42px} .dialpad.compact .callbtn svg{width:19px;height:19px}
+.crow{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px}
+.crow.active{background:var(--m-blue-tint)}
+.crow .avatar{width:26px;height:26px;font-size:10px}
+.crow .tx{flex:1;min-width:0;display:flex;flex-direction:column}
+.crow .tx b{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crow .tx span{font-size:11px;color:var(--m-label2);font-variant-numeric:tabular-nums}
+.crow .tx span.act{color:var(--m-blue);font-weight:500}
+.crow .tx span.held{color:var(--m-orange);font-weight:500}
+.mini-end{width:22px;height:22px;border-radius:50%;background:var(--m-red);color:#fff;display:grid;place-items:center;flex:none}
+.mini-end svg{width:13px;height:13px;fill:currentColor;stroke:none}
+.banner{display:flex;flex-direction:column;gap:7px;padding:8px 10px;border-radius:8px;background:var(--m-fill);font-size:12px}
+.banner .bb2{display:flex;gap:6px;justify-content:flex-end}
+.popover{position:relative;background:var(--m-menu);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:10px;outline:.5px solid var(--m-winborder);box-shadow:0 10px 30px rgba(0,0,0,.22);padding:12px;width:270px;display:flex;flex-direction:column;gap:9px}
+.popover::before{content:"";position:absolute;top:-7px;left:var(--tip,50%);width:14px;height:14px;background:var(--m-menu);transform:translateX(-50%) rotate(45deg);border-left:.5px solid var(--m-winborder);border-top:.5px solid var(--m-winborder)}
+.dtmf{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.dtmf span{height:30px;border-radius:7px;background:var(--m-fill);display:grid;place-items:center;font-size:15px}
+.dtmf span.hit{background:var(--m-fill3)}
+
+/* ---------- desktop backdrop, incoming, menu bar ---------- */
+.desktop{position:relative;border-radius:12px;overflow:hidden;background:
+  radial-gradient(120% 90% at 10% 0%,var(--m-desktop-a),transparent 60%),
+  radial-gradient(90% 80% at 100% 30%,var(--m-desktop-b),transparent 60%),
+  radial-gradient(80% 80% at 40% 100%,var(--m-desktop-c),transparent 60%),var(--m-desktop-a);
+  outline:.5px solid var(--m-winborder)}
+.menubar{height:26px;display:flex;align-items:center;gap:14px;padding:0 12px;background:var(--m-menubar);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);font-size:13px;color:var(--m-label)}
+.menubar .l{display:flex;gap:16px;align-items:center}
+.menubar .l b{font-weight:600}
+.menubar .r{margin-left:auto;display:flex;gap:12px;align-items:center;font-variant-numeric:tabular-nums}
+.sitem{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 6px;border-radius:5px;position:relative}
+.sitem.pressed{background:var(--m-fill3)}
+.sitem svg{width:16px;height:16px}
+.sitem .bdg{position:absolute;top:1px;right:1px;min-width:12px;height:12px;border-radius:6px;background:var(--m-red);color:#fff;font-size:8.5px;font-weight:700;display:grid;place-items:center;padding:0 3px;line-height:1}
+.hs-solid{fill:currentColor;stroke:none}
+.hs-line{fill:none;stroke:currentColor;stroke-width:1.6}
+.incoming{width:300px;background:var(--m-menu);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-radius:14px;outline:.5px solid var(--m-winborder);box-shadow:var(--m-shadow);padding:14px 16px 16px;display:flex;flex-direction:column;gap:12px}
+.incoming .top{display:flex;gap:12px;align-items:center}
+.incoming .avatar{width:48px;height:48px;font-size:17px}
+.incoming .eyebrow{font-size:11px;color:var(--m-label2);display:flex;gap:5px;align-items:center}
+.incoming .nm{font-size:17px;font-weight:600;line-height:1.2}
+.incoming .num{font-size:12.5px;color:var(--m-label2)}
+.ans-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ans{height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;gap:7px;color:#fff;font-weight:600;font-size:13px}
+.ans svg{width:17px;height:17px;fill:currentColor;stroke:none}
+.ans.yes{background:var(--m-green)} .ans.no{background:var(--m-red)}
+.aa{display:flex;align-items:center;gap:8px;font-size:12px;padding:7px 9px;border-radius:8px;background:var(--m-fill)}
+.aa .ring{width:22px;height:22px;flex:none}
+.aa a{margin-left:auto;color:var(--m-blue);text-decoration:none;font-size:12px}
+.notif{width:350px;background:var(--m-menu);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-radius:16px;outline:.5px solid var(--m-winborder);box-shadow:0 8px 24px rgba(0,0,0,.2);display:flex;overflow:hidden}
+.notif .main{display:flex;gap:10px;padding:11px 12px;flex:1;min-width:0}
+.notif .main svg{width:34px;height:34px;flex:none}
+.notif .main .tx{display:flex;flex-direction:column;min-width:0;font-size:12.5px;line-height:1.3}
+.notif .acts{display:flex;flex-direction:column;border-left:.5px solid var(--m-sep);width:84px;flex:none}
+.notif .acts span{flex:1;display:grid;place-items:center;font-size:12.5px;font-weight:500}
+.notif .acts span + span{border-top:.5px solid var(--m-sep)}
+.menu{width:286px;background:var(--m-menu);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-radius:9px;outline:.5px solid var(--m-winborder);box-shadow:0 12px 34px rgba(0,0,0,.28);padding:5px;font-size:13px;color:var(--m-label)}
+.menu .acctline{display:flex;align-items:center;gap:8px;padding:3px 9px;min-height:22px}
+.menu .acctline .dot{width:7px;height:7px}
+.menu .acctline small{margin-left:auto;color:var(--m-label2);font-size:11.5px}
+.menu .qd{padding:4px 9px 6px;display:flex;gap:6px}
+.menu .qd .field{flex:1;min-height:24px}
+.istates{display:flex;flex-wrap:wrap;gap:14px}
+.istate{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;color:var(--ink-2);font-family:var(--font-mono);min-width:76px}
+.istate .box{height:30px;padding:0 10px;display:flex;align-items:center;gap:5px;border-radius:7px;background:var(--m-menubar);outline:.5px solid var(--m-winborder);color:var(--m-label);font:12px var(--font-ui);font-variant-numeric:tabular-nums}
+.dockicon{position:relative;width:64px;height:64px}
+.dockicon svg{width:64px;height:64px}
+.dockicon .bdg{position:absolute;top:-4px;right:-6px;min-width:22px;height:22px;border-radius:11px;background:var(--m-red);color:#fff;font:600 13px/22px var(--font-ui);text-align:center;padding:0 6px;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+
+/* ---------- settings ---------- */
+.sw{width:620px}
+.sw .titlebar{height:28px}
+.toolbar{display:flex;justify-content:center;gap:2px;padding:0 10px 8px;border-bottom:.5px solid var(--m-sep)}
+.tb-tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 7px 3px;border-radius:7px;min-width:62px;font-size:11px;color:var(--m-label2);cursor:pointer;position:relative}
+.tb-tab svg{width:20px;height:20px;stroke-width:1.4}
+.tb-tab.on{background:var(--m-fill2);color:var(--m-blue)}
+.tb-tab.on .lbl{color:var(--m-label)}
+.pane{background:var(--m-groupbg);padding:18px 22px 22px;border-radius:0 0 11px 11px;display:flex;flex-direction:column;gap:18px;min-height:380px}
+.grp{display:flex;flex-direction:column;gap:6px}
+.grp > .gh{font-size:11.5px;font-weight:600;color:var(--m-label2);padding:0 10px}
+.grp > .gf{font-size:11.5px;color:var(--m-label2);padding:0 10px;line-height:1.4}
+.gbox{background:var(--m-group);border-radius:9px;box-shadow:0 0 0 .5px var(--m-sep);display:flex;flex-direction:column}
+.gr{display:flex;align-items:center;gap:12px;padding:8px 12px;min-height:40px;position:relative}
+.gr + .gr::before{content:"";position:absolute;top:0;left:12px;right:12px;height:.5px;background:var(--m-sep)}
+.gr .gl{flex:1;min-width:0;display:flex;flex-direction:column}
+.gr .gl small{font-size:11.5px;color:var(--m-label2)}
+.gr .gv{display:flex;align-items:center;gap:8px;flex:none;color:var(--m-label2)}
+.gr .field{min-width:200px}
+.stepper{display:inline-flex;flex-direction:column;width:13px;height:22px;border-radius:5px;box-shadow:0 0 0 .5px var(--m-ctl-border);background:var(--m-ctl);overflow:hidden}
+.stepper i{flex:1;display:grid;place-items:center;font-size:7px;font-style:normal;color:var(--m-label2)}
+.stepper i + i{border-top:.5px solid var(--m-sep)}
+.meter{display:flex;gap:2px}
+.meter i{width:5px;height:9px;border-radius:1px;background:var(--m-fill3)}
+.meter i.on{background:var(--m-green)}
+.meter i.on.y{background:var(--m-yellow)}
+.tbl{background:var(--m-group);border-radius:9px;box-shadow:0 0 0 .5px var(--m-sep);overflow:hidden}
+.tbl .th,.tbl .tr{display:grid;align-items:center;gap:10px;padding:0 12px;min-height:30px;font-size:12.5px}
+.tbl .th{font-size:11px;font-weight:600;color:var(--m-label2);border-bottom:.5px solid var(--m-sep);min-height:24px}
+.tbl .tr:nth-child(odd of .tr){background:var(--m-fill)}
+.tbl .tr.sel{background:var(--m-blue);color:var(--m-on-accent)}
+.tbl .tr.sel .muted{color:rgba(255,255,255,.8)}
+.tbl .muted{color:var(--m-label2)}
+.tbl .grip{color:var(--m-label3)}
+.tbl-foot{display:flex;align-items:center;border-top:.5px solid var(--m-sep);padding:3px 6px;background:var(--m-group)}
+.badge{font-size:10px;font-weight:600;padding:0 5px;border-radius:4px;line-height:16px;background:var(--m-blue-tint);color:var(--m-blue)}
+.tr.sel .badge{background:rgba(255,255,255,.25);color:#fff}
+
+/* ---------- narrow widths ---------- */
+@media (max-width: 1180px){ .layout{grid-template-columns:minmax(0,1fr)} .notes{max-width:720px} }
+@media (max-width: 860px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .rail{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:14px 16px;gap:12px;flex-direction:row;flex-wrap:wrap;align-items:flex-start}
+  .brand{width:100%;padding:0}
+  .ctl-group{padding:0;flex:1 1 160px}
+  nav.screens{order:5;width:100%;flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:4px;scrollbar-width:thin}
+  nav.screens a{display:flex;flex:none;white-space:nowrap;border:1px solid var(--line);padding:5px 10px}
+  nav.screens a.sub{padding-left:10px}
+  .legend{display:none}
+  main{padding-inline:16px;padding-block:20px 48px}
+  .stage{padding:20px 12px 28px}
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="g-icon" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2c6bed"/><stop offset="1" stop-color="#14a3a0"/></linearGradient>
+  </defs>
+  <symbol id="i-handset" viewBox="0 0 24 24"><path d="M6.6 10.8a15.2 15.2 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></symbol>
+  <symbol id="i-hangup" viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1a1 1 0 0 1-.56.9 11.5 11.5 0 0 0-2.66 1.85 1 1 0 0 1-1.4 0L.29 13.08a1 1 0 0 1 0-1.41C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67a1 1 0 0 1 0 1.41l-2.48 2.49a1 1 0 0 1-1.4 0 11.3 11.3 0 0 0-2.67-1.85 1 1 0 0 1-.56-.9v-3.1A15 15 0 0 0 12 9z"/></symbol>
+  <symbol id="i-mic-off" viewBox="0 0 16 16"><path d="M8 1.75a2.25 2.25 0 0 0-2.25 2.25v3.5a2.25 2.25 0 0 0 3.9 1.53M10.25 6.5V4A2.25 2.25 0 0 0 6.4 2.4M3.75 7.5a4.25 4.25 0 0 0 7.3 2.95M12.25 7.5c0 .5-.08.98-.24 1.43M8 11.75v2.5M2 2l12 12"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 16 16"><path d="M8 1.75A2.25 2.25 0 0 0 5.75 4v3.5a2.25 2.25 0 0 0 4.5 0V4A2.25 2.25 0 0 0 8 1.75zM3.75 7.5a4.25 4.25 0 0 0 8.5 0M8 11.75v2.5"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 16 16"><path d="M5.5 3v10M10.5 3v10"/></symbol>
+  <symbol id="i-play" viewBox="0 0 16 16"><path d="M5 3.2v9.6L12.5 8z"/></symbol>
+  <symbol id="i-transfer" viewBox="0 0 16 16"><path d="M2.5 5h9M9 2.5 11.5 5 9 7.5M13.5 11h-9M7 8.5 4.5 11 7 13.5"/></symbol>
+  <symbol id="i-keypad" viewBox="0 0 16 16"><circle cx="4" cy="3" r=".9"/><circle cx="8" cy="3" r=".9"/><circle cx="12" cy="3" r=".9"/><circle cx="4" cy="7" r=".9"/><circle cx="8" cy="7" r=".9"/><circle cx="12" cy="7" r=".9"/><circle cx="4" cy="11" r=".9"/><circle cx="8" cy="11" r=".9"/><circle cx="12" cy="11" r=".9"/><circle cx="8" cy="14.5" r=".9"/></symbol>
+  <symbol id="i-record" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.75"/><circle cx="8" cy="8" r="2.75" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-merge" viewBox="0 0 16 16"><path d="M3 2.5v2.25A3.25 3.25 0 0 0 6.25 8H8m5-5.5v2.25A3.25 3.25 0 0 1 9.75 8H8m0 0v5.5M5.75 11.25 8 13.5l2.25-2.25"/></symbol>
+  <symbol id="i-backspace" viewBox="0 0 16 16"><path d="M5.5 3h8a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-8L1.5 8z"/><path d="m7.5 6 4 4m0-4-4 4"/></symbol>
+  <symbol id="i-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5"/><path d="m10.4 10.4 3.6 3.6"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 16 16"><path d="M3 8h10"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 16 16"><path d="m4.5 6.5 3.5-3 3.5 3M4.5 9.5l3.5 3 3.5-3"/></symbol>
+  <symbol id="i-chev-d" viewBox="0 0 16 16"><path d="m4 6 4 4 4-4"/></symbol>
+  <symbol id="i-chev-r" viewBox="0 0 16 16"><path d="m6 4 4 4-4 4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 16 16"><path d="m3.5 8.5 3 3 6-7"/></symbol>
+  <symbol id="i-in" viewBox="0 0 16 16"><path d="M12.5 3.5 4 12M4 6v6h6"/></symbol>
+  <symbol id="i-out" viewBox="0 0 16 16"><path d="M3.5 12.5 12 4M6 4h6v6"/></symbol>
+  <symbol id="i-missed" viewBox="0 0 16 16"><path d="M2.5 4.5 7 9l4.5-4.5M8.5 4.5h3v3"/><path d="M2 12.5h12"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 16 16"><path d="M2.75 4.25h10.5M6.25 4.25V2.75h3.5v1.5M4 4.25l.6 8.6a1 1 0 0 0 1 .9h4.8a1 1 0 0 0 1-.9l.6-8.6"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.25"/><path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.15 1.15M11.45 11.45l1.15 1.15M3.4 12.6l1.15-1.15M11.45 4.55l1.15-1.15"/><circle cx="8" cy="8" r="4.6"/></symbol>
+  <symbol id="i-person" viewBox="0 0 16 16"><circle cx="8" cy="5.5" r="2.75"/><path d="M2.75 14c.6-2.7 2.7-4.25 5.25-4.25S12.65 11.3 13.25 14"/></symbol>
+  <symbol id="i-people" viewBox="0 0 16 16"><circle cx="6" cy="5.5" r="2.4"/><path d="M1.75 13.5c.5-2.3 2.2-3.6 4.25-3.6s3.75 1.3 4.25 3.6M10.5 3.4a2.4 2.4 0 0 1 0 4.4M12 9.9c1.2.5 2 1.6 2.25 3.6"/></symbol>
+  <symbol id="i-speaker" viewBox="0 0 16 16"><path d="M2.5 6h2.5l3.5-3v10L5 10H2.5zM11 5.5a3.5 3.5 0 0 1 0 5M12.75 3.75a6 6 0 0 1 0 8.5"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.25"/><path d="M1.75 8h12.5M8 1.75c1.8 1.8 2.6 3.9 2.6 6.25S9.8 12.45 8 14.25C6.2 12.45 5.4 10.35 5.4 8S6.2 3.55 8 1.75"/></symbol>
+  <symbol id="i-wave" viewBox="0 0 16 16"><path d="M2 8h1M4.5 5.5v5M7 3v10M9.5 5v6M12 6.5v3M14 8h0"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 16 16"><path d="M1.75 4.25a1 1 0 0 1 1-1H6l1.5 1.5h5.75a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1H2.75a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 16 16"><path d="M9 1.5 3.5 9H8l-1 5.5L12.5 7H8z"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 16 16"><path d="M13.5 9.6A5.75 5.75 0 1 1 6.4 2.5a4.6 4.6 0 0 0 7.1 7.1z"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 16 16"><rect x="3.25" y="7" width="9.5" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></symbol>
+  <symbol id="i-info" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.25"/><path d="M8 7.25v4M8 4.9v.1"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 16 16"><path d="M8 2 14.5 13.5h-13z"/><path d="M8 6.5v3.25M8 11.6v.1"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 16 16"><path d="m10.5 2.5 3 3-8 8H2.5v-3z"/></symbol>
+  <symbol id="i-grip" viewBox="0 0 16 16"><path d="M3 5.5h10M3 8h10M3 10.5h10"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.25"/><path d="M8 4.5V8l2.5 1.5"/></symbol>
+  <symbol id="i-signal" viewBox="0 0 16 16"><path d="M2.5 13v-2M6 13V8.5M9.5 13V6M13 13V3.5"/></symbol>
+  <symbol id="i-xmark" viewBox="0 0 16 16"><path d="m4 4 8 8m0-8-8 8"/></symbol>
+  <symbol id="i-play-c" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.25"/><path d="M6.75 5.5v5L10.5 8z"/></symbol>
+  <symbol id="i-link" viewBox="0 0 16 16"><path d="M6.75 9.25a2.75 2.75 0 0 0 3.9 0l2-2a2.75 2.75 0 0 0-3.9-3.9l-.6.6M9.25 6.75a2.75 2.75 0 0 0-3.9 0l-2 2a2.75 2.75 0 0 0 3.9 3.9l.6-.6"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 16 16"><path d="M4 11.5V7a4 4 0 0 1 8 0v4.5l1.25 1.25H2.75zM6.5 14h3"/></symbol>
+  <symbol id="i-mark" viewBox="0 0 64 64"><rect width="64" height="64" rx="14.5" fill="url(#g-icon)"/><path fill="#fff" d="M22.6 17.5c1.2-.9 2.9-.7 3.8.5l4.2 5.6c.8 1.1.7 2.6-.3 3.6l-2.6 2.6c1.6 3.5 4.3 6.2 7.8 7.8l2.6-2.6c1-1 2.5-1.1 3.6-.3l5.6 4.2c1.2.9 1.4 2.6.5 3.8l-2.3 3c-1.4 1.8-3.8 2.6-6 1.8C29.6 44.6 19.4 34.4 16.5 24.6c-.7-2.2 0-4.6 1.8-6z"/><path d="M38 19.5a8.5 8.5 0 0 1 6.5 6.5M37.5 13a15 15 0 0 1 13.5 13.5" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none" opacity=".75"/></symbol>
+</svg>
+
+<div class="app">
+  <aside class="rail" aria-label="Screens and view options">
+    <div class="brand"><svg class="appicon" aria-hidden="true"><use href="#i-mark"/></svg><div><b>MacroSIP</b><small>UI mockups · for approval</small></div></div>
+
+    <div class="ctl-group">
+      <span class="ctl-label" id="lbl-ed">Edition</span>
+      <div class="pseg ed" role="group" aria-labelledby="lbl-ed">
+        <button type="button" data-ed="lite" aria-pressed="true" id="ed-lite">Lite</button>
+        <button type="button" data-ed="full" aria-pressed="false" id="ed-full">Full</button>
+      </div>
+      <label class="chk" for="mark-full"><input type="checkbox" id="mark-full" checked> Mark Full-only additions</label>
+    </div>
+    <div class="ctl-group">
+      <span class="ctl-label" id="lbl-th">Theme</span>
+      <div class="pseg th" role="group" aria-labelledby="lbl-th">
+        <button type="button" data-th="system" aria-pressed="true" id="th-system">System</button>
+        <button type="button" data-th="light" aria-pressed="false" id="th-light">Light</button>
+        <button type="button" data-th="dark" aria-pressed="false" id="th-dark">Dark</button>
+      </div>
+    </div>
+
+    <nav class="screens" aria-label="Screens">
+      <a href="#dialpad" data-s="dialpad"><span class="n">1</span>Dialpad</a>
+      <a href="#contacts" data-s="contacts"><span class="n">2</span>Contacts</a>
+      <a href="#calllog" data-s="calllog"><span class="n">3</span>Call Log</a>
+      <a href="#activecall" data-s="activecall"><span class="n">4</span>Active call</a>
+      <a href="#multicall" data-s="multicall"><span class="n">5</span>Several calls</a>
+      <a href="#incoming" data-s="incoming"><span class="n">6</span>Incoming call</a>
+      <a href="#menubar" data-s="menubar"><span class="n">7</span>Menu bar &amp; Dock</a>
+      <a href="#settings" data-s="settings" data-pane="general"><span class="n">8</span>Settings</a>
+      <a href="#settings" class="sub" data-s="settings" data-pane="general">General</a>
+      <a href="#settings" class="sub" data-s="settings" data-pane="accounts">Accounts</a>
+      <a href="#settings" class="sub" data-s="settings" data-pane="audio">Audio</a>
+      <a href="#settings" class="sub" data-s="settings" data-pane="network">Network</a>
+      <a href="#settings" class="sub" data-s="settings" data-pane="codecs">Codecs</a>
+      <a href="#settings" class="sub f-plain" data-s="settings" data-pane="recording">Recording <span class="ftag">Full</span></a>
+      <a href="#settings" class="sub f-plain" data-s="settings" data-pane="autoanswer">Auto-answer <span class="ftag">Full</span></a>
+      <a href="#account" data-s="account"><span class="n">9</span>Account editor</a>
+      <a href="#firstrun" data-s="firstrun"><span class="n">10</span>First launch</a>
+    </nav>
+
+    <div class="legend">
+      <div class="row"><span class="swatch"></span><span>Dashed amber outline with a <b>Full</b> tag marks controls that exist only in the Full edition. Switch to Full to see them.</span></div>
+      <div class="row"><span class="mono" style="color:var(--q);font-size:11px;font-weight:600;flex:none">Q4.2</span><span>Open questions are numbered by screen so feedback can cite them.</span></div>
+    </div>
+  </aside>
+
+  <main>
+<section class="screen" id="s-dialpad" data-screen="dialpad">
+  <header class="screen-head"><span class="n">01</span><h1>Dialpad</h1><span class="meta">Main window · 340 × 520 pt · resizable height</span></header>
+  <div class="layout">
+    <div class="stage"><div class="stage-inner">
+      <div>
+        <p class="cap"><b>Main window</b> · Dialpad tab, idle, typing a number</p>
+        <div class="win mw mac">
+          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t"><span class="l-plain">MacroSIP Lite</span><span class="f-plain">MacroSIP</span></div></div>
+          <div class="numrow">
+            <span class="popup acct-pop" title="Outgoing account"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span>
+            <div class="field focus"><span id="dial-out" class="tnum">+7 912 555-01</span><span style="width:1px;height:19px;background:var(--m-blue);margin-left:-4px"></span></div>
+          </div>
+          <div class="tabs"><div class="seg full"><span class="on">Dialpad</span><span data-go="contacts">Contacts</span><span data-go="calllog">Call Log</span></div></div>
+          <div class="body">
+            <div class="dialpad">
+              <div class="keys" id="keys">
+                <button class="key" type="button"><b>1</b><small>&nbsp;</small></button>
+                <button class="key" type="button"><b>2</b><small>ABC</small></button>
+                <button class="key" type="button"><b>3</b><small>DEF</small></button>
+                <button class="key" type="button"><b>4</b><small>GHI</small></button>
+                <button class="key" type="button"><b>5</b><small>JKL</small></button>
+                <button class="key" type="button"><b>6</b><small>MNO</small></button>
+                <button class="key" type="button"><b>7</b><small>PQRS</small></button>
+                <button class="key" type="button"><b>8</b><small>TUV</small></button>
+                <button class="key" type="button"><b>9</b><small>WXYZ</small></button>
+                <button class="key" type="button"><b>*</b><small>&nbsp;</small></button>
+                <button class="key" type="button"><b>0</b><small>+</small></button>
+                <button class="key" type="button"><b>#</b><small>&nbsp;</small></button>
+              </div>
+              <div class="dial-actions">
+                <span></span>
+                <button class="callbtn" type="button" aria-label="Call"><svg class="i"><use href="#i-handset"/></svg></button>
+                <button class="ghost" type="button" aria-label="Delete last digit" id="dial-back"><svg class="i"><use href="#i-backspace"/></svg></button>
+              </div>
+              <div class="hint">Return calls · type letters to search contacts</div>
+            </div>
+          </div>
+          <div class="statusbar">
+            <span class="acc"><span class="dot ok"></span>Office</span>
+            <span class="acc"><span class="dot ok"></span>Home</span>
+            <span class="acc" style="color:var(--m-red)"><span class="dot err"></span>Backup: 403</span>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <aside class="notes">
+      <div><h3>Intent</h3><p>The fastest path from "I know the number" to a ringing call. The number field is focused whenever the window is key, so typing digits works without clicking.</p></div>
+      <div><h3>Interaction</h3><ul>
+        <li>Keys on screen and the keyboard both type into the field; <kbd>⌫</kbd> deletes, <kbd>↩</kbd> calls, long-press <b>0</b> gives <b>+</b>.</li>
+        <li>The account picker sets the outgoing account for this call only; its default comes from "Default for outgoing". The dot shows that account's registration.</li>
+        <li>Pasting <span class="mono">sip:</span> or <span class="mono">tel:</span> URIs and numbers with spaces or dashes is accepted; the dial string is normalised on call.</li>
+        <li>Status bar: one item per enabled account. A failed account shows the short reason in red; clicking an item opens that account in Settings.</li>
+      </ul></div>
+      <div><h3>Open questions</h3><ol class="qs">
+        <li><span class="qid">Q1.1</span><span>Should typing letters jump to the Contacts tab with search results, or show inline suggestions under the field and stay on Dialpad?</span></li>
+        <li><span class="qid">Q1.2</span><span>Do you want a redial shortcut (empty field + Call redials the last number, like MicroSIP)?</span></li>
+      </ol></div>
+    </aside>
+  </div>
+</section>
+<section class="screen" id="s-contacts" data-screen="contacts">
+  <header class="screen-head"><span class="n">02</span><h1>Contacts</h1><span class="meta">Main window · Contacts tab · context menu open</span></header>
+  <div class="layout">
+    <div class="stage"><div class="stage-inner">
+      <div>
+        <p class="cap"><b>Main window</b> · Contacts tab, right-click on a row</p>
+        <div class="win mw mac">
+          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t"><span class="l-plain">MacroSIP Lite</span><span class="f-plain">MacroSIP</span></div></div>
+          <div class="numrow">
+            <span class="popup acct-pop"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span>
+            <div class="field"><span class="ph">Name or number</span></div>
+          </div>
+          <div class="tabs"><div class="seg full"><span data-go="dialpad">Dialpad</span><span class="on">Contacts</span><span data-go="calllog">Call Log</span></div></div>
+          <div class="body">
+            <div class="searchrow"><div class="field"><svg class="i"><use href="#i-search"/></svg><span>Search</span></div></div>
+            <div class="list">
+              <div class="secthead">A</div>
+              <div class="row"><span class="av-wrap"><span class="avatar b">AP</span><span class="pres f-plain" style="background:var(--m-green)"></span></span><span class="tx"><b>Anna Petrova</b><span class="tnum">+7 912 555-01-23</span></span><span class="f" style="font-size:11px;color:var(--m-label2)">Available</span></div>
+              <div class="secthead">B</div>
+              <div class="row sel ctx"><span class="av-wrap"><span class="avatar o">BI</span><span class="pres f-plain" style="background:var(--m-red)"></span></span><span class="tx"><b>Boris Ivanov</b><span class="tnum">104 · Office</span></span><span class="rbtn" style="background:rgba(255,255,255,.2);color:#fff"><svg class="i"><use href="#i-handset"/></svg></span></div>
+              <div class="secthead">H</div>
+              <div class="row"><span class="av-wrap"><span class="avatar">HD</span></span><span class="tx"><b>Help Desk</b><span class="tnum">sip:helpdesk@pbx.example.com</span></span></div>
+              <div class="secthead">M</div>
+              <div class="row"><span class="av-wrap"><span class="avatar g">MC</span><span class="pres f-plain" style="background:var(--m-yellow)"></span></span><span class="tx"><b>Mike Chen</b><span class="tnum">+1 415 555-0142</span></span><span class="f" style="font-size:11px;color:var(--m-label2)">Away</span></div>
+              <div class="secthead">O</div>
+              <div class="row"><span class="av-wrap"><span class="avatar p">OS</span><span class="pres f-plain" style="background:var(--m-gray)"></span></span><span class="tx"><b>Olga Smirnova</b><span class="tnum">+7 495 555-77-10</span></span></div>
+              <div class="secthead">R</div>
+              <div class="row"><span class="av-wrap"><span class="avatar r">RE</span></span><span class="tx"><b>Reception</b><span class="tnum">100</span></span></div>
+              <div class="ctxmenu mac" style="left:150px;top:96px">
+                <div class="mi hl"><svg class="i"><use href="#i-handset"/></svg>Call<span class="sc">↩</span></div>
+                <div class="mi"><span style="width:14px"></span>Call from<span class="sc"><svg class="i" style="width:11px;height:11px"><use href="#i-chev-r"/></svg></span></div>
+                <div class="mi"><span style="width:14px"></span>Copy Number<span class="sc">⌘C</span></div>
+                <div class="msep"></div>
+                <div class="mi"><svg class="i"><use href="#i-pencil"/></svg>Edit…<span class="sc">⌘E</span></div>
+                <div class="mi f"><span style="width:14px"></span>Watch Presence<span class="sc"><svg class="i" style="width:12px;height:12px"><use href="#i-check"/></svg></span></div>
+                <div class="msep"></div>
+                <div class="mi danger"><svg class="i"><use href="#i-trash"/></svg>Delete<span class="sc">⌘⌫</span></div>
+              </div>
+            </div>
+            <div class="bottombar"><span class="bb" title="Add contact"><svg class="i"><use href="#i-plus"/></svg></span><span class="bb" title="Delete contact"><svg class="i"><use href="#i-minus"/></svg></span><span class="bb" title="Edit contact"><svg class="i"><use href="#i-pencil"/></svg></span><span class="txt">6 contacts</span></div>
+          </div>
+          <div class="statusbar">
+            <span class="acc"><span class="dot ok"></span>Office</span>
+            <span class="acc"><span class="dot ok"></span>Home</span>
+            <span class="acc" style="color:var(--m-red)"><span class="dot err"></span>Backup: 403</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p class="cap"><b>Sheet</b> · New / Edit contact</p>
+        <div class="win mac" style="width:320px">
+          <div style="padding:16px 18px 14px;display:flex;flex-direction:column;gap:10px">
+            <b style="font-size:13px">Edit Contact</b>
+            <div style="display:grid;grid-template-columns:72px 1fr;gap:8px 8px;align-items:center;font-size:13px">
+              <span style="text-align:right;color:var(--m-label2)">Name</span><div class="field">Boris Ivanov</div>
+              <span style="text-align:right;color:var(--m-label2)">Number</span><div class="field tnum">104</div>
+              <span style="text-align:right;color:var(--m-label2)">Account</span><span class="popup" style="justify-self:start">Any (use default)<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span>
+              <span class="f-plain"></span><label class="f" style="display:flex;gap:7px;align-items:center;font-size:12.5px"><span class="check on"><svg class="i"><use href="#i-check"/></svg></span>Watch presence (subscribe)</label>
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px"><span class="btn">Cancel</span><span class="btn primary">Save</span></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <aside class="notes">
+      <div><h3>Intent</h3><p>A short personal phone book that sits one click from the dialpad. Double-click or <kbd>↩</kbd> calls the selected contact.</p></div>
+      <div><h3>Interaction</h3><ul>
+        <li>Search filters by name and number as you type; <kbd>⌘F</kbd> focuses it.</li>
+        <li>Hover shows a green call button on the row; the selected row shows it permanently.</li>
+        <li>Context menu: Call, Call from (account submenu), Copy Number, Edit, Delete. Delete asks for confirmation inline in the row ("Delete Boris Ivanov?" with Delete / Cancel).</li>
+        <li>Contacts can carry a preferred account; "Any" uses the picker in the number row.</li>
+      </ul></div>
+      <div class="fnote f-plain"><b>Full:</b> presence dot on the avatar (green available, yellow away, red busy/DND, grey offline/unknown) and a text status on the right. Subscribing is per contact: "Watch presence" in the sheet and the context menu.</div>
+      <div><h3>Open questions</h3><ol class="qs">
+        <li><span class="qid">Q2.1</span><span>Import from macOS Contacts (read-only, on request) in v1, or only manual entries? It needs a privacy permission prompt.</span></li>
+        <li><span class="qid">Q2.2</span><span>Is a per-contact preferred account useful, or should every contact call through the account picker?</span></li>
+      </ol></div>
+    </aside>
+  </div>
+</section>
+<section class="screen" id="s-calllog" data-screen="calllog">
+  <header class="screen-head"><span class="n">03</span><h1>Call Log</h1><span class="meta">Main window · Call Log tab · try the All / Missed filter</span></header>
+  <div class="layout">
+    <div class="stage"><div class="stage-inner">
+      <div>
+        <p class="cap"><b>Main window</b> · Call Log tab, 2 missed calls unseen</p>
+        <div class="win mw mac">
+          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t"><span class="l-plain">MacroSIP Lite</span><span class="f-plain">MacroSIP</span></div></div>
+          <div class="numrow">
+            <span class="popup acct-pop"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span>
+            <div class="field"><span class="ph">Name or number</span></div>
+          </div>
+          <div class="tabs"><div class="seg full"><span data-go="dialpad">Dialpad</span><span data-go="contacts">Contacts</span><span class="on">Call Log <b style="display:inline-block;min-width:16px;padding:0 4px;margin-left:3px;border-radius:8px;background:var(--m-red);color:#fff;font-size:10px;line-height:15px">2</b></span></div></div>
+          <div class="body">
+            <div class="toolrow"><div class="seg"><span class="on" data-filter="all">All</span><span data-filter="missed">Missed</span></div><span class="btn sm"><svg class="i" style="width:12px;height:12px"><use href="#i-trash"/></svg>Clear…</span></div>
+            <div class="list" data-log="all">
+              <div class="secthead">Today</div>
+              <div class="row missed"><span class="dir missed"><svg class="i"><use href="#i-missed"/></svg></span><span class="tx"><b>Mike Chen</b><span class="tnum">+1 415 555-0142 · <span class="acctag">Home</span></span></span><span class="when tnum">14:52<span>missed</span></span></div>
+              <div class="row"><span class="dir"><svg class="i"><use href="#i-in"/></svg></span><span class="tx"><b>Anna Petrova</b><span class="tnum">+7 912 555-01-23 · <span class="acctag">Office</span></span></span><span class="when tnum">13:10<span>12:04</span></span></div>
+              <div class="row sel"><span class="dir" style="color:#fff"><svg class="i"><use href="#i-out"/></svg></span><span class="tx"><b>Reception</b><span class="tnum">100 · Office</span></span><span class="when tnum" style="color:rgba(255,255,255,.85)">11:47<span style="color:inherit">0:48</span></span></div>
+              <div class="row missed"><span class="dir missed"><svg class="i"><use href="#i-missed"/></svg></span><span class="tx"><b>+7 495 555-30-07</b><span class="tnum">Unknown · <span class="acctag">Office</span></span></span><span class="when tnum">09:15<span>missed</span></span></div>
+              <div class="secthead nomiss">Yesterday</div>
+              <div class="row"><span class="dir"><svg class="i"><use href="#i-out"/></svg></span><span class="tx"><b>Help Desk</b><span class="tnum">helpdesk@pbx.example.com · <span class="acctag">Office</span></span></span><span class="when tnum">17:30<span>3:21</span></span></div>
+              <div class="row"><span class="dir"><svg class="i"><use href="#i-in"/></svg></span><span class="tx"><b>Olga Smirnova</b><span class="tnum">+7 495 555-77-10 · <span class="acctag">Home</span></span></span><span class="when tnum">10:02<span>27:15</span></span></div>
+              <div class="secthead nomiss">Mon, 6 Oct</div>
+              <div class="row"><span class="dir"><svg class="i"><use href="#i-out"/></svg></span><span class="tx"><b>Boris Ivanov</b><span class="tnum">104 · <span class="acctag">Office</span></span></span><span class="when tnum">16:44<span>1:09</span></span></div>
+            </div>
+          </div>
+          <div class="statusbar">
+            <span class="acc"><span class="dot ok"></span>Office</span>
+            <span class="acc"><span class="dot ok"></span>Home</span>
+            <span class="acc" style="color:var(--m-red)"><span class="dot err"></span>Backup: 403</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p class="cap"><b>Inline confirm</b> · after Clear…</p>
+        <div class="win mac" style="width:300px;padding:16px 18px;display:flex;flex-direction:column;gap:10px">
+          <svg style="width:40px;height:40px" aria-hidden="true"><use href="#i-mark"/></svg>
+          <b>Clear the call log?</b>
+          <span style="font-size:12px;color:var(--m-label2)">All 214 entries are removed. Recordings stay in their folder.</span>
+          <div style="display:flex;gap:8px;justify-content:flex-end"><span class="btn">Cancel</span><span class="btn primary" style="background:var(--m-red)">Clear</span></div>
+        </div>
+      </div>
+    </div></div>
+    <aside class="notes">
+      <div><h3>Intent</h3><p>See who called, call them back in one action, and clear the missed-call badge.</p></div>
+      <div><h3>Interaction</h3><ul>
+        <li>Icons: arrow in (answered), arrow out (outgoing), red dip arrow and red name (missed). Right column: time, then duration or "missed".</li>
+        <li>Double-click or <kbd>↩</kbd> calls back through the account the call came in on. Context menu: Call, Call from, Add to Contacts, Copy Number, Delete Entry.</li>
+        <li>Opening this tab marks missed calls as seen and clears the tab badge, the Dock badge and the menu bar badge.</li>
+        <li>Clear removes everything after a confirmation alert. In Full, the alert notes that recordings are kept.</li>
+      </ul></div>
+      <div><h3>Open questions</h3><ol class="qs">
+        <li><span class="qid">Q3.1</span><span>How long should history be kept: forever, or capped (for example the last 1,000 calls)?</span></li>
+        <li><span class="qid">Q3.2</span><span>Full: show a small play button on rows that have a recording, or keep recordings only in Finder?</span></li>
+      </ol></div>
+    </aside>
+  </div>
+</section>
+<section class="screen" id="s-activecall" data-screen="activecall">
+  <header class="screen-head"><span class="n">04</span><h1>Active call</h1><span class="meta">Main window grows to ~610 pt while a call is up</span></header>
+  <div class="layout">
+    <div class="stage"><div class="stage-inner">
+      <div>
+        <p class="cap"><b>Main window</b> · one connected call, muted<span class="f-plain">, recording</span></p>
+        <div class="win mw mac">
+          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t"><span class="l-plain">MacroSIP Lite</span><span class="f-plain">MacroSIP</span></div></div>
+          <div class="numrow">
+            <span class="popup acct-pop"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span>
+            <div class="field"><span class="ph">Name or number</span></div>
+          </div>
+          <div class="callp">
+            <div class="ch">
+              <span class="avatar b">AP</span>
+              <span class="who"><b>Anna Petrova</b><span class="tnum">+7 912 555-01-23</span></span>
+              <span class="tm"><b>04:12</b><span>Connected</span></span>
+            </div>
+            <div class="cmeta">
+              <span class="chip">via Office</span>
+              <span class="chip"><span class="bars"><i></i><i></i><i></i><i></i></span>Opus 48 kHz</span>
+              <span class="chip" title="Media encrypted with SRTP"><svg class="i"><use href="#i-lock"/></svg>SRTP</span>
+              <span class="chip rec f">REC 01:37</span>
+            </div>
+            <div class="cbtns">
+              <span class="cb on"><span class="c"><svg class="i"><use href="#i-mic-off"/></svg></span>Mute</span>
+              <span class="cb"><span class="c"><svg class="i"><use href="#i-pause"/></svg></span>Hold</span>
+              <span class="cb"><span class="c"><svg class="i"><use href="#i-transfer"/></svg></span>Transfer</span>
+              <span class="cb"><span class="c"><svg class="i"><use href="#i-keypad"/></svg></span>Keypad</span>
+              <span class="cb rec f"><span class="c"><svg class="i"><use href="#i-record"/></svg></span>Record</span>
+              <span class="cb dis f"><span class="c"><svg class="i"><use href="#i-merge"/></svg></span>Merge</span>
+            </div>
+            <div class="endcall"><svg class="i"><use href="#i-hangup"/></svg>End Call</div>
+          </div>
+          <div class="tabs"><div class="seg full"><span class="on">Dialpad</span><span>Contacts</span><span>Call Log</span></div></div>
+          <div class="body">
+            <div class="dialpad compact">
+              <div class="keys"><span class="key"><b>1</b></span><span class="key"><b>2</b></span><span class="key"><b>3</b></span><span class="key"><b>4</b></span><span class="key"><b>5</b></span><span class="key"><b>6</b></span><span class="key"><b>7</b></span><span class="key"><b>8</b></span><span class="key"><b>9</b></span><span class="key"><b>*</b></span><span class="key"><b>0</b></span><span class="key"><b>#</b></span></div>
+              <div class="dial-actions"><span></span><span class="callbtn" title="Start another call (current one is held)"><svg class="i"><use href="#i-handset"/></svg></span><span></span></div>
+            </div>
+          </div>
+          <div class="statusbar">
+            <span class="acc"><span class="dot ok"></span>Office</span>
+            <span class="acc"><span class="dot ok"></span>Home</span>
+            <span class="acc" style="color:var(--m-red)"><span class="dot err"></span>Backup: 403</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:30px">
+        <div>
+          <p class="cap"><b>State</b> · Transfer popover (from the Transfer button)</p>
+          <div class="popover mac" style="--tip:118px">
+            <b style="font-size:13px">Transfer Anna Petrova to</b>
+            <div class="field focus">Boris</div>
+            <div style="display:flex;flex-direction:column;gap:1px;margin:0 -4px">
+              <div class="mi hl"><span class="avatar o" style="width:20px;height:20px;font-size:8.5px">BI</span>Boris Ivanov<span class="sc tnum">104</span></div>
+              <div class="mi"><span class="avatar" style="width:20px;height:20px;font-size:8.5px">BI</span>Boris (mobile)<span class="sc tnum">+7 916 555-44-01</span></div>
+            </div>
+            <div class="sep"></div>
+            <div style="display:flex;gap:8px;justify-content:flex-end">
+              <span class="btn" title="Attended: call Boris first, then complete">Call First</span>
+              <span class="btn primary" title="Blind: hand the call over now">Transfer Now</span>
+            </div>
+            <span style="font-size:11px;color:var(--m-label2)">Transfer Now hands the call over immediately. Call First lets you talk to Boris before you complete the transfer.</span>
+          </div>
+        </div>
+        <div>
+          <p class="cap"><b>State</b> · Keypad open (DTMF)</p>
+          <div class="win mac" style="width:320px;padding:10px 0 0">
+            <div class="callp" style="margin:0 10px 10px">
+              <div class="ch"><span class="avatar">HD</span><span class="who"><b>Help Desk</b><span class="tnum mono" style="font-family:var(--font-mono);letter-spacing:.1em">Sent: 2 1 #</span></span><span class="tm"><b>00:38</b><span>Connected</span></span></div>
+              <div class="dtmf"><span>1</span><span class="hit">2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>*</span><span>0</span><span>#</span></div>
+              <div style="display:flex;gap:8px"><span class="btn" style="flex:1"><svg class="i"><use href="#i-keypad"/></svg>Hide Keypad</span><span class="endcall" style="flex:1">End Call</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <aside class="notes">
+      <div><h3>Intent</h3><p>Everything you need during a call stays in the same window as the dialpad and contacts, so you can look up a transfer target without switching windows.</p></div>
+      <div><h3>Interaction</h3><ul>
+        <li>Mute, Hold and Record are toggles: filled when on. Transfer opens a popover with contact suggestions and two actions: <b>Transfer Now</b> (blind) and <b>Call First</b> (attended, leads to screen 5).</li>
+        <li>Keypad swaps the button row for a DTMF pad; physical digit keys also send DTMF while the window is key. Sent digits echo under the name.</li>
+        <li>Quality chip: codec + 3-bar indicator from RTCP loss/jitter; hover shows numbers (loss %, jitter ms, RTT).</li>
+        <li><kbd>⌘D</kbd> ends the call, <kbd>⌘⇧M</kbd> toggles mute while MacroSIP is the frontmost app.</li>
+        <li>The dialpad's green button starts a second call; the current one goes on hold automatically.</li>
+      </ul></div>
+      <div class="fnote f-plain"><b>Full:</b> Record button and a red <b>REC</b> timer chip. Merge is disabled with one call and becomes active when a second call is connected.</div>
+      <div><h3>Open questions</h3><ol class="qs">
+        <li><span class="qid">Q4.1</span><span>Grow the window while in a call (shown), or keep 520 pt and replace the dialpad with the call panel?</span></li>
+        <li><span class="qid">Q4.2</span><span>Do you want a speaker volume / mic level control in the panel, or leave volume to macOS?</span></li>
+        <li><span class="qid">Q4.3</span><span>Global hotkeys (answer/hang up from any app) in v1, or later?</span></li>
+      </ol></div>
+    </aside>
+  </div>
+</section>
+<section class="screen" id="s-multicall" data-screen="multicall">
+  <header class="screen-head"><span class="n">05</span><h1>Several calls</h1><span class="meta">One active call, others held · attended transfer · <span class="f-plain">conference</span></span></header>
+  <div class="layout">
+    <div class="stage"><div class="stage-inner">
+      <div>
+        <p class="cap"><b>Main window</b> · two calls, Boris on hold</p>
+        <div class="win mw mac">
+          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t"><span class="l-plain">MacroSIP Lite</span><span class="f-plain">MacroSIP</span></div></div>
+          <div class="numrow">
+            <span class="popup acct-pop"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span>
+            <div class="field"><span class="ph">Name or number</span></div>
+          </div>
+          <div class="callp" style="gap:8px">
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--m-label2);font-weight:600;padding:0 2px"><span>2 CALLS</span><span>Click a row to switch</span></div>
+            <div style="display:flex;flex-direction:column;gap:2px;margin:0 -4px">
+              <div class="crow active"><span class="avatar b">AP</span><span class="tx"><b>Anna Petrova</b><span class="act">Active · 04:12</span></span><span class="chip" style="font-size:10.5px"><span class="bars"><i></i><i></i><i></i><i></i></span>Opus</span><span class="mini-end" title="End"><svg class="i"><use href="#i-hangup"/></svg></span></div>
+              <div class="crow"><span class="avatar o">BI</span><span class="tx"><b>Boris Ivanov</b><span class="held">On hold · 01:55</span></span><span class="btn sm"><svg class="i" style="width:11px;height:11px"><use href="#i-play"/></svg>Resume</span><span class="mini-end" title="End"><svg class="i"><use href="#i-hangup"/></svg></span></div>
+            </div>
+            <div class="sep"></div>
+            <div class="cbtns">
+              <span class="cb"><span class="c"><svg class="i"><use href="#i-mic"/></svg></span>Mute</span>
+              <span class="cb"><span class="c"><svg class="i"><use href="#i-pause"/></svg></span>Hold</span>
+              <span class="cb"><span class="c"><svg class="i"><use href="#i-transfer"/></svg></span>Transfer</span>
+              <span class="cb"><span class="c"><svg class="i"><use href="#i-keypad"/></svg></span>Keypad</span>
+              <span class="cb f"><span class="c"><svg class="i"><use href="#i-record"/></svg></span>Record</span>
+              <span class="cb f"><span class="c" style="background:var(--m-blue);color:#fff"><svg class="i"><use href="#i-merge"/></svg></span>Merge</span>
+            </div>
+            <div class="endcall"><svg class="i"><use href="#i-hangup"/></svg>End Call with Anna</div>
+          </div>
+          <div class="tabs"><div class="seg full"><span>Dialpad</span><span class="on">Contacts</span><span>Call Log</span></div></div>
+          <div class="body">
+            <div class="list" style="height:150px">
+              <div class="row"><span class="av-wrap"><span class="avatar b">AP</span></span><span class="tx"><b>Anna Petrova</b><span class="tnum">+7 912 555-01-23</span></span></div>
+              <div class="row"><span class="av-wrap"><span class="avatar o">BI</span></span><span class="tx"><b>Boris Ivanov</b><span class="tnum">104 · Office</span></span></div>
+              <div class="row"><span class="av-wrap"><span class="avatar">HD</span></span><span class="tx"><b>Help Desk</b><span class="tnum">sip:helpdesk@pbx.example.com</span></span></div>
+            </div>
+          </div>
+          <div class="statusbar">
+            <span class="acc"><span class="dot ok"></span>Office</span>
+            <span class="acc"><span class="dot ok"></span>Home</span>
+            <span class="acc" style="color:var(--m-red)"><span class="dot err"></span>Backup: 403</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:30px">
+        <div>
+          <p class="cap"><b>State</b> · attended transfer in progress</p>
+          <div class="win mac" style="width:320px;padding:10px 0 0">
+            <div class="callp" style="gap:8px">
+              <div style="display:flex;flex-direction:column;gap:2px;margin:0 -4px">
+                <div class="crow active"><span class="avatar o">BI</span><span class="tx"><b>Boris Ivanov</b><span class="act">Consulting · 00:21</span></span><span class="mini-end"><svg class="i"><use href="#i-hangup"/></svg></span></div>
+                <div class="crow"><span class="avatar b">AP</span><span class="tx"><b>Anna Petrova</b><span class="held">On hold · waiting for transfer</span></span></div>
+              </div>
+              <div class="banner">
+                <span><b>Transfer Anna Petrova to Boris Ivanov?</b><br><span style="color:var(--m-label2)">Anna and Boris will be connected and you leave both calls.</span></span>
+                <div class="bb2"><span class="btn sm">Cancel</span><span class="btn sm primary">Complete Transfer</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="f" style="border-radius:11px">
+          <p class="cap"><b>State</b> · merged into a local conference</p>
+          <div class="win mac" style="width:320px;padding:10px 0 0">
+            <div class="callp" style="gap:8px">
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--m-label2);font-weight:600;padding:0 2px"><span>CONFERENCE · 3 PARTICIPANTS</span><span class="tnum">06:40</span></div>
+              <div style="display:flex;flex-direction:column;gap:2px;margin:0 -4px">
+                <div class="crow active"><span class="avatar b">AP</span><span class="tx"><b>Anna Petrova</b><span class="act">In conference</span></span><span class="btn sm">Split</span><span class="mini-end"><svg class="i"><use href="#i-hangup"/></svg></span></div>
+                <div class="crow active"><span class="avatar o">BI</span><span class="tx"><b>Boris Ivanov</b><span class="act">In conference</span></span><span class="btn sm">Split</span><span class="mini-end"><svg class="i"><use href="#i-hangup"/></svg></span></div>
+              </div>
+              <div class="endcall"><svg class="i"><use href="#i-hangup"/></svg>End Conference</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <aside class="notes">
+      <div><h3>Intent</h3><p>Handle a second call without losing the first. Exactly one call is active; every other call is held, and the row list makes that visible at a glance.</p></div>
+      <div><h3>Interaction</h3><ul>
+        <li>Clicking a held row (or its Resume button) makes it active and holds the current one. The button row and End Call act on the active call; each row also has its own small red end button.</li>
+        <li>A new incoming call while on a call shows the incoming window (screen 6); Answer holds the current call.</li>
+        <li>Attended transfer: Transfer → Call First puts the original call on hold and calls the target. The banner completes or cancels the transfer.</li>
+        <li>Window title shows the active party when the window is in the background.</li>
+      </ul></div>
+      <div class="fnote f-plain"><b>Full:</b> Merge joins all connected calls into a local conference (mixed on this Mac). Split takes one participant back out as a held call. Ending the conference ends every leg.</div>
+      <div><h3>Open questions</h3><ol class="qs">
+        <li><span class="qid">Q5.1</span><span>Cap on simultaneous calls? Suggest 4 (pjsua supports more, but the panel gets long).</span></li>
+        <li><span class="qid">Q5.2</span><span>Full: should Merge include held calls automatically, or only calls the user selects?</span></li>
+      </ol></div>
+    </aside>
+  </div>
+</section>
+<section class="screen" id="s-incoming" data-screen="incoming">
+  <header class="screen-head"><span class="n">06</span><h1>Incoming call</h1><span class="meta">Floating window (always on top) + system notification</span></header>
+  <div class="layout">
+    <div class="stage"><div class="stage-inner">
+      <div>
+        <p class="cap"><b>Desktop</b> · while another app is in front</p>
+        <div class="desktop mac" style="width:640px;height:400px">
+          <div class="menubar"><div class="l"><b>Notes</b><span>File</span><span>Edit</span><span>View</span><span>Window</span></div><div class="r"><span class="sitem"><svg aria-hidden="true"><use href="#i-handset" class="hs-solid"/></svg></span><span>Sat 10 Oct 14:58</span></div></div>
+          <div class="notif" style="position:absolute;right:12px;top:36px">
+            <div class="main"><svg aria-hidden="true"><use href="#i-mark"/></svg><div class="tx"><b>Incoming call · Office</b><span>Anna Petrova</span><span style="color:var(--m-label2)" class="tnum">+7 912 555-01-23</span></div></div>
+            <div class="acts"><span style="color:var(--m-blue)">Answer</span><span>Decline</span></div>
+          </div>
+          <div class="incoming" style="position:absolute;left:170px;top:150px">
+            <div class="top">
+              <span class="avatar b">AP</span>
+              <div style="min-width:0;display:flex;flex-direction:column;gap:1px">
+                <span class="eyebrow"><svg class="i" style="width:12px;height:12px"><use href="#i-bell"/></svg>Incoming call on <b style="color:var(--m-label)">Office</b></span>
+                <span class="nm">Anna Petrova</span>
+                <span class="num tnum">+7 912 555-01-23</span>
+              </div>
+            </div>
+            <div class="aa f">
+              <svg class="ring" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="9" fill="none" stroke="var(--m-fill3)" stroke-width="2.5"/><circle cx="11" cy="11" r="9" fill="none" stroke="var(--m-green)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="56.5" stroke-dashoffset="22.6" transform="rotate(-90 11 11)"/></svg>
+              <span>Auto-answer in <b class="tnum">3 s</b></span><a href="#incoming" onclick="return false">Cancel</a>
+            </div>
+            <div class="ans-row">
+              <span class="ans no"><svg class="i"><use href="#i-hangup"/></svg>Decline</span>
+              <span class="ans yes"><svg class="i"><use href="#i-handset"/></svg>Answer</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p class="cap"><b>Variant</b> · arrives while already on a call</p>
+        <div class="incoming mac">
+          <div class="top">
+            <span class="avatar g">MC</span>
+            <div style="min-width:0;display:flex;flex-direction:column;gap:1px">
+              <span class="eyebrow">Incoming call on <b style="color:var(--m-label)">Home</b></span>
+              <span class="nm">Mike Chen</span>
+              <span class="num tnum">+1 415 555-0142</span>
+            </div>
+          </div>
+          <span style="font-size:11.5px;color:var(--m-label2)">You are on a call with Anna Petrova (04:12).</span>
+          <div class="ans-row">
+            <span class="ans no"><svg class="i"><use href="#i-hangup"/></svg>Decline</span>
+            <span class="ans yes" style="font-size:12px"><svg class="i"><use href="#i-handset"/></svg>Hold &amp; Answer</span>
+          </div>
+          <span class="btn" style="width:100%">End Current &amp; Answer</span>
+        </div>
+      </div>
+    </div></div>
+    <aside class="notes">
+      <div><h3>Intent</h3><p>An incoming call must be impossible to miss and quick to act on, wherever you are working, without stealing keyboard focus from the app you are typing in.</p></div>
+      <div><h3>Interaction</h3><ul>
+        <li>Non-activating floating panel on all Spaces, centred on the screen with the pointer; it can be dragged and remembers its position.</li>
+        <li>Shortcuts while it is visible: <kbd>⌘↩</kbd> answer, <kbd>⌘.</kbd> decline. <kbd>Esc</kbd> only silences the ringtone.</li>
+        <li>The notification carries Answer / Decline actions, so the call can also be handled from Notification Center or a locked screen. Both disappear when the call is answered, declined or cancelled by the caller.</li>
+        <li>Decline sends <span class="mono">486 Busy Here</span>. An unanswered call becomes a missed call (badge on Dock, menu bar, Call Log tab).</li>
+      </ul></div>
+      <div class="fnote f-plain"><b>Full:</b> countdown ring "Auto-answer in N s" with Cancel when auto-answer applies (mode All, or Contacts only and the caller is a contact). A server <span class="mono">answer-after</span> header shows the same strip.</div>
+      <div><h3>Open questions</h3><ol class="qs">
+        <li><span class="qid">Q6.1</span><span>Should the floating window appear when the main window is already frontmost, or should the call then show only inside the main window?</span></li>
+        <li><span class="qid">Q6.2</span><span>Notification style: banner (disappears) or alert (stays until acted on)? macOS lets the user change it, but we pick the default request.</span></li>
+      </ol></div>
+    </aside>
+  </div>
+</section>
+<section class="screen" id="s-menubar" data-screen="menubar">
+  <header class="screen-head"><span class="n">07</span><h1>Menu bar &amp; Dock</h1><span class="meta">Status item menu · icon states · Dock badge</span></header>
+  <div class="layout">
+    <div class="stage"><div class="stage-inner">
+      <div>
+        <p class="cap"><b>Status item menu</b> · open, 2 missed calls</p>
+        <div class="desktop mac" style="width:560px;height:560px">
+          <div class="menubar"><div class="l"><b>Notes</b><span>File</span><span>Edit</span><span>View</span></div><div class="r"><span class="sitem pressed"><svg aria-hidden="true"><use href="#i-handset" class="hs-solid"/></svg><span class="bdg">2</span></span><span>Sat 10 Oct 14:58</span></div></div>
+          <div class="menu" style="position:absolute;right:118px;top:30px">
+            <div class="acctline"><span class="dot ok"></span>Office<small>alex@pbx.example.com</small></div>
+            <div class="acctline"><span class="dot ok"></span>Home<small>7741@sip.example.net</small></div>
+            <div class="acctline" style="color:var(--m-red)"><span class="dot err"></span>Backup<small style="color:var(--m-red)">Failed: 403 Forbidden</small></div>
+            <div class="msep"></div>
+            <div class="qd"><div class="field focus"><span class="ph">Call number or name…</span></div><span class="btn" style="min-height:24px;padding:0 8px;color:var(--m-green)"><svg class="i" style="width:14px;height:14px;fill:currentColor;stroke:none"><use href="#i-handset"/></svg></span></div>
+            <div class="msep"></div>
+            <div class="mhead">Recent Calls</div>
+            <div class="mi" style="color:var(--m-red)"><span class="dir missed"><svg class="i"><use href="#i-missed"/></svg></span>Mike Chen<span class="sc tnum">14:52</span></div>
+            <div class="mi hl"><span class="dir" style="color:inherit"><svg class="i"><use href="#i-in"/></svg></span>Anna Petrova<span class="sc tnum">13:10</span></div>
+            <div class="mi"><span class="dir"><svg class="i"><use href="#i-out"/></svg></span>Reception<span class="sc tnum">11:47</span></div>
+            <div class="mi" style="color:var(--m-red)"><span class="dir missed"><svg class="i"><use href="#i-missed"/></svg></span>+7 495 555-30-07<span class="sc tnum">09:15</span></div>
+            <div class="mi"><span class="dir"><svg class="i"><use href="#i-out"/></svg></span>Help Desk<span class="sc">Yesterday</span></div>
+            <div class="msep"></div>
+            <div class="mi"><span class="chk-sp"></span>Do Not Disturb<span class="sc">⌥⌘D</span></div>
+            <div class="mi f" style="flex-direction:column;align-items:flex-start;gap:0"><span style="display:flex;gap:8px;width:100%"><span class="chk-sp"></span>My Status<span class="sc" style="color:var(--m-label2)">Available ›</span></span></div>
+            <div class="msep"></div>
+            <div class="mi"><span class="chk-sp"></span>Show MacroSIP<span class="sc">⌘0</span></div>
+            <div class="mi"><span class="chk-sp"></span>Settings…<span class="sc">⌘,</span></div>
+            <div class="msep"></div>
+            <div class="mi"><span class="chk-sp"></span>Quit MacroSIP<span class="sc">⌘Q</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:22px;max-width:360px">
+        <div>
+          <p class="cap"><b>Icon states</b> · monochrome template image</p>
+          <div class="istates mac">
+            <div class="istate"><span class="box" style="color:var(--m-label3)"><svg width="16" height="16" aria-hidden="true"><use href="#i-handset" class="hs-line"/></svg></span>offline</div>
+            <div class="istate"><span class="box"><svg width="16" height="16" aria-hidden="true"><use href="#i-handset" class="hs-solid"/></svg></span>registered</div>
+            <div class="istate"><span class="box"><svg width="16" height="16" aria-hidden="true"><use href="#i-handset" class="hs-solid"/></svg>04:12</span>on call</div>
+            <div class="istate"><span class="box" style="position:relative"><svg width="16" height="16" aria-hidden="true"><use href="#i-handset" class="hs-solid"/></svg><span style="position:absolute;top:3px;right:5px;min-width:12px;height:12px;border-radius:6px;background:var(--m-red);color:#fff;font-size:8.5px;font-weight:700;display:grid;place-items:center;padding:0 3px">2</span></span>missed</div>
+            <div class="istate"><span class="box"><svg width="16" height="16" aria-hidden="true"><use href="#i-handset" class="hs-solid"/></svg><svg class="i" style="width:11px;height:11px;margin-left:-3px"><use href="#i-moon"/></svg></span>DND</div>
+          </div>
+        </div>
+        <div>
+          <p class="cap"><b>Dock</b> · badge = unseen missed calls</p>
+          <div style="display:flex;gap:18px;align-items:flex-end;padding:14px 18px 10px;border-radius:18px;background:var(--m-menubar);outline:.5px solid var(--m-winborder);width:max-content">
+            <span class="dockicon"><svg aria-hidden="true"><use href="#i-mark"/></svg><span class="bdg mac">2</span></span>
+            <span style="font-size:11.5px;color:var(--m-label2);max-width:150px" class="mac">Badge clears when the Call Log tab is opened. Dock icon can be hidden in Settings › General.</span>
+          </div>
+        </div>
+        <div class="f" style="border-radius:10px">
+          <p class="cap"><b>Submenu</b> · My Status</p>
+          <div class="menu mac" style="width:190px">
+            <div class="mi"><span class="chk-sp"><svg class="i" style="width:12px;height:12px"><use href="#i-check"/></svg></span><span class="dot ok" style="width:7px;height:7px"></span>Available</div>
+            <div class="mi"><span class="chk-sp"></span><span class="dot away" style="width:7px;height:7px"></span>Away</div>
+            <div class="mi"><span class="chk-sp"></span><span class="dot busy" style="width:7px;height:7px"></span>Do Not Disturb</div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <aside class="notes">
+      <div><h3>Intent</h3><p>MacroSIP keeps running in the menu bar when its window is closed. The menu answers "am I reachable?" and lets you place or return a call without opening the main window.</p></div>
+      <div><h3>Interaction</h3><ul>
+        <li>Account lines are informational; clicking one opens it in Settings › Accounts. A failed line shows the SIP reason.</li>
+        <li>Quick dial: type, <kbd>↩</kbd> calls via the default account; matching contacts appear as menu items below the field while typing.</li>
+        <li>Recent Calls: last 5, click calls back. Missed ones are red.</li>
+        <li>Do Not Disturb rejects incoming calls with <span class="mono">486 Busy</span> and shows a moon on the icon. It is a checkmark item, like other macOS menus.</li>
+        <li>On call, the icon shows the running timer; clicking it during a call brings the main window forward.</li>
+      </ul></div>
+      <div class="fnote f-plain"><b>Full:</b> turning on DND also publishes <span class="mono">dnd</span> presence. "My Status" sets the published status (Available / Away / Do Not Disturb), kept in sync with the DND item.</div>
+      <div><h3>Open questions</h3><ol class="qs">
+        <li><span class="qid">Q7.1</span><span>Native menu (shown) or a Control Center-style panel with switches? The menu is more keyboard-friendly; the panel has more room for status.</span></li>
+        <li><span class="qid">Q7.2</span><span>Should DND have a timer ("for 1 hour", "until tomorrow")?</span></li>
+      </ol></div>
+    </aside>
+  </div>
+</section>
+<section class="screen" id="s-settings" data-screen="settings">
+  <header class="screen-head"><span class="n">08</span><h1>Settings</h1><span class="meta">Toolbar-tab window · 620 pt wide · click the tabs</span></header>
+  <div class="layout">
+    <div class="stage"><div class="stage-inner">
+      <div>
+        <p class="cap"><b>Settings window</b> · <span id="settings-cap">grouped form panes</span></p>
+        <div class="win sw mac">
+          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t" id="settings-title">General</div></div>
+          <div class="toolbar">
+            <span class="tb-tab on" data-pane="general"><svg class="i"><use href="#i-gear"/></svg><span class="lbl">General</span></span>
+            <span class="tb-tab" data-pane="accounts"><svg class="i"><use href="#i-person"/></svg><span class="lbl">Accounts</span></span>
+            <span class="tb-tab" data-pane="audio"><svg class="i"><use href="#i-speaker"/></svg><span class="lbl">Audio</span></span>
+            <span class="tb-tab" data-pane="network"><svg class="i"><use href="#i-globe"/></svg><span class="lbl">Network</span></span>
+            <span class="tb-tab" data-pane="codecs"><svg class="i"><use href="#i-wave"/></svg><span class="lbl">Codecs</span></span>
+            <span class="tb-tab f" data-pane="recording"><svg class="i"><use href="#i-record"/></svg><span class="lbl">Recording</span></span>
+            <span class="tb-tab f" data-pane="autoanswer"><svg class="i"><use href="#i-bolt"/></svg><span class="lbl">Auto-answer</span></span>
+          </div>
+
+          <!-- General -->
+          <div class="pane" data-pane-body="general">
+            <div class="grp"><div class="gbox">
+              <div class="gr"><span class="gl">Launch at login</span><span class="switch on"></span></div>
+              <div class="gr"><span class="gl">Keep running in the menu bar when the window is closed</span><span class="switch on"></span></div>
+              <div class="gr"><span class="gl">Show icon in the Dock</span><span class="switch on"></span></div>
+            </div></div>
+            <div class="grp"><div class="gbox">
+              <div class="gr"><span class="gl">Language<small>Takes effect after MacroSIP restarts.</small></span><span class="popup">System (English)<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+            </div><div class="gf">Choices: System, English, Русский.</div></div>
+            <div class="grp"><span class="gh">Links</span><div class="gbox">
+              <div class="gr"><span class="gl">Open <span class="mono" style="font-size:12px">sip:</span> and <span class="mono" style="font-size:12px">tel:</span> links with MacroSIP<small style="display:flex;align-items:center;gap:5px"><span class="dot warn" style="width:7px;height:7px"></span>Another app currently handles tel: links.</small></span><span class="btn">Make Default</span></div>
+              <div class="gr"><span class="gl">When a link is opened<small>Fills the number field so you can check it first.</small></span><span class="popup">Ask before calling<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+            </div></div>
+          </div>
+
+          <!-- Accounts -->
+          <div class="pane" data-pane-body="accounts" hidden>
+            <div class="grp">
+              <div class="tbl">
+                <div class="th" style="grid-template-columns:16px 1.1fr 1.8fr 60px 70px"><span></span><span>Name</span><span>Address</span><span>Transport</span><span>Status</span></div>
+                <div class="tr sel" style="grid-template-columns:16px 1.1fr 1.8fr 60px 70px"><span class="dot ok"></span><span style="display:flex;gap:6px;align-items:center">Office <span class="badge">Default</span></span><span class="muted">alex@pbx.example.com</span><span class="muted">TLS</span><span>Registered</span></div>
+                <div class="tr" style="grid-template-columns:16px 1.1fr 1.8fr 60px 70px"><span class="dot ok"></span><span>Home</span><span class="muted">7741@sip.example.net</span><span class="muted">UDP</span><span>Registered</span></div>
+                <div class="tr" style="grid-template-columns:16px 1.1fr 1.8fr 60px 70px"><span class="dot err"></span><span>Backup</span><span class="muted">alex@voip.example.org</span><span class="muted">UDP</span><span style="color:var(--m-red)">403</span></div>
+                <div class="tr" style="grid-template-columns:16px 1.1fr 1.8fr 60px 70px"><span class="dot off"></span><span class="muted">Lab</span><span class="muted">test@10.0.0.5</span><span class="muted">UDP</span><span class="muted">Disabled</span></div>
+                <div class="tbl-foot"><span class="bb"><svg class="i"><use href="#i-plus"/></svg></span><span class="bb"><svg class="i"><use href="#i-minus"/></svg></span><span class="btn sm" style="margin-left:auto" data-go="account">Edit…</span></div>
+              </div>
+              <div class="gf">Double-click an account to edit it. Drag to reorder; the order is used in the account picker and the status bar.</div>
+            </div>
+            <div class="grp"><span class="gh">Backup · last error</span><div class="gbox">
+              <div class="gr"><span class="gl"><span class="mono" style="font-size:12px">403 Forbidden</span><small>REGISTER rejected at 14:31. Check the username and password.</small></span><span class="btn">Retry</span></div>
+            </div></div>
+          </div>
+
+          <!-- Audio -->
+          <div class="pane" data-pane-body="audio" hidden>
+            <div class="grp"><span class="gh">Devices</span><div class="gbox">
+              <div class="gr"><span class="gl">Microphone</span><span class="gv"><span class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on y"></i><i></i><i></i><i></i></span><span class="popup">MacBook Pro Microphone<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></span></div>
+              <div class="gr"><span class="gl">Speaker</span><span class="gv"><span class="btn sm">Test</span><span class="popup">External Headphones<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></span></div>
+              <div class="gr"><span class="gl">Ringtone device<small>Ring through the speakers even when a headset is used for calls.</small></span><span class="popup">MacBook Pro Speakers<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+            </div><div class="gf">"System default" follows macOS Sound settings. If a chosen device is unplugged, MacroSIP falls back to the system default and switches back when it returns.</div></div>
+            <div class="grp"><span class="gh">Ringtone</span><div class="gbox">
+              <div class="gr"><span class="gl">Sound</span><span class="gv"><span class="btn sm"><svg class="i" style="width:12px;height:12px"><use href="#i-play-c"/></svg>Play</span><span class="popup">Custom: office-bell.m4a<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></span></div>
+              <div class="gr"><span class="gl">Volume</span><span class="gv" style="width:200px"><svg class="i" style="width:12px;height:12px"><use href="#i-speaker"/></svg><span style="flex:1;height:4px;border-radius:2px;background:linear-gradient(90deg,var(--m-blue) 70%,var(--m-fill3) 70%);position:relative"><span style="position:absolute;left:70%;top:50%;width:14px;height:14px;margin:-7px;border-radius:50%;background:#fff;box-shadow:0 0 0 .5px rgba(0,0,0,.2),0 1px 2px rgba(0,0,0,.3)"></span></span></span></div>
+            </div><div class="gf">Built-in choices: Classic, Digital, Soft. "Custom file…" accepts WAV, AIFF, M4A, MP3.</div></div>
+            <div class="grp"><span class="gh">Processing</span><div class="gbox">
+              <div class="gr"><span class="gl">Echo cancellation<small>Turn off only when using a headset with its own echo cancellation.</small></span><span class="switch on"></span></div>
+            </div></div>
+          </div>
+
+          <!-- Network -->
+          <div class="pane" data-pane-body="network" hidden>
+            <div class="grp"><span class="gh">Defaults for new accounts</span><div class="gbox">
+              <div class="gr"><span class="gl">Transport</span><div class="seg"><span class="on">UDP</span><span>TCP</span><span>TLS</span></div></div>
+              <div class="gr"><span class="gl">Media encryption (SRTP)</span><span class="popup">Optional<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+            </div><div class="gf">Each account can override these in its editor.</div></div>
+            <div class="grp"><span class="gh">Connection</span><div class="gbox">
+              <div class="gr"><span class="gl">STUN server<small>Leave empty if you are not behind NAT.</small></span><div class="field" style="min-width:220px">stun.example.org:3478</div></div>
+              <div class="gr"><span class="gl">Local SIP port<small>0 picks a free port automatically.</small></span><span class="gv"><div class="field tnum" style="min-width:70px;justify-content:flex-end">5060</div><span class="stepper"><i>▲</i><i>▼</i></span></span></div>
+              <div class="gr"><span class="gl">Keep-alive interval<small>Keeps NAT bindings open between registrations.</small></span><span class="gv"><div class="field tnum" style="min-width:50px;justify-content:flex-end">15</div><span class="stepper"><i>▲</i><i>▼</i></span>seconds</span></div>
+            </div></div>
+            <div class="grp"><div class="gbox"><div class="gr" style="color:var(--m-label2);font-size:12px"><svg class="i"><use href="#i-info"/></svg><span class="gl">Changes to transport or port re-register all accounts. Calls in progress are not interrupted.</span></div></div></div>
+          </div>
+
+          <!-- Codecs -->
+          <div class="pane" data-pane-body="codecs" hidden>
+            <div class="grp"><span class="gh">Audio codecs, in order of preference</span>
+              <div class="tbl">
+                <div class="th" style="grid-template-columns:18px 1fr 90px 90px 16px"><span></span><span>Codec</span><span>Sample rate</span><span>Bitrate</span><span></span></div>
+                <div class="tr" style="grid-template-columns:18px 1fr 90px 90px 16px"><span class="check on"><svg class="i"><use href="#i-check"/></svg></span><span>Opus</span><span class="muted tnum">48 kHz</span><span class="muted tnum">6–510 kbit/s</span><svg class="i grip"><use href="#i-grip"/></svg></div>
+                <div class="tr sel" style="grid-template-columns:18px 1fr 90px 90px 16px"><span class="check on" style="background:#fff;color:var(--m-blue)"><svg class="i"><use href="#i-check"/></svg></span><span>G.722</span><span class="muted tnum">16 kHz</span><span class="muted tnum">64 kbit/s</span><svg class="i grip" style="color:#fff"><use href="#i-grip"/></svg></div>
+                <div class="tr" style="grid-template-columns:18px 1fr 90px 90px 16px"><span class="check on"><svg class="i"><use href="#i-check"/></svg></span><span>PCMU (G.711 µ-law)</span><span class="muted tnum">8 kHz</span><span class="muted tnum">64 kbit/s</span><svg class="i grip"><use href="#i-grip"/></svg></div>
+                <div class="tr" style="grid-template-columns:18px 1fr 90px 90px 16px"><span class="check"></span><span class="muted">PCMA (G.711 A-law)</span><span class="muted tnum">8 kHz</span><span class="muted tnum">64 kbit/s</span><svg class="i grip"><use href="#i-grip"/></svg></div>
+                <div class="tbl-foot"><span class="bb" title="Move up" style="transform:rotate(180deg)"><svg class="i"><use href="#i-chev-d"/></svg></span><span class="bb" title="Move down"><svg class="i"><use href="#i-chev-d"/></svg></span><span class="btn sm" style="margin-left:auto">Restore Defaults</span></div>
+              </div>
+              <div class="gf">Drag rows or use the arrows to reorder. Unchecked codecs are never offered. At least one codec must stay enabled.</div>
+            </div>
+          </div>
+
+          <!-- Recording (Full) -->
+          <div class="pane" data-pane-body="recording" hidden>
+            <div class="grp"><div class="gbox">
+              <div class="gr"><span class="gl">Save recordings to</span><span class="gv"><span class="popup"><svg class="i" style="width:13px;height:13px;color:var(--m-blue)"><use href="#i-folder"/></svg>MacroSIP Recordings<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></span></div>
+              <div class="gr"><span class="gl">Record all calls automatically</span><span class="switch"></span></div>
+            </div><div class="gf">Recordings are saved as M4A (AAC). The temporary WAV is deleted after conversion.<br>File name: <span class="mono">2026-10-10 14.52 Anna Petrova (in).m4a</span></div></div>
+            <div class="grp"><div class="gbox">
+              <div class="gr"><span class="gl">Show Recordings Folder</span><span class="btn">Open in Finder</span></div>
+            </div></div>
+          </div>
+
+          <!-- Auto-answer (Full) -->
+          <div class="pane" data-pane-body="autoanswer" hidden>
+            <div class="grp"><div class="gbox">
+              <div class="gr"><span class="gl">Answer incoming calls automatically</span><div class="seg"><span>Off</span><span>All calls</span><span class="on">Contacts only</span></div></div>
+              <div class="gr"><span class="gl">Delay before answering</span><span class="gv"><div class="field tnum" style="min-width:44px;justify-content:flex-end">5</div><span class="stepper"><i>▲</i><i>▼</i></span>seconds</span></div>
+              <div class="gr"><span class="gl">Honour the server's answer-after request<small>Answers when the PBX sends <span class="mono">Call-Info: answer-after=N</span> (intercom, paging), even if the mode is Off.</small></span><span class="switch on"></span></div>
+            </div><div class="gf">Do Not Disturb wins over auto-answer. Auto-answer never answers a second call while you are already on one.</div></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <aside class="notes">
+      <div><h3>Intent</h3><p>Standard macOS settings window: toolbar tabs, grouped forms, changes apply immediately (no Save button), window title follows the selected tab.</p></div>
+      <div data-pane-body="general"><h3>General</h3><ul>
+        <li>"Make Default" registers MacroSIP for <span class="mono">sip:</span>, <span class="mono">sips:</span> and <span class="mono">tel:</span> through Launch Services; the line under it says which app currently owns the scheme.</li>
+        <li>Language switches the app's own language (macOS per-app language) and asks to restart.</li>
+      </ul></div>
+      <div data-pane-body="accounts" hidden><h3>Accounts</h3><ul>
+        <li>Not in the brief: the account editor needs a home. This pane lists accounts with live status; +, −, Edit… and double-click open the editor sheet (screen 9).</li>
+        <li>Unchecking "Register" in the editor shows the account as Disabled here.</li>
+      </ul></div>
+      <div data-pane-body="audio" hidden><h3>Audio</h3><ul>
+        <li>The level meter is live while this pane is open. Test plays a short tone on the speaker device.</li>
+        <li>Device lists update when devices are plugged in or out.</li>
+      </ul></div>
+      <div data-pane-body="network" hidden><h3>Network</h3><ul>
+        <li>Transport and SRTP appear here and in each account. Here they are defaults for new accounts; the account value wins.</li>
+      </ul></div>
+      <div data-pane-body="codecs" hidden><h3>Codecs</h3><ul>
+        <li>Order sets SDP preference. Bitrate column is informational.</li>
+      </ul></div>
+      <div data-pane-body="recording" hidden class="fnote"><b>Full only.</b> Folder picker remembers access with a security-scoped bookmark. A Record button is always available in the call panel even when automatic recording is off.</div>
+      <div data-pane-body="autoanswer" hidden class="fnote"><b>Full only.</b> The incoming window shows a countdown and Cancel whenever auto-answer will fire (screen 6).</div>
+      <div><h3>Open questions</h3><ol class="qs">
+        <li><span class="qid">Q8.1</span><span>Network: are global transport/SRTP defaults useful, or should they live only in each account (simpler)?</span></li>
+        <li><span class="qid">Q8.2</span><span>Full, Recording: should MacroSIP play a "this call is being recorded" prompt or show a reminder? Rules differ by country.</span></li>
+        <li><span class="qid">Q8.3</span><span>Should G.729 or other codecs appear disabled in the list, or are the four in the brief final?</span></li>
+      </ol></div>
+    </aside>
+  </div>
+</section>
+<section class="screen" id="s-account" data-screen="account">
+  <header class="screen-head"><span class="n">09</span><h1>Account editor</h1><span class="meta">Sheet on Settings › Accounts · 460 pt wide</span></header>
+  <div class="layout">
+    <div class="stage"><div class="stage-inner">
+      <div>
+        <p class="cap"><b>Sheet</b> · editing "Office"</p>
+        <div class="win mac" style="width:460px;overflow:hidden">
+          <div class="pane" style="border-radius:11px;gap:14px;padding:18px 20px 16px;min-height:0">
+            <b style="font-size:13px">Edit Account</b>
+            <div class="grp"><span class="gh">Identity</span><div class="gbox">
+              <div class="gr"><span class="gl">Account name</span><div class="field">Office</div></div>
+              <div class="gr"><span class="gl">Display name<small>Shown to people you call.</small></span><div class="field">Alex Morgan</div></div>
+            </div></div>
+            <div class="grp"><span class="gh">Server</span><div class="gbox">
+              <div class="gr"><span class="gl">SIP server</span><div class="field">pbx.example.com</div></div>
+              <div class="gr"><span class="gl">Username</span><div class="field">alex</div></div>
+              <div class="gr"><span class="gl">Password<small>Stored in the Keychain.</small></span><div class="field" style="letter-spacing:.18em">••••••••••</div></div>
+              <div class="gr"><span class="gl">Domain<small>Empty uses the SIP server.</small></span><div class="field"><span class="ph">pbx.example.com</span></div></div>
+              <div class="gr"><span class="gl">Outgoing proxy</span><div class="field"><span class="ph">Optional, e.g. sip:proxy.example.com;lr</span></div></div>
+            </div></div>
+            <div class="grp"><span class="gh">Connection</span><div class="gbox">
+              <div class="gr"><span class="gl">Transport</span><div class="seg"><span>UDP</span><span>TCP</span><span class="on">TLS</span></div></div>
+              <div class="gr"><span class="gl">Media encryption (SRTP)</span><span class="popup">Mandatory<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+            </div></div>
+            <div class="grp"><div class="gbox">
+              <div class="gr"><span class="gl">Register with server<small>Off keeps the account for outgoing calls only.</small></span><span class="switch on"></span></div>
+              <div class="gr"><span class="gl">Default for outgoing calls</span><span class="switch on"></span></div>
+              <div class="gr f"><span class="gl">Publish my presence<small>Lets contacts who watch you see Available / Away / DND.</small></span><span class="switch on"></span></div>
+            </div></div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span class="btn danger">Delete Account…</span>
+              <span style="margin-left:auto;font-size:11.5px;color:var(--m-label2);display:flex;gap:5px;align-items:center"><span class="dot ok" style="width:7px;height:7px"></span>Registered</span>
+              <span class="btn">Cancel</span><span class="btn primary">Save</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p class="cap"><b>State</b> · validation and failed test</p>
+        <div class="win mac" style="width:330px;overflow:hidden">
+          <div class="pane" style="border-radius:11px;gap:10px;padding:14px 16px;min-height:0">
+            <div class="grp"><div class="gbox">
+              <div class="gr"><span class="gl">SIP server</span><div class="field" style="min-width:150px;box-shadow:0 0 0 1px var(--m-red)">pbx.example</div></div>
+            </div><div class="gf" style="color:var(--m-red)">Enter a host name like pbx.example.com, or an IP address.</div></div>
+            <div class="grp"><div class="gbox">
+              <div class="gr" style="font-size:12px"><svg class="i" style="color:var(--m-orange)"><use href="#i-warn"/></svg><span class="gl">Registration failed: 401 Unauthorized<small>The server rejected the username or password.</small></span></div>
+            </div></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <aside class="notes">
+      <div><h3>Intent</h3><p>One sheet holds everything about an account. Required fields are only server, username and password; everything else has a sensible default.</p></div>
+      <div><h3>Interaction</h3><ul>
+        <li>Save validates the fields, stores the password in the Keychain and re-registers. The status beside the buttons updates live.</li>
+        <li>"Account name" is the short label used in the picker, status bar and call panel ("Office"). Not in the brief, but those places need something shorter than the full address.</li>
+        <li>Only one account can be default; turning it on here turns it off on the previous default.</li>
+        <li>Delete asks for confirmation and removes the Keychain item too.</li>
+      </ul></div>
+      <div class="fnote f-plain"><b>Full:</b> "Publish my presence" per account. Contacts' presence subscriptions go through the account they are reached on.</div>
+      <div><h3>Open questions</h3><ol class="qs">
+        <li><span class="qid">Q9.1</span><span>Add a "Test" button that registers once without saving, or is live status after Save enough?</span></li>
+        <li><span class="qid">Q9.2</span><span>Do you need advanced fields in v1 (auth username different from user, registration expiry, voicemail number), maybe behind a disclosure?</span></li>
+      </ol></div>
+    </aside>
+  </div>
+</section>
+<section class="screen" id="s-firstrun" data-screen="firstrun">
+  <header class="screen-head"><span class="n">10</span><h1>First launch</h1><span class="meta">Main window with no accounts</span></header>
+  <div class="layout">
+    <div class="stage"><div class="stage-inner">
+      <div>
+        <p class="cap"><b>Main window</b> · empty state</p>
+        <div class="win mw mac">
+          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t"><span class="l-plain">MacroSIP Lite</span><span class="f-plain">MacroSIP</span></div></div>
+          <div class="numrow">
+            <span class="popup acct-pop" style="opacity:.5"><span class="dot off"></span><span class="nm">No account</span><span class="chev" style="background:var(--m-gray)"><svg class="i"><use href="#i-chev"/></svg></span></span>
+            <div class="field dis"><span class="ph">Name or number</span></div>
+          </div>
+          <div class="tabs"><div class="seg full"><span class="on">Dialpad</span><span>Contacts</span><span>Call Log</span></div></div>
+          <div class="body" style="height:398px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px 28px;text-align:center">
+            <svg style="width:64px;height:64px" aria-hidden="true"><use href="#i-mark"/></svg>
+            <b style="font-size:17px">Add a SIP account to start calling</b>
+            <span style="font-size:12.5px;color:var(--m-label2);max-width:250px">You need the server address, username and password from your phone provider or PBX administrator.</span>
+            <span class="btn primary" style="padding:5px 16px;margin-top:4px" data-go="account">Add Account…</span>
+            <span style="font-size:11.5px;color:var(--m-label2);margin-top:6px">Contacts and the call log work without an account.</span>
+          </div>
+          <div class="statusbar"><span class="acc"><span class="dot off"></span>No accounts</span><span class="right">Settings… ⌘,</span></div>
+        </div>
+      </div>
+      <div>
+        <p class="cap"><b>First call attempt</b> · microphone permission</p>
+        <div class="win mac" style="width:290px;padding:18px;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center">
+          <svg style="width:48px;height:48px" aria-hidden="true"><use href="#i-mark"/></svg>
+          <b style="font-size:13px">"MacroSIP" would like to access the microphone.</b>
+          <span style="font-size:11.5px;color:var(--m-label2)">MacroSIP needs the microphone so the other person can hear you during calls.</span>
+          <div style="display:flex;gap:8px;width:100%"><span class="btn" style="flex:1">Don't Allow</span><span class="btn primary" style="flex:1">Allow</span></div>
+        </div>
+        <p class="cap" style="margin-top:10px;max-width:290px">System prompt; we supply only the usage string. Requested on first call, not at launch.</p>
+      </div>
+    </div></div>
+    <aside class="notes">
+      <div><h3>Intent</h3><p>On first launch there is exactly one useful thing to do. The window says so and offers one button, without a multi-step wizard.</p></div>
+      <div><h3>Interaction</h3><ul>
+        <li>"Add Account…" opens the account editor (screen 9) as a sheet on this window. After Save the empty state disappears and the dialpad is live.</li>
+        <li>The number field and picker are disabled until an account exists; the tabs still work.</li>
+        <li>The menu bar icon appears in the offline state from the first launch.</li>
+        <li>Microphone permission is requested on the first call. If denied, the call panel shows "Microphone access is off" with an Open System Settings button.</li>
+      </ul></div>
+      <div><h3>Open questions</h3><ol class="qs">
+        <li><span class="qid">Q10.1</span><span>Should we offer importing accounts and contacts from a MicroSIP .ini file? Useful for people moving from Windows.</span></li>
+        <li><span class="qid">Q10.2</span><span>Ask about "Launch at login" on first run, or leave it off until the user turns it on?</span></li>
+      </ol></div>
+    </aside>
+  </div>
+</section>
+  </main>
+</div>
+<script>
+(function(){
+  const root=document.documentElement, body=document.body;
+  const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+
+  function setEdition(ed){
+    body.dataset.edition=ed;
+    document.querySelectorAll('[data-ed]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.ed===ed)));
+    store.set('msip-ed',ed);
+    if(ed==='lite' && (currentPane==='recording'||currentPane==='autoanswer')) setPane('general');
+  }
+  function setTheme(th){
+    if(th==='system') root.removeAttribute('data-theme'); else root.setAttribute('data-theme',th);
+    document.querySelectorAll('[data-th]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.th===th)));
+    store.set('msip-th',th);
+  }
+  function setMark(on){ body.dataset.mark=on?'on':'off'; store.set('msip-mark',on?'on':'off'); }
+
+  let currentPane='general';
+  function setPane(p){
+    currentPane=p;
+    document.querySelectorAll('[data-pane-body]').forEach(el=>el.hidden=el.dataset.paneBody!==p);
+    document.querySelectorAll('.tb-tab[data-pane]').forEach(el=>el.classList.toggle('on',el.dataset.pane===p));
+    const t=document.querySelector('.tb-tab.on .lbl'); const st=document.getElementById('settings-title'); if(st&&t) st.textContent=t.textContent;
+    markNav();
+  }
+  const screens=[...document.querySelectorAll('.screen')].map(s=>s.dataset.screen);
+  let current=screens[0];
+  function show(id){
+    if(!screens.includes(id)) id=screens[0];
+    current=id;
+    document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.dataset.screen===id));
+    markNav();
+  }
+  function markNav(){
+    document.querySelectorAll('nav.screens a').forEach(a=>{
+      let on=a.dataset.s===current;
+      if(on && a.dataset.s==='settings') on = a.classList.contains('sub') ? a.dataset.pane===currentPane : true;
+      a.setAttribute('aria-current',String(on));
+    });
+  }
+  document.querySelectorAll('nav.screens a').forEach(a=>a.addEventListener('click',e=>{
+    e.preventDefault(); show(a.dataset.s); if(a.dataset.pane) setPane(a.dataset.pane);
+    try{history.replaceState(null,'','#'+a.dataset.s)}catch(_){}
+    if(window.matchMedia('(max-width: 860px)').matches) document.querySelector('main').scrollIntoView({block:'start'});
+  }));
+  document.addEventListener('click',e=>{
+    const go=e.target.closest('[data-go]'); if(go){ show(go.dataset.go); try{history.replaceState(null,'','#'+go.dataset.go)}catch(_){} }
+    const tab=e.target.closest('.tb-tab[data-pane]'); if(tab) setPane(tab.dataset.pane);
+    const f=e.target.closest('[data-filter]'); if(f){ const list=f.closest('.win').querySelector('[data-log]'); f.parentElement.querySelectorAll('span').forEach(s=>s.classList.toggle('on',s===f)); if(list) list.dataset.log=f.dataset.filter; }
+  });
+  document.querySelectorAll('[data-ed]').forEach(b=>b.addEventListener('click',()=>setEdition(b.dataset.ed)));
+  document.querySelectorAll('[data-th]').forEach(b=>b.addEventListener('click',()=>setTheme(b.dataset.th)));
+  const mk=document.getElementById('mark-full'); mk.addEventListener('change',()=>setMark(mk.checked));
+
+  // dialpad typing
+  const out=document.getElementById('dial-out');
+  document.querySelectorAll('#keys .key').forEach(k=>k.addEventListener('click',()=>{ if(out) out.textContent+=k.querySelector('b').textContent; }));
+  const back=document.getElementById('dial-back'); if(back) back.addEventListener('click',()=>{ if(out) out.textContent=out.textContent.slice(0,-1); });
+
+  setEdition(store.get('msip-ed')||'lite');
+  setTheme(store.get('msip-th')||'system');
+  const m=store.get('msip-mark'); setMark(m!=='off'); mk.checked=m!=='off';
+  setPane('general');
+  show((location.hash||'').replace('#','')||screens[0]);
+  window.addEventListener('hashchange',()=>show(location.hash.replace('#','')));
+})();
+</script>
