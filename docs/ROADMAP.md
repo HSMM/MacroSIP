@@ -13,13 +13,13 @@ A milestone is done only when every item in its "Done when" list holds.
 - `docs/design/SCREENS.md`: text spec derived from the approved mockups — per screen: elements, states (empty, loading, error, Lite/Full), control behaviour, shortcuts, and every UI string for localization. Written by the technical writer; it is the UI engineer's primary input.
 - Done when: `swift build` passes, smoke test prints codecs and devices, both `.app` bundles launch, mockups approved, SCREENS.md matches them, pushed to `main`.
 
-## 2. Engine: registration and a call — IN PROGRESS
+## 2. Engine: registration and a call — DONE 2026-10-10 (reviewed, 36 tests, selftest call)
 - `Engine` actor owns the pjsua instance; thread-safe event stream to the UI.
 - Account model, Keychain-backed credentials, simultaneous registration of enabled accounts.
 - Outgoing and incoming calls, answer, hang up, mute, hold, DTMF. Audio device selection.
 - Done when: a call between the app and `pjsua` CLI over UDP on localhost has two-way audio, and tests for models, storage and dial-string parsing are green.
 
-## 3. Call and account UI, menu bar
+## 3. Call and account UI, menu bar — IN PROGRESS (code done, awaiting the owner's real call)
 - Main window per mockups: dial field with account picker, Dialpad tab, active-call panel, multiple-call rows.
 - Incoming-call floating window and notification with Answer/Decline. Dock badge for missed calls.
 - Account editor sheet; status bar with registration state per account; first-launch empty state.
@@ -33,6 +33,7 @@ A milestone is done only when every item in its "Done when" list holds.
 - Blind and attended transfer.
 - Settings window: General, Audio (three devices, ringtone, AEC), Network (transport, STUN, SRTP, port, keep-alive), Codecs (reorderable).
 - Russian localization of everything so far.
+- Follow-ups from the engine review: switch the UI to the name-based audio device API (`setAudioDevices(inputName:outputName:)`, `setRingtoneDevice(name:)`), add the "Verify server certificate" toggle (`verifyTLSCertificate`) to the account editor, write the "Rejected: call limit" log note for an auto-rejected fifth call.
 - Done when: Lite `.app` passes a manual checklist on the owner's account; tagged `v0.1-lite`.
 
 ## 5. Full features: presence, conference, auto-answer, recording
