@@ -10,7 +10,8 @@ A milestone is done only when every item in its "Done when" list holds.
 - `CPJSUA` target and `pjsip-smoke` executable prove Swift links and runs pjsua.
 - `MacroSIPCore` and `MacroSIPApp` targets exist; `scripts/make-app.sh lite|full` bundles a signed empty window into `dist/`.
 - UI mockups for all screens published and approved by the owner.
-- Done when: `swift build` passes, smoke test prints codecs and devices, both `.app` bundles launch, mockups approved, pushed to `main`.
+- `docs/design/SCREENS.md`: text spec derived from the approved mockups — per screen: elements, states (empty, loading, error, Lite/Full), control behaviour, shortcuts, and every UI string for localization. Written by the technical writer; it is the UI engineer's primary input.
+- Done when: `swift build` passes, smoke test prints codecs and devices, both `.app` bundles launch, mockups approved, SCREENS.md matches them, pushed to `main`.
 
 ## 2. Engine: registration and a call
 - `Engine` actor owns the pjsua instance; thread-safe event stream to the UI.

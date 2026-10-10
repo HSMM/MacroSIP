@@ -8,7 +8,7 @@ SwiftPM only (no Xcode project), PJSIP 2.17 linked statically through the `CPJSU
 - `docs/AGENTS.md` — who does what: roles, models, effort levels. Delegate by this table.
 - `docs/GLOSSARY.md` — shared vocabulary. Use these terms in code and docs.
 - `docs/adr/` — settled decisions. Do not reopen them silently; add a new ADR to change one.
-- `docs/design/mockups.html` — approved UI mockups. UI code follows them.
+- `docs/design/mockups.html` — approved UI mockups; `docs/design/SCREENS.md` — their text spec (elements, states, strings). UI code follows both.
 
 ## Layout
 - `Sources/CPJSUA` — C shim and umbrella header over pjsua. The only place that includes PJSIP headers.
