@@ -10,7 +10,7 @@ approved this table on 2026-10-10. Change it with a new ADR.
 | SIP engine engineer | Opus | xhigh | `MacroSIPCore`: accounts, calls, transfer, conference, presence, recording, auto-answer; thread-safety of PJSIP callbacks | Highest-risk code: foreign-thread C callbacks, object lifetimes, leaks |
 | UI designer | Opus | high | HTML mockups of every screen as a published Artifact, light and dark, Lite/Full toggle; iterates until the owner approves | Visual judgement; the owner reviews before any UI code |
 | UI engineer | Sonnet | high | SwiftUI/AppKit views: main window, call panel, incoming window, menu bar, settings, account sheet; wiring to the engine; String Catalog entries | Well-specified from mockups; large volume of regular code |
-| Data and tests engineer | Sonnet | medium | Models, JSON store, Keychain wrapper, dial-string/URI parsing, auto-answer rules, XCTest suites | Clear contracts; cost-effective |
+| Data and tests engineer | Sonnet | medium | Models, JSON store, Keychain wrapper, dial-string/URI parsing, auto-answer rules, Swift Testing suites | Clear contracts; cost-effective |
 | Researcher | Sonnet | low | PJSIP API lookups, function signatures, build-error archaeology in pjproject issues | Short factual tasks |
 | Technical writer | Haiku | low | README, docs upkeep, ADR formatting from orchestrator notes, code comments | Reformatting existing content |
 | Reviewer | Opus | high | Independent review of each milestone (`/code-review`): bugs, races, leaks, Keychain and TLS handling. Receives the code, not the orchestrator's conclusions | An unanchored second opinion |

@@ -1,0 +1,8 @@
+# Everything under third_party/ is produced by scripts/build-pjsip.sh
+# (downloads, extracted pjproject tree, build logs, installed headers/libs/bin,
+# generated LINKFLAGS/CFLAGS). Only the hand-written PJSIP site config is tracked.
+/*
+!/.gitignore
+!/pjsip/
+/pjsip/*
+!/pjsip/config_site.h

@@ -14,7 +14,7 @@ SwiftPM only (no Xcode project), PJSIP 2.17 linked statically through the `CPJSU
 - `Sources/CPJSUA` — C shim and umbrella header over pjsua. The only place that includes PJSIP headers.
 - `Sources/MacroSIPCore` — Swift engine: accounts, calls, presence, recording, storage. No UI imports.
 - `Sources/MacroSIPApp` — SwiftUI/AppKit app. Edition features are gated with `#if FULL`.
-- `Tests/` — XCTest for Core (models, storage, URI parsing, auto-answer logic).
+- `Tests/` — Swift Testing (`import Testing`) for Core; XCTest is unavailable with Command Line Tools only.
 - `scripts/` — `build-pjsip.sh`, `make-app.sh`. `third_party/` holds the PJSIP build (git-ignored except `pjsip/config_site.h`).
 
 ## Rules
@@ -23,6 +23,6 @@ SwiftPM only (no Xcode project), PJSIP 2.17 linked statically through the `CPJSU
 - Every `pjsua_*` call that can fail returns `pj_status_t`; check it and surface the error text via `pj_strerror`.
 - Passwords live only in Keychain. Everything else is JSON in `~/Library/Application Support/MacroSIP/`.
 - Strings go through String Catalogs; English is the base, Russian is maintained alongside.
-- A milestone is done only after: `swift build` clean, `swift test` green, and a real call verified (pjsua CLI as the second phone, or the owner's SIP account).
+- Run tests with `scripts/test.sh` and `scripts/test.sh full`, never bare `swift test` (it cannot find the Testing macro plugin under Command Line Tools). A milestone is done only after: `swift build` clean, both test runs green, and a real call verified (pjsua CLI as the second phone, or the owner's SIP account).
 - Commit after each working milestone and push to `main`. Commit messages end with the Co-Authored-By line required by the session.
 - Do not add dependencies without an ADR.
