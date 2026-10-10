@@ -384,6 +384,40 @@ body[data-edition="full"][data-mark="on"] .f::after{content:"Full";position:abso
   .stage{padding:20px 12px 28px}
 }
 @media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+
+/* ---------- in-call states inside the 520 pt window ---------- */
+.mw .body.fixed{height:392px;display:flex;flex-direction:column}
+.incall{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 16px 12px;text-align:center}
+.incall .avatar{width:48px;height:48px;font-size:17px}
+.incall .nm{font-size:17px;font-weight:600;line-height:1.2}
+.incall .num{font-size:12px;color:var(--m-label2)}
+.incall .timer{font-size:22px;font-weight:300;font-variant-numeric:tabular-nums;line-height:1}
+.incall .state{font-size:11px;color:var(--m-green);font-weight:500}
+.incall .cmeta{justify-content:center}
+.cgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 4px;width:100%;margin-top:auto}
+body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
+.cgrid .cb{width:auto}
+.incall .endcall{width:100%;margin-top:4px}
+.kp{flex:1;display:flex;flex-direction:column;gap:10px;padding:10px 16px 14px}
+.kp-top{display:flex;align-items:center;gap:8px;font-size:12px}
+.kp-top .who{margin-left:auto;text-align:right;color:var(--m-label2);font-variant-numeric:tabular-nums}
+.kp-top .who b{color:var(--m-label);font-weight:600}
+.backbtn{display:inline-flex;align-items:center;gap:3px;color:var(--m-blue);font-size:12.5px;font-weight:500}
+.backbtn svg{width:12px;height:12px;stroke-width:2;transform:rotate(180deg)}
+.sent{font:500 20px/1 var(--font-mono);letter-spacing:.25em;text-align:center;min-height:24px;padding:4px 0;color:var(--m-label)}
+.kp .dtmf{gap:7px;flex:1}
+.kp .dtmf span{height:auto;min-height:38px;font-size:18px;border-radius:9px}
+.cbar{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--m-blue-tint);border-bottom:.5px solid var(--m-sep);font-size:12px;cursor:pointer}
+.cbar .live{width:7px;height:7px;border-radius:50%;background:var(--m-green);box-shadow:0 0 0 3px rgba(40,205,65,.25);flex:none}
+.cbar b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.cbar .t{font-variant-numeric:tabular-nums;color:var(--m-label2)}
+.cbar .ic{color:var(--m-red);display:grid;place-items:center}
+.cbar .ic svg{width:13px;height:13px}
+.cbar .more{color:var(--m-orange);font-weight:500;white-space:nowrap}
+.cbar .mini-end{margin-left:auto}
+.mcalls{flex:1;display:flex;flex-direction:column;gap:8px;padding:10px 10px 12px}
+.mcalls .cgrid{margin-top:auto;gap:8px 4px}
+.mcalls .cb .c{width:34px;height:34px}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -478,7 +512,7 @@ body[data-edition="full"][data-mark="on"] .f::after{content:"Full";position:abso
 
     <div class="legend">
       <div class="row"><span class="swatch"></span><span>Dashed amber outline with a <b>Full</b> tag marks controls that exist only in the Full edition. Switch to Full to see them.</span></div>
-      <div class="row"><span class="mono" style="color:var(--q);font-size:11px;font-weight:600;flex:none">Q4.2</span><span>Open questions are numbered by screen so feedback can cite them.</span></div>
+      <div class="row"><span class="mono" style="color:var(--q);font-size:11px;font-weight:600;flex:none">Q4.2</span><span>Owner decisions keep the numbers of the questions they answered.</span></div>
     </div>
   </aside>
 
@@ -517,7 +551,7 @@ body[data-edition="full"][data-mark="on"] .f::after{content:"Full";position:abso
                 <button class="callbtn" type="button" aria-label="Call"><svg class="i"><use href="#i-handset"/></svg></button>
                 <button class="ghost" type="button" aria-label="Delete last digit" id="dial-back"><svg class="i"><use href="#i-backspace"/></svg></button>
               </div>
-              <div class="hint">Return calls · type letters to search contacts</div>
+              <div class="hint">Return calls · empty field + Call redials</div>
             </div>
           </div>
           <div class="statusbar">
@@ -536,9 +570,9 @@ body[data-edition="full"][data-mark="on"] .f::after{content:"Full";position:abso
         <li>Pasting <span class="mono">sip:</span> or <span class="mono">tel:</span> URIs and numbers with spaces or dashes is accepted; the dial string is normalised on call.</li>
         <li>Status bar: one item per enabled account. A failed account shows the short reason in red; clicking an item opens that account in Settings.</li>
       </ul></div>
-      <div><h3>Open questions</h3><ol class="qs">
-        <li><span class="qid">Q1.1</span><span>Should typing letters jump to the Contacts tab with search results, or show inline suggestions under the field and stay on Dialpad?</span></li>
-        <li><span class="qid">Q1.2</span><span>Do you want a redial shortcut (empty field + Call redials the last number, like MicroSIP)?</span></li>
+      <div><h3>Decided</h3><ol class="qs">
+        <li><span class="qid">Q1.1</span><span>Decided: letters typed in the number field show contact suggestions in a dropdown under the field.</span></li>
+        <li><span class="qid">Q1.2</span><span>Decided: an empty field + Call redials the last number.</span></li>
       </ol></div>
     </aside>
   </div>
@@ -617,9 +651,9 @@ body[data-edition="full"][data-mark="on"] .f::after{content:"Full";position:abso
         <li>Contacts can carry a preferred account; "Any" uses the picker in the number row.</li>
       </ul></div>
       <div class="fnote f-plain"><b>Full:</b> presence dot on the avatar (green available, yellow away, red busy/DND, grey offline/unknown) and a text status on the right. Subscribing is per contact: "Watch presence" in the sheet and the context menu.</div>
-      <div><h3>Open questions</h3><ol class="qs">
-        <li><span class="qid">Q2.1</span><span>Import from macOS Contacts (read-only, on request) in v1, or only manual entries? It needs a privacy permission prompt.</span></li>
-        <li><span class="qid">Q2.2</span><span>Is a per-contact preferred account useful, or should every contact call through the account picker?</span></li>
+      <div><h3>Decided</h3><ol class="qs">
+        <li><span class="qid">Q2.1</span><span>Decided: no import from macOS Contacts in v1.</span></li>
+        <li><span class="qid">Q2.2</span><span>Decided: the per-contact preferred account stays.</span></li>
       </ol></div>
     </aside>
   </div>
@@ -678,52 +712,46 @@ body[data-edition="full"][data-mark="on"] .f::after{content:"Full";position:abso
         <li>Opening this tab marks missed calls as seen and clears the tab badge, the Dock badge and the menu bar badge.</li>
         <li>Clear removes everything after a confirmation alert. In Full, the alert notes that recordings are kept.</li>
       </ul></div>
-      <div><h3>Open questions</h3><ol class="qs">
-        <li><span class="qid">Q3.1</span><span>How long should history be kept: forever, or capped (for example the last 1,000 calls)?</span></li>
-        <li><span class="qid">Q3.2</span><span>Full: show a small play button on rows that have a recording, or keep recordings only in Finder?</span></li>
+      <div><h3>Decided</h3><ol class="qs">
+        <li><span class="qid">Q3.1</span><span>Decided: the call log keeps the last 1,000 entries.</span></li>
+        <li><span class="qid">Q3.2</span><span>Decided: a play button for recordings is Full, later.</span></li>
       </ol></div>
     </aside>
   </div>
 </section>
 <section class="screen" id="s-activecall" data-screen="activecall">
-  <header class="screen-head"><span class="n">04</span><h1>Active call</h1><span class="meta">Main window grows to ~610 pt while a call is up</span></header>
+  <header class="screen-head"><span class="n">04</span><h1>Active call</h1><span class="meta">Main window stays 340 × 520 pt · call panel replaces the dialpad</span></header>
   <div class="layout">
     <div class="stage"><div class="stage-inner">
       <div>
-        <p class="cap"><b>Main window</b> · one connected call, muted<span class="f-plain">, recording</span></p>
+        <p class="cap"><b>Dialpad tab</b> · one connected call, muted<span class="f-plain">, recording</span></p>
         <div class="win mw mac">
           <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t"><span class="l-plain">MacroSIP Lite</span><span class="f-plain">MacroSIP</span></div></div>
           <div class="numrow">
             <span class="popup acct-pop"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span>
             <div class="field"><span class="ph">Name or number</span></div>
           </div>
-          <div class="callp">
-            <div class="ch">
-              <span class="avatar b">AP</span>
-              <span class="who"><b>Anna Petrova</b><span class="tnum">+7 912 555-01-23</span></span>
-              <span class="tm"><b>04:12</b><span>Connected</span></span>
-            </div>
-            <div class="cmeta">
-              <span class="chip">via Office</span>
-              <span class="chip"><span class="bars"><i></i><i></i><i></i><i></i></span>Opus 48 kHz</span>
-              <span class="chip" title="Media encrypted with SRTP"><svg class="i"><use href="#i-lock"/></svg>SRTP</span>
-              <span class="chip rec f">REC 01:37</span>
-            </div>
-            <div class="cbtns">
-              <span class="cb on"><span class="c"><svg class="i"><use href="#i-mic-off"/></svg></span>Mute</span>
-              <span class="cb"><span class="c"><svg class="i"><use href="#i-pause"/></svg></span>Hold</span>
-              <span class="cb"><span class="c"><svg class="i"><use href="#i-transfer"/></svg></span>Transfer</span>
-              <span class="cb"><span class="c"><svg class="i"><use href="#i-keypad"/></svg></span>Keypad</span>
-              <span class="cb rec f"><span class="c"><svg class="i"><use href="#i-record"/></svg></span>Record</span>
-              <span class="cb dis f"><span class="c"><svg class="i"><use href="#i-merge"/></svg></span>Merge</span>
-            </div>
-            <div class="endcall"><svg class="i"><use href="#i-hangup"/></svg>End Call</div>
-          </div>
           <div class="tabs"><div class="seg full"><span class="on">Dialpad</span><span>Contacts</span><span>Call Log</span></div></div>
-          <div class="body">
-            <div class="dialpad compact">
-              <div class="keys"><span class="key"><b>1</b></span><span class="key"><b>2</b></span><span class="key"><b>3</b></span><span class="key"><b>4</b></span><span class="key"><b>5</b></span><span class="key"><b>6</b></span><span class="key"><b>7</b></span><span class="key"><b>8</b></span><span class="key"><b>9</b></span><span class="key"><b>*</b></span><span class="key"><b>0</b></span><span class="key"><b>#</b></span></div>
-              <div class="dial-actions"><span></span><span class="callbtn" title="Start another call (current one is held)"><svg class="i"><use href="#i-handset"/></svg></span><span></span></div>
+          <div class="body fixed">
+            <div class="incall">
+              <span class="avatar b">AP</span>
+              <div style="display:flex;flex-direction:column;gap:2px"><span class="nm">Anna Petrova</span><span class="num tnum">+7 912 555-01-23</span></div>
+              <div style="display:flex;flex-direction:column;gap:3px;align-items:center"><span class="timer">04:12</span><span class="state">Connected</span></div>
+              <div class="cmeta">
+                <span class="chip">via Office</span>
+                <span class="chip"><span class="bars"><i></i><i></i><i></i><i></i></span>Opus 48 kHz</span>
+                <span class="chip" title="Media encrypted with SRTP"><svg class="i"><use href="#i-lock"/></svg>SRTP</span>
+                <span class="chip rec f">REC 01:37</span>
+              </div>
+              <div class="cgrid">
+                <span class="cb on"><span class="c"><svg class="i"><use href="#i-mic-off"/></svg></span>Mute</span>
+                <span class="cb"><span class="c"><svg class="i"><use href="#i-pause"/></svg></span>Hold</span>
+                <span class="cb"><span class="c"><svg class="i"><use href="#i-transfer"/></svg></span>Transfer</span>
+                <span class="cb"><span class="c"><svg class="i"><use href="#i-keypad"/></svg></span>Keypad</span>
+                <span class="cb rec f"><span class="c"><svg class="i"><use href="#i-record"/></svg></span>Record</span>
+                <span class="cb dis f"><span class="c"><svg class="i"><use href="#i-merge"/></svg></span>Merge</span>
+              </div>
+              <div class="endcall"><svg class="i"><use href="#i-hangup"/></svg>End Call</div>
             </div>
           </div>
           <div class="statusbar">
@@ -734,89 +762,156 @@ body[data-edition="full"][data-mark="on"] .f::after{content:"Full";position:abso
         </div>
       </div>
 
-      <div style="display:flex;flex-direction:column;gap:30px">
-        <div>
-          <p class="cap"><b>State</b> · Transfer popover (from the Transfer button)</p>
-          <div class="popover mac" style="--tip:118px">
-            <b style="font-size:13px">Transfer Anna Petrova to</b>
-            <div class="field focus">Boris</div>
-            <div style="display:flex;flex-direction:column;gap:1px;margin:0 -4px">
-              <div class="mi hl"><span class="avatar o" style="width:20px;height:20px;font-size:8.5px">BI</span>Boris Ivanov<span class="sc tnum">104</span></div>
-              <div class="mi"><span class="avatar" style="width:20px;height:20px;font-size:8.5px">BI</span>Boris (mobile)<span class="sc tnum">+7 916 555-44-01</span></div>
-            </div>
-            <div class="sep"></div>
-            <div style="display:flex;gap:8px;justify-content:flex-end">
-              <span class="btn" title="Attended: call Boris first, then complete">Call First</span>
-              <span class="btn primary" title="Blind: hand the call over now">Transfer Now</span>
-            </div>
-            <span style="font-size:11px;color:var(--m-label2)">Transfer Now hands the call over immediately. Call First lets you talk to Boris before you complete the transfer.</span>
-          </div>
-        </div>
-        <div>
-          <p class="cap"><b>State</b> · Keypad open (DTMF)</p>
-          <div class="win mac" style="width:320px;padding:10px 0 0">
-            <div class="callp" style="margin:0 10px 10px">
-              <div class="ch"><span class="avatar">HD</span><span class="who"><b>Help Desk</b><span class="tnum mono" style="font-family:var(--font-mono);letter-spacing:.1em">Sent: 2 1 #</span></span><span class="tm"><b>00:38</b><span>Connected</span></span></div>
-              <div class="dtmf"><span>1</span><span class="hit">2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>*</span><span>0</span><span>#</span></div>
-              <div style="display:flex;gap:8px"><span class="btn" style="flex:1"><svg class="i"><use href="#i-keypad"/></svg>Hide Keypad</span><span class="endcall" style="flex:1">End Call</span></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div></div>
-    <aside class="notes">
-      <div><h3>Intent</h3><p>Everything you need during a call stays in the same window as the dialpad and contacts, so you can look up a transfer target without switching windows.</p></div>
-      <div><h3>Interaction</h3><ul>
-        <li>Mute, Hold and Record are toggles: filled when on. Transfer opens a popover with contact suggestions and two actions: <b>Transfer Now</b> (blind) and <b>Call First</b> (attended, leads to screen 5).</li>
-        <li>Keypad swaps the button row for a DTMF pad; physical digit keys also send DTMF while the window is key. Sent digits echo under the name.</li>
-        <li>Quality chip: codec + 3-bar indicator from RTCP loss/jitter; hover shows numbers (loss %, jitter ms, RTT).</li>
-        <li><kbd>⌘D</kbd> ends the call, <kbd>⌘⇧M</kbd> toggles mute while MacroSIP is the frontmost app.</li>
-        <li>The dialpad's green button starts a second call; the current one goes on hold automatically.</li>
-      </ul></div>
-      <div class="fnote f-plain"><b>Full:</b> Record button and a red <b>REC</b> timer chip. Merge is disabled with one call and becomes active when a second call is connected.</div>
-      <div><h3>Open questions</h3><ol class="qs">
-        <li><span class="qid">Q4.1</span><span>Grow the window while in a call (shown), or keep 520 pt and replace the dialpad with the call panel?</span></li>
-        <li><span class="qid">Q4.2</span><span>Do you want a speaker volume / mic level control in the panel, or leave volume to macOS?</span></li>
-        <li><span class="qid">Q4.3</span><span>Global hotkeys (answer/hang up from any app) in v1, or later?</span></li>
-      </ol></div>
-    </aside>
-  </div>
-</section>
-<section class="screen" id="s-multicall" data-screen="multicall">
-  <header class="screen-head"><span class="n">05</span><h1>Several calls</h1><span class="meta">One active call, others held · attended transfer · <span class="f-plain">conference</span></span></header>
-  <div class="layout">
-    <div class="stage"><div class="stage-inner">
       <div>
-        <p class="cap"><b>Main window</b> · two calls, Boris on hold</p>
+        <p class="cap"><b>Keypad</b> · after clicking Keypad (DTMF)</p>
         <div class="win mw mac">
           <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t"><span class="l-plain">MacroSIP Lite</span><span class="f-plain">MacroSIP</span></div></div>
           <div class="numrow">
             <span class="popup acct-pop"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span>
             <div class="field"><span class="ph">Name or number</span></div>
           </div>
-          <div class="callp" style="gap:8px">
-            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--m-label2);font-weight:600;padding:0 2px"><span>2 CALLS</span><span>Click a row to switch</span></div>
-            <div style="display:flex;flex-direction:column;gap:2px;margin:0 -4px">
-              <div class="crow active"><span class="avatar b">AP</span><span class="tx"><b>Anna Petrova</b><span class="act">Active · 04:12</span></span><span class="chip" style="font-size:10.5px"><span class="bars"><i></i><i></i><i></i><i></i></span>Opus</span><span class="mini-end" title="End"><svg class="i"><use href="#i-hangup"/></svg></span></div>
-              <div class="crow"><span class="avatar o">BI</span><span class="tx"><b>Boris Ivanov</b><span class="held">On hold · 01:55</span></span><span class="btn sm"><svg class="i" style="width:11px;height:11px"><use href="#i-play"/></svg>Resume</span><span class="mini-end" title="End"><svg class="i"><use href="#i-hangup"/></svg></span></div>
+          <div class="tabs"><div class="seg full"><span class="on">Dialpad</span><span>Contacts</span><span>Call Log</span></div></div>
+          <div class="body fixed">
+            <div class="kp">
+              <div class="kp-top"><span class="backbtn"><svg class="i"><use href="#i-chev-r"/></svg>Back to call</span><span class="who"><b>Help Desk</b> · 00:38</span></div>
+              <div class="sent">21#</div>
+              <div class="dtmf"><span>1</span><span class="hit">2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>*</span><span>0</span><span>#</span></div>
+              <div class="endcall"><svg class="i"><use href="#i-hangup"/></svg>End Call</div>
             </div>
-            <div class="sep"></div>
-            <div class="cbtns">
-              <span class="cb"><span class="c"><svg class="i"><use href="#i-mic"/></svg></span>Mute</span>
-              <span class="cb"><span class="c"><svg class="i"><use href="#i-pause"/></svg></span>Hold</span>
-              <span class="cb"><span class="c"><svg class="i"><use href="#i-transfer"/></svg></span>Transfer</span>
-              <span class="cb"><span class="c"><svg class="i"><use href="#i-keypad"/></svg></span>Keypad</span>
-              <span class="cb f"><span class="c"><svg class="i"><use href="#i-record"/></svg></span>Record</span>
-              <span class="cb f"><span class="c" style="background:var(--m-blue);color:#fff"><svg class="i"><use href="#i-merge"/></svg></span>Merge</span>
-            </div>
-            <div class="endcall"><svg class="i"><use href="#i-hangup"/></svg>End Call with Anna</div>
+          </div>
+          <div class="statusbar">
+            <span class="acc"><span class="dot ok"></span>Office</span>
+            <span class="acc"><span class="dot ok"></span>Home</span>
+            <span class="acc" style="color:var(--m-red)"><span class="dot err"></span>Backup: 403</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p class="cap"><b>Contacts tab</b> · during the call</p>
+        <div class="win mw mac">
+          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t"><span class="l-plain">MacroSIP Lite</span><span class="f-plain">MacroSIP</span></div></div>
+          <div class="numrow">
+            <span class="popup acct-pop"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span>
+            <div class="field"><span class="ph">Name or number</span></div>
           </div>
           <div class="tabs"><div class="seg full"><span>Dialpad</span><span class="on">Contacts</span><span>Call Log</span></div></div>
-          <div class="body">
-            <div class="list" style="height:150px">
-              <div class="row"><span class="av-wrap"><span class="avatar b">AP</span></span><span class="tx"><b>Anna Petrova</b><span class="tnum">+7 912 555-01-23</span></span></div>
-              <div class="row"><span class="av-wrap"><span class="avatar o">BI</span></span><span class="tx"><b>Boris Ivanov</b><span class="tnum">104 · Office</span></span></div>
+          <div class="body fixed">
+            <div class="cbar" title="Click to return to the call"><span class="live"></span><b>Anna Petrova</b><span class="t">04:12</span><span class="ic" title="Muted"><svg class="i"><use href="#i-mic-off"/></svg></span><span class="chip rec f" style="font-size:10px">REC</span><span class="mini-end"><svg class="i"><use href="#i-hangup"/></svg></span></div>
+            <div class="searchrow"><div class="field"><svg class="i"><use href="#i-search"/></svg><span>Search</span></div></div>
+            <div class="list" style="height:auto;flex:1">
+              <div class="secthead">A</div>
+              <div class="row"><span class="av-wrap"><span class="avatar b">AP</span><span class="pres f-plain" style="background:var(--m-green)"></span></span><span class="tx"><b>Anna Petrova</b><span class="tnum">+7 912 555-01-23</span></span></div>
+              <div class="secthead">B</div>
+              <div class="row sel"><span class="av-wrap"><span class="avatar o">BI</span><span class="pres f-plain" style="background:var(--m-red)"></span></span><span class="tx"><b>Boris Ivanov</b><span class="tnum">104 · Office</span></span><span class="rbtn" style="background:rgba(255,255,255,.2);color:#fff"><svg class="i"><use href="#i-handset"/></svg></span></div>
+              <div class="secthead">H</div>
               <div class="row"><span class="av-wrap"><span class="avatar">HD</span></span><span class="tx"><b>Help Desk</b><span class="tnum">sip:helpdesk@pbx.example.com</span></span></div>
+              <div class="secthead">M</div>
+              <div class="row"><span class="av-wrap"><span class="avatar g">MC</span><span class="pres f-plain" style="background:var(--m-yellow)"></span></span><span class="tx"><b>Mike Chen</b><span class="tnum">+1 415 555-0142</span></span></div>
+            </div>
+          </div>
+          <div class="statusbar">
+            <span class="acc"><span class="dot ok"></span>Office</span>
+            <span class="acc"><span class="dot ok"></span>Home</span>
+            <span class="acc" style="color:var(--m-red)"><span class="dot err"></span>Backup: 403</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p class="cap"><b>Transfer popover</b> · from the Transfer button</p>
+        <div class="popover mac" style="--tip:150px">
+          <b style="font-size:13px">Transfer Anna Petrova to</b>
+          <div class="field focus">Boris</div>
+          <div style="display:flex;flex-direction:column;gap:1px;margin:0 -4px">
+            <div class="mi hl"><span class="avatar o" style="width:20px;height:20px;font-size:8.5px">BI</span>Boris Ivanov<span class="sc tnum">104</span></div>
+            <div class="mi"><span class="avatar" style="width:20px;height:20px;font-size:8.5px">BI</span>Boris (mobile)<span class="sc tnum">+7 916 555-44-01</span></div>
+          </div>
+          <div class="sep"></div>
+          <div style="display:flex;gap:8px;justify-content:flex-end">
+            <span class="btn" title="Attended: call Boris first, then complete">Call First</span>
+            <span class="btn primary" title="Blind: hand the call over now">Transfer Now</span>
+          </div>
+          <span style="font-size:11px;color:var(--m-label2)">Transfer Now hands the call over immediately. Call First lets you talk to Boris before you complete the transfer.</span>
+        </div>
+      </div>
+    </div></div>
+    <aside class="notes">
+      <div><h3>Intent</h3><p>Same window, same size as when idle, as in MicroSIP. During a call the Dialpad tab becomes the call panel, and Contacts and Call Log stay one click away for looking up a transfer target.</p></div>
+      <div><h3>Interaction</h3><ul>
+        <li>The window keeps its 340 × 520 pt size. On the Dialpad tab the call panel replaces the keypad; when the last call ends the dialpad comes back.</li>
+        <li>Mute, Hold and Record are toggles: filled when on. Transfer opens a popover with contact suggestions: <b>Transfer Now</b> (blind) and <b>Call First</b> (attended, see screen 5).</li>
+        <li>Keypad swaps the panel for a DTMF pad with <b>Back to call</b>. Digit keys on the keyboard also send DTMF while the window is key; sent digits echo above the pad.</li>
+        <li>On Contacts or Call Log a one-line bar above the list shows the call (name, timer, mute, end). Clicking the bar returns to the Dialpad tab.</li>
+        <li>The number field stays live: typing a number and <kbd>↩</kbd> places a second call and holds this one.</li>
+        <li>Quality chip: codec + 3 bars from RTCP loss and jitter; hover shows the numbers. <kbd>⌘D</kbd> ends the call, <kbd>⌘⇧M</kbd> toggles mute while MacroSIP is the frontmost app.</li>
+      </ul></div>
+      <div class="fnote f-plain"><b>Full:</b> Record button and a red <b>REC</b> chip (also in the summary bar). Merge is disabled with one call and turns on when a second call is connected.</div>
+      <div><h3>Decided</h3><ol class="qs">
+        <li><span class="qid">Q4.1</span><span>Decided: the window does not grow; the call panel replaces the dialpad area (shown here).</span></li>
+        <li><span class="qid">Q4.2</span><span>Decided: no volume or mic level controls in the call panel.</span></li>
+        <li><span class="qid">Q4.3</span><span>Decided: no global hotkeys in v1.</span></li>
+      </ol></div>
+    </aside>
+  </div>
+</section>
+<section class="screen" id="s-multicall" data-screen="multicall">
+  <header class="screen-head"><span class="n">05</span><h1>Several calls</h1><span class="meta">Up to 4 calls · one active, others held · attended transfer<span class="f-plain"> · conference</span></span></header>
+  <div class="layout">
+    <div class="stage"><div class="stage-inner">
+      <div>
+        <p class="cap"><b>Dialpad tab</b> · two calls, Boris on hold</p>
+        <div class="win mw mac">
+          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t"><span class="l-plain">MacroSIP Lite</span><span class="f-plain">MacroSIP</span></div></div>
+          <div class="numrow">
+            <span class="popup acct-pop"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span>
+            <div class="field"><span class="ph">Name or number</span></div>
+          </div>
+          <div class="tabs"><div class="seg full"><span class="on">Dialpad</span><span>Contacts</span><span>Call Log</span></div></div>
+          <div class="body fixed">
+            <div class="mcalls">
+              <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--m-label2);font-weight:600;padding:0 4px"><span>2 CALLS</span><span>Click a row to switch</span></div>
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <div class="crow active"><span class="avatar b">AP</span><span class="tx"><b>Anna Petrova</b><span class="act">Active · 04:12</span></span><span class="chip" style="font-size:10.5px"><span class="bars"><i></i><i></i><i></i><i></i></span>Opus</span><span class="mini-end" title="End"><svg class="i"><use href="#i-hangup"/></svg></span></div>
+                <div class="crow"><span class="avatar o">BI</span><span class="tx"><b>Boris Ivanov</b><span class="held">On hold · 01:55</span></span><span class="btn sm"><svg class="i" style="width:11px;height:11px"><use href="#i-play"/></svg>Resume</span><span class="mini-end" title="End"><svg class="i"><use href="#i-hangup"/></svg></span></div>
+              </div>
+              <div class="cgrid">
+                <span class="cb"><span class="c"><svg class="i"><use href="#i-mic"/></svg></span>Mute</span>
+                <span class="cb"><span class="c"><svg class="i"><use href="#i-pause"/></svg></span>Hold</span>
+                <span class="cb"><span class="c"><svg class="i"><use href="#i-transfer"/></svg></span>Transfer</span>
+                <span class="cb"><span class="c"><svg class="i"><use href="#i-keypad"/></svg></span>Keypad</span>
+                <span class="cb f"><span class="c"><svg class="i"><use href="#i-record"/></svg></span>Record</span>
+                <span class="cb f"><span class="c" style="background:var(--m-blue);color:#fff"><svg class="i"><use href="#i-merge"/></svg></span>Merge</span>
+              </div>
+              <div class="endcall"><svg class="i"><use href="#i-hangup"/></svg>End Call with Anna</div>
+            </div>
+          </div>
+          <div class="statusbar">
+            <span class="acc"><span class="dot ok"></span>Office</span>
+            <span class="acc"><span class="dot ok"></span>Home</span>
+            <span class="acc" style="color:var(--m-red)"><span class="dot err"></span>Backup: 403</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p class="cap"><b>Call Log tab</b> · summary bar with two calls</p>
+        <div class="win mw mac">
+          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t"><span class="l-plain">MacroSIP Lite</span><span class="f-plain">MacroSIP</span></div></div>
+          <div class="numrow">
+            <span class="popup acct-pop"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span>
+            <div class="field"><span class="ph">Name or number</span></div>
+          </div>
+          <div class="tabs"><div class="seg full"><span>Dialpad</span><span>Contacts</span><span class="on">Call Log</span></div></div>
+          <div class="body fixed">
+            <div class="cbar"><span class="live"></span><b>Anna Petrova</b><span class="t">04:12</span><span class="more">+1 on hold</span><span class="mini-end"><svg class="i"><use href="#i-hangup"/></svg></span></div>
+            <div class="toolrow"><div class="seg"><span class="on">All</span><span>Missed</span></div><span class="btn sm"><svg class="i" style="width:12px;height:12px"><use href="#i-trash"/></svg>Clear…</span></div>
+            <div class="list" style="height:auto;flex:1">
+              <div class="secthead">Today</div>
+              <div class="row"><span class="dir"><svg class="i"><use href="#i-in"/></svg></span><span class="tx"><b>Anna Petrova</b><span class="tnum">+7 912 555-01-23 · <span class="acctag">Office</span></span></span><span class="when tnum">14:54<span>now</span></span></div>
+              <div class="row missed"><span class="dir missed"><svg class="i"><use href="#i-missed"/></svg></span><span class="tx"><b>Mike Chen</b><span class="tnum">+1 415 555-0142 · <span class="acctag">Home</span></span></span><span class="when tnum">14:52<span>missed</span></span></div>
+              <div class="row"><span class="dir"><svg class="i"><use href="#i-out"/></svg></span><span class="tx"><b>Reception</b><span class="tnum">100 · <span class="acctag">Office</span></span></span><span class="when tnum">11:47<span>0:48</span></span></div>
+              <div class="row"><span class="dir"><svg class="i"><use href="#i-out"/></svg></span><span class="tx"><b>Help Desk</b><span class="tnum">helpdesk@pbx.example.com · <span class="acctag">Office</span></span></span><span class="when tnum">09:30<span>3:21</span></span></div>
             </div>
           </div>
           <div class="statusbar">
@@ -859,17 +954,18 @@ body[data-edition="full"][data-mark="on"] .f::after{content:"Full";position:abso
       </div>
     </div></div>
     <aside class="notes">
-      <div><h3>Intent</h3><p>Handle a second call without losing the first. Exactly one call is active; every other call is held, and the row list makes that visible at a glance.</p></div>
+      <div><h3>Intent</h3><p>Handle a second call without losing the first, inside the same 520 pt window. Exactly one call is active; every other call is held, and the row list makes that visible at a glance.</p></div>
       <div><h3>Interaction</h3><ul>
-        <li>Clicking a held row (or its Resume button) makes it active and holds the current one. The button row and End Call act on the active call; each row also has its own small red end button.</li>
-        <li>A new incoming call while on a call shows the incoming window (screen 6); Answer holds the current call.</li>
-        <li>Attended transfer: Transfer → Call First puts the original call on hold and calls the target. The banner completes or cancels the transfer.</li>
-        <li>Window title shows the active party when the window is in the background.</li>
+        <li>On the Dialpad tab, call rows sit at the top of the panel and the buttons below act on the active call. Up to 4 rows fit; a fifth call is rejected with <span class="mono">486 Busy</span>.</li>
+        <li>Clicking a held row (or Resume) makes it active and holds the current one. Each row has its own small red end button.</li>
+        <li>On Contacts or Call Log the summary bar shows the active call plus "+N on hold"; clicking it returns to the panel.</li>
+        <li>A new incoming call while on a call follows screen 6; Answer holds the current call.</li>
+        <li>Attended transfer: Transfer → Call First holds the original call and calls the target. The banner completes or cancels the transfer.</li>
       </ul></div>
       <div class="fnote f-plain"><b>Full:</b> Merge joins all connected calls into a local conference (mixed on this Mac). Split takes one participant back out as a held call. Ending the conference ends every leg.</div>
-      <div><h3>Open questions</h3><ol class="qs">
-        <li><span class="qid">Q5.1</span><span>Cap on simultaneous calls? Suggest 4 (pjsua supports more, but the panel gets long).</span></li>
-        <li><span class="qid">Q5.2</span><span>Full: should Merge include held calls automatically, or only calls the user selects?</span></li>
+      <div><h3>Decided</h3><ol class="qs">
+        <li><span class="qid">Q5.1</span><span>Decided: at most 4 simultaneous calls.</span></li>
+        <li><span class="qid">Q5.2</span><span>Decided: Merge auto-including held calls is Full, later.</span></li>
       </ol></div>
     </aside>
   </div>
@@ -930,15 +1026,16 @@ body[data-edition="full"][data-mark="on"] .f::after{content:"Full";position:abso
     <aside class="notes">
       <div><h3>Intent</h3><p>An incoming call must be impossible to miss and quick to act on, wherever you are working, without stealing keyboard focus from the app you are typing in.</p></div>
       <div><h3>Interaction</h3><ul>
+        <li>Shown only when the main window is hidden or behind another app; if MacroSIP is frontmost the incoming call appears inside the main window instead.</li>
         <li>Non-activating floating panel on all Spaces, centred on the screen with the pointer; it can be dragged and remembers its position.</li>
         <li>Shortcuts while it is visible: <kbd>⌘↩</kbd> answer, <kbd>⌘.</kbd> decline. <kbd>Esc</kbd> only silences the ringtone.</li>
         <li>The notification carries Answer / Decline actions, so the call can also be handled from Notification Center or a locked screen. Both disappear when the call is answered, declined or cancelled by the caller.</li>
         <li>Decline sends <span class="mono">486 Busy Here</span>. An unanswered call becomes a missed call (badge on Dock, menu bar, Call Log tab).</li>
       </ul></div>
       <div class="fnote f-plain"><b>Full:</b> countdown ring "Auto-answer in N s" with Cancel when auto-answer applies (mode All, or Contacts only and the caller is a contact). A server <span class="mono">answer-after</span> header shows the same strip.</div>
-      <div><h3>Open questions</h3><ol class="qs">
-        <li><span class="qid">Q6.1</span><span>Should the floating window appear when the main window is already frontmost, or should the call then show only inside the main window?</span></li>
-        <li><span class="qid">Q6.2</span><span>Notification style: banner (disappears) or alert (stays until acted on)? macOS lets the user change it, but we pick the default request.</span></li>
+      <div><h3>Decided</h3><ol class="qs">
+        <li><span class="qid">Q6.1</span><span>Decided: the floating window appears only when the main window is not visible or not frontmost; otherwise the call shows inside the main window.</span></li>
+        <li><span class="qid">Q6.2</span><span>Decided: notifications use the alert style (they stay until acted on).</span></li>
       </ol></div>
     </aside>
   </div>
@@ -1014,9 +1111,9 @@ body[data-edition="full"][data-mark="on"] .f::after{content:"Full";position:abso
         <li>On call, the icon shows the running timer; clicking it during a call brings the main window forward.</li>
       </ul></div>
       <div class="fnote f-plain"><b>Full:</b> turning on DND also publishes <span class="mono">dnd</span> presence. "My Status" sets the published status (Available / Away / Do Not Disturb), kept in sync with the DND item.</div>
-      <div><h3>Open questions</h3><ol class="qs">
-        <li><span class="qid">Q7.1</span><span>Native menu (shown) or a Control Center-style panel with switches? The menu is more keyboard-friendly; the panel has more room for status.</span></li>
-        <li><span class="qid">Q7.2</span><span>Should DND have a timer ("for 1 hour", "until tomorrow")?</span></li>
+      <div><h3>Decided</h3><ol class="qs">
+        <li><span class="qid">Q7.1</span><span>Decided: native menu (shown).</span></li>
+        <li><span class="qid">Q7.2</span><span>Decided: no timed Do Not Disturb in v1. The Full "My Status" submenu stays.</span></li>
       </ol></div>
     </aside>
   </div>
@@ -1091,16 +1188,13 @@ body[data-edition="full"][data-mark="on"] .f::after{content:"Full";position:abso
 
           <!-- Network -->
           <div class="pane" data-pane-body="network" hidden>
-            <div class="grp"><span class="gh">Defaults for new accounts</span><div class="gbox">
-              <div class="gr"><span class="gl">Transport</span><div class="seg"><span class="on">UDP</span><span>TCP</span><span>TLS</span></div></div>
-              <div class="gr"><span class="gl">Media encryption (SRTP)</span><span class="popup">Optional<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
-            </div><div class="gf">Each account can override these in its editor.</div></div>
             <div class="grp"><span class="gh">Connection</span><div class="gbox">
               <div class="gr"><span class="gl">STUN server<small>Leave empty if you are not behind NAT.</small></span><div class="field" style="min-width:220px">stun.example.org:3478</div></div>
               <div class="gr"><span class="gl">Local SIP port<small>0 picks a free port automatically.</small></span><span class="gv"><div class="field tnum" style="min-width:70px;justify-content:flex-end">5060</div><span class="stepper"><i>▲</i><i>▼</i></span></span></div>
               <div class="gr"><span class="gl">Keep-alive interval<small>Keeps NAT bindings open between registrations.</small></span><span class="gv"><div class="field tnum" style="min-width:50px;justify-content:flex-end">15</div><span class="stepper"><i>▲</i><i>▼</i></span>seconds</span></div>
+              <div class="gr"><span class="gl">Use ICE<small>Finds a working media path through NAT. Uses the STUN server above.</small></span><span class="switch on"></span></div>
             </div></div>
-            <div class="grp"><div class="gbox"><div class="gr" style="color:var(--m-label2);font-size:12px"><svg class="i"><use href="#i-info"/></svg><span class="gl">Changes to transport or port re-register all accounts. Calls in progress are not interrupted.</span></div></div></div>
+            <div class="grp"><div class="gbox"><div class="gr" style="color:var(--m-label2);font-size:12px"><svg class="i"><use href="#i-info"/></svg><span class="gl">Changing the port re-registers all accounts. Calls in progress are not interrupted. Transport and SRTP are set per account in the account editor.</span></div></div></div>
           </div>
 
           <!-- Codecs -->
@@ -1155,17 +1249,17 @@ body[data-edition="full"][data-mark="on"] .f::after{content:"Full";position:abso
         <li>Device lists update when devices are plugged in or out.</li>
       </ul></div>
       <div data-pane-body="network" hidden><h3>Network</h3><ul>
-        <li>Transport and SRTP appear here and in each account. Here they are defaults for new accounts; the account value wins.</li>
+        <li>Transport and SRTP are not here: each account sets its own in the account editor (screen 9). Echo cancellation is in Audio.</li>
       </ul></div>
       <div data-pane-body="codecs" hidden><h3>Codecs</h3><ul>
         <li>Order sets SDP preference. Bitrate column is informational.</li>
       </ul></div>
       <div data-pane-body="recording" hidden class="fnote"><b>Full only.</b> Folder picker remembers access with a security-scoped bookmark. A Record button is always available in the call panel even when automatic recording is off.</div>
       <div data-pane-body="autoanswer" hidden class="fnote"><b>Full only.</b> The incoming window shows a countdown and Cancel whenever auto-answer will fire (screen 6).</div>
-      <div><h3>Open questions</h3><ol class="qs">
-        <li><span class="qid">Q8.1</span><span>Network: are global transport/SRTP defaults useful, or should they live only in each account (simpler)?</span></li>
-        <li><span class="qid">Q8.2</span><span>Full, Recording: should MacroSIP play a "this call is being recorded" prompt or show a reminder? Rules differ by country.</span></li>
-        <li><span class="qid">Q8.3</span><span>Should G.729 or other codecs appear disabled in the list, or are the four in the brief final?</span></li>
+      <div><h3>Decided</h3><ol class="qs">
+        <li><span class="qid">Q8.1</span><span>Decided: transport and SRTP live only in the account editor; Network keeps STUN, local port, keep-alive and ICE.</span></li>
+        <li><span class="qid">Q8.2</span><span>Decided: a recording notice is Full, later.</span></li>
+        <li><span class="qid">Q8.3</span><span>Decided: only the four codecs are shown.</span></li>
       </ol></div>
     </aside>
   </div>
@@ -1186,6 +1280,7 @@ body[data-edition="full"][data-mark="on"] .f::after{content:"Full";position:abso
             <div class="grp"><span class="gh">Server</span><div class="gbox">
               <div class="gr"><span class="gl">SIP server</span><div class="field">pbx.example.com</div></div>
               <div class="gr"><span class="gl">Username</span><div class="field">alex</div></div>
+              <div class="gr"><span class="gl">Auth username<small>Only if different from the username.</small></span><div class="field"><span class="ph">Optional</span></div></div>
               <div class="gr"><span class="gl">Password<small>Stored in the Keychain.</small></span><div class="field" style="letter-spacing:.18em">••••••••••</div></div>
               <div class="gr"><span class="gl">Domain<small>Empty uses the SIP server.</small></span><div class="field"><span class="ph">pbx.example.com</span></div></div>
               <div class="gr"><span class="gl">Outgoing proxy</span><div class="field"><span class="ph">Optional, e.g. sip:proxy.example.com;lr</span></div></div>
@@ -1193,6 +1288,7 @@ body[data-edition="full"][data-mark="on"] .f::after{content:"Full";position:abso
             <div class="grp"><span class="gh">Connection</span><div class="gbox">
               <div class="gr"><span class="gl">Transport</span><div class="seg"><span>UDP</span><span>TCP</span><span class="on">TLS</span></div></div>
               <div class="gr"><span class="gl">Media encryption (SRTP)</span><span class="popup">Mandatory<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+              <div class="gr"><span class="gl">Registration expiry</span><span class="gv"><div class="field tnum" style="min-width:56px;justify-content:flex-end">300</div><span class="stepper"><i>▲</i><i>▼</i></span>seconds</span></div>
             </div></div>
             <div class="grp"><div class="gbox">
               <div class="gr"><span class="gl">Register with server<small>Off keeps the account for outgoing calls only.</small></span><span class="switch on"></span></div>
@@ -1201,6 +1297,7 @@ body[data-edition="full"][data-mark="on"] .f::after{content:"Full";position:abso
             </div></div>
             <div style="display:flex;gap:8px;align-items:center">
               <span class="btn danger">Delete Account…</span>
+              <span class="btn">Test</span>
               <span style="margin-left:auto;font-size:11.5px;color:var(--m-label2);display:flex;gap:5px;align-items:center"><span class="dot ok" style="width:7px;height:7px"></span>Registered</span>
               <span class="btn">Cancel</span><span class="btn primary">Save</span>
             </div>
@@ -1209,14 +1306,14 @@ body[data-edition="full"][data-mark="on"] .f::after{content:"Full";position:abso
       </div>
 
       <div>
-        <p class="cap"><b>State</b> · validation and failed test</p>
+        <p class="cap"><b>State</b> · validation, and Test result shown inline</p>
         <div class="win mac" style="width:330px;overflow:hidden">
           <div class="pane" style="border-radius:11px;gap:10px;padding:14px 16px;min-height:0">
             <div class="grp"><div class="gbox">
               <div class="gr"><span class="gl">SIP server</span><div class="field" style="min-width:150px;box-shadow:0 0 0 1px var(--m-red)">pbx.example</div></div>
             </div><div class="gf" style="color:var(--m-red)">Enter a host name like pbx.example.com, or an IP address.</div></div>
             <div class="grp"><div class="gbox">
-              <div class="gr" style="font-size:12px"><svg class="i" style="color:var(--m-orange)"><use href="#i-warn"/></svg><span class="gl">Registration failed: 401 Unauthorized<small>The server rejected the username or password.</small></span></div>
+              <div class="gr" style="font-size:12px"><svg class="i" style="color:var(--m-orange)"><use href="#i-warn"/></svg><span class="gl">Test failed: 401 Unauthorized<small>The server rejected the username or password. Nothing was saved.</small></span><span class="btn sm">Test Again</span></div>
             </div></div>
           </div>
         </div>
@@ -1225,15 +1322,16 @@ body[data-edition="full"][data-mark="on"] .f::after{content:"Full";position:abso
     <aside class="notes">
       <div><h3>Intent</h3><p>One sheet holds everything about an account. Required fields are only server, username and password; everything else has a sensible default.</p></div>
       <div><h3>Interaction</h3><ul>
+        <li><b>Test</b> registers once with the values in the sheet, without saving, and shows the result inline (success with the server's expiry, or the SIP error and a plain-language hint).</li>
         <li>Save validates the fields, stores the password in the Keychain and re-registers. The status beside the buttons updates live.</li>
         <li>"Account name" is the short label used in the picker, status bar and call panel ("Office"). Not in the brief, but those places need something shorter than the full address.</li>
         <li>Only one account can be default; turning it on here turns it off on the previous default.</li>
         <li>Delete asks for confirmation and removes the Keychain item too.</li>
       </ul></div>
       <div class="fnote f-plain"><b>Full:</b> "Publish my presence" per account. Contacts' presence subscriptions go through the account they are reached on.</div>
-      <div><h3>Open questions</h3><ol class="qs">
-        <li><span class="qid">Q9.1</span><span>Add a "Test" button that registers once without saving, or is live status after Save enough?</span></li>
-        <li><span class="qid">Q9.2</span><span>Do you need advanced fields in v1 (auth username different from user, registration expiry, voicemail number), maybe behind a disclosure?</span></li>
+      <div><h3>Decided</h3><ol class="qs">
+        <li><span class="qid">Q9.1</span><span>Decided: a Test button tries to register without saving and shows the result inline (shown).</span></li>
+        <li><span class="qid">Q9.2</span><span>Decided: v1 adds a separate auth username and registration expiry; no voicemail number.</span></li>
       </ol></div>
     </aside>
   </div>
@@ -1280,9 +1378,9 @@ body[data-edition="full"][data-mark="on"] .f::after{content:"Full";position:abso
         <li>The menu bar icon appears in the offline state from the first launch.</li>
         <li>Microphone permission is requested on the first call. If denied, the call panel shows "Microphone access is off" with an Open System Settings button.</li>
       </ul></div>
-      <div><h3>Open questions</h3><ol class="qs">
-        <li><span class="qid">Q10.1</span><span>Should we offer importing accounts and contacts from a MicroSIP .ini file? Useful for people moving from Windows.</span></li>
-        <li><span class="qid">Q10.2</span><span>Ask about "Launch at login" on first run, or leave it off until the user turns it on?</span></li>
+      <div><h3>Decided</h3><ol class="qs">
+        <li><span class="qid">Q10.1</span><span>Decided: no MicroSIP .ini import in v1.</span></li>
+        <li><span class="qid">Q10.2</span><span>Decided: no launch-at-login prompt on first run; it stays in Settings › General.</span></li>
       </ol></div>
     </aside>
   </div>
