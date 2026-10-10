@@ -50,6 +50,7 @@ let package = Package(
     products: [
         .executable(name: "MacroSIPApp", targets: ["MacroSIPApp"]),
         .executable(name: "pjsip-smoke", targets: ["pjsip-smoke"]),
+        .executable(name: "macrosip-cli", targets: ["macrosip-cli"]),
     ],
     targets: [
         .target(
@@ -69,17 +70,27 @@ let package = Package(
         ),
         .target(
             name: "MacroSIPCore",
-            path: "Sources/MacroSIPCore"
+            dependencies: ["CPJSUA"],
+            path: "Sources/MacroSIPCore",
+            swiftSettings: pjsipSwiftSettings
+        ),
+        .executableTarget(
+            name: "macrosip-cli",
+            dependencies: ["MacroSIPCore"],
+            path: "Sources/macrosip-cli",
+            swiftSettings: pjsipSwiftSettings
         ),
         .executableTarget(
             name: "MacroSIPApp",
             dependencies: ["MacroSIPCore"],
-            path: "Sources/MacroSIPApp"
+            path: "Sources/MacroSIPApp",
+            swiftSettings: pjsipSwiftSettings
         ),
         .testTarget(
             name: "MacroSIPCoreTests",
             dependencies: ["MacroSIPCore"],
-            path: "Tests/MacroSIPCoreTests"
+            path: "Tests/MacroSIPCoreTests",
+            swiftSettings: pjsipSwiftSettings
         ),
     ]
 )

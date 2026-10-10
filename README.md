@@ -29,6 +29,7 @@ Requirements: macOS 14+, Apple Silicon, Xcode Command Line Tools, Homebrew with
 scripts/build-pjsip.sh      # downloads and builds PJSIP 2.17 (once, several minutes)
 swift build -c release      # builds the Swift packages
 scripts/test.sh && scripts/test.sh full   # Swift Testing suites for both editions
+scripts/selftest-call.sh    # real call against a local pjsua: two-way RTP, hold, DTMF
 scripts/make-app.sh lite    # bundles "MacroSIP Lite.app" into dist/
 scripts/make-app.sh full    # bundles "MacroSIP.app" into dist/
 ```
