@@ -1,0 +1,28 @@
+# MacroSIP — notes for Claude Code
+
+MicroSIP-style SIP softphone for macOS 14+ on Apple Silicon. Swift 6, SwiftUI/AppKit,
+SwiftPM only (no Xcode project), PJSIP 2.17 linked statically through the `CPJSUA` C target.
+
+## Read first
+- `docs/ROADMAP.md` — milestones and their done criteria. Work on the current milestone only.
+- `docs/AGENTS.md` — who does what: roles, models, effort levels. Delegate by this table.
+- `docs/GLOSSARY.md` — shared vocabulary. Use these terms in code and docs.
+- `docs/adr/` — settled decisions. Do not reopen them silently; add a new ADR to change one.
+- `docs/design/mockups.html` — approved UI mockups. UI code follows them.
+
+## Layout
+- `Sources/CPJSUA` — C shim and umbrella header over pjsua. The only place that includes PJSIP headers.
+- `Sources/MacroSIPCore` — Swift engine: accounts, calls, presence, recording, storage. No UI imports.
+- `Sources/MacroSIPApp` — SwiftUI/AppKit app. Edition features are gated with `#if FULL`.
+- `Tests/` — XCTest for Core (models, storage, URI parsing, auto-answer logic).
+- `scripts/` — `build-pjsip.sh`, `make-app.sh`. `third_party/` holds the PJSIP build (git-ignored except `pjsip/config_site.h`).
+
+## Rules
+- Two editions, one codebase: Lite is the default build; Full adds `-D FULL`. Never fork UI files per edition.
+- PJSIP callbacks arrive on PJSIP worker threads. Hop to the main actor before touching app state; never block a PJSIP thread on the main actor.
+- Every `pjsua_*` call that can fail returns `pj_status_t`; check it and surface the error text via `pj_strerror`.
+- Passwords live only in Keychain. Everything else is JSON in `~/Library/Application Support/MacroSIP/`.
+- Strings go through String Catalogs; English is the base, Russian is maintained alongside.
+- A milestone is done only after: `swift build` clean, `swift test` green, and a real call verified (pjsua CLI as the second phone, or the owner's SIP account).
+- Commit after each working milestone and push to `main`. Commit messages end with the Co-Authored-By line required by the session.
+- Do not add dependencies without an ADR.
