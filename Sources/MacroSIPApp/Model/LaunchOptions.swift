@@ -7,8 +7,11 @@ import Foundation
 ///   --snapshot-after SECS   SECS seconds (default 6); works without a display, unlike screencapture
 ///   --demo-state NAME       (DEBUG builds) seed sample data and put the mock in a given state;
 ///                           implies --mock-engine and a throw-away data directory.
+///   --log-level N           PJSIP log level 0...6 (default 3); also MACROSIP_LOG_LEVEL=N.
+///                           Logs go to the unified log, subsystem com.hsmm.macrosip.
 struct LaunchOptions {
     var mockEngine = false
+    var logLevel = 3
     var dataDirectory: URL?
     var demoState: String?
     var demoTab: String?
@@ -34,10 +37,17 @@ struct LaunchOptions {
                 i += 1; o.snapshotDelay = Double(args[i]) ?? 6
             case "--demo-tab" where i + 1 < args.count:
                 i += 1; o.demoTab = args[i]
+            case "--log-level" where i + 1 < args.count:
+                i += 1; o.logLevel = Int(args[i]) ?? o.logLevel
             default: break
             }
             i += 1
         }
+        if !args.contains("--log-level"),
+           let env = ProcessInfo.processInfo.environment["MACROSIP_LOG_LEVEL"], let n = Int(env) {
+            o.logLevel = n
+        }
+        o.logLevel = max(0, min(6, o.logLevel))
         #if !DEBUG
         o.demoState = nil
         o.demoTab = nil

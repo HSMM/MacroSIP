@@ -28,5 +28,5 @@ SwiftPM only (no Xcode project), PJSIP 2.17 linked statically through the `CPJSU
 - Commit after each working milestone and push to `main`. Commit messages end with the Co-Authored-By line required by the session.
 - SwiftUI `@State` does not compile under Command Line Tools (its macro plugin ships only with Xcode). Use the `@Local` wrapper from `Sources/MacroSIPApp/Views/Components/Local.swift`; it is a drop-in for `@State`.
 - Opus and OpenSSL are linked as static archives from Homebrew (Package.swift) so the .app has no /opt/homebrew dylib dependencies; never switch them back to `.linkedLibrary`.
-- Debug builds accept `--mock-engine`, `--demo-state <name>`, `--data-dir <path>`, `--snapshot <prefix>`; see `Sources/MacroSIPApp/Model/LaunchOptions.swift`. Demo launches use a temp data dir and never touch the real Keychain.
+- Debug builds accept `--mock-engine`, `--demo-state <name>`, `--data-dir <path>`, `--snapshot <prefix>`; all builds accept `--log-level 0-6` (or `MACROSIP_LOG_LEVEL`) for PJSIP verbosity; see `Sources/MacroSIPApp/Model/LaunchOptions.swift`. Demo launches use a temp data dir and never touch the real Keychain.
 - Do not add dependencies without an ADR.

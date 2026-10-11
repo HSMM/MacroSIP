@@ -11,8 +11,8 @@ extension Engine: SIPEngine {}
 enum EngineFactory {
     /// Real engine unless `--mock-engine` was passed. `AppModel` falls back to
     /// `MockEngine` (with a banner) when the real one fails to start.
-    static func make(useMock: Bool) -> any SIPEngine {
+    static func make(useMock: Bool, logLevel: Int = LaunchOptions.current.logLevel) -> any SIPEngine {
         if useMock { return MockEngine() }
-        return Engine(logLevel: 3)          // <- real engine
+        return Engine(logLevel: logLevel)   // <- real engine
     }
 }
