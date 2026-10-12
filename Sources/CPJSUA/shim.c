@@ -4,6 +4,8 @@
  */
 #include "CPJSUA.h"
 
+#include <ctype.h>
+#include <stdlib.h>
 #include <string.h>
 
 pj_str_t cpjsua_str(const char *s)
@@ -384,6 +386,203 @@ int cpjsua_conf_is_connected(pjsua_conf_port_id src, pjsua_conf_port_id sink)
             return 1;
     }
     return 0;
+}
+
+/* ========================================================== recorder === */
+
+pj_status_t cpjsua_recorder_create(const char *path, pjsua_recorder_id *out_id,
+                                   pjsua_conf_port_id *out_slot)
+{
+    pj_str_t file;
+    pjsua_recorder_id rid = PJSUA_INVALID_ID;
+    pj_status_t status;
+
+    if (!path || !out_id || !out_slot)
+        return PJ_EINVAL;
+    *out_id = PJSUA_INVALID_ID;
+    *out_slot = PJSUA_INVALID_ID;
+    file = cpjsua_str(path);
+    /* enc_type 0, no encoder parameter, no size limit, options 0 = 16-bit PCM. */
+    status = pjsua_recorder_create(&file, 0, NULL, -1, 0, &rid);
+    if (status != PJ_SUCCESS)
+        return status;
+    *out_id = rid;
+    *out_slot = pjsua_recorder_get_conf_port(rid);
+    return PJ_SUCCESS;
+}
+
+/* Group lock handler: runs after the WAV writer's own on_destroy (handlers run in the
+ * order they were added; the port's handler is the first), i.e. after the header update. */
+static void recorder_port_destroyed(void *arg)
+{
+    __atomic_store_n((int *)arg, 1, __ATOMIC_RELEASE);
+}
+
+pj_status_t cpjsua_recorder_destroy_wait(pjsua_recorder_id id, unsigned timeout_ms,
+                                         int *finalised)
+{
+    pjmedia_port *port = NULL;
+    int *done = NULL;
+    unsigned waited = 0;
+    pj_status_t status;
+
+    if (finalised)
+        *finalised = 0;
+    if (pjsua_recorder_get_port(id, &port) == PJ_SUCCESS && port && port->grp_lock) {
+        done = (int *)calloc(1, sizeof(int));
+        if (done && pj_grp_lock_add_handler(port->grp_lock, NULL, done,
+                                            &recorder_port_destroyed) != PJ_SUCCESS)
+        {
+            free(done);
+            done = NULL;
+        }
+    }
+
+    status = pjsua_recorder_destroy(id);
+    if (status != PJ_SUCCESS || !done)
+        return status;   /* `done` stays registered (and allocated) if destroy failed */
+
+    while (!__atomic_load_n(done, __ATOMIC_ACQUIRE) && waited < timeout_ms) {
+        pj_thread_sleep(2);
+        waited += 2;
+    }
+    if (__atomic_load_n(done, __ATOMIC_ACQUIRE)) {
+        if (finalised)
+            *finalised = 1;
+        free(done);
+    }
+    /* else: the handler still owns `done` and sets it later; it is leaked on purpose. */
+    return status;
+}
+
+/* ========================================================== presence === */
+
+pj_status_t cpjsua_buddy_add(const char *uri, pjsua_buddy_id *out_id)
+{
+    pjsua_buddy_config cfg;
+
+    if (!uri || !out_id)
+        return PJ_EINVAL;
+    pjsua_buddy_config_default(&cfg);
+    cfg.uri = cpjsua_str(uri);
+    cfg.subscribe = PJ_TRUE;
+    return pjsua_buddy_add(&cfg, out_id);
+}
+
+pj_status_t cpjsua_buddy_snapshot_get(pjsua_buddy_id id, cpjsua_buddy_snapshot *out)
+{
+    pjsua_buddy_info info;
+    pj_status_t status;
+
+    if (!out)
+        return PJ_EINVAL;
+    pj_bzero(out, sizeof(*out));
+    if (!pjsua_buddy_is_valid(id))
+        return PJ_EINVAL;
+    status = pjsua_buddy_get_info(id, &info);
+    if (status != PJ_SUCCESS)
+        return status;
+    copy_pjstr(&info.uri, out->uri, sizeof(out->uri));
+    out->status = info.status;
+    out->activity = info.rpid.activity;
+    copy_pjstr(&info.rpid.note, out->note, sizeof(out->note));
+    out->sub_state = info.sub_state;
+    out->term_code = info.sub_term_code;
+    return PJ_SUCCESS;
+}
+
+pj_status_t cpjsua_acc_set_presence(pjsua_acc_id acc_id, int online,
+                                    pjrpid_activity activity, const char *note)
+{
+    pjrpid_element elem;
+
+    pj_bzero(&elem, sizeof(elem));
+    elem.type = PJRPID_ELEMENT_TYPE_PERSON;
+    elem.activity = activity;
+    elem.note = cpjsua_str(note);
+    return pjsua_acc_set_online_status2(acc_id, online ? PJ_TRUE : PJ_FALSE, &elem);
+}
+
+/* ============================================ Call-Info answer-after === */
+
+static const char *skip_ws(const char *p)
+{
+    while (*p == ' ' || *p == '\t')
+        ++p;
+    return p;
+}
+
+/* Value of "answer-after" when `p` points at the parameter name, else -1. */
+static int answer_after_at(const char *p)
+{
+    static const char key[] = "answer-after";
+    const size_t klen = sizeof(key) - 1;
+    long n = 0;
+
+    if (pj_ansi_strnicmp(p, key, klen) != 0)
+        return -1;
+    p = skip_ws(p + klen);
+    if (*p != '=')
+        return -1;
+    p = skip_ws(p + 1);
+    if (*p == '"')
+        ++p;
+    if (!isdigit((unsigned char)*p))
+        return -1;
+    while (isdigit((unsigned char)*p)) {
+        if (n < 86400)
+            n = n * 10 + (*p - '0');
+        ++p;
+    }
+    return n > 86400 ? 86400 : (int)n;
+}
+
+int cpjsua_parse_answer_after(const char *value)
+{
+    const char *p;
+    int n;
+
+    if (!value)
+        return -1;
+    n = answer_after_at(skip_ws(value));
+    if (n >= 0)
+        return n;
+    for (p = value; *p; ++p) {
+        if (*p != ';')
+            continue;
+        n = answer_after_at(skip_ws(p + 1));
+        if (n >= 0)
+            return n;
+    }
+    return -1;
+}
+
+int cpjsua_rdata_answer_after(const pjsip_rx_data *rdata)
+{
+    static const pj_str_t name = { "Call-Info", 9 };
+    const pjsip_msg *msg;
+    const pjsip_hdr *hdr;
+    char buf[1024];
+
+    if (!rdata || !(msg = rdata->msg_info.msg))
+        return -1;
+    hdr = (const pjsip_hdr *)pjsip_msg_find_hdr_by_name(msg, &name, NULL);
+    while (hdr) {
+        /* Print the whole header ("Call-Info: <...>;answer-after=0"); works for any
+         * header representation (Call-Info has no dedicated parser in PJSIP). */
+        int len = pjsip_hdr_print_on((void *)hdr, buf, sizeof(buf) - 1);
+        if (len > 0) {
+            const char *colon;
+            int n;
+            buf[len] = '\0';
+            colon = strchr(buf, ':');
+            n = cpjsua_parse_answer_after(colon ? colon + 1 : buf);
+            if (n >= 0)
+                return n;
+        }
+        hdr = (const pjsip_hdr *)pjsip_msg_find_hdr_by_name(msg, &name, hdr->next);
+    }
+    return -1;
 }
 
 /* ============================================================== tones === */

@@ -32,10 +32,20 @@ protocol SIPEngine: Actor {
     func attendedTransfer(_ id: CallID, replacing other: CallID) throws
     func calls() -> [CallInfo]
 
+    // conference, recording, presence (milestone 5)
+    func merge(_ ids: [CallID]) throws
+    func split(_ id: CallID) throws
+    func startRecording(_ id: CallID, to wavURL: URL) throws
+    func stopRecording(_ id: CallID) throws -> URL
+    func subscribePresence(uri: String) throws
+    func unsubscribePresence(uri: String) throws
+    func publishPresence(_ status: PresenceStatus, for account: AccountID) throws
+
     // audio
     func audioDevices() -> [AudioDevice]
-    func setAudioDevices(input: Int?, output: Int?) throws
-    func setRingtoneDevice(_ id: Int?)
+    /// By device name as stored in `AudioSettings`; nil = system default.
+    func setAudioDevices(inputName: String?, outputName: String?) throws
+    func setRingtoneDevice(name: String?)
     func setRingtoneFile(_ url: URL?)
     func codecs() -> [CodecInfo]
     func setCodecPriorities(_ ordered: [String]) throws

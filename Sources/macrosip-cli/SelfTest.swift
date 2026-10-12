@@ -1,8 +1,9 @@
 import Foundation
 import MacroSIPCore
 
-/// `macrosip-cli --selftest`: one real call against a second phone (pjsua CLI with
-/// --auto-answer 200 on localhost). Exit 0 only when every step passed.
+/// `macrosip-cli --selftest`: real calls against two local phones (pjsua CLI with
+/// --auto-answer 200 and a looped tone, see scripts/selftest-call.sh). Covers RTP, hold,
+/// DTMF, recording, presence and a two-leg conference. Exit 0 only when every step passed.
 @MainActor
 enum SelfTest {
     final class Recorder {
@@ -31,6 +32,14 @@ enum SelfTest {
             summary.append(s)
         }
 
+        let scratch: URL
+        if let dir = options.scratch {
+            scratch = URL(fileURLWithPath: dir, isDirectory: true)
+        } else {
+            scratch = FileManager.default.temporaryDirectory
+                .appendingPathComponent("macrosip-selftest-\(ProcessInfo.processInfo.processIdentifier)", isDirectory: true)
+        }
+
         do {
             try await engine.start(
                 network: NetworkSettings(stunServer: nil, localPort: 0, keepAliveSeconds: 15,
@@ -44,6 +53,24 @@ enum SelfTest {
             let reg = await engine.registrationState(of: account.id)
             guard reg == .unregistered else { throw Failure(description: "disabled account state is \(reg)") }
             step("disabled account sip:selftest@127.0.0.1 added (\(describe(reg)))")
+
+            // Presence: pjsua answers SUBSCRIBE with 200 and a NOTIFY carrying its status
+            // (the script set it online with the CLI command "T 1").
+            try await engine.subscribePresence(uri: options.target)
+            let presence = try await waitForPresence(recorder, timeout: 5) { $0 != .offline }
+            step("presence of \(options.target): \(presence.1.rawValue) (event URI \(presence.0))")
+            if let cli = options.targetCLI {
+                // Change pjsua's status through its telnet CLI ("T n" = pre_text): the NOTIFY
+                // carries the RPID activity, which maps to away / dnd.
+                var seen: [String] = []
+                for (command, expected) in [("T 5", PresenceStatus.away), ("T 2", .dnd), ("T 1", .available)] {
+                    let mark = recorder.events.count
+                    try await pjsuaCLI(command, port: cli)
+                    _ = try await waitForPresence(recorder, since: mark, timeout: 5) { $0 == expected }
+                    seen.append("\(command) -> \(expected.rawValue)")
+                }
+                step("presence changes via NOTIFY: \(seen.joined(separator: ", "))")
+            }
 
             guard let dial = DialString.parse(options.target, account: account) else {
                 throw Failure(description: "cannot parse target \(options.target)")
@@ -91,17 +118,77 @@ enum SelfTest {
             try await engine.sendDTMF(id, "1#")
             step("DTMF \"1#\" sent")
 
+            // Recording: 3 s of the call into a WAV.
+            let wav = scratch.appendingPathComponent("recordings/call1.wav")
+            try await engine.startRecording(id, to: wav)
+            _ = try await waitFor(engine, id, "isRecording", timeout: 2) { $0.isRecording }
             try await Task.sleep(for: .seconds(3))
             let stats = try await engine.mediaStats(id)
             guard stats.rxPackets > 0, stats.txPackets > 0 else {
                 throw Failure(description: "no two-way RTP: rx \(stats.rxPackets), tx \(stats.txPackets)")
             }
             step("RTP after 3 s: rx \(stats.rxPackets) packets (lost \(stats.rxLost)), tx \(stats.txPackets) packets")
+            let stoppedURL = try await engine.stopRecording(id)
+            guard stoppedURL == wav else { throw Failure(description: "stopRecording returned \(stoppedURL.path)") }
+            _ = try await waitFor(engine, id, "isRecording cleared", timeout: 2) { !$0.isRecording }
+            let header = try checkWAV(wav, minBytes: 50_000)
+            step("recording: \(wav.lastPathComponent) \(header.fileSize) bytes, \(header.sampleRate) Hz, "
+                 + "\(header.dataSize) data bytes, RMS \(header.rms) (remote tone captured)")
 
-            try await engine.hangup(id)
+            // Conference: hold the first call (as the UI does), dial the second, merge.
+            try await engine.setHold(id, true)
+            _ = try await waitFor(engine, id, "held before second call", timeout: 5) { $0.state == .held }
+            guard let dial2 = DialString.parse(options.target2, account: account) else {
+                throw Failure(description: "cannot parse target \(options.target2)")
+            }
+            let id2 = try await engine.makeCall(to: dial2, from: account.id)
+            _ = try await waitFor(engine, id2, "second call connected", timeout: 10) {
+                $0.state == .connected && $0.codec != nil
+            }
+            step("second call \(dial2.uri) as \(id2) connected; first call held")
+
+            try await engine.merge([id, id2])
+            for leg in [id, id2] {
+                _ = try await waitFor(engine, leg, "conference leg connected", timeout: 5) {
+                    $0.state == .connected && $0.inConference && $0.codec != nil
+                }
+            }
+            let wavConf = scratch.appendingPathComponent("recordings/conference.wav")
+            try await engine.startRecording(id, to: wavConf)
+            try await Task.sleep(for: .milliseconds(500))
+            let s1 = try await engine.mediaStats(id), s2 = try await engine.mediaStats(id2)
+            try await Task.sleep(for: .seconds(3))
+            let e1 = try await engine.mediaStats(id), e2 = try await engine.mediaStats(id2)
+            for (name, a, b) in [("leg 1", s1, e1), ("leg 2", s2, e2)] {
+                guard b.rxPackets - a.rxPackets > 50, b.txPackets - a.txPackets > 50 else {
+                    throw Failure(description: "\(name) RTP stalled in the conference: rx +\(b.rxPackets - a.rxPackets), "
+                                  + "tx +\(b.txPackets - a.txPackets) in 3 s")
+                }
+            }
+            let legs = await engine.calls()
+            guard legs.count == 2, legs.allSatisfy({ $0.inConference && $0.state == .connected }) else {
+                throw Failure(description: "calls() after merge: \(legs.map { describe($0) })")
+            }
+            step("conference: 3 s, leg 1 rx +\(e1.rxPackets - s1.rxPackets) tx +\(e1.txPackets - s1.txPackets), "
+                 + "leg 2 rx +\(e2.rxPackets - s2.rxPackets) tx +\(e2.txPackets - s2.txPackets); both inConference")
+
+            try await engine.split(id2)
+            for leg in [id, id2] {
+                _ = try await waitFor(engine, leg, "out of the conference after split", timeout: 3) { !$0.inConference }
+            }
+            step("split \(id2): both calls report inConference == false")
+
+            // Hang up everything; the recorded call's .callEnded must say isRecording and the
+            // WAV must already be complete when it arrives.
+            await engine.hangupAll()
             let ended = try await waitForEnd(recorder, id, timeout: 5)
-            step("hung up: callEnded \(describe(ended.0.state)), duration \(String(format: "%.1f", ended.1)) s")
+            _ = try await waitForEnd(recorder, id2, timeout: 5)
+            guard ended.0.isRecording else { throw Failure(description: "callEnded of the recorded call: isRecording false") }
+            let confHeader = try checkWAV(wavConf, minBytes: 50_000)
+            step("hung up all: callEnded \(describe(ended.0.state)), duration \(String(format: "%.1f", ended.1)) s, "
+                 + "isRecording; conference WAV \(confHeader.fileSize) bytes finalised")
 
+            try await engine.unsubscribePresence(uri: options.target)
             await engine.stop()
             step("engine stopped")
         } catch {
@@ -140,5 +227,81 @@ enum SelfTest {
             try await Task.sleep(for: .milliseconds(100))
         }
         throw Failure(description: "no callEnded event within \(Int(timeout)) s")
+    }
+
+    /// Waits for a `.buddyPresence` event (at index `since` or later) whose status matches.
+    static func waitForPresence(_ recorder: Recorder, since: Int = 0, timeout: Double,
+                                _ condition: (PresenceStatus) -> Bool) async throws -> (String, PresenceStatus) {
+        let deadline = Date().addingTimeInterval(timeout)
+        var seen: [PresenceStatus] = []
+        while Date() < deadline {
+            let events = recorder.events.dropFirst(since)
+            seen = events.compactMap { if case let .buddyPresence(_, st) = $0 { return st }; return nil }
+            for e in events {
+                if case let .buddyPresence(uri, st) = e, condition(st) { return (uri, st) }
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        throw Failure(description: "no matching buddyPresence within \(Int(timeout)) s; seen \(seen.map(\.rawValue))")
+    }
+
+    /// Sends one command to a pjsua telnet CLI on 127.0.0.1 (telnet negotiation is ignored).
+    static func pjsuaCLI(_ command: String, port: UInt16) async throws {
+        let fd = socket(AF_INET, SOCK_STREAM, 0)
+        guard fd >= 0 else { throw Failure(description: "socket: \(errno)") }
+        defer { close(fd) }
+        var addr = sockaddr_in()
+        addr.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
+        addr.sin_family = sa_family_t(AF_INET)
+        addr.sin_port = in_port_t(port.bigEndian)
+        addr.sin_addr.s_addr = inet_addr("127.0.0.1")
+        let rc = withUnsafePointer(to: &addr) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                Darwin.connect(fd, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
+            }
+        }
+        guard rc == 0 else { throw Failure(description: "pjsua CLI on port \(port): connect errno \(errno)") }
+        try await Task.sleep(for: .milliseconds(300))      // banner and option negotiation
+        let bytes = Array((command + "\r\n").utf8)
+        guard write(fd, bytes, bytes.count) == bytes.count else {
+            throw Failure(description: "pjsua CLI on port \(port): write errno \(errno)")
+        }
+        try await Task.sleep(for: .milliseconds(300))      // let pjsua run it before we hang up
+    }
+
+    struct WAVHeader {
+        var fileSize: Int
+        var sampleRate: UInt32
+        var dataSize: UInt32
+        var rms: Int
+    }
+
+    /// RIFF/WAVE PCM header with sizes that match the file, at least `minBytes`, not silent.
+    static func checkWAV(_ url: URL, minBytes: Int) throws -> WAVHeader {
+        guard let data = try? Data(contentsOf: url) else { throw Failure(description: "no file \(url.path)") }
+        guard data.count >= 44, data[0..<4] == Data("RIFF".utf8), data[8..<12] == Data("WAVE".utf8),
+              data[12..<16] == Data("fmt ".utf8), data[36..<40] == Data("data".utf8) else {
+            throw Failure(description: "\(url.lastPathComponent): not a RIFF/WAVE PCM file")
+        }
+        func u32(_ o: Int) -> UInt32 { (0..<4).reduce(0) { $0 | UInt32(data[o + $1]) << (8 * UInt32($1)) } }
+        let riff = u32(4), rate = u32(24), dataSize = u32(40)
+        guard dataSize > 0, Int(dataSize) == data.count - 44, Int(riff) == data.count - 8 else {
+            throw Failure(description: "\(url.lastPathComponent): header not final (RIFF \(riff), data \(dataSize), file \(data.count))")
+        }
+        guard data.count > minBytes else {
+            throw Failure(description: "\(url.lastPathComponent): only \(data.count) bytes")
+        }
+        var sum = 0.0
+        var n = 0
+        var i = 44
+        while i + 1 < data.count {
+            let v = Double(Int16(bitPattern: UInt16(data[i]) | UInt16(data[i + 1]) << 8))
+            sum += v * v
+            n += 1
+            i += 2
+        }
+        let rms = n > 0 ? Int((sum / Double(n)).squareRoot()) : 0
+        guard rms > 300 else { throw Failure(description: "\(url.lastPathComponent): silent (RMS \(rms))") }
+        return WAVHeader(fileSize: data.count, sampleRate: rate, dataSize: dataSize, rms: rms)
     }
 }

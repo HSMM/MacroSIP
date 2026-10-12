@@ -26,6 +26,7 @@ extension AppModel {
         if !order.contains(cfg.id.raw.uuidString) { order.append(cfg.id.raw.uuidString); prefs.set(order, forKey: "accountOrder") }
         loadStores()
         guard engineReady else { return }
+        defer { syncPresenceSubscriptions(); publishMyPresence(only: [cfg.id]) }
         let saved = account(cfg.id) ?? cfg
         if engineAccounts.contains(cfg.id) {
             try await engine.updateAccount(saved, password: password)
@@ -50,6 +51,7 @@ extension AppModel {
         registration[id] = nil
         if settingsSelectedAccount == id { settingsSelectedAccount = nil }
         loadStores()
+        syncPresenceSubscriptions()
     }
 
     func moveAccounts(from: IndexSet, to: Int) {
@@ -110,6 +112,11 @@ extension AppModel {
         let old = settings
         var new = old
         mutate(&new)
+        // Do Not Disturb and the published status move together.
+        if new.general.doNotDisturb != old.general.doNotDisturb {
+            if new.general.doNotDisturb { new.general.presenceStatus = .dnd }
+            else if new.general.presenceStatus == .dnd { new.general.presenceStatus = .available }
+        }
         guard new != old else { return }
         settings = new
         do { try settingsStore.save(new) } catch { report(error) }
@@ -118,6 +125,8 @@ extension AppModel {
         if new.codecOrder != old.codecOrder || new.enabledCodecs != old.enabledCodecs { applyCodecs() }
         if new.network != old.network { scheduleNetworkRestart() }
         if new.audio != old.audio { Task { await applyAudioSelection() } }
+        let published: (AppSettings) -> PresenceStatus = { $0.general.doNotDisturb ? .dnd : $0.general.presenceStatus }
+        if published(new) != published(old) { publishMyPresence() }
     }
 
     func binding<T: Sendable>(_ keyPath: WritableKeyPath<AppSettings, T> & Sendable) -> Binding<T> {
@@ -148,11 +157,13 @@ extension AppModel {
     func saveContact(_ c: Contact) {
         do { try contactStore.upsert(c) } catch { report(error) }
         loadStores()
+        syncPresenceSubscriptions()
     }
 
     func deleteContact(_ id: UUID) {
         do { try contactStore.remove(id) } catch { report(error) }
         loadStores()
+        syncPresenceSubscriptions()
     }
 
     func suggestions(for text: String, limit: Int = 5) -> [Contact] {

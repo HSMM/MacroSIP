@@ -20,6 +20,10 @@ extension Engine {
         bridge.setAccount(index, cfg.id, registrationInterval: cfg.registrationInterval)
         bridge.setRegistration(cfg.id, .unregistered, force: true)
         warnIfUnverifiedTLS(cfg)
+        // pjsua starts accounts offline; the first PUBLISH (after registering) says available.
+        if cfg.publishPresence {
+            do { try applyPresence(.available, index: index) } catch { PJ.warn(error, "initial presence") }
+        }
         guard cfg.enabled else { return }
         do {
             try applyRegistration(cfg.id, true)
@@ -58,6 +62,11 @@ extension Engine {
         accounts[cfg.id] = entry
         bridge.setAccount(entry.index, cfg.id, registrationInterval: cfg.registrationInterval)
         warnIfUnverifiedTLS(cfg)
+        // Switching publishing off makes pjsua un-PUBLISH and go offline; switching it back
+        // on must not publish "offline": re-apply the last status.
+        if cfg.publishPresence {
+            do { try applyPresence(entry.presence, index: entry.index) } catch { PJ.warn(error, "presence") }
+        }
         if cfg.enabled {
             try applyRegistration(cfg.id, true)
         }

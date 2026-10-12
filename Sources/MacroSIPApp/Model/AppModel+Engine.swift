@@ -53,9 +53,13 @@ extension AppModel {
         }
         await refreshDevices()
         await applyAudioSelection()
+        resetPresence()
+        syncPresenceSubscriptions()
+        publishMyPresence()
     }
 
     func shutdown() async {
+        await finishRecordingsForQuit()
         eventTask?.cancel()
         await engine.hangupAll()
         await engine.stop()
@@ -78,10 +82,13 @@ extension AppModel {
             handleEnded(info, duration: duration)
         case let .transferStatus(_, code, final):
             if final, code >= 300 { showBanner("Transfer failed (\(code))") }
-        case .dtmfReceived, .buddyPresence, .log:
+        case let .buddyPresence(uri, status):
+            handlePresence(uri: uri, status: status)
+        case .dtmfReceived, .log:
             break
         case .audioDevicesChanged:
-            Task { await refreshDevices(); await applyAudioSelection() }
+            // The engine re-resolves the stored device names itself; only the lists change.
+            Task { await refreshDevices() }
         }
     }
 
@@ -104,6 +111,8 @@ extension AppModel {
 
     private func upsert(_ info: CallInfo) {
         if let i = calls.firstIndex(where: { $0.id == info.id }) { calls[i] = info } else { calls.append(info) }
+        if info.state != .incoming { clearAutoAnswer(info.id) }
+        noteRecordingState(info)
     }
 
     private func handleIncoming(_ info: CallInfo) {
@@ -112,11 +121,20 @@ extension AppModel {
             return
         }
         if mainWindowIsFrontmost { tab = .dialpad }
+        armAutoAnswer(for: info)
         afterCallsChanged()
     }
 
     private func handleEnded(_ info: CallInfo, duration: TimeInterval) {
+        // The engine rejects a fifth call itself (486) without ever announcing it.
+        var note: String?
+        if !calls.contains(where: { $0.id == info.id }), info.direction == .incoming,
+           case .disconnected(486, _) = info.state {
+            note = L.logNoteCallLimit
+        }
         calls.removeAll { $0.id == info.id }
+        clearAutoAnswer(info.id)
+        recordingCallEnded(info)
         ringtoneSilenced.remove(info.id)
         if let t = transfer, t.original == info.id || t.consult == info.id { transfer = nil }
         if liveCalls.isEmpty { showKeypad = false; dtmfSent = "" }
@@ -125,7 +143,7 @@ extension AppModel {
         let entry = CallLogEntry(
             direction: direction, remoteNumber: info.remote.number.isEmpty ? info.remote.uri : info.remote.number,
             remoteDisplayName: info.remote.displayName, accountID: info.accountID,
-            startedAt: started, duration: direction == .missed ? 0 : duration)
+            startedAt: started, duration: direction == .missed ? 0 : duration, note: note)
         do { try callLogStore.append(entry) } catch { report(error) }
         reloadCallLog()
         if tab == .callLog { markLogSeen() }
@@ -144,17 +162,13 @@ extension AppModel {
         devices = await engine.audioDevices()
     }
 
-    /// Maps the stored device names to engine ids; a missing device falls back to the system default.
+    /// The stored device names go to the engine as they are; it falls back to the system default
+    /// for a missing device and switches back when the device returns.
     func applyAudioSelection() async {
         let a = settings.audio
-        func id(_ name: String?, input: Bool) -> Int? {
-            guard let name else { return nil }
-            return devices.first { $0.name == name && (input ? $0.inputChannels > 0 : $0.outputChannels > 0) }?.id
-        }
         do {
-            try await engine.setAudioDevices(input: id(a.inputDeviceName, input: true),
-                                             output: id(a.outputDeviceName, input: false))
-            await engine.setRingtoneDevice(id(a.ringtoneDeviceName, input: false))
+            try await engine.setAudioDevices(inputName: a.inputDeviceName, outputName: a.outputDeviceName)
+            await engine.setRingtoneDevice(name: a.ringtoneDeviceName)
             if case let .file(url) = a.ringtone { await engine.setRingtoneFile(url) } else { await engine.setRingtoneFile(nil) }
         } catch { report(error) }
     }

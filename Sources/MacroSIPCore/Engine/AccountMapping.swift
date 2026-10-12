@@ -27,6 +27,10 @@ struct PJAccountSettings: Equatable, Sendable {
     var randomizeRTPPort: Bool
     /// Bind RTP to and advertise this address (nil = all interfaces, default route address).
     var bindAddress: String?
+    /// PUBLISH our presence (PIDF/RPID) to the registrar's domain (AccountConfig.publishPresence).
+    var publishEnabled: Bool
+    /// Queue a status change while a PUBLISH is in flight instead of failing it.
+    var publishQueueRequest: Bool
 }
 
 /// SIP transports created at engine start. TLS exists twice: a listener that verifies the
@@ -88,7 +92,9 @@ enum AccountMapping {
             rtpPort: 4000,
             rtpPortRange: 16000,
             randomizeRTPPort: true,
-            bindAddress: bindAddress
+            bindAddress: bindAddress,
+            publishEnabled: account.publishPresence,
+            publishQueueRequest: true
         )
     }
 
@@ -174,6 +180,9 @@ enum AccountMapping {
             cfg.pointee.rtp_cfg.public_addr = arena.pj(addr)
         }
 
+        cfg.pointee.publish_enabled = s.publishEnabled ? 1 : 0
+        cfg.pointee.publish_opt.queue_request = s.publishQueueRequest ? 1 : 0
+
         return try withExtendedLifetime(arena) { try body(cfg) }
     }
 
@@ -203,7 +212,9 @@ enum AccountMapping {
             rtpPort: Int(c.rtp_cfg.port),
             rtpPortRange: Int(c.rtp_cfg.port_range),
             randomizeRTPPort: c.rtp_cfg.randomize_port != 0,
-            bindAddress: c.rtp_cfg.bound_addr.slen > 0 ? PJ.string(c.rtp_cfg.bound_addr) : nil
+            bindAddress: c.rtp_cfg.bound_addr.slen > 0 ? PJ.string(c.rtp_cfg.bound_addr) : nil,
+            publishEnabled: c.publish_enabled != 0,
+            publishQueueRequest: c.publish_opt.queue_request != 0
         )
     }
 }

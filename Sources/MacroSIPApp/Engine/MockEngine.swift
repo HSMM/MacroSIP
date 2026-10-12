@@ -16,6 +16,9 @@ actor MockEngine: SIPEngine {
     private var order: [CallID] = []
     private var serial: UInt64 = 0
     private var level: Float = 0
+    private var recordings: [CallID: (url: URL, since: Date)] = [:]
+    private var presenceTasks: [String: Task<Void, Never>] = [:]
+    private(set) var publishedPresence: [AccountID: PresenceStatus] = [:]
 
     private let devices = [
         AudioDevice(id: 0, name: "MacBook Pro Microphone", inputChannels: 1, outputChannels: 0),
@@ -44,6 +47,8 @@ actor MockEngine: SIPEngine {
     func stop() {
         guard started else { return }
         hangupAll()
+        for task in presenceTasks.values { task.cancel() }
+        presenceTasks = [:]
         for id in accounts.keys { set(id, .unregistered) }
         accounts = [:]
         started = false
@@ -148,12 +153,18 @@ actor MockEngine: SIPEngine {
 
     /// Debug menu: an incoming call on `account` (first account when nil).
     func simulateIncoming(name: String?, number: String, account: AccountID? = nil) {
-        guard let acct = account ?? accounts.keys.first, callTable.count < 4 else { return }
+        guard let acct = account ?? accounts.keys.first else { return }
         let id = nextID()
-        let info = CallInfo(
+        var info = CallInfo(
             id: id, accountID: acct, direction: .incoming, state: .incoming,
             remote: RemoteParty(displayName: name, uri: "sip:\(number)@mock.example.org", number: number),
             isSecure: false)
+        guard callTable.count < 4 else {
+            // Like the real engine: a fifth call is answered with 486 and the UI never sees it ring.
+            info.state = .disconnected(code: 486, reason: "Busy Here")
+            emit(.callEnded(info, duration: 0))
+            return
+        }
         publish(info)
         emit(.incomingCall(info))
     }
@@ -168,6 +179,7 @@ actor MockEngine: SIPEngine {
     private func end(_ id: CallID, code: Int, reason: String) throws {
         guard var info = callTable[id] else { throw EngineError.noSuchCall(id) }
         let duration = info.startedAt.map { Date().timeIntervalSince($0) } ?? 0
+        if recordings[id] != nil { _ = try? stopRecording(id) }     // like the real engine: the file is complete when the call ends
         info.state = .disconnected(code: code, reason: reason)
         callTable[id] = nil
         order.removeAll { $0 == id }
@@ -206,11 +218,98 @@ actor MockEngine: SIPEngine {
 
     func calls() -> [CallInfo] { order.compactMap { callTable[$0] } }
 
+    // MARK: conference
+
+    func merge(_ ids: [CallID]) throws {
+        guard ids.count >= 2 else { throw EngineError.invalidArgument("a conference needs at least two calls") }
+        for id in ids {
+            guard let c = callTable[id] else { throw EngineError.noSuchCall(id) }
+            guard c.state == .connected || c.state == .held else { throw EngineError.invalidArgument("call is not connected") }
+        }
+        for id in ids {
+            try change(id) { $0.inConference = true; $0.isOnHold = false; $0.state = .connected }
+        }
+    }
+
+    /// The leg goes back to a held call; a conference that is left with one leg dissolves.
+    func split(_ id: CallID) throws {
+        guard let c = callTable[id] else { throw EngineError.noSuchCall(id) }
+        guard c.inConference else { throw EngineError.invalidArgument("call is not in a conference") }
+        try change(id) { $0.inConference = false; $0.isOnHold = true; $0.state = .held }
+        let rest = order.filter { callTable[$0]?.inConference == true }
+        if rest.count == 1, let last = rest.first { try change(last) { $0.inConference = false } }
+    }
+
+    // MARK: recording
+
+    func startRecording(_ id: CallID, to wavURL: URL) throws {
+        guard let c = callTable[id] else { throw EngineError.noSuchCall(id) }
+        guard recordings[id] == nil else { throw EngineError.invalidArgument("call is already being recorded") }
+        guard c.state == .connected || c.state == .held else { throw EngineError.invalidArgument("call is not connected") }
+        try FileManager.default.createDirectory(at: wavURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Self.sineWAV(seconds: 0.5).write(to: wavURL)
+        recordings[id] = (wavURL, Date())
+        try change(id) { $0.isRecording = true }
+    }
+
+    /// Finishes the WAV (a tone as long as the recording, 1...8 s) and returns its URL.
+    func stopRecording(_ id: CallID) throws -> URL {
+        guard let rec = recordings.removeValue(forKey: id) else { throw EngineError.invalidArgument("call is not being recorded") }
+        let seconds = min(8, max(1, Date().timeIntervalSince(rec.since)))
+        try Self.sineWAV(seconds: seconds).write(to: rec.url)
+        if callTable[id] != nil { try change(id) { $0.isRecording = false } }
+        return rec.url
+    }
+
+    /// 16-bit mono 16 kHz PCM WAV with a quiet 440 Hz tone.
+    static func sineWAV(seconds: Double, rate: Int = 16_000) -> Data {
+        let count = Int(seconds * Double(rate))
+        var pcm = Data(capacity: count * 2)
+        for i in 0..<count {
+            let v = Int16(3_000 * sin(2 * Double.pi * 440 * Double(i) / Double(rate)))
+            withUnsafeBytes(of: v.littleEndian) { pcm.append(contentsOf: $0) }
+        }
+        func le32(_ v: UInt32) -> Data { withUnsafeBytes(of: v.littleEndian) { Data($0) } }
+        func le16(_ v: UInt16) -> Data { withUnsafeBytes(of: v.littleEndian) { Data($0) } }
+        var d = Data("RIFF".utf8)
+        d += le32(UInt32(36 + pcm.count)) + Data("WAVEfmt ".utf8) + le32(16) + le16(1) + le16(1)
+        d += le32(UInt32(rate)) + le32(UInt32(rate * 2)) + le16(2) + le16(16)
+        d += Data("data".utf8) + le32(UInt32(pcm.count)) + pcm
+        return d
+    }
+
+    // MARK: presence
+
+    /// First answer after 0.8 s; then the status flips between available and away every 6 s.
+    func subscribePresence(uri: String) throws {
+        guard started else { throw EngineError.notStarted }
+        presenceTasks[uri]?.cancel()
+        var status: PresenceStatus = uri.utf8.reduce(0, { $0 &+ Int($1) }) % 2 == 0 ? .available : .away
+        presenceTasks[uri] = Task {
+            try? await Task.sleep(for: .milliseconds(800))
+            while !Task.isCancelled {
+                self.emit(.buddyPresence(contactURI: uri, status))
+                status = status == .available ? .away : .available
+                try? await Task.sleep(for: .seconds(6))
+            }
+        }
+    }
+
+    func unsubscribePresence(uri: String) throws {
+        presenceTasks.removeValue(forKey: uri)?.cancel()
+    }
+
+    func publishPresence(_ status: PresenceStatus, for account: AccountID) throws {
+        guard accounts[account] != nil else { throw EngineError.unknownAccount(account) }
+        publishedPresence[account] = status
+        emit(.log(level: 4, "mock publish presence \(status.rawValue)"))
+    }
+
     // MARK: audio
 
     func audioDevices() -> [AudioDevice] { devices }
-    func setAudioDevices(input: Int?, output: Int?) throws {}
-    func setRingtoneDevice(_ id: Int?) {}
+    func setAudioDevices(inputName: String?, outputName: String?) throws {}
+    func setRingtoneDevice(name: String?) {}
     func setRingtoneFile(_ url: URL?) {}
 
     func codecs() -> [CodecInfo] {

@@ -38,6 +38,8 @@ public actor Engine {
         var index: pjsua_acc_id
         var config: AccountConfig
         var password: String
+        /// Last status given to `publishPresence` (re-applied when the account changes).
+        var presence: PresenceStatus = .available
     }
 
     /// Conference connection (source slot -> sink slot) as last requested by the engine.
@@ -51,6 +53,15 @@ public actor Engine {
     var transports = TransportIDs()
     var accounts: [AccountID: AccountEntry] = [:]
     var requestedWiring: [Wire: Bool] = [:]
+    /// Who owned each conference slot at the last `reconcileMedia` (call serial or recorder):
+    /// requests for a slot whose owner changed are forgotten, PJSIP dropped them with the port.
+    var slotOwners: [pjsua_conf_port_id: PortOwner] = [:]
+    /// Active recordings by call (at most one per call).
+    var recordings: [CallID: Recording] = [:]
+    /// Next local conference id (`CallRecord.conference`).
+    var nextConferenceID: UInt64 = 1
+    /// Presence subscriptions: normalised URI -> pjsua buddy id.
+    var buddies: [String: pjsua_buddy_id] = [:]
 
     // Audio devices are remembered by name (indices change when devices come and go).
     var inputDeviceName: String?
@@ -136,9 +147,17 @@ public actor Engine {
         stopRingtone()
         stopRingback()
         silencedCalls = []
-        requestedWiring = [:]
+        // Finalise the WAV files while the bridge still runs; the calls' `.callEnded` (held
+        // back because they were recorded) is released after pjsua_destroy.
+        for id in Array(recordings.keys) { finishRecorder(id) }
+        // No presence events during shutdown: the subscriptions end with pjsua.
+        bridge.unwatchAll()
+        buddies = [:]
         pjsua_call_hangup_all()
         PJ.warn(pjsua_destroy(), "pjsua_destroy")
+        bridge.releaseDeferredEnds()
+        requestedWiring = [:]
+        slotOwners = [:]
         isStarted = false
         transports = TransportIDs()
         appliedSoundDevices = nil
@@ -243,18 +262,5 @@ public actor Engine {
     /// Throws unless started; registers the current queue thread with pjlib.
     func requireStarted() throws {
         guard isStarted, PJ.registerThread() else { throw EngineError.notStarted }
-    }
-}
-
-// Conference, recording and presence: implemented in milestone 5.
-extension Engine {
-    public func merge(_ ids: [CallID]) throws { throw EngineError.unsupported("merge") }
-    public func split(_ id: CallID) throws { throw EngineError.unsupported("split") }
-    public func startRecording(_ id: CallID, to wavURL: URL) throws { throw EngineError.unsupported("recording") }
-    public func stopRecording(_ id: CallID) throws -> URL { throw EngineError.unsupported("recording") }
-    public func subscribePresence(uri: String) throws { throw EngineError.unsupported("presence") }
-    public func unsubscribePresence(uri: String) throws { throw EngineError.unsupported("presence") }
-    public func publishPresence(_ status: PresenceStatus, for account: AccountID) throws {
-        throw EngineError.unsupported("presence")
     }
 }

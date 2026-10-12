@@ -320,4 +320,71 @@ enum L {
     static func bannerLinkFilled(_ number: String) -> String { String(localized: "banner.link.filled", defaultValue: "Link opened: \(number). Press Call to dial.") }
     static var bannerNoAccount: String { String(localized: "banner.noAccount", defaultValue: "Add an account before calling.") }
     static var bannerTooManyCalls: String { String(localized: "banner.tooManyCalls", defaultValue: "Four calls are already in progress.") }
+
+    // MARK: presence (screens 2, 7)
+    static var presenceAvailable: String { String(localized: "presence.available", defaultValue: "Available") }
+    static var presenceAway: String { String(localized: "presence.away", defaultValue: "Away") }
+    static var presenceDND: String { String(localized: "presence.dnd", defaultValue: "Do Not Disturb") }
+    static var presenceOffline: String { String(localized: "presence.offline", defaultValue: "Offline") }
+    static var contactsMenuWatchPresence: String { String(localized: "contacts.menu.watchPresence", defaultValue: "Watch Presence") }
+    static var contactWatchPresence: String { String(localized: "contact.watchPresence", defaultValue: "Watch presence (subscribe)") }
+    static var menuMyStatus: String { String(localized: "menu.myStatus", defaultValue: "My Status") }
+
+    // MARK: call log additions (screen 3)
+    static var logClearBodyRecordings: String { String(localized: "calllog.clear.bodyRecordings", defaultValue: "Recordings stay in their folder.") }
+    static var logNoteCallLimit: String { String(localized: "calllog.note.callLimit", defaultValue: "Rejected: call limit") }
+
+    // MARK: recording, conference (screens 4, 5)
+    static func callRecChip(_ time: String) -> String { String(localized: "call.rec.chip", defaultValue: "REC \(time)") }
+    static var callRecShort: String { String(localized: "callbar.rec", defaultValue: "REC") }
+    static var callRecord: String { String(localized: "call.record", defaultValue: "Record") }
+    static var callMerge: String { String(localized: "call.merge", defaultValue: "Merge") }
+    static var callsInConference: String { String(localized: "calls.row.inConference", defaultValue: "In conference") }
+    static var callsSplit: String { String(localized: "calls.split", defaultValue: "Split") }
+    static func conferenceHeader(_ n: Int) -> String { String(localized: "conference.header", defaultValue: "Conference · \(n) participants") }
+    static var conferenceEnd: String { String(localized: "conference.end", defaultValue: "End Conference") }
+
+    // MARK: auto-answer (screens 6.5, 8.7)
+    static func autoAnswerCountdown(_ seconds: Int) -> String { String(localized: "incoming.autoAnswer.countdown", defaultValue: "Auto-answer in \(seconds) s") }
+    static var autoAnswerCancel: String { String(localized: "incoming.autoAnswer.cancel", defaultValue: "Cancel") }
+    static var settingsAutoAnswer: String { String(localized: "settings.tab.autoAnswer", defaultValue: "Auto-answer") }
+    static var autoAnswerMode: String { String(localized: "settings.autoAnswer.mode", defaultValue: "Answer incoming calls automatically") }
+    static var autoAnswerOff: String { String(localized: "settings.autoAnswer.off", defaultValue: "Off") }
+    static var autoAnswerAll: String { String(localized: "settings.autoAnswer.all", defaultValue: "All calls") }
+    static var autoAnswerContactsOnly: String { String(localized: "settings.autoAnswer.contactsOnly", defaultValue: "Contacts only") }
+    static var autoAnswerDelay: String { String(localized: "settings.autoAnswer.delay", defaultValue: "Delay before answering") }
+    static var autoAnswerHonour: String { String(localized: "settings.autoAnswer.honourServer", defaultValue: "Honour the server's answer-after request") }
+    static var autoAnswerHonourHelp: String {
+        String(localized: "settings.autoAnswer.honourServer.help", defaultValue: "Answers when the PBX sends Call-Info: answer-after=N (intercom, paging), even if the mode is Off.")
+    }
+    static var autoAnswerFooter: String {
+        String(localized: "settings.autoAnswer.footer", defaultValue: "Do Not Disturb wins over auto-answer. Auto-answer never answers a second call while you are already on one.")
+    }
+
+    // MARK: recording settings (screen 8.6)
+    static var settingsRecording: String { String(localized: "settings.tab.recording", defaultValue: "Recording") }
+    static var recordingFolder: String { String(localized: "settings.recording.folder", defaultValue: "Save recordings to") }
+    static var recordingChooseFolder: String { String(localized: "settings.recording.chooseFolder", defaultValue: "Choose Folder…") }
+    static var recordingFolderMissing: String { String(localized: "settings.recording.folderMissing", defaultValue: "Folder not found") }
+    static var recordingAuto: String { String(localized: "settings.recording.auto", defaultValue: "Record all calls automatically") }
+    static var recordingFooter: String {
+        String(localized: "settings.recording.footer", defaultValue: "Recordings are saved as M4A (AAC). The temporary WAV is deleted after conversion.")
+    }
+    static func recordingFileName(_ sample: String) -> String { String(localized: "settings.recording.fileName", defaultValue: "File name: \(sample)") }
+    static var recordingShowFolder: String { String(localized: "settings.recording.showFolder", defaultValue: "Show Recordings Folder") }
+    static var recordingOpenFinder: String { String(localized: "settings.recording.openFinder", defaultValue: "Open in Finder") }
+    static func bannerRecordingFailed(_ reason: String) -> String { String(localized: "banner.recording.failed", defaultValue: "Recording could not be saved: \(reason)") }
+
+    // MARK: menu bar status, account editor additions
+    static var menuStatusAvailable: String { String(localized: "menu.status.available", defaultValue: "Available") }
+    static var menuStatusAway: String { String(localized: "menu.status.away", defaultValue: "Away") }
+    static var menuStatusDND: String { String(localized: "menu.status.dnd", defaultValue: "Do Not Disturb") }
+    static var accountPublishPresence: String { String(localized: "account.field.publishPresence", defaultValue: "Publish my presence") }
+    static var accountPublishPresenceHelp: String {
+        String(localized: "account.field.publishPresence.help", defaultValue: "Lets contacts who watch you see Available / Away / DND.")
+    }
+    static var accountVerifyCertificate: String { String(localized: "account.field.verifyCertificate", defaultValue: "Verify server certificate") }
+    static var accountVerifyCertificateHelp: String {
+        String(localized: "account.field.verifyCertificate.help", defaultValue: "Turn off only for a server with a self-signed certificate.")
+    }
 }

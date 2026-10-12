@@ -21,6 +21,8 @@ struct AccountEditorSheet: View {
     @Local private var expiry = 300
     @Local private var register = true
     @Local private var isDefault = false
+    @Local private var publishPresence = false
+    @Local private var verifyTLS = true
     @Local private var serverTouched = false
     @Local private var loaded = false
     @Local private var testing = false
@@ -101,6 +103,12 @@ struct AccountEditorSheet: View {
                                 Text(L.unitSeconds).font(.system(size: 12)).foregroundStyle(Theme.label2)
                             }
                         }
+                        if transport == .tls {
+                            FormDivider()
+                            row(L.accountVerifyCertificate, help: L.accountVerifyCertificateHelp) {
+                                Toggle("", isOn: $verifyTLS).labelsHidden().toggleStyle(.switch)
+                            }
+                        }
                     }
                     FormGroup {
                         row(L.accountRegister, help: L.accountRegisterHelp) {
@@ -110,7 +118,10 @@ struct AccountEditorSheet: View {
                         row(L.accountDefaultOutgoing) {
                             Toggle("", isOn: $isDefault).labelsHidden().toggleStyle(.switch)
                         }
-                        // TODO(milestone 5): "Publish my presence" row
+                        FormDivider()
+                        row(L.accountPublishPresence, help: L.accountPublishPresenceHelp) {
+                            Toggle("", isOn: $publishPresence).labelsHidden().toggleStyle(.switch)
+                        }
                     }
                 }
                 .padding(.horizontal, 22).padding(.bottom, 8)
@@ -230,6 +241,8 @@ struct AccountEditorSheet: View {
             expiry = a.registrationInterval
             register = a.enabled
             isDefault = a.isDefaultOutgoing
+            publishPresence = a.publishPresence
+            verifyTLS = a.verifyTLSCertificate
         } else {
             isDefault = model.accounts.isEmpty          // the first account is the default
         }
@@ -253,6 +266,8 @@ struct AccountEditorSheet: View {
         cfg.enabled = register
         cfg.isDefaultOutgoing = isDefault
         cfg.registrationInterval = expiry
+        cfg.publishPresence = publishPresence
+        cfg.verifyTLSCertificate = verifyTLS
         return cfg
     }
 

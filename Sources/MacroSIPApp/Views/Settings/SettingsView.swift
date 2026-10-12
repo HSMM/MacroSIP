@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Screen 8: toolbar tabs, changes apply immediately. Five tabs for now.
+/// Screen 8: toolbar tabs, changes apply immediately. Seven tabs.
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
 
@@ -22,7 +22,12 @@ struct SettingsView: View {
             CodecsPane()
                 .tabItem { Label(L.settingsCodecs, systemImage: "waveform") }
                 .tag(SettingsTab.codecs)
-            // TODO(milestone 5): Recording and Auto-answer tabs
+            RecordingPane()
+                .tabItem { Label(L.settingsRecording, systemImage: "record.circle") }
+                .tag(SettingsTab.recording)
+            AutoAnswerPane()
+                .tabItem { Label(L.settingsAutoAnswer, systemImage: "bolt.fill") }
+                .tag(SettingsTab.autoAnswer)
         }
         .frame(width: 620)
     }

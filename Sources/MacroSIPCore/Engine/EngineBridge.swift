@@ -31,6 +31,13 @@ struct CallRecord: Sendable {
     /// Last codec / SRTP state seen while media was up, reported again in `.callEnded`.
     var lastCodec: String?
     var lastSecure = false
+    /// Local conference the call belongs to (Engine.merge); nil = not in a conference.
+    var conference: UInt64?
+    /// A recorder is attached (Engine.startRecording). Stays true in `.callEnded` when the
+    /// call ended while recorded: that event is held back until the WAV is finalised.
+    var isRecording = false
+    /// `Call-Info: ...;answer-after=N` of the incoming INVITE.
+    var answerAfter: Int?
 }
 
 /// How `EngineBridge.updateCall` treats the call's record.
@@ -52,6 +59,12 @@ final class EngineBridge: Sendable {
         var registrationInterval: Int
     }
 
+    struct WatchedBuddy: Sendable {
+        /// The URI as the caller passed it to `subscribePresence`; `.buddyPresence` carries it.
+        var reportedURI: String
+        var last: PresenceStatus?
+    }
+
     struct State: Sendable {
         var sink: AsyncStream<EngineEvent>.Continuation?
         var engine: Engine?
@@ -61,6 +74,11 @@ final class EngineBridge: Sendable {
         /// (PJSIP answered EBUSY); applied when that transaction completes.
         var pendingRegistration: [AccountID: Bool] = [:]
         var calls: [Int32: CallRecord] = [:]                    // pjsua_call_id -> record
+        /// `.callEnded` of recorded calls, keyed by call serial, held back until the engine
+        /// finalised the recording (see `releaseDeferredEnds`).
+        var deferredEnds: [UInt64: EngineEvent] = [:]
+        /// Watched presence URIs (as given to pjsua_buddy_add) -> what events report.
+        var watched: [String: WatchedBuddy] = [:]
         /// Never reset, so CallIDs stay unique across engine restarts in one process.
         var nextSerial: UInt64 = 1
     }
@@ -169,6 +187,10 @@ final class EngineBridge: Sendable {
     /// Updates the slot's record from a fresh snapshot and, in the same critical section,
     /// yields the event built by `event` (if any). Returns nil when `mode == .updateOnly`
     /// and the call has no record of the same serial (it ended or never was announced).
+    ///
+    /// With `mode == .remove` the event of a call that is being recorded is not yielded but
+    /// kept until `releaseDeferredEnds` (the engine finalises the WAV first, so a `.callEnded`
+    /// with `isRecording` always refers to a complete file).
     @discardableResult
     func updateCall(
         _ snap: CallSnapshot,
@@ -230,7 +252,13 @@ final class EngineBridge: Sendable {
             // A late callback for a call whose record is already gone (its .callEnded was
             // emitted) must not produce a ghost event.
             let gone = mode == .createOrUpdate && snap.state == .disconnected && existing?.serial != serial
-            if !gone, let e = event?(info, rec) { st.sink?.yield(e) }
+            if !gone, let e = event?(info, rec) {
+                if mode == .remove && rec.isRecording {
+                    st.deferredEnds[rec.serial] = e
+                } else {
+                    st.sink?.yield(e)
+                }
+            }
             return (info, rec, newSerial)
         }
         guard let result else { return nil }
@@ -267,11 +295,48 @@ final class EngineBridge: Sendable {
             startedAt: r.startedAt,
             isMuted: r.isMuted,
             isOnHold: onHold,
-            isRecording: false,
-            inConference: false,
+            isRecording: r.isRecording,
+            inConference: r.conference != nil,
             codec: s.state == .disconnected ? (s.codec ?? r.lastCodec) : s.codec,
-            isSecure: s.state == .disconnected ? (s.codec != nil ? s.isSecure : r.lastSecure) : s.isSecure
+            isSecure: s.state == .disconnected ? (s.codec != nil ? s.isSecure : r.lastSecure) : s.isSecure,
+            answerAfter: r.answerAfter
         )
+    }
+
+    /// Yields the held-back `.callEnded` events except those of calls in `keep` (serials whose
+    /// recording is still being finalised). Ordered by serial.
+    func releaseDeferredEnds(keeping keep: Set<UInt64> = []) {
+        state.withLock { st in
+            for serial in st.deferredEnds.keys.sorted() where !keep.contains(serial) {
+                if let e = st.deferredEnds.removeValue(forKey: serial) { st.sink?.yield(e) }
+            }
+        }
+    }
+
+    // MARK: presence
+
+    func watch(_ uri: String, reportedAs reported: String) {
+        state.withLock { st in
+            if st.watched[uri] == nil { st.watched[uri] = WatchedBuddy(reportedURI: reported) }
+        }
+    }
+
+    func unwatch(_ uri: String) {
+        _ = state.withLock { $0.watched.removeValue(forKey: uri) }
+    }
+
+    func unwatchAll() {
+        state.withLock { $0.watched = [:] }
+    }
+
+    /// Emits `.buddyPresence` for a watched URI when its status changed.
+    func reportPresence(uri: String, _ status: PresenceStatus) {
+        state.withLock { st in
+            guard var w = st.watched[uri], w.last != status else { return }
+            w.last = status
+            st.watched[uri] = w
+            st.sink?.yield(.buddyPresence(contactURI: w.reportedURI, status))
+        }
     }
 }
 
@@ -309,6 +374,8 @@ func installPJCallbacks(_ cb: inout pjsua_callback) {
     cb.on_call_transfer_status = pjOnCallTransferStatus
     cb.on_dtmf_digit2 = pjOnDtmfDigit2
     cb.on_call_replaced = pjOnCallReplaced
+    cb.on_buddy_state = pjOnBuddyState
+    // on_pager (instant messages) stays unset: pjsua answers MESSAGE with 200 and drops it.
 }
 
 /// PJSIP log writer: os_log (subsystem com.hsmm.macrosip, category pjsip) + `.log` event.
@@ -358,10 +425,17 @@ private func pjOnIncomingCall(_ accID: pjsua_acc_id, _ callID: pjsua_call_id, _ 
         return
     }
 
+    // Intercom / paging: Call-Info: <...>;answer-after=N (AutoAnswerPolicy decides).
+    let after = Int(cpjsua_rdata_answer_after(rdata))
+    let answerAfter: Int? = after >= 0 ? after : nil
+
     // Ring: 180 Ringing goes out now; the call waits in EARLY until answer()/reject().
     PJ.warn(cpjsua_call_answer(callID, 180), "call \(callID): 180 Ringing")
     guard let snap = CallSnapshot.read(callID) else { return }
-    bridge.updateCall(snap, mode: .createOrUpdate, mutate: { $0.announced = true }, event: { info, _ in
+    bridge.updateCall(snap, mode: .createOrUpdate, mutate: {
+        $0.announced = true
+        $0.answerAfter = answerAfter
+    }, event: { info, _ in
         if case .disconnected = info.state { return nil }
         return .incomingCall(info)
     })
@@ -451,4 +525,10 @@ private func pjOnDtmfDigit2(_ callID: pjsua_call_id, _ info: UnsafePointer<pjsua
     let bridge = EngineBridge.shared
     let serial = bridge.record(callID)?.serial ?? UInt64(cpjsua_call_serial(callID))
     bridge.emit(.dtmfReceived(CallID(raw: callID, serial: serial), digit: Character(scalar)))
+}
+
+private func pjOnBuddyState(_ buddyID: pjsua_buddy_id) {
+    PJ.registerThread()
+    guard let buddy = BuddySnapshot.read(buddyID) else { return }
+    EngineBridge.shared.reportPresence(uri: buddy.uri, buddy.presence)
 }

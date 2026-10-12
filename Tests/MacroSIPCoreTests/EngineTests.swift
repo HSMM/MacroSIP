@@ -403,6 +403,7 @@ struct EngineTests {
         let expectedAuthUser: String
         var testDescription: String {
             "\(account.transport.rawValue)/\(account.srtp.rawValue)\(account.verifyTLSCertificate ? "" : "/noverify")"
+                + (account.publishPresence ? "/publish" : "")
         }
     }
 
@@ -458,6 +459,11 @@ struct EngineTests {
                                    registrar: " SIP:reg.example.com:5070 "),
             expectedRegURI: "sip:reg.example.com:5070", expectedTransportID: 0,
             expectedSecureSignaling: 0, expectedProxies: [], expectedAuthUser: "1009"),
+        MappingCase(   // presence publishing on
+            account: AccountConfig(displayName: "P", username: "1010", domain: "sip.example.com",
+                                   publishPresence: true),
+            expectedRegURI: "sip:sip.example.com", expectedTransportID: 0,
+            expectedSecureSignaling: 0, expectedProxies: [], expectedAuthUser: "1010"),
     ]
 
     @Test(arguments: mappingCases)
@@ -484,6 +490,8 @@ struct EngineTests {
             #expect(x.iceEnabled, "\(label)")
             #expect(x.rtpPort == 4000 && x.rtpPortRange == 16000 && x.randomizeRTPPort, "\(label)")
             #expect(x.bindAddress == nil, "\(label)")
+            #expect(x.publishEnabled == c.account.publishPresence, "\(label)")
+            #expect(x.publishQueueRequest, "\(label)")
         }
     }
 

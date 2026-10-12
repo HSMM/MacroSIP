@@ -126,14 +126,26 @@ struct ContactsView: View {
 
     private func row(_ c: Contact) -> some View {
         let selected = selection == c.id
+        let status = model.presenceStatus(for: c)
         return HStack(spacing: 9) {
             AvatarView(name: c.name, size: 32)
+                .overlay(alignment: .bottomTrailing) {
+                    if c.subscribePresence {
+                        PresenceDot(status: status, ring: selected ? Theme.blue : Theme.content)
+                            .offset(x: 2, y: 2)
+                    }
+                }
             VStack(alignment: .leading, spacing: 0) {
                 Text(c.name).font(.system(size: 13, weight: .medium)).lineLimit(1)
                 Text(c.number).font(.system(size: 11.5))
                     .foregroundStyle(selected ? Color.white.opacity(0.8) : Theme.label2).lineLimit(1)
             }
             Spacer(minLength: 4)
+            if let status, let text = PresenceDot.text(status) {
+                Text(text).font(.system(size: 11))
+                    .foregroundStyle(selected ? Color.white.opacity(0.8) : Theme.label2)
+                    .lineLimit(1)
+            }
             if selected || hovered == c.id {
                 Button { model.placeCall(to: c) } label: {
                     Image(systemName: "phone.fill").font(.system(size: 11))
@@ -165,12 +177,15 @@ struct ContactsView: View {
             Button(L.contactsMenuCopy) { copy(c) }.keyboardShortcut("c", modifiers: .command)
             Divider()
             Button(L.contactsMenuEdit) { editor = ContactEditorRequest(contact: c) }.keyboardShortcut("e", modifiers: .command)
+            Toggle(L.contactsMenuWatchPresence, isOn: Binding(
+                get: { c.subscribePresence },
+                set: { model.setWatchPresence($0, for: c) }))
             Divider()
             Button(L.contactsMenuDelete, role: .destructive) { pendingDelete = c.id }
                 .keyboardShortcut(.delete, modifiers: .command)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(c.name), \(c.number)")
+        .accessibilityLabel("\(c.name), \(c.number)" + (status.flatMap(PresenceDot.text).map { ", \($0)" } ?? ""))
         .id(c.id)
     }
 
@@ -238,6 +253,7 @@ struct ContactSheet: View {
     @Local private var name = ""
     @Local private var number = ""
     @Local private var accountID: AccountID?
+    @Local private var watch = false
     @FocusState private var focus: Field?
     private enum Field { case name, number }
 
@@ -262,6 +278,11 @@ struct ContactSheet: View {
                     }
                     .labelsHidden()
                 }
+                Toggle(L.contactWatchPresence, isOn: $watch)
+                    .toggleStyle(.checkbox)
+                    .font(.system(size: 12.5))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading, 68)
             }
             HStack {
                 Spacer()
@@ -273,7 +294,7 @@ struct ContactSheet: View {
         .frame(width: 320)
         .onAppear {
             if let c = request.contact {
-                name = c.name; number = c.number; accountID = c.preferredAccountID
+                name = c.name; number = c.number; accountID = c.preferredAccountID; watch = c.subscribePresence
             } else {
                 name = request.prefillName; number = request.prefillNumber
             }
@@ -293,7 +314,41 @@ struct ContactSheet: View {
         c.name = name.trimmingCharacters(in: .whitespaces)
         c.number = number.trimmingCharacters(in: .whitespaces)
         c.preferredAccountID = accountID
+        c.subscribePresence = watch
         model.saveContact(c)
         dismiss()
+    }
+}
+
+/// 11 pt status dot on the avatar: green available, yellow away, red busy or DND, grey offline or unknown.
+struct PresenceDot: View {
+    let status: PresenceStatus?
+    var ring: Color = Theme.content
+
+    var body: some View {
+        Circle()
+            .fill(Self.color(status))
+            .frame(width: 11, height: 11)
+            .overlay(Circle().strokeBorder(ring, lineWidth: 2))
+            .accessibilityHidden(true)
+    }
+
+    static func color(_ status: PresenceStatus?) -> Color {
+        switch status {
+        case .available: return Theme.green
+        case .away: return Color(nsColor: .systemYellow)
+        case .dnd: return Theme.red
+        case .offline, nil: return Color(nsColor: .systemGray)
+        }
+    }
+
+    /// nil while there is no answer yet.
+    static func text(_ status: PresenceStatus) -> String? {
+        switch status {
+        case .available: return L.presenceAvailable
+        case .away: return L.presenceAway
+        case .dnd: return L.presenceDND
+        case .offline: return L.presenceOffline
+        }
     }
 }

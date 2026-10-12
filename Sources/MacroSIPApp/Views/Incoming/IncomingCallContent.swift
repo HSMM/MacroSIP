@@ -37,6 +37,9 @@ struct IncomingCallContent: View {
                 }
                 Spacer(minLength: 0)
             }
+            if let countdown = model.autoAnswer[call.id] {
+                AutoAnswerStrip(countdown: countdown) { model.cancelAutoAnswer(call.id) }
+            }
             if let other = otherCall {
                 TickingText { L.incomingOnCall(model.name(for: other.remote), elapsedText(other, at: $0)) }
                     .font(.system(size: 11.5))
@@ -112,5 +115,36 @@ struct IncomingCallPanelView: View {
         .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5))
+    }
+}
+
+/// 6.5: countdown ring, "Auto-answer in N s", Cancel.
+struct AutoAnswerStrip: View {
+    let countdown: AutoAnswerCountdown
+    let cancel: () -> Void
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 0.1)) { ctx in
+            let remaining = max(0, countdown.fireAt.timeIntervalSince(ctx.date))
+            let progress = countdown.total > 0 ? remaining / countdown.total : 0
+            HStack(spacing: 8) {
+                ZStack {
+                    Circle().stroke(Theme.fill3, lineWidth: 2.5)
+                    Circle().trim(from: 0, to: progress)
+                        .stroke(Theme.green, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                }
+                .frame(width: 22, height: 22)
+                Text(L.autoAnswerCountdown(Int(remaining.rounded(.up)))).font(.system(size: 12.5)).monospacedDigit()
+                Spacer(minLength: 4)
+                Button(L.autoAnswerCancel, action: cancel)
+                    .buttonStyle(.plain)
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(Theme.blue)
+            }
+            .padding(.horizontal, 10).padding(.vertical, 6)
+            .frame(maxWidth: .infinity)
+            .background(RoundedRectangle(cornerRadius: 8).fill(Theme.fill))
+        }
     }
 }

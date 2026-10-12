@@ -195,3 +195,12 @@ extension RemoteParty {
         return RemoteParty(displayName: name, uri: uri, number: number)
     }
 }
+
+/// `Call-Info` header parsing (the C parser in shim.c, also used on incoming INVITEs).
+enum CallInfoHeader {
+    /// Seconds of an `answer-after=N` parameter in a Call-Info header value, nil if absent.
+    static func answerAfter(_ value: String) -> Int? {
+        let n = value.withCString { cpjsua_parse_answer_after($0) }
+        return n >= 0 ? Int(n) : nil
+    }
+}

@@ -15,6 +15,8 @@ public struct CallLogEntry: Codable, Identifiable, Equatable, Sendable {
     public var duration: TimeInterval
     /// Resolved at insert time if a contact matches.
     public var contactID: UUID?
+    /// Short explanation shown in the row, e.g. "Rejected: call limit". Absent in older files.
+    public var note: String?
 
     public init(
         id: UUID = UUID(),
@@ -24,7 +26,8 @@ public struct CallLogEntry: Codable, Identifiable, Equatable, Sendable {
         accountID: AccountID,
         startedAt: Date = Date(),
         duration: TimeInterval = 0,
-        contactID: UUID? = nil
+        contactID: UUID? = nil,
+        note: String? = nil
     ) {
         self.id = id
         self.direction = direction
@@ -34,5 +37,6 @@ public struct CallLogEntry: Codable, Identifiable, Equatable, Sendable {
         self.startedAt = startedAt
         self.duration = duration
         self.contactID = contactID
+        self.note = note
     }
 }

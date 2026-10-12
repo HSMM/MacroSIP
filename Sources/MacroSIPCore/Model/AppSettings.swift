@@ -34,6 +34,8 @@ public struct GeneralSettings: Codable, Equatable, Sendable {
     public var keepRunningInMenuBar: Bool
     public var showDockIcon: Bool
     public var doNotDisturb: Bool
+    /// Status published to the accounts with `publishPresence` (Menu bar › My Status).
+    public var presenceStatus: PresenceStatus
 
     public init(
         launchAtLogin: Bool = false,
@@ -42,7 +44,8 @@ public struct GeneralSettings: Codable, Equatable, Sendable {
         askBeforeCallingFromURL: Bool = true,
         keepRunningInMenuBar: Bool = true,
         showDockIcon: Bool = true,
-        doNotDisturb: Bool = false
+        doNotDisturb: Bool = false,
+        presenceStatus: PresenceStatus = .available
     ) {
         self.launchAtLogin = launchAtLogin
         self.language = language
@@ -51,6 +54,20 @@ public struct GeneralSettings: Codable, Equatable, Sendable {
         self.keepRunningInMenuBar = keepRunningInMenuBar
         self.showDockIcon = showDockIcon
         self.doNotDisturb = doNotDisturb
+        self.presenceStatus = presenceStatus
+    }
+
+    /// Older settings.json files lack `presenceStatus`; it decodes as `.available`.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        launchAtLogin = try c.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? false
+        language = try c.decodeIfPresent(String.self, forKey: .language)
+        handleURLSchemes = try c.decodeIfPresent(Bool.self, forKey: .handleURLSchemes) ?? true
+        askBeforeCallingFromURL = try c.decodeIfPresent(Bool.self, forKey: .askBeforeCallingFromURL) ?? true
+        keepRunningInMenuBar = try c.decodeIfPresent(Bool.self, forKey: .keepRunningInMenuBar) ?? true
+        showDockIcon = try c.decodeIfPresent(Bool.self, forKey: .showDockIcon) ?? true
+        doNotDisturb = try c.decodeIfPresent(Bool.self, forKey: .doNotDisturb) ?? false
+        presenceStatus = try c.decodeIfPresent(PresenceStatus.self, forKey: .presenceStatus) ?? .available
     }
 }
 

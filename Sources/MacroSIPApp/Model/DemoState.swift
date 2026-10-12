@@ -5,6 +5,7 @@ import MacroSIPCore
 
 /// DEBUG-only launch states for screenshots and manual checks:
 ///   --demo-state first-launch | dialpad | contacts | calllog | connected | calls | incoming | incoming-hidden
+///                 | conference | recording | autoAnswer | settings-recording | settings-autoanswer
 ///                 | settings-accounts | account-editor | editor-first-launch
 /// Data goes to a throw-away directory (see LaunchOptions); the Keychain is never touched.
 enum DemoState {
@@ -32,8 +33,9 @@ enum DemoState {
             ("Anna Petrova", "102"), ("Boris Ivanov", "101"), ("Reception", "100"),
             ("Dmitry Sokolov", "+7 912 555-01-23"), ("Elena Kuznetsova", "sip:elena@example.org"), ("Alex Müller", "+49 30 123456"),
         ]
+        let watched: Set<String> = ["Anna Petrova", "Boris Ivanov", "Dmitry Sokolov", "Reception"]
         for (name, number) in people {
-            try? contacts.upsert(Contact(name: name, number: number))
+            try? contacts.upsert(Contact(name: name, number: number, subscribePresence: watched.contains(name)))
         }
         let now = Date()
         let rows: [(CallDirection, String, String?, AccountID, TimeInterval, TimeInterval)] = [
@@ -80,11 +82,31 @@ enum DemoState {
             try? await Task.sleep(for: .seconds(3))
         case "selftest":
             await selftest(model)
+        case "quit":                // checks that quitting finishes (shutdown must not hang)
+            try? await Task.sleep(for: .seconds(2))
+            quitLater()
         case "calls":
             try? await Task.sleep(for: .seconds(1.5))
             model.placeCall(to: "102")
             try? await Task.sleep(for: .seconds(3.2))
             model.placeCall(to: "101")
+        case "conference":
+            try? await Task.sleep(for: .seconds(1.5))
+            model.placeCall(to: "102")
+            try? await Task.sleep(for: .seconds(3.2))
+            model.placeCall(to: "101")
+            try? await Task.sleep(for: .seconds(3.2))
+            model.mergeCalls()
+        case "recording":
+            try? await Task.sleep(for: .seconds(1.5))
+            model.placeCall(to: "102")
+            try? await Task.sleep(for: .seconds(3.2))
+            if let c = model.activeCall { model.toggleRecording(c) }
+        case "autoAnswer":
+            try? await Task.sleep(for: .seconds(1.0))
+            model.updateSettings { $0.autoAnswer = AutoAnswerSettings(mode: .all, delaySeconds: 20, honourCallInfo: true) }
+            try? await Task.sleep(for: .seconds(0.5))
+            simulateIncoming(model)
         case "incoming":
             try? await Task.sleep(for: .seconds(1.5))
             simulateIncoming(model)
@@ -106,7 +128,8 @@ enum DemoState {
             model.mainEditor = AccountEditorRequest(accountID: nil)
         case let s where s.hasPrefix("settings-"):
             try? await Task.sleep(for: .seconds(1.5))
-            model.openSettings(tab: SettingsTab(rawValue: String(s.dropFirst(9))) ?? .general)
+            let name = String(s.dropFirst(9)).lowercased()
+            model.openSettings(tab: SettingsTab.allCases.first { $0.rawValue.lowercased() == name } ?? .general)
         default: break
         }
         if let prefix = model.launch.snapshotPrefix {
@@ -247,11 +270,145 @@ enum DemoState {
         model.toggleDND()
         check("DND persisted off", !model.settingsStore.load().general.doNotDisturb)
 
+
+        // presence: watched contacts get a status, unwatching drops it
+        let watchedContacts = model.contacts.filter(\.subscribePresence)
+        check("presence arrives for watched contacts", !watchedContacts.isEmpty && watchedContacts.allSatisfy { model.presenceStatus(for: $0) != nil },
+              "\(model.presence)")
+        if let anna = model.contacts.first(where: { $0.name == "Anna Petrova" }) {
+            let subs = model.presenceSubscriptions.count
+            model.setWatchPresence(false, for: anna)
+            check("unwatch unsubscribes", model.presenceSubscriptions.count == subs - 1 && model.presenceStatus(for: anna) == nil)
+            model.setWatchPresence(true, for: anna)
+            await wait(1.2)
+            check("watch subscribes again", model.presenceSubscriptions.count == subs && model.contacts.first { $0.id == anna.id }.flatMap(model.presenceStatus(for:)) != nil)
+        }
+        if let z = Optional(Contact(name: "Zzz", number: "888", subscribePresence: true)) {
+            model.saveContact(z)
+            let n = model.presenceSubscriptions.count
+            model.deleteContact(z.id)
+            check("delete unsubscribes", model.presenceSubscriptions.count == n - 1)
+        }
+
+        // my status and publish
+        if var office = model.account(officeID) {
+            office.publishPresence = true
+            do { try await model.saveAccount(office, password: "demo", callerName: "") } catch { check("save publish flag", false, "\(error)") }
+            model.setMyStatus(.away)
+            await wait(0.3)
+            var published = await mock?.publishedPresence[officeID]
+            check("away published", published == .away && !model.doNotDisturb)
+            model.setMyStatus(.dnd)
+            await wait(0.3)
+            published = await mock?.publishedPresence[officeID]
+            check("My Status DND turns DND on and publishes dnd", model.doNotDisturb && published == .dnd)
+            model.toggleDND()
+            check("DND off returns to available", !model.doNotDisturb && model.settings.general.presenceStatus == .available)
+            await wait(0.3)
+            published = await mock?.publishedPresence[officeID]
+            check("available published", published == .available)
+            model.toggleDND()
+            check("DND on sets status dnd", model.doNotDisturb && model.settings.general.presenceStatus == .dnd)
+            model.toggleDND()
+            check("status persisted", model.settingsStore.load().general.presenceStatus == .available)
+        }
+
+        // conference, split, recording
+        model.placeCall(to: "300")
+        await wait(2.8)
+        model.placeCall(to: "301")
+        await wait(2.8)
+        check("merge enabled with two connected calls", model.liveCalls.count == 2 && model.canMerge, "\(model.liveCalls.count)")
+        model.mergeCalls()
+        await wait(0.3)
+        check("merged into a conference", model.conferenceCalls.count == 2 && model.activeCalls.count == 2 && !model.canMerge)
+        if let c = model.conferenceCalls.first {
+            let savedBefore = model.savedRecordings.count
+            model.toggleRecording(c)
+            await wait(0.4)
+            let recorded = model.conferenceCalls.filter(\.isRecording)
+            check("conference records one leg, the lowest serial", recorded.count == 1
+                  && recorded.first?.id.serial == model.conferenceCalls.map(\.id.serial).min() && model.isRecording(c))
+            model.toggleRecording(model.conferenceCalls.last ?? c)
+            await wait(1.5)
+            check("stopping a conference recording stops that one file",
+                  model.conferenceCalls.allSatisfy { !$0.isRecording } && model.savedRecordings.count == savedBefore + 1)
+            model.split(c)
+        }
+        await wait(0.3)
+        check("split dissolves a two-party conference", model.conferenceCalls.isEmpty && model.heldCount == 1, "\(model.conferenceCalls.count)")
+        let saved = model.savedRecordings.count
+        let tempRecordings = FileManager.default.temporaryDirectory.appendingPathComponent("MacroSIP-Recording")
+        let wavsBefore = Set((try? FileManager.default.contentsOfDirectory(atPath: tempRecordings.path))?.filter { $0.hasSuffix(".wav") } ?? [])
+        if let c = model.activeCall { model.toggleRecording(c) }
+        await wait(0.3)
+        check("recording starts", model.activeCall?.isRecording == true && model.activeCall.flatMap { model.recordingSince[$0.id] } != nil)
+        await wait(1.1)
+        if let c = model.activeCall { model.toggleRecording(c) }
+        await wait(1.5)
+        check("recording stopped and converted", model.savedRecordings.count == saved + 1 && model.activeCall?.isRecording == false,
+              "\(model.savedRecordings.count) \(String(describing: model.banner?.text))")
+        if let url = model.savedRecordings.last {
+            let size = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? 0
+            check("m4a is in the recordings folder and named per 8.6",
+                  size > 1024 && url.deletingLastPathComponent() == model.recordingsFolderForDisplay.standardizedFileURL
+                  && url.lastPathComponent.hasSuffix("(out).m4a"), "\(url.path) \(size)")
+        }
+        if let c = model.activeCall { model.toggleRecording(c) }      // recording a second time, ended by the hang-up
+        await wait(0.3)
+        Task { await model.engine.hangupAll() }
+        await wait(1.5)
+        check("ending a recorded call converts it", model.savedRecordings.count == saved + 2, "\(model.savedRecordings.count)")
+        let wavsAfter = Set((try? FileManager.default.contentsOfDirectory(atPath: tempRecordings.path))?.filter { $0.hasSuffix(".wav") } ?? [])
+        check("temporary WAVs are deleted", wavsAfter.subtracting(wavsBefore).isEmpty, "\(wavsAfter.subtracting(wavsBefore))")
+
+        // record all calls
+        model.updateSettings { $0.recording.recordAllCalls = true }
+        model.placeCall(to: "302")
+        await wait(2.8)
+        check("record-all starts recording on connect", model.activeCall?.isRecording == true)
+        Task { await model.engine.hangupAll() }
+        await wait(1.5)
+        model.updateSettings { $0.recording.recordAllCalls = false }
+        check("record-all call was saved", model.savedRecordings.count == saved + 3, "\(model.savedRecordings.count)")
+
+        // auto-answer
+        model.updateSettings { $0.autoAnswer = AutoAnswerSettings(mode: .contactsOnly, delaySeconds: 1, honourCallInfo: true) }
+        await mock?.simulateIncoming(name: nil, number: "999", account: officeID)
+        await wait(0.3)
+        check("contacts-only ignores a stranger", model.autoAnswer.isEmpty && model.incomingCall != nil)
+        if let c = model.incomingCall { model.decline(c.id) }
+        await wait(0.3)
+        await mock?.simulateIncoming(name: nil, number: "102", account: officeID)
+        await wait(0.3)
+        check("auto-answer armed for a contact", model.autoAnswer.count == 1)
+        await wait(1.4)
+        check("auto-answered after the delay", model.activeCall?.remote.number == "102" && model.autoAnswer.isEmpty)
+        await mock?.simulateIncoming(name: nil, number: "101", account: officeID)
+        await wait(1.5)
+        check("never auto-answers a second call", model.incomingCall?.remote.number == "101" && model.autoAnswer.isEmpty)
+        Task { await model.engine.hangupAll() }
+        await wait(0.5)
+        model.updateSettings { $0.autoAnswer.delaySeconds = 2 }
+        await mock?.simulateIncoming(name: nil, number: "102", account: officeID)
+        await wait(0.3)
+        if let c = model.incomingCall { model.cancelAutoAnswer(c.id) }
+        await wait(2.3)
+        check("cancel keeps the call ringing", model.incomingCall?.remote.number == "102" && model.activeCall == nil)
+        if let c = model.incomingCall { model.decline(c.id) }
+        model.updateSettings { $0.autoAnswer = AutoAnswerSettings() }
+        await wait(0.3)
+
         // call limit
         for n in ["200", "201", "202", "203"] { model.placeCall(to: n); await wait(0.15) }
         model.placeCall(to: "204")
         await wait(0.3)
         check("fifth call refused", model.calls.count == 4 && model.banner != nil, "\(model.calls.count)")
+        await mock?.simulateIncoming(name: "Late Caller", number: "777", account: officeID)
+        await wait(0.3)
+        check("engine-rejected fifth call is noted in the log",
+              model.callLog.first { $0.remoteNumber == "777" }?.note == L.logNoteCallLimit && model.calls.count == 4,
+              "\(String(describing: model.callLog.first?.note))")
         Task { await model.engine.hangupAll() }
         await wait(0.5)
 
@@ -289,7 +446,15 @@ enum DemoState {
         let text = out.joined(separator: "\n") + "\nfailures=\(failures)\n"
         if let prefix = model.launch.snapshotPrefix { try? text.write(toFile: "\(prefix)-selftest.txt", atomically: true, encoding: .utf8) }
         print(text)
-        NSApp.terminate(nil)
+        quitLater()
+    }
+
+    /// `terminate:` spins a nested run loop until `shutdown()` has finished on the main actor; calling it
+    /// from inside a main-queue block or a main-actor task would block that very queue. A run-loop
+    /// timer is neither.
+    @MainActor
+    static func quitLater() {
+        NSApp.perform(#selector(NSApplication.terminate(_:)), with: nil, afterDelay: 0.1)
     }
 
     @MainActor

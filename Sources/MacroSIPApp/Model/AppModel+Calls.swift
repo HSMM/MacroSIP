@@ -34,7 +34,7 @@ extension AppModel {
         run {
             await self.ensureMicrophone()
             // A second call holds the active one first.
-            if let active = self.activeCall { try await self.engine.setHold(active.id, true) }
+            for active in self.activeCalls { try await self.engine.setHold(active.id, true) }
             _ = try await self.engine.makeCall(to: dial, from: acct.id)
             self.dialText = ""
             self.selectedAccountID = nil
@@ -72,8 +72,11 @@ extension AppModel {
         hangup(c.id)
     }
 
+    /// In a conference the microphone is muted for every leg.
     func toggleMute(_ call: CallInfo) {
-        run { try await self.engine.setMute(call.id, !call.isMuted) }
+        let legs = legs(of: call)
+        let on = !call.isMuted
+        run { for leg in legs { try await self.engine.setMute(leg.id, on) } }
     }
 
     func toggleMuteCurrent() { if let c = currentCall { toggleMute(c) } }
@@ -82,7 +85,7 @@ extension AppModel {
     func toggleHold(_ call: CallInfo) {
         run {
             if call.isHeldCall {
-                if let other = self.activeCall, other.id != call.id { try await self.engine.setHold(other.id, true) }
+                for other in self.activeCalls where other.id != call.id { try await self.engine.setHold(other.id, true) }
                 try await self.engine.setHold(call.id, false)
             } else {
                 try await self.engine.setHold(call.id, true)
@@ -106,7 +109,7 @@ extension AppModel {
     /// Answer holds the active call first (the call becomes active, the other one held).
     func answer(_ id: CallID) {
         run {
-            if let active = self.activeCall { try await self.engine.setHold(active.id, true) }
+            for active in self.activeCalls { try await self.engine.setHold(active.id, true) }
             try await self.engine.answer(id)
             self.tab = .dialpad
         }
@@ -129,6 +132,29 @@ extension AppModel {
     func silenceRingtone(_ id: CallID) {
         ringtoneSilenced.insert(id)
         Task { await engine.silenceRingtone() }
+    }
+
+    // MARK: - Conference
+
+    /// Calls that Merge would join: everything answered.
+    var mergeableCalls: [CallInfo] { liveCalls.filter(\.isEstablished) }
+
+    var canMerge: Bool {
+        let calls = mergeableCalls
+        return calls.count >= 2 && !calls.allSatisfy(\.inConference) && transfer == nil
+    }
+
+    func mergeCalls() {
+        let ids = mergeableCalls.map(\.id)
+        guard ids.count >= 2 else { return }
+        run { try await self.engine.merge(ids) }
+    }
+
+    func split(_ call: CallInfo) { run { try await self.engine.split(call.id) } }
+
+    func endConference() {
+        let ids = conferenceCalls.map(\.id)
+        run { for id in ids { try await self.engine.hangup(id) } }
     }
 
     // MARK: - Transfer

@@ -58,7 +58,7 @@ struct SingleCallView: View {
     }
 
     private var chips: some View {
-        HStack(spacing: 6) {
+        ChipFlow {
             Chip { Text(L.callVia(model.accountName(call.accountID))) }
             if let codec = codecDisplay(call.codec) {
                 Chip { Text(codec); SignalBars() }
@@ -68,6 +68,7 @@ struct SingleCallView: View {
                 Chip { Image(systemName: "lock.fill").font(.system(size: 9)); Text(L.callSRTP) }
                     .help(L.callSRTPHelp)
             }
+            if call.isRecording { RecChip(since: model.recordingSince[call.id]) }
         }
         .lineLimit(1)
     }
@@ -86,25 +87,40 @@ struct SingleCallView: View {
     }
 }
 
-/// 5.1 and 5.3: up to four call rows, controls for the active call, End Call with <name>.
+/// 5.1, 5.3 and 5.4: up to four call rows, controls for the active call, End Call with <name>
+/// (End Conference while a conference runs).
 struct MultiCallView: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
         let calls = model.liveCalls
+        let conference = model.conferenceCalls
+        let others = calls.filter { !$0.inConference }
         let target = model.activeCall ?? calls.first
         VStack(spacing: 8) {
-            HStack {
-                Text(L.callsCount(calls.count).uppercased())
-                Spacer()
-                Text(L.callsSwitchHint)
-            }
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(Theme.label2)
-            .padding(.horizontal, 4)
+            if conference.count >= 2 {
+                conferenceHeader(conference)
+                VStack(spacing: 2) {
+                    ForEach(conference) { call in CallRow(call: call) }
+                }
+                if !others.isEmpty {
+                    VStack(spacing: 2) {
+                        ForEach(others) { call in CallRow(call: call) }
+                    }
+                }
+            } else {
+                HStack {
+                    Text(L.callsCount(calls.count).uppercased())
+                    Spacer()
+                    Text(L.callsSwitchHint)
+                }
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Theme.label2)
+                .padding(.horizontal, 4)
 
-            VStack(spacing: 2) {
-                ForEach(calls) { call in CallRow(call: call) }
+                VStack(spacing: 2) {
+                    ForEach(calls) { call in CallRow(call: call) }
+                }
             }
 
             if let t = model.transfer, let consult = t.consult,
@@ -116,15 +132,34 @@ struct MultiCallView: View {
             Spacer(minLength: 0)
             if let target {
                 CallControlGrid(call: target)
-                EndCallButton(title: L.callEndWith(model.name(for: target.remote))) { model.hangup(target.id) }
-                    .keyboardShortcut("d", modifiers: .command)
-                    .padding(.top, 2)
+                if conference.count >= 2 {
+                    EndCallButton(title: L.conferenceEnd) { model.endConference() }
+                        .keyboardShortcut("d", modifiers: .command)
+                        .padding(.top, 2)
+                } else {
+                    EndCallButton(title: L.callEndWith(model.name(for: target.remote))) { model.hangup(target.id) }
+                        .keyboardShortcut("d", modifiers: .command)
+                        .padding(.top, 2)
+                }
             }
         }
         .padding(.horizontal, 10)
         .padding(.top, 10)
         .padding(.bottom, 12)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// "CONFERENCE · 3 PARTICIPANTS" and the conference timer.
+    private func conferenceHeader(_ legs: [CallInfo]) -> some View {
+        let started = legs.compactMap(\.startedAt).min()
+        return HStack {
+            Text(L.conferenceHeader(legs.count).uppercased())
+            Spacer()
+            if let started { TickingText { formatDuration($0.timeIntervalSince(started)) } }
+        }
+        .font(.system(size: 11, weight: .semibold))
+        .foregroundStyle(Theme.label2)
+        .padding(.horizontal, 4)
     }
 }
 
@@ -145,18 +180,14 @@ struct CallRow: View {
                 subtitle.font(.system(size: 11))
             }
             Spacer(minLength: 4)
-            if isActive, !isConsulting, let codec = codecDisplay(call.codec) {
+            if call.inConference {
+                smallButton(symbol: "arrow.triangle.branch", title: L.callsSplit) { model.split(call) }
+            }
+            if isActive, !isConsulting, !call.inConference, let codec = codecDisplay(call.codec) {
                 Chip { Text(codec); SignalBars() }
             }
             if call.isHeldCall && !isWaiting {
-                Button { model.toggleHold(call) } label: {
-                    HStack(spacing: 3) { Image(systemName: "play.fill").font(.system(size: 8)); Text(L.callResume) }
-                        .font(.system(size: 11.5))
-                        .padding(.horizontal, 8).frame(height: 20)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(Theme.control))
-                        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Theme.controlBorder, lineWidth: 0.5))
-                }
-                .buttonStyle(.plain)
+                smallButton(symbol: "play.fill", title: L.callResume) { model.toggleHold(call) }
             }
             MiniEndButton(help: L.callsEndHelp) { model.hangup(call.id) }
         }
@@ -168,9 +199,22 @@ struct CallRow: View {
         .accessibilityElement(children: .combine)
     }
 
+    private func smallButton(symbol: String, title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 3) { Image(systemName: symbol).font(.system(size: 8)); Text(title) }
+                .font(.system(size: 11.5))
+                .padding(.horizontal, 8).frame(height: 20)
+                .background(RoundedRectangle(cornerRadius: 6).fill(Theme.control))
+                .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Theme.controlBorder, lineWidth: 0.5))
+        }
+        .buttonStyle(.plain)
+    }
+
     @ViewBuilder
     private var subtitle: some View {
-        if isWaiting {
+        if call.inConference {
+            Text(L.callsInConference).foregroundStyle(Theme.blue).fontWeight(.medium)
+        } else if isWaiting {
             Text(L.callsWaitingTransfer).foregroundStyle(Theme.orange).fontWeight(.medium)
         } else if isConsulting {
             TickingText { L.callsConsulting(elapsedText(call, at: $0)) }.foregroundStyle(Theme.blue).fontWeight(.medium)
@@ -312,6 +356,7 @@ struct CallSummaryBar: View {
                 if call.isMuted {
                     Image(systemName: "mic.slash.fill").font(.system(size: 10)).foregroundStyle(Theme.red).help(L.callbarMuted)
                 }
+                if model.isRecording(call) { RecChip(since: nil) }
                 if model.heldCount > (call.isHeldCall ? 1 : 0) {
                     Text(L.callbarMoreHeld(model.heldCount - (call.isHeldCall ? 1 : 0)))
                         .font(.system(size: 12, weight: .medium)).foregroundStyle(Theme.orange).lineLimit(1)

@@ -112,7 +112,11 @@ final class StatusItemController: NSObject, NSMenuDelegate, NSTextFieldDelegate 
     func debugMenuTitles() -> [String] {
         let m = NSMenu()
         buildMenu(m)
-        return m.items.map { $0.isSeparatorItem ? "----" : ($0.view != nil ? "[quick dial field]" : $0.attributedTitle?.string ?? $0.title) + ($0.state == .on ? "  [x]" : "") }
+        return m.items.flatMap { item -> [String] in
+            let line = item.isSeparatorItem ? "----" : (item.view != nil ? "[quick dial field]" : item.attributedTitle?.string ?? item.title) + (item.state == .on ? "  [x]" : "")
+            let subs = item.submenu?.items.map { "      " + $0.title + ($0.state == .on ? "  [x]" : "") } ?? []
+            return [line] + subs
+        }
     }
     #endif
 
@@ -200,6 +204,26 @@ final class StatusItemController: NSObject, NSMenuDelegate, NSTextFieldDelegate 
         dnd.target = self
         dnd.state = model.doNotDisturb ? .on : .off
         menu.addItem(dnd)
+
+        // 9. My Status (7.4)
+        let status = NSMenuItem()
+        let current = model.effectivePresence
+        let statusTitle = NSMutableAttributedString(string: L.menuMyStatus)
+        statusTitle.append(NSAttributedString(
+            string: "   " + Self.statusTitle(current),
+            attributes: [.foregroundColor: NSColor.secondaryLabelColor, .font: NSFont.menuFont(ofSize: 11.5)]))
+        status.attributedTitle = statusTitle
+        let sub = NSMenu()
+        for option in [PresenceStatus.available, .away, .dnd] {
+            let mi = NSMenuItem(title: Self.statusTitle(option), action: #selector(setMyStatus(_:)), keyEquivalent: "")
+            mi.target = self
+            mi.representedObject = option.rawValue
+            mi.state = option == current ? .on : .off
+            mi.image = Self.dotImage(Self.statusColor(option))
+            sub.addItem(mi)
+        }
+        status.submenu = sub
+        menu.addItem(status)
         menu.addItem(.separator())
 
         // 11-14
@@ -279,6 +303,27 @@ final class StatusItemController: NSObject, NSMenuDelegate, NSTextFieldDelegate 
         guard let s = sender.representedObject as? String, let uuid = UUID(uuidString: s),
               let entry = model.callLog.first(where: { $0.id == uuid }) else { return }
         model.callBack(entry)
+    }
+
+    private static func statusTitle(_ s: PresenceStatus) -> String {
+        switch s {
+        case .available, .offline: return L.menuStatusAvailable
+        case .away: return L.menuStatusAway
+        case .dnd: return L.menuStatusDND
+        }
+    }
+
+    private static func statusColor(_ s: PresenceStatus) -> NSColor {
+        switch s {
+        case .available, .offline: return .systemGreen
+        case .away: return .systemYellow
+        case .dnd: return .systemRed
+        }
+    }
+
+    @objc private func setMyStatus(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String, let status = PresenceStatus(rawValue: raw) else { return }
+        model.setMyStatus(status)
     }
 
     @objc private func toggleDND() { model.toggleDND() }

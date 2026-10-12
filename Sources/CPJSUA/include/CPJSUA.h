@@ -162,6 +162,50 @@ pj_status_t cpjsua_call_unhold(pjsua_call_id call_id);
 /** 1 if src currently transmits to sink (per pjsua_conf_get_port_info). */
 int cpjsua_conf_is_connected(pjsua_conf_port_id src, pjsua_conf_port_id sink);
 
+/** Recorder (pjsua_recorder_create): WAV, 16-bit PCM, conference clock rate, mono.
+ *  Writes the recorder id and its conference slot. `path` must end in ".wav". */
+pj_status_t cpjsua_recorder_create(const char *path, pjsua_recorder_id *out_id,
+                                   pjsua_conf_port_id *out_slot);
+
+/** pjsua_recorder_destroy, then wait up to `timeout_ms` until the WAV writer port is
+ *  really destroyed (PJSIP 2.17 removes conference ports on the next audio frame and
+ *  only then writes the final RIFF/data sizes). *finalised = 1 when that happened in time;
+ *  otherwise the header is written later, when the bridge processes the removal. */
+pj_status_t cpjsua_recorder_destroy_wait(pjsua_recorder_id id, unsigned timeout_ms,
+                                         int *finalised);
+
+/* ----------------------------------------------------------- presence --- */
+
+/** pjsua_buddy_add with subscribe = PJ_TRUE (account chosen by pjsua per request). */
+pj_status_t cpjsua_buddy_add(const char *uri, pjsua_buddy_id *out_id);
+
+/** Flat copy of the pjsua_buddy_info fields MacroSIP maps to a presence status. */
+typedef struct cpjsua_buddy_snapshot {
+    char               uri[PJSIP_MAX_URL_SIZE];   /* as given to pjsua_buddy_add */
+    pjsua_buddy_status status;
+    pjrpid_activity    activity;
+    char               note[128];
+    pjsip_evsub_state  sub_state;                 /* NULL when no subscription exists */
+    unsigned           term_code;
+} cpjsua_buddy_snapshot;
+
+pj_status_t cpjsua_buddy_snapshot_get(pjsua_buddy_id id, cpjsua_buddy_snapshot *out);
+
+/** pjsua_acc_set_online_status2 with a PERSON RPID element (`note` may be NULL). */
+pj_status_t cpjsua_acc_set_presence(pjsua_acc_id acc_id, int online,
+                                    pjrpid_activity activity, const char *note);
+
+/* ------------------------------------------------- Call-Info answer-after --- */
+
+/** Seconds from an `answer-after=N` parameter in a Call-Info header value: the parameter
+ *  after any ';' (e.g. "<sip:pbx>;answer-after=0" or the bare ";answer-after=5") or at the
+ *  very start of the value. Case-insensitive, whitespace around ';' and '=' allowed,
+ *  capped at 86400. Returns -1 when absent or without digits. */
+int cpjsua_parse_answer_after(const char *value);
+
+/** answer-after of the first Call-Info header of an incoming request that has one, or -1. */
+int cpjsua_rdata_answer_after(const pjsip_rx_data *rdata);
+
 /* -------------------------------------------------------------- tones --- */
 
 /** Create a tone generator port that loops (freq1+freq2, on_ms / off_ms)

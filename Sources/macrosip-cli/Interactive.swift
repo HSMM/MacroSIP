@@ -100,7 +100,7 @@ final class Interactive {
             print("""
             acc add <name> <user> <domain> <password> [udp|tcp|tls] [disabled|optional|mandatory] [noverify]
                                             add account (not registered); SRTP mode; noverify = no TLS cert check
-            acc list | acc use <name> | acc del <name>
+            acc list | acc use <name> | acc del <name> | acc publish on|off
             reg | unreg                     register / unregister the current account
             call <dial>                     number, user@host or sip: URI
             answer | reject [code] | hangup [all]
@@ -109,6 +109,11 @@ final class Interactive {
             xfer <dial>                     blind transfer of the current call
             axfer                           attended transfer: current call -> other call
             use <slot>                      make call in slot current
+            merge | split                   conference of all connected calls / take current call out
+            rec <file.wav> | stoprec        record the current call (WAV)
+            sub <uri> | unsub <uri>         watch / stop watching a contact's presence
+            status available|away|dnd|offline   publish presence (account needs publishing on)
+            acc publish on|off              PUBLISH presence for the current account
             calls | stats | devs | setdev <in|-> <out|-> | ringdev <id|->
             codecs [id ...]                 list, or set priority order
             quit
@@ -154,6 +159,26 @@ final class Interactive {
             guard let slot = args.first.flatMap(Int32.init),
                   let id = calls.keys.first(where: { $0.raw == slot }) else { throw CLIError("use <slot>") }
             currentCall = id
+        case "merge":
+            let ids = await engine.calls().filter { $0.state == .connected || $0.state == .held }.map(\.id)
+            try await engine.merge(ids)
+        case "split":
+            try await engine.split(try call())
+        case "rec":
+            guard let path = args.first else { throw CLIError("rec <file.wav>") }
+            let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
+            try await engine.startRecording(try call(), to: url)
+            print("recording \(try call()) to \(url.path)")
+        case "stoprec":
+            print("recorded \(try await engine.stopRecording(try call()).path)")
+        case "sub", "unsub":
+            guard let uri = args.first else { throw CLIError("\(cmd) <uri>") }
+            if cmd == "sub" { try await engine.subscribePresence(uri: uri) } else { try await engine.unsubscribePresence(uri: uri) }
+        case "status":
+            guard let raw = args.first, let status = PresenceStatus(rawValue: raw) else {
+                throw CLIError("status available|away|dnd|offline")
+            }
+            try await engine.publishPresence(status, for: try await account().id)
         case "calls":
             let list = await engine.calls()
             if list.isEmpty { print("no calls") }
@@ -200,6 +225,18 @@ final class Interactive {
         case "use":
             guard args.count == 2, let a = accounts.first(where: { $0.name == args[1] }) else { throw CLIError("acc use <name>") }
             currentAccount = a.config
+        case "publish":
+            guard args.count == 2, ["on", "off"].contains(args[1]), var cfg = currentAccount,
+                  let i = accounts.firstIndex(where: { $0.config.id == cfg.id }) else {
+                throw CLIError("acc publish on|off (current account)")
+            }
+            cfg.publishPresence = args[1] == "on"
+            // updateAccount unregisters a disabled account; keep a registered one registered
+            // (the re-REGISTER also starts the PUBLISH session).
+            if case .registered = await engine.registrationState(of: cfg.id) { cfg.enabled = true }
+            try await engine.updateAccount(cfg, password: nil)
+            accounts[i].config = cfg
+            currentAccount = cfg
         case "del":
             guard args.count == 2, let i = accounts.firstIndex(where: { $0.name == args[1] }) else { throw CLIError("acc del <name>") }
             try await engine.removeAccount(accounts[i].config.id)

@@ -29,6 +29,10 @@ final class AppModel {
     @ObservationIgnored var openSettingsAction: (() -> Void)?
     @ObservationIgnored var presentedIncoming: Set<CallID> = []
     @ObservationIgnored var micChecked = false
+    @ObservationIgnored var presenceSubscriptions: [UUID: String] = [:]      // contact -> URI handed to the engine
+    @ObservationIgnored var recordingJobs: [CallID: RecordingJob] = [:]
+    @ObservationIgnored var autoRecordTried: Set<CallID> = []
+    @ObservationIgnored var autoAnswerTasks: [CallID: Task<Void, Never>] = [:]
 
     // Data
     var accounts: [AccountConfig] = []
@@ -40,6 +44,10 @@ final class AppModel {
     var devices: [AudioDevice] = []
     var calls: [CallInfo] = []
     var seenLogAt: Date
+    var presence: [String: PresenceStatus] = [:]             // keyed by `presenceKey(_:)`
+    var recordingSince: [CallID: Date] = [:]                 // calls being recorded, for the REC chip
+    var autoAnswer: [CallID: AutoAnswerCountdown] = [:]      // calls that will be answered by themselves
+    var savedRecordings: [URL] = []                          // finished M4A files of this session
 
     // UI state
     var banner: Banner?
@@ -106,6 +114,8 @@ final class AppModel {
     var incomingCall: CallInfo? { ringingCalls.first }
     var liveCalls: [CallInfo] { calls.filter { !$0.isRinging && $0.isLive } }
     var activeCall: CallInfo? { liveCalls.first { !$0.isHeldCall } }
+    var activeCalls: [CallInfo] { liveCalls.filter { !$0.isHeldCall } }
+    var conferenceCalls: [CallInfo] { liveCalls.filter(\.inConference) }
     var currentCall: CallInfo? { activeCall ?? liveCalls.first }
     var heldCount: Int { liveCalls.filter(\.isHeldCall).count }
     var hasCallActivity: Bool { !calls.isEmpty }

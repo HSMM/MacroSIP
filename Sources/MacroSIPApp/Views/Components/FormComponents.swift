@@ -1,10 +1,26 @@
 import SwiftUI
 
 /// Grouped-form pattern of the Settings panes (SCREENS.md section 8): header, rounded box, footer.
-struct FormGroup<Content: View>: View {
+struct FormGroup<Content: View, Footer: View>: View {
     var header: String?
     var footer: String?
     @ViewBuilder var content: Content
+    @ViewBuilder var footerView: Footer
+
+    init(header: String? = nil, footer: String? = nil, @ViewBuilder content: () -> Content) where Footer == EmptyView {
+        self.header = header
+        self.footer = footer
+        self.content = content()
+        self.footerView = EmptyView()
+    }
+
+    /// Footer made of several lines or styled text.
+    init(header: String? = nil, @ViewBuilder content: () -> Content, @ViewBuilder footerView: () -> Footer) {
+        self.header = header
+        self.footer = nil
+        self.content = content()
+        self.footerView = footerView()
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -18,6 +34,8 @@ struct FormGroup<Content: View>: View {
                 Text(footer).font(.system(size: 11.5)).foregroundStyle(Theme.label2).padding(.horizontal, 10)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            footerView
+                .font(.system(size: 11.5)).foregroundStyle(Theme.label2).padding(.horizontal, 10)
         }
     }
 }

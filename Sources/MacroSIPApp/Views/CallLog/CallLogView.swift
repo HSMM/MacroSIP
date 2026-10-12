@@ -85,7 +85,7 @@ struct CallLogView: View {
             Button(L.commonCancel, role: .cancel) {}
             Button(L.logClearConfirm, role: .destructive) { model.clearCallLog(); selection = nil }
         } message: {
-            Text(L.logClearBody(model.callLog.count))
+            Text(L.logClearBody(model.callLog.count) + " " + L.logClearBodyRecordings)
         }
     }
 
@@ -114,6 +114,11 @@ struct CallLogView: View {
                 .font(.system(size: 11.5))
                 .foregroundStyle(selected ? Color.white.opacity(0.8) : Theme.label2)
                 .lineLimit(1)
+                if let note = e.note, !note.isEmpty {
+                    Text(note).font(.system(size: 11))
+                        .foregroundStyle(selected ? Color.white.opacity(0.9) : Theme.orange)
+                        .lineLimit(1)
+                }
             }
             Spacer(minLength: 4)
             VStack(alignment: .trailing, spacing: 1) {

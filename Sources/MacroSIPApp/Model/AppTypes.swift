@@ -3,7 +3,7 @@ import MacroSIPCore
 
 enum MainTab: Hashable { case dialpad, contacts, callLog }
 
-enum SettingsTab: String, Hashable, CaseIterable { case general, accounts, audio, network, codecs }
+enum SettingsTab: String, Hashable, CaseIterable { case general, accounts, audio, network, codecs, recording, autoAnswer }
 
 enum LinkOpenMode: String, CaseIterable {
     case ask, callImmediately, fillOnly
@@ -65,4 +65,18 @@ func describe(_ error: Error) -> String {
     if let e = error as? EngineError { return e.description }
     if let e = error as? KeychainError { return "Keychain error: \(e)" }
     return error.localizedDescription
+}
+
+/// A recording in progress: the temporary WAV the engine writes and what the file name needs.
+struct RecordingJob {
+    var wav: URL
+    var startedAt: Date
+    var direction: CallDirection
+}
+
+/// Auto-answer armed for a ringing call (SCREENS.md 6.5): answers at `fireAt` unless cancelled.
+struct AutoAnswerCountdown: Equatable {
+    var start: Date
+    var fireAt: Date
+    var total: TimeInterval { fireAt.timeIntervalSince(start) }
 }

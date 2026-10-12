@@ -125,62 +125,27 @@ extension Engine {
     }
 
     /// Changes the call's record and announces it. Never creates a record: if the call
-    /// ended meanwhile, nothing is emitted and `.noSuchCall` is thrown.
-    private func updateRecord(_ id: CallID, _ change: @escaping @Sendable (inout CallRecord) -> Void) throws {
+    /// ended meanwhile, nothing is emitted and `.noSuchCall` is thrown. Rewires the
+    /// conference bridge unless `reconcile` is false (the caller does it once at the end).
+    func updateRecord(_ id: CallID, reconcile: Bool = true,
+                      _ change: @escaping @Sendable (inout CallRecord) -> Void) throws {
         guard let snap = CallSnapshot.read(id.raw), snap.serial == id.serial,
               bridge.updateCall(snap, mode: .updateOnly, mutate: change, event: { info, rec in
                   rec.announced ? .callChanged(info) : nil
               }) != nil
         else { throw EngineError.noSuchCall(id) }
-        reconcileMedia(id.raw)
-    }
-
-    /// Wires the call's conference port: remote -> speaker while media flows, microphone ->
-    /// remote unless muted. Idempotent; runs after every media change, mute and hold.
-    func reconcileMedia(_ slot: pjsua_call_id) {
-        guard isStarted, PJ.registerThread(),
-              let snap = CallSnapshot.read(slot), snap.confSlot != PJ.invalidID,
-              let record = bridge.record(slot), record.serial == snap.serial else { return }
-        let port = snap.confSlot
-        switch snap.mediaStatus {
-        case .active, .remoteHold:
-            connect(port, 0, true)
-            connect(0, port, !record.isMuted)
-        case .localHold, .none, .error:
-            connect(port, 0, false)
-            connect(0, port, false)
-        }
-    }
-
-    /// PJSIP 2.17 queues conference (dis)connections and applies them on the next audio
-    /// frame, so `cpjsua_conf_is_connected` can lag behind our own requests. An operation is
-    /// skipped only when both our last request and the applied state already match `on`;
-    /// otherwise it is issued (a duplicate is harmless: PJSIP logs and ignores it).
-    private func connect(_ src: pjsua_conf_port_id, _ sink: pjsua_conf_port_id, _ on: Bool) {
-        let wire = Wire(src: src, sink: sink)
-        let applied = cpjsua_conf_is_connected(src, sink) != 0
-        if requestedWiring[wire] == on && applied == on { return }
-        requestedWiring[wire] = on
-        PJ.warn(on ? pjsua_conf_connect(src, sink) : pjsua_conf_disconnect(src, sink),
-                "conference \(on ? "connect" : "disconnect") \(src)->\(sink)")
-    }
-
-    /// Applied conference wiring of a call (tests and diagnostics).
-    func wiring(of id: CallID) -> (toSpeaker: Bool, fromMic: Bool)? {
-        guard isStarted, PJ.registerThread(),
-              let snap = CallSnapshot.read(id.raw), snap.confSlot != PJ.invalidID else { return nil }
-        return (cpjsua_conf_is_connected(snap.confSlot, 0) != 0,
-                cpjsua_conf_is_connected(0, snap.confSlot) != 0)
+        if reconcile { reconcileMedia() }
     }
 
     // Follow-up work scheduled by the callbacks (asynchronously, see EngineBridge).
 
     func handleCallStateChanged() {
         reconcileTones()
+        finishEndedCalls()
     }
 
     func handleMediaStateChanged(_ slot: pjsua_call_id) {
-        reconcileMedia(slot)
+        reconcileMedia()
         reconcileTones()
     }
 
