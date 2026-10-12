@@ -18,6 +18,7 @@ phone does.
 </p>
 <p align="center">
   <img src="docs/screenshots/contacts-presence.png" width="300" alt="Contacts with presence">
+  <img src="docs/screenshots/account-popup.png" width="300" alt="Account pop-up">
   <img src="docs/screenshots/incoming-auto-answer.png" width="300" alt="Incoming call with auto-answer countdown">
 </p>
 
