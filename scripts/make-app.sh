@@ -13,7 +13,10 @@ case "$CONFIG" in
   *) echo "usage: $0 [debug|release]" >&2; exit 2 ;;
 esac
 
-VERSION="$(git -C "$ROOT" describe --tags --always 2>/dev/null | sed "s/^v//" || echo 0.0.0)"
+# Version: the nearest tag (26.0.0, see ADR 0011); before the first tag, Product.version from Product.swift.
+VERSION="$(git -C "$ROOT" describe --tags --abbrev=0 2>/dev/null || true)"
+[ -n "$VERSION" ] || VERSION="$(sed -n 's/.*static let version = "\([^"]*\)".*/\1/p' "$ROOT/Sources/MacroSIPCore/Product.swift")"
+[ -n "$VERSION" ] || VERSION="0.0.0"
 BUILD_NUMBER="$(git -C "$ROOT" rev-list --count HEAD 2>/dev/null || echo 1)"
 
 echo "==> swift build ($CONFIG)"
