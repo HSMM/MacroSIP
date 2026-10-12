@@ -113,9 +113,15 @@ extension AppModel {
         var new = old
         mutate(&new)
         // Do Not Disturb and the published status move together.
+        // The status from before DND is remembered and comes back when DND goes off (Away stays Away).
         if new.general.doNotDisturb != old.general.doNotDisturb {
-            if new.general.doNotDisturb { new.general.presenceStatus = .dnd }
-            else if new.general.presenceStatus == .dnd { new.general.presenceStatus = .available }
+            if new.general.doNotDisturb {
+                if old.general.presenceStatus != .dnd { prefs.set(old.general.presenceStatus.rawValue, forKey: "presenceBeforeDND") }
+                new.general.presenceStatus = .dnd
+            } else if new.general.presenceStatus == .dnd {
+                let before = prefs.string(forKey: "presenceBeforeDND").flatMap(PresenceStatus.init(rawValue:))
+                new.general.presenceStatus = (before == .away) ? .away : .available
+            }
         }
         guard new != old else { return }
         settings = new
@@ -124,6 +130,9 @@ extension AppModel {
         if new.general.launchAtLogin != old.general.launchAtLogin { applyLaunchAtLogin() }
         if new.codecOrder != old.codecOrder || new.enabledCodecs != old.enabledCodecs { applyCodecs() }
         if new.network != old.network { scheduleNetworkRestart() }
+        if new.recording.folder != old.recording.folder || new.recording.folderBookmark != old.recording.folderBookmark {
+            refreshRecordingFolder()
+        }
         if new.audio != old.audio { Task { await applyAudioSelection() } }
         let published: (AppSettings) -> PresenceStatus = { $0.general.doNotDisturb ? .dnd : $0.general.presenceStatus }
         if published(new) != published(old) { publishMyPresence() }

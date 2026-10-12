@@ -60,8 +60,8 @@ public actor Engine {
     var recordings: [CallID: Recording] = [:]
     /// Next local conference id (`CallRecord.conference`).
     var nextConferenceID: UInt64 = 1
-    /// Presence subscriptions: normalised URI -> pjsua buddy id.
-    var buddies: [String: pjsua_buddy_id] = [:]
+    /// Presence subscriptions by normalised URI.
+    var buddies: [String: Buddy] = [:]
 
     // Audio devices are remembered by name (indices change when devices come and go).
     var inputDeviceName: String?
@@ -71,6 +71,8 @@ public actor Engine {
 
     var ringtoneSource: RingtoneSource = .tone(.ringtone)
     var ringtone: TonePlayer?
+    /// Separate device the ringtone was opened on (nil = conference bridge).
+    var ringtoneDevice: Int?
     var ringback: TonePlayer?
     /// Ringing calls the user silenced; a new incoming call rings again.
     var silencedCalls: Set<CallID> = []

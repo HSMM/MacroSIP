@@ -6,18 +6,27 @@ import Foundation
 enum PresenceMapping {
     /// pjsua_buddy_status as seen by MacroSIP.
     enum Basic: Sendable, Equatable { case unknown, online, offline }
-    /// RPID activity (pjrpid_activity) of a buddy or of our own status.
-    enum Activity: Sendable, Equatable { case unknown, away, busy }
+    /// RPID activity of a buddy or of our own status. pjrpid knows busy and away;
+    /// `onThePhone` comes from the NOTIFY body (`<rpid:on-the-phone/>`, Asterisk/FreePBX).
+    enum Activity: Sendable, Equatable { case unknown, away, busy, onThePhone }
+
+    /// Notes that mean "busy" when the activity does not say so (Asterisk sends
+    /// "On the phone" and "Ringing" with basic open; ours is "Do Not Disturb").
+    static let busyNotes: Set<String> = ["on the phone", "busy", "ringing", "do not disturb"]
 
     /// Watched contact -> PresenceStatus. Offline or unknown basic status, and a terminated
     /// subscription (rejected, expired, network error), are `.offline`. Online maps the RPID
-    /// activity: busy -> `.dnd`, away -> `.away`, anything else -> `.available`.
-    static func status(basic: Basic, activity: Activity, subscriptionTerminated: Bool) -> PresenceStatus {
+    /// activity: busy or on-the-phone -> `.dnd`, away -> `.away`; with no known activity a
+    /// busy note (case-insensitive, `busyNotes`) -> `.dnd`, anything else -> `.available`.
+    static func status(basic: Basic, activity: Activity, note: String? = nil,
+                       subscriptionTerminated: Bool) -> PresenceStatus {
         guard !subscriptionTerminated, basic == .online else { return .offline }
         switch activity {
-        case .busy: return .dnd
+        case .busy, .onThePhone: return .dnd
         case .away: return .away
-        case .unknown: return .available
+        case .unknown:
+            let n = note?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? ""
+            return busyNotes.contains(n) ? .dnd : .available
         }
     }
 
@@ -55,8 +64,12 @@ enum PresenceMapping {
 
 /// Sendable copy of `cpjsua_buddy_snapshot`.
 struct BuddySnapshot: Sendable {
+    var token: UInt64
     var uri: String
-    var presence: PresenceStatus
+    var basic: PresenceMapping.Basic
+    var activity: PresenceMapping.Activity
+    var note: String
+    var terminated: Bool
 
     /// Reads the buddy from pjsua. Must run on a pj-registered thread.
     static func read(_ id: pjsua_buddy_id) -> BuddySnapshot? {
@@ -80,48 +93,87 @@ struct BuddySnapshot: Sendable {
         case PJRPID_ACTIVITY_AWAY: activity = .away
         default: activity = .unknown
         }
-        return BuddySnapshot(
-            uri: PJ.string(tuple: b.uri),
-            presence: PresenceMapping.status(basic: basic, activity: activity,
-                                             subscriptionTerminated: b.sub_state == PJSIP_EVSUB_STATE_TERMINATED))
+        return BuddySnapshot(token: UInt64(b.token), uri: PJ.string(tuple: b.uri), basic: basic,
+                             activity: activity, note: PJ.string(tuple: b.note),
+                             terminated: b.sub_state == PJSIP_EVSUB_STATE_TERMINATED)
+    }
+
+    /// The token MacroSIP stored in the buddy's user data, nil for an invalid buddy.
+    static func token(_ id: pjsua_buddy_id) -> UInt64? {
+        guard pjsua_buddy_is_valid(id) != 0 else { return nil }
+        let t = UInt64(UInt(bitPattern: pjsua_buddy_get_user_data(id)))
+        return t == 0 ? nil : t
     }
 }
 
 // MARK: - Engine API
 
 extension Engine {
+    /// A watched contact: pjsua buddy id and the token in its user data (events are matched
+    /// by the token, never by the URI).
+    struct Buddy: Sendable {
+        var id: pjsua_buddy_id
+        var token: UInt64
+    }
+
     /// Watches a contact's presence (SUBSCRIBE to `presence`, pjsua buddy). `uri` may lack
     /// the `sip:` scheme. Subscribing the same URI again is a no-op. Updates arrive as
     /// `.buddyPresence(contactURI:, status)` with `contactURI` exactly as passed here (the
-    /// first time); a rejected or ended subscription reports `.offline` (pjsua retries
-    /// later on its own). The subscription uses the account pjsua picks for the URI (the
-    /// one whose domain matches, else the default account); with no account at all nothing
-    /// is sent until the next pjsua presence refresh. Subscriptions do not survive `stop()`.
+    /// first time); a rejected or ended subscription reports `.offline`. The subscription
+    /// uses the account pjsua picks for the URI (the one whose domain matches, else the
+    /// default account). Failed subscriptions are retried when that account is updated or
+    /// becomes registered (pjsua itself retries after 300 s). `.invalidArgument` beyond
+    /// PJSUA_MAX_BUDDIES (256). Subscriptions do not survive `stop()`.
     public func subscribePresence(uri: String) throws {
         try requireStarted()
         guard let key = PresenceMapping.normalizedURI(uri), pjsua_verify_sip_url(key) == PJ.success else {
             throw EngineError.invalidArgument("presence URI \"\(uri)\"")
         }
         guard buddies[key] == nil else { return }
+        // pjsua_buddy_add asserts (aborts a debug build) when the list is full.
+        let limit = cpjsua_max_buddies()
+        guard pjsua_get_buddy_count() < limit else {
+            throw EngineError.invalidArgument("too many presence subscriptions (limit \(limit))")
+        }
         // Watch first: pjsua may report the first state from inside pjsua_buddy_add.
-        bridge.watch(key, reportedAs: uri.trimmingCharacters(in: .whitespacesAndNewlines))
-        var buddy = PJ.invalidID
-        let status = cpjsua_buddy_add(key, &buddy)
+        let token = bridge.allocateSerial()
+        bridge.watch(token: token, reportedAs: uri.trimmingCharacters(in: .whitespacesAndNewlines))
+        var id = PJ.invalidID
+        let status = cpjsua_buddy_add(key, token, &id)
         guard status == PJ.success else {
-            bridge.unwatch(key)
+            bridge.unwatch(token: token)
             throw PJ.error(status, "subscribe presence of \(key)")
         }
-        buddies[key] = buddy
+        buddies[key] = Buddy(id: id, token: token)
     }
 
     /// Ends the subscription (un-SUBSCRIBE) and forgets the URI. Unknown URIs are a no-op.
-    /// No `.buddyPresence` event follows for this URI.
+    /// No `.buddyPresence` event follows for this URI. If pjsua cannot delete the buddy the
+    /// subscription stays known (and watched) and the error is thrown.
     public func unsubscribePresence(uri: String) throws {
         try requireStarted()
         guard let key = PresenceMapping.normalizedURI(uri), let buddy = buddies[key] else { return }
-        bridge.unwatch(key)
+        // pjsua_buddy_del takes the dialog lock and clears the subscription's module data,
+        // so no callback for this buddy runs after it returns.
+        try PJ.check(pjsua_buddy_del(buddy.id), "unsubscribe presence of \(key)")
         buddies[key] = nil
-        try PJ.check(pjsua_buddy_del(buddy), "unsubscribe presence of \(key)")
+        bridge.unwatch(token: buddy.token)
+    }
+
+    /// Restarts the subscriptions pjsua sends through this account that are not active
+    /// (failed or never started); active ones are left alone. Runs after `updateAccount` and
+    /// when the account becomes registered.
+    func refreshPresenceSubscriptions(accountIndex index: pjsua_acc_id) {
+        guard isStarted, PJ.registerThread(), !buddies.isEmpty else { return }
+        for (key, buddy) in buddies.sorted(by: { $0.key < $1.key }) {
+            let account = key.withCString { p -> pjsua_acc_id in
+                var uri = cpjsua_str(p)
+                return pjsua_acc_find_for_outgoing(&uri)
+            }
+            guard account == index else { continue }
+            // No-op when the subscription is active; subscribes at once otherwise.
+            PJ.warn(pjsua_buddy_update_pres(buddy.id), "resubscribe presence of \(key)")
+        }
     }
 
     /// Publishes our status (PUBLISH with PIDF/RPID, and NOTIFY to anyone subscribed to us)
@@ -147,7 +199,7 @@ extension Engine {
         switch p.activity {
         case .unknown: activity = PJRPID_ACTIVITY_UNKNOWN
         case .away: activity = PJRPID_ACTIVITY_AWAY
-        case .busy: activity = PJRPID_ACTIVITY_BUSY
+        case .busy, .onThePhone: activity = PJRPID_ACTIVITY_BUSY
         }
         let rc: pj_status_t
         if let note = p.note {

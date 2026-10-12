@@ -204,3 +204,94 @@ enum CallInfoHeader {
         return n >= 0 ? Int(n) : nil
     }
 }
+
+/// Where a SIP message came from. Used to decide whether an INVITE comes from the account's
+/// server (Call-Info answer-after is honoured only then).
+struct SignallingSource: Equatable, Sendable, CustomStringConvertible {
+    var address: String
+    var port: Int
+    var transport: TransportKind?
+
+    init(address: String, port: Int, transport: TransportKind?) {
+        self.address = address
+        self.port = port
+        self.transport = transport
+    }
+
+    /// Source of a received message (rdata->pkt_info and its transport).
+    static func read(_ rdata: UnsafePointer<pjsip_rx_data>?) -> SignallingSource? {
+        guard let rdata else { return nil }
+        var s = cpjsua_pkt_source()
+        guard cpjsua_rdata_source(rdata, &s) == PJ.success else { return nil }
+        let address = PJ.string(tuple: s.addr)
+        guard !address.isEmpty else { return nil }
+        let kind: TransportKind?
+        switch UInt32(bitPattern: s.transport) {
+        case PJSIP_TRANSPORT_UDP.rawValue: kind = .udp
+        case PJSIP_TRANSPORT_TCP.rawValue: kind = .tcp
+        case PJSIP_TRANSPORT_TLS.rawValue: kind = .tls
+        default: kind = nil
+        }
+        return SignallingSource(address: address, port: Int(s.port), transport: kind)
+    }
+
+    /// The same peer: same transport and address (compared as IP addresses); over UDP also the
+    /// same port. TCP/TLS servers may open a new connection from another port, so the port is
+    /// not compared there.
+    func isSamePeer(as other: SignallingSource) -> Bool {
+        guard transport != nil, transport == other.transport,
+              SignallingSource.canonical(address) == SignallingSource.canonical(other.address) else { return false }
+        return transport != .udp || port == other.port
+    }
+
+    var description: String {
+        let host = address.contains(":") ? "[\(address)]" : address
+        return "\(host):\(port)/\(transport?.rawValue ?? "?")"
+    }
+
+    /// IPv4/IPv6 literal in a comparable form; other strings lower-cased.
+    static func canonical(_ raw: String) -> String {
+        let a = raw.trimmingCharacters(in: CharacterSet(charactersIn: "[] "))
+        var v4 = in_addr()
+        if inet_pton(AF_INET, a, &v4) == 1 { return "v4:\(v4.s_addr)" }
+        var v6 = in6_addr()
+        if inet_pton(AF_INET6, a, &v6) == 1 {
+            return "v6:" + withUnsafeBytes(of: &v6) { $0.map { String(format: "%02x", $0) }.joined() }
+        }
+        return a.lowercased()
+    }
+
+    static func isIPLiteral(_ raw: String) -> Bool {
+        let c = canonical(raw)
+        return c.hasPrefix("v4:") || c.hasPrefix("v6:")
+    }
+
+    /// The account's outbound proxy as a peer, when it is given as an IP literal
+    /// ("sip:192.0.2.1:5070;lr", "[2001:db8::1]"); default port 5060 (5061 for TLS). Host
+    /// names give nil: the REGISTER answer of the proxy is trusted instead.
+    static func proxy(_ raw: String?, transport: TransportKind) -> SignallingSource? {
+        var s = raw?.trimmingCharacters(in: .whitespaces) ?? ""
+        if let lt = s.firstIndex(of: "<"), let gt = s[lt...].firstIndex(of: ">") {
+            s = String(s[s.index(after: lt)..<gt])
+        }
+        for scheme in ["sips:", "sip:"] where s.lowercased().hasPrefix(scheme) {
+            s.removeFirst(scheme.count)
+            break
+        }
+        if let semi = s.firstIndex(of: ";") { s = String(s[..<semi]) }
+        if let at = s.lastIndex(of: "@") { s = String(s[s.index(after: at)...]) }
+        let defaultPort = transport == .tls ? 5061 : 5060
+        var host = s
+        var port = defaultPort
+        if s.hasPrefix("["), let close = s.firstIndex(of: "]") {
+            host = String(s[s.index(after: s.startIndex)..<close])
+            let rest = s[s.index(after: close)...]
+            if rest.hasPrefix(":") { port = Int(rest.dropFirst()) ?? defaultPort }
+        } else if s.filter({ $0 == ":" }).count == 1, let colon = s.firstIndex(of: ":") {
+            host = String(s[..<colon])
+            port = Int(s[s.index(after: colon)...]) ?? defaultPort
+        }
+        guard !host.isEmpty, isIPLiteral(host) else { return nil }
+        return SignallingSource(address: host, port: port, transport: transport)
+    }
+}

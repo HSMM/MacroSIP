@@ -135,6 +135,13 @@ enum SelfTest {
             step("recording: \(wav.lastPathComponent) \(header.fileSize) bytes, \(header.sampleRate) Hz, "
                  + "\(header.dataSize) data bytes, RMS \(header.rms) (remote tone captured)")
 
+            // What the app does next: WAV -> M4A (AAC).
+            let m4a = wav.deletingPathExtension().appendingPathExtension("m4a")
+            try await RecordingConverter.convert(wav: wav, to: m4a)
+            let m4aSize = (try? FileManager.default.attributesOfItem(atPath: m4a.path))?[.size] as? Int ?? 0
+            guard m4aSize > 1_000 else { throw Failure(description: "M4A \(m4a.lastPathComponent): \(m4aSize) bytes") }
+            step("M4A conversion: \(m4a.lastPathComponent) \(m4aSize) bytes")
+
             // Conference: hold the first call (as the UI does), dial the second, merge.
             try await engine.setHold(id, true)
             _ = try await waitFor(engine, id, "held before second call", timeout: 5) { $0.state == .held }
@@ -172,21 +179,34 @@ enum SelfTest {
             step("conference: 3 s, leg 1 rx +\(e1.rxPackets - s1.rxPackets) tx +\(e1.txPackets - s1.txPackets), "
                  + "leg 2 rx +\(e2.rxPackets - s2.rxPackets) tx +\(e2.txPackets - s2.txPackets); both inConference")
 
-            try await engine.split(id2)
+            // Split the recorded leg: the recording belongs to the conference and moves to the
+            // remaining leg (same file, which keeps growing).
+            try await engine.split(id)
             for leg in [id, id2] {
                 _ = try await waitFor(engine, leg, "out of the conference after split", timeout: 3) { !$0.inConference }
             }
-            step("split \(id2): both calls report inConference == false")
+            _ = try await waitFor(engine, id2, "recording moved to the remaining leg", timeout: 3) { $0.isRecording }
+            _ = try await waitFor(engine, id, "recording left the split leg", timeout: 3) { !$0.isRecording }
+            let sizeBefore = fileSize(wavConf)
+            try await Task.sleep(for: .milliseconds(1500))
+            let sizeAfter = fileSize(wavConf)
+            guard sizeAfter > sizeBefore + 16_000 else {
+                throw Failure(description: "conference WAV stopped growing after the move: \(sizeBefore) -> \(sizeAfter) bytes")
+            }
+            step("split recorded leg \(id): both out of the conference, recording moved to \(id2), "
+                 + "WAV grew \(sizeBefore) -> \(sizeAfter) bytes in 1.5 s")
 
-            // Hang up everything; the recorded call's .callEnded must say isRecording and the
-            // WAV must already be complete when it arrives.
+            // Hang up everything; the recording's current owner reports isRecording in its
+            // .callEnded and the WAV is complete when that event arrives.
             await engine.hangupAll()
-            let ended = try await waitForEnd(recorder, id, timeout: 5)
-            _ = try await waitForEnd(recorder, id2, timeout: 5)
-            guard ended.0.isRecording else { throw Failure(description: "callEnded of the recorded call: isRecording false") }
+            let ended = try await waitForEnd(recorder, id2, timeout: 5)
+            let endedOld = try await waitForEnd(recorder, id, timeout: 5)
+            guard ended.0.isRecording, !endedOld.0.isRecording else {
+                throw Failure(description: "callEnded isRecording: owner \(ended.0.isRecording), old owner \(endedOld.0.isRecording)")
+            }
             let confHeader = try checkWAV(wavConf, minBytes: 50_000)
             step("hung up all: callEnded \(describe(ended.0.state)), duration \(String(format: "%.1f", ended.1)) s, "
-                 + "isRecording; conference WAV \(confHeader.fileSize) bytes finalised")
+                 + "isRecording on \(id2) only; conference WAV \(confHeader.fileSize) bytes finalised")
 
             try await engine.unsubscribePresence(uri: options.target)
             await engine.stop()
@@ -267,6 +287,10 @@ enum SelfTest {
             throw Failure(description: "pjsua CLI on port \(port): write errno \(errno)")
         }
         try await Task.sleep(for: .milliseconds(300))      // let pjsua run it before we hang up
+    }
+
+    static func fileSize(_ url: URL) -> Int {
+        (try? FileManager.default.attributesOfItem(atPath: url.path))?[.size] as? Int ?? 0
     }
 
     struct WAVHeader {

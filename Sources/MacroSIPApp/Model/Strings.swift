@@ -373,7 +373,18 @@ enum L {
     static func recordingFileName(_ sample: String) -> String { String(localized: "settings.recording.fileName", defaultValue: "File name: \(sample)") }
     static var recordingShowFolder: String { String(localized: "settings.recording.showFolder", defaultValue: "Show Recordings Folder") }
     static var recordingOpenFinder: String { String(localized: "settings.recording.openFinder", defaultValue: "Open in Finder") }
-    static func bannerRecordingFailed(_ reason: String) -> String { String(localized: "banner.recording.failed", defaultValue: "Recording could not be saved: \(reason)") }
+    static func bannerRecordingKeptAsWAV(_ reason: String, _ file: String) -> String {
+        String(localized: "banner.recording.keptAsWAV", defaultValue: "Recording could not be converted (\(reason)). It was saved as \(file) in the recordings folder.")
+    }
+    static var autoAnswerServerOnly: String {
+        String(localized: "settings.autoAnswer.honourServer.note", defaultValue: "Only requests from your own server are honoured.")
+    }
+    static func logNoteText(_ code: String) -> String {
+        switch code {
+        case CallLogNote.callLimit: return logNoteCallLimit
+        default: return code
+        }
+    }
 
     // MARK: menu bar status, account editor additions
     static var menuStatusAvailable: String { String(localized: "menu.status.available", defaultValue: "Available") }

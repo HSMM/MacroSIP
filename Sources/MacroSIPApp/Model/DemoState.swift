@@ -303,14 +303,16 @@ enum DemoState {
             published = await mock?.publishedPresence[officeID]
             check("My Status DND turns DND on and publishes dnd", model.doNotDisturb && published == .dnd)
             model.toggleDND()
-            check("DND off returns to available", !model.doNotDisturb && model.settings.general.presenceStatus == .available)
+            check("DND off restores the status from before (Away stays Away)", !model.doNotDisturb && model.settings.general.presenceStatus == .away,
+                  "\(model.settings.general.presenceStatus)")
             await wait(0.3)
             published = await mock?.publishedPresence[officeID]
-            check("available published", published == .available)
+            check("away published again", published == .away)
             model.toggleDND()
             check("DND on sets status dnd", model.doNotDisturb && model.settings.general.presenceStatus == .dnd)
             model.toggleDND()
-            check("status persisted", model.settingsStore.load().general.presenceStatus == .available)
+            model.setMyStatus(.available)
+            check("status persisted", model.settingsStore.load().general.presenceStatus == .available && !model.doNotDisturb)
         }
 
         // conference, split, recording
@@ -322,6 +324,16 @@ enum DemoState {
         model.mergeCalls()
         await wait(0.3)
         check("merged into a conference", model.conferenceCalls.count == 2 && model.activeCalls.count == 2 && !model.canMerge)
+        // a conference is held and resumed as one unit
+        if let leg = model.conferenceCalls.first {
+            model.toggleHold(leg)
+            await wait(0.4)
+            check("holding a conference holds every leg", model.conferenceCalls.count == 2 && model.conferenceCalls.allSatisfy(\.isHeldCall))
+            if let held = model.conferenceCalls.last { model.switchTo(held) }
+            await wait(0.4)
+            check("resuming one leg resumes the whole conference",
+                  model.conferenceCalls.count == 2 && model.conferenceCalls.allSatisfy { !$0.isHeldCall } && model.activeCalls.count == 2)
+        }
         if let c = model.conferenceCalls.first {
             let savedBefore = model.savedRecordings.count
             model.toggleRecording(c)
@@ -351,7 +363,7 @@ enum DemoState {
         if let url = model.savedRecordings.last {
             let size = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? 0
             check("m4a is in the recordings folder and named per 8.6",
-                  size > 1024 && url.deletingLastPathComponent() == model.recordingsFolderForDisplay.standardizedFileURL
+                  size > 1024 && url.deletingLastPathComponent() == model.recordingFolderURL.standardizedFileURL
                   && url.lastPathComponent.hasSuffix("(out).m4a"), "\(url.path) \(size)")
         }
         if let c = model.activeCall { model.toggleRecording(c) }      // recording a second time, ended by the hang-up
@@ -371,6 +383,21 @@ enum DemoState {
         await wait(1.5)
         model.updateSettings { $0.recording.recordAllCalls = false }
         check("record-all call was saved", model.savedRecordings.count == saved + 3, "\(model.savedRecordings.count)")
+
+        // record-all with a merge: the conference keeps one recording
+        model.updateSettings { $0.recording.recordAllCalls = true }
+        model.placeCall(to: "303")
+        await wait(2.8)
+        model.placeCall(to: "304")
+        await wait(2.8)
+        check("both calls record on connect", model.liveCalls.filter(\.isRecording).count == 2, "\(model.liveCalls.filter(\.isRecording).count)")
+        model.mergeCalls()
+        await wait(1.8)
+        check("after the merge only the primary leg records", model.conferenceCalls.filter(\.isRecording).count == 1
+              && model.conferenceCalls.first(where: \.isRecording)?.id.serial == model.conferenceCalls.map(\.id.serial).min())
+        Task { await model.engine.hangupAll() }
+        await wait(1.8)
+        model.updateSettings { $0.recording.recordAllCalls = false }
 
         // auto-answer
         model.updateSettings { $0.autoAnswer = AutoAnswerSettings(mode: .contactsOnly, delaySeconds: 1, honourCallInfo: true) }
@@ -396,6 +423,18 @@ enum DemoState {
         await wait(2.3)
         check("cancel keeps the call ringing", model.incomingCall?.remote.number == "102" && model.activeCall == nil)
         if let c = model.incomingCall { model.decline(c.id) }
+        await wait(0.3)
+        model.updateSettings { $0.autoAnswer.delaySeconds = 2 }
+        await mock?.simulateIncoming(name: nil, number: "102", account: officeID)
+        await wait(0.3)
+        await mock?.simulateIncoming(name: nil, number: "555", account: officeID)
+        await wait(0.3)
+        check("a second ringing call leaves the first countdown alone", model.autoAnswer.count == 1 && model.ringingCalls.count == 2)
+        await wait(2.2)
+        check("the first call is auto-answered, the second keeps ringing",
+              model.activeCall?.remote.number == "102" && model.incomingCall?.remote.number == "555", "\(model.calls.map(\.remote.number))")
+        Task { await model.engine.hangupAll() }
+        await wait(0.6)
         model.updateSettings { $0.autoAnswer = AutoAnswerSettings() }
         await wait(0.3)
 
@@ -407,7 +446,7 @@ enum DemoState {
         await mock?.simulateIncoming(name: "Late Caller", number: "777", account: officeID)
         await wait(0.3)
         check("engine-rejected fifth call is noted in the log",
-              model.callLog.first { $0.remoteNumber == "777" }?.note == L.logNoteCallLimit && model.calls.count == 4,
+              model.callLog.first { $0.remoteNumber == "777" }?.note == CallLogNote.callLimit && model.calls.count == 4,
               "\(String(describing: model.callLog.first?.note))")
         Task { await model.engine.hangupAll() }
         await wait(0.5)

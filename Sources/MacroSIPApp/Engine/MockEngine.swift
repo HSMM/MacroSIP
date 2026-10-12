@@ -231,11 +231,12 @@ actor MockEngine: SIPEngine {
         }
     }
 
-    /// The leg goes back to a held call; a conference that is left with one leg dissolves.
+    /// The leg leaves the conference (the real engine does not hold it; the app does).
+    /// A conference that is left with one leg dissolves.
     func split(_ id: CallID) throws {
         guard let c = callTable[id] else { throw EngineError.noSuchCall(id) }
         guard c.inConference else { throw EngineError.invalidArgument("call is not in a conference") }
-        try change(id) { $0.inConference = false; $0.isOnHold = true; $0.state = .held }
+        try change(id) { $0.inConference = false }
         let rest = order.filter { callTable[$0]?.inConference == true }
         if rest.count == 1, let last = rest.first { try change(last) { $0.inConference = false } }
     }

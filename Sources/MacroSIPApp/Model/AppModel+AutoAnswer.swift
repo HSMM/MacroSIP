@@ -4,11 +4,14 @@ import MacroSIPCore
 /// Auto-answer (SCREENS.md 6.5 and 8.7). The decision is `AutoAnswerPolicy`; this arms the countdown.
 extension AppModel {
     func armAutoAnswer(for call: CallInfo) {
+        // Only the call the user sees ringing gets a countdown; a second ringing call neither cancels
+        // nor replaces it (only a connected or held call blocks auto-answer).
+        guard !calls.contains(where: { $0.id != call.id && $0.isRinging }) else { return }
         guard let delay = AutoAnswerPolicy.decide(
             call: call,
             isContact: contact(forNumber: call.remote.number) != nil,
             settings: settings.autoAnswer,
-            onAnotherCall: calls.contains { $0.id != call.id },
+            onAnotherCall: liveCalls.contains { $0.id != call.id },
             doNotDisturb: doNotDisturb)
         else { return }
         if delay <= 0 { answer(call.id); return }
@@ -22,7 +25,7 @@ extension AppModel {
             self.clearAutoAnswer(id)
             // Something else started in the meantime: do not take the call over the user's head.
             guard self.calls.contains(where: { $0.id == id && $0.isRinging }),
-                  !self.calls.contains(where: { $0.id != id }) else { return }
+                  !self.liveCalls.contains(where: { $0.id != id }) else { return }
             self.answer(id)
         }
     }

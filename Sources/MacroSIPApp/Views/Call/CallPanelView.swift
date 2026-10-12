@@ -151,7 +151,7 @@ struct MultiCallView: View {
 
     /// "CONFERENCE · 3 PARTICIPANTS" and the conference timer.
     private func conferenceHeader(_ legs: [CallInfo]) -> some View {
-        let started = legs.compactMap(\.startedAt).min()
+        let started = model.conferenceSince
         return HStack {
             Text(L.conferenceHeader(legs.count).uppercased())
             Spacer()
@@ -212,14 +212,15 @@ struct CallRow: View {
 
     @ViewBuilder
     private var subtitle: some View {
-        if call.inConference {
+        if call.inConference && !call.isHeldCall {
             Text(L.callsInConference).foregroundStyle(Theme.blue).fontWeight(.medium)
         } else if isWaiting {
             Text(L.callsWaitingTransfer).foregroundStyle(Theme.orange).fontWeight(.medium)
         } else if isConsulting {
             TickingText { L.callsConsulting(elapsedText(call, at: $0)) }.foregroundStyle(Theme.blue).fontWeight(.medium)
         } else if call.isHeldCall {
-            TickingText { L.callsHeld(elapsedText(call, at: $0)) }.foregroundStyle(Theme.orange).fontWeight(.medium)
+            TickingText { (call.inConference ? L.callsHeld(L.callsInConference) : L.callsHeld(elapsedText(call, at: $0))) }
+                .foregroundStyle(Theme.orange).fontWeight(.medium)
         } else if call.isEstablished {
             TickingText { L.callsActive(elapsedText(call, at: $0)) }.foregroundStyle(Theme.blue).fontWeight(.medium)
         } else {

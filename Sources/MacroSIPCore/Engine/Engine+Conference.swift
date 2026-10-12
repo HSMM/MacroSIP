@@ -67,13 +67,15 @@ extension Engine {
 
     /// Takes the call out of its conference. It stays connected to the microphone and the
     /// speaker (the UI holds it if it wants). When only one leg remains, that leg leaves the
-    /// conference too. Both get `.callChanged` with `inConference == false`.
+    /// conference too. Both get `.callChanged` with `inConference == false`. A conference
+    /// recording owned by the split leg moves to a remaining leg (see `rehomeRecordings`).
     public func split(_ id: CallID) throws {
         let slot = try liveSlot(id)
         guard let rec = bridge.record(slot), rec.serial == id.serial else { throw EngineError.noSuchCall(id) }
         guard rec.conference != nil else { throw EngineError.invalidArgument("call \(id) is not in a conference") }
         defer { reconcileMedia() }
         try updateRecord(id, reconcile: false) { $0.conference = nil }
+        rehomeRecordings()                   // while the other legs are still in the conference
         dissolveSingleLegConferences()
     }
 
@@ -102,6 +104,7 @@ extension Engine {
     /// media, mute, hold, conference and recording change.
     func reconcileMedia() {
         guard isStarted, PJ.registerThread() else { return }
+        rehomeRecordings()
 
         struct Leg {
             var id: CallID

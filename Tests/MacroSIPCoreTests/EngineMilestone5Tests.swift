@@ -64,6 +64,115 @@ func sendUDP(_ text: (UInt16) -> String, to port: Int) throws {
     guard sent == bytes.count else { throw EngineError.unsupported("sendto") }
 }
 
+/// A presence server on 127.0.0.1: accepts one SUBSCRIBE (200) and sends NOTIFYs with the
+/// PIDF bodies the test asks for, in that subscription's dialog.
+final class PresenceStub: Sendable {
+    let port: UInt16
+    private let fd: Int32
+    private let stopped = OSAllocatedUnfairLock(initialState: false)
+    /// From the SUBSCRIBE: (from, to, callID, contact URI, subscriber address port).
+    private let dialog = OSAllocatedUnfairLock<(from: String, to: String, callID: String, target: String, peer: UInt16)?>(initialState: nil)
+    private let cseq = OSAllocatedUnfairLock(initialState: 0)
+
+    init() throws {
+        let sock = socket(AF_INET, SOCK_DGRAM, 0)
+        guard sock >= 0 else { throw EngineError.unsupported("socket") }
+        var addr = sockaddr_in()
+        addr.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
+        addr.sin_family = sa_family_t(AF_INET)
+        addr.sin_addr.s_addr = inet_addr("127.0.0.1")
+        var len = socklen_t(MemoryLayout<sockaddr_in>.size)
+        let ok = withUnsafeMutablePointer(to: &addr) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                bind(sock, $0, len) == 0 && getsockname(sock, $0, &len) == 0
+            }
+        }
+        guard ok else { close(sock); throw EngineError.unsupported("bind") }
+        var tv = timeval(tv_sec: 0, tv_usec: 100_000)
+        setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
+        fd = sock
+        port = UInt16(bigEndian: addr.sin_port)
+        Thread.detachNewThread { [self] in self.serve() }
+    }
+
+    var subscribed: Bool { dialog.withLock { $0 != nil } }
+
+    func stop() { stopped.withLock { $0 = true } }
+
+    private func serve() {
+        var buf = [UInt8](repeating: 0, count: 65_536)
+        while !stopped.withLock({ $0 }) {
+            var from = sockaddr_in()
+            var fromLen = socklen_t(MemoryLayout<sockaddr_in>.size)
+            let n = withUnsafeMutablePointer(to: &from) {
+                $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { recvfrom(fd, &buf, buf.count, 0, $0, &fromLen) }
+            }
+            guard n > 0 else { continue }
+            let request = String(decoding: buf[0..<n], as: UTF8.self)
+            guard request.hasPrefix("SUBSCRIBE ") else { continue }
+            var headers: [String: String] = [:]
+            var response = "SIP/2.0 200 OK\r\n"
+            for line in request.components(separatedBy: "\r\n") {
+                guard let colon = line.firstIndex(of: ":") else { continue }
+                let name = line[..<colon].lowercased()
+                let value = line[line.index(after: colon)...].trimmingCharacters(in: .whitespaces)
+                if headers[name] == nil { headers[name] = value }
+                switch name {
+                case "via", "from", "call-id", "cseq": response += line + "\r\n"
+                case "to": response += line + ";tag=pres\r\n"
+                default: break
+                }
+            }
+            response += "Contact: <sip:buddy@127.0.0.1:\(port)>\r\nExpires: 600\r\nContent-Length: 0\r\n\r\n"
+            send(response, to: UInt16(bigEndian: from.sin_port))
+            var target = headers["contact"] ?? ""
+            if let lt = target.firstIndex(of: "<"), let gt = target.firstIndex(of: ">") {
+                target = String(target[target.index(after: lt)..<gt])
+            }
+            let d = (from: headers["from"] ?? "", to: (headers["to"] ?? "") + ";tag=pres",
+                     callID: headers["call-id"] ?? "", target: target, peer: UInt16(bigEndian: from.sin_port))
+            dialog.withLock { $0 = d }
+        }
+        close(fd)
+    }
+
+    /// NOTIFY in the subscription's dialog with an Asterisk-style PIDF body.
+    func notify(activity: String?, note: String?, open: Bool = true) {
+        guard let d = dialog.withLock({ $0 }) else { return }
+        let n = cseq.withLock { $0 += 1; return $0 }
+        var body = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            + "<presence entity=\"sip:buddy@127.0.0.1\" xmlns=\"urn:ietf:params:xml:ns:pidf\" "
+            + "xmlns:dm=\"urn:ietf:params:xml:ns:pidf:data-model\" xmlns:rpid=\"urn:ietf:params:xml:ns:pidf:rpid\">\n"
+        if let note { body += " <note>\(note)</note>\n" }
+        body += " <tuple id=\"buddy\"><status><basic>\(open ? "open" : "closed")</basic></status>"
+            + "<contact priority=\"1\">sip:buddy@127.0.0.1</contact></tuple>\n"
+        if let activity { body += " <dm:person><rpid:activities><rpid:\(activity)/></rpid:activities></dm:person>\n" }
+        body += "</presence>\n"
+        let msg = "NOTIFY \(d.target) SIP/2.0\r\n"
+            + "Via: SIP/2.0/UDP 127.0.0.1:\(port);rport;branch=z9hG4bK-notify-\(n)-\(UUID().uuidString.prefix(8))\r\n"
+            + "Max-Forwards: 70\r\n"
+            + "From: \(d.to)\r\nTo: \(d.from)\r\nCall-ID: \(d.callID)\r\nCSeq: \(n) NOTIFY\r\n"
+            + "Contact: <sip:buddy@127.0.0.1:\(port)>\r\nEvent: presence\r\n"
+            + "Subscription-State: active;expires=600\r\nContent-Type: application/pidf+xml\r\n"
+            + "Content-Length: \(body.utf8.count)\r\n\r\n" + body
+        send(msg, to: d.peer)
+    }
+
+    private func send(_ text: String, to port: UInt16) {
+        var dest = sockaddr_in()
+        dest.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
+        dest.sin_family = sa_family_t(AF_INET)
+        dest.sin_addr.s_addr = inet_addr("127.0.0.1")
+        dest.sin_port = in_port_t(port.bigEndian)
+        let bytes = Array(text.utf8)
+        _ = withUnsafePointer(to: &dest) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                sendto(fd, bytes, bytes.count, 0, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
+            }
+        }
+    }
+}
+
 // MARK: - tests that run pjsua (part of the serialized "Engine (pjsua)" suite)
 
 extension EngineTests {
@@ -203,36 +312,61 @@ extension EngineTests {
             _ = try await engine.stopRecording(out1)
         }
 
-        // Split: with two legs both leave the conference; the split leg keeps mic and speaker.
+        // Split the recording leg: both leave the conference (two legs), the split leg keeps
+        // mic and speaker, and the recording moves to the remaining leg.
+        let wavSplit = tempWAV("split.wav")
+        try await engine.startRecording(out2, to: wavSplit)
         try await engine.split(out2)
         #expect(await waitUntil {
             let a = await call(out1), b = await call(out2)
             return a?.inConference == false && b?.inConference == false
+                && a?.isRecording == true && b?.isRecording == false
         })
         #expect(await linked(out1, out2, false))
         #expect(await wired(out2, true, true))
+        #expect(log.all.contains { if case let .callChanged(c) = $0 { return c.id == out1 && c.isRecording }; return false })
+        #expect(await waitUntil(timeout: 2) { await engine.recorderHears(out1, from: out1) })
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(try await engine.stopRecording(out1) == wavSplit)
+        #expect(WAVHeader.read(wavSplit)?.isFinal == true)
 
-        // A leg ends: the conference of two dissolves; a recorded call's .callEnded comes
-        // with isRecording and a finished WAV.
+        // stopRecording on any leg stops the conference's recording; a second recording of
+        // the same conference is refused.
         try await engine.merge([out2, out1])
         #expect(await waitUntil {
             let a = await call(out1), b = await call(out2)
             return a?.inConference == true && b?.inConference == true
         })
-        let wav2 = tempWAV("ending.wav")
-        recordingURLs.withLock { $0[out2] = wav2 }
-        try await engine.startRecording(out2, to: wav2)
+        let wav2 = tempWAV("any-leg.wav")
+        try await engine.startRecording(out1, to: wav2)
+        await #expect(throws: EngineError.invalidArgument("the conference of call \(out2) is already being recorded (by \(out1))")) {
+            try await engine.startRecording(out2, to: tempWAV("second.wav"))
+        }
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(try await engine.stopRecording(out2) == wav2)
+        #expect(await call(out1)?.isRecording == false)
+
+        // The recording leg ends: the recording moves to the leg that remains (same file, it
+        // keeps growing); the ended leg's .callEnded says isRecording == false. Then the last
+        // leg ends: its .callEnded says isRecording and the WAV is final when it arrives.
+        let wav3 = tempWAV("moving.wav")
+        recordingURLs.withLock { $0[out2] = wav3 }
+        try await engine.startRecording(out1, to: wav3)
         try await Task.sleep(for: .milliseconds(300))
         try await engine.hangup(out1)
-        #expect(await waitUntil { await call(out2)?.inConference == false })
+        #expect(await waitUntil { let b = await call(out2); return b?.isRecording == true && b?.inConference == false })
+        let sizeAfterMove = (try? FileManager.default.attributesOfItem(atPath: wav3.path))?[.size] as? Int ?? 0
+        try await Task.sleep(for: .milliseconds(600))
+        let sizeLater = (try? FileManager.default.attributesOfItem(atPath: wav3.path))?[.size] as? Int ?? 0
+        #expect(sizeLater > sizeAfterMove, "\(sizeAfterMove) -> \(sizeLater)")
         try await engine.hangup(out2)
 
         func ended(_ id: CallID) -> CallInfo? {
             log.all.lazy.compactMap { if case let .callEnded(c, _) = $0, c.id == id { return c }; return nil }.first
         }
         #expect(await waitUntil { [out1, inc1, out2, inc2].allSatisfy { ended($0) != nil } })
-        #expect(ended(out2)?.isRecording == true)
         #expect(ended(out1)?.isRecording == false)
+        #expect(ended(out2)?.isRecording == true)
         let atEnd = try #require(headersAtEnd.withLock { $0[out2] } ?? nil, "no WAV header when .callEnded arrived")
         #expect(atEnd.isFinal, "\(atEnd)")
         for id in [out1, inc1, out2, inc2] {
@@ -244,8 +378,9 @@ extension EngineTests {
         await #expect(throws: EngineError.noSuchCall(out2)) { _ = try await engine.stopRecording(out2) }
         #expect(await engine.calls().isEmpty)
         await engine.stop()
-        try? FileManager.default.removeItem(at: wav1.deletingLastPathComponent().deletingLastPathComponent())
-        try? FileManager.default.removeItem(at: wav2.deletingLastPathComponent().deletingLastPathComponent())
+        for wav in [wav1, wavSplit, wav2, wav3] {
+            try? FileManager.default.removeItem(at: wav.deletingLastPathComponent().deletingLastPathComponent())
+        }
     }
 
     /// stop() with a recording running: the WAV is finished and the call's .callEnded
@@ -325,6 +460,18 @@ extension EngineTests {
         try await engine.unsubscribePresence(uri: "never@watched")
         #expect(await engine.presenceSubscriptions() == ["sips:other@example.com"])
 
+        // pjsua aborts beyond PJSUA_MAX_BUDDIES: the engine refuses instead.
+        var added = await engine.presenceSubscriptionCount()
+        while added < 256 {
+            try await engine.subscribePresence(uri: "sip:b\(added)@192.0.2.1")
+            added += 1
+        }
+        await #expect(throws: EngineError.invalidArgument("too many presence subscriptions (limit 256)")) {
+            try await engine.subscribePresence(uri: "sip:one-too-many@192.0.2.1")
+        }
+        try await engine.unsubscribePresence(uri: "sip:b255@192.0.2.1")
+        try await engine.subscribePresence(uri: "sip:one-too-many@192.0.2.1")
+
         // A restart drops every subscription; the caller subscribes again.
         await engine.stop()
         #expect(await engine.presenceSubscriptions().isEmpty)
@@ -367,8 +514,9 @@ extension EngineTests {
         await engine.stop()
     }
 
-    /// An INVITE with `Call-Info: <...>;answer-after=5` (as a PBX pages an intercom).
-    @Test func incomingCallCarriesAnswerAfter() async throws {
+    /// An INVITE with `Call-Info: <...>;answer-after=5` from anyone but the account's server
+    /// must not open the microphone: answerAfter stays nil and a warning is logged.
+    @Test func answerAfterFromUntrustedSourceIsIgnored() async throws {
         let engine = makeEngine()
         let log = EventLog()
         let consumer = log.consume(engine)
@@ -377,39 +525,136 @@ extension EngineTests {
         let account = AccountConfig(displayName: "I", username: "intercom", domain: "127.0.0.1", enabled: false)
         try await engine.addAccount(account, password: "")
         let port = await engine.localPort(of: .udp)
-
-        func invite(_ callID: String, _ callInfo: String?) throws {
-            try sendUDP({ myPort in
-                let sdp = "v=0\r\no=- 1 1 IN IP4 127.0.0.1\r\ns=-\r\nc=IN IP4 127.0.0.1\r\nt=0 0\r\n"
-                    + "m=audio 40000 RTP/AVP 0\r\na=rtpmap:0 PCMU/8000\r\n"
-                var msg = "INVITE sip:intercom@127.0.0.1:\(port) SIP/2.0\r\n"
-                    + "Via: SIP/2.0/UDP 127.0.0.1:\(myPort);rport;branch=z9hG4bK-\(callID)\r\n"
-                    + "Max-Forwards: 70\r\n"
-                    + "From: \"Pager\" <sip:pager@127.0.0.1:\(myPort)>;tag=t-\(callID)\r\n"
-                    + "To: <sip:intercom@127.0.0.1:\(port)>\r\n"
-                    + "Call-ID: \(callID)@127.0.0.1\r\n"
-                    + "CSeq: 1 INVITE\r\n"
-                    + "Contact: <sip:pager@127.0.0.1:\(myPort)>\r\n"
-                if let callInfo { msg += "Call-Info: \(callInfo)\r\n" }
-                msg += "Content-Type: application/sdp\r\nContent-Length: \(sdp.utf8.count)\r\n\r\n" + sdp
-                return msg
-            }, to: port)
-        }
         func incoming() -> [CallInfo] {
             log.all.compactMap { if case let .incomingCall(c) = $0 { return c }; return nil }
         }
 
-        try invite("ci-1", "<sip:127.0.0.1>;answer-after=5")
+        try sendUDP({ inviteText(callID: "ci-1", from: $0, to: port, callInfo: "<sip:127.0.0.1>;answer-after=0") }, to: port)
+        #expect(await waitUntil { incoming().count == 1 })
+        #expect(incoming().first?.answerAfter == nil)
+        #expect(await engine.calls().first?.answerAfter == nil)
+        #expect(log.all.contains {
+            if case let .log(_, text) = $0 { return text.contains("ignored answer-after from untrusted source 127.0.0.1:") }
+            return false
+        })
+        await engine.stop()
+    }
+
+    /// The same INVITE from the registrar that accepted our REGISTER is honoured; from any
+    /// other port on the same host it is not.
+    @Test func answerAfterFromTheRegistrarIsHonoured() async throws {
+        let stub = try RegistrarStub(status: "200 OK")
+        defer { stub.stop() }
+        let engine = makeEngine()
+        let log = EventLog()
+        let consumer = log.consume(engine)
+        defer { consumer.cancel() }
+        try await engine.start(network: Self.network)
+        let account = AccountConfig(displayName: "I", username: "intercom", domain: "127.0.0.1",
+                                    registrar: "127.0.0.1:\(stub.port)", enabled: true)
+        try await engine.addAccount(account, password: "pw")
+        #expect(await waitUntil {
+            if case .registered = await engine.registrationState(of: account.id) { return true }
+            return false
+        })
+        let port = await engine.localPort(of: .udp)
+        func incoming() -> [CallInfo] {
+            log.all.compactMap { if case let .incomingCall(c) = $0 { return c }; return nil }
+        }
+
+        stub.send(inviteText(callID: "reg-1", from: stub.port, to: port, callInfo: "<sip:pbx>;answer-after=5"), to: port)
         #expect(await waitUntil { incoming().count == 1 })
         #expect(incoming().first?.answerAfter == 5)
-        #expect(await engine.calls().first?.answerAfter == 5)
         try await engine.reject(try #require(incoming().first).id)
 
-        try invite("ci-2", nil)
+        try sendUDP({ inviteText(callID: "other-1", from: $0, to: port, callInfo: ";answer-after=5") }, to: port)
         #expect(await waitUntil { incoming().count == 2 })
+        #expect(incoming().last?.answerAfter == nil)
+
+        stub.send(inviteText(callID: "reg-2", from: stub.port, to: port, callInfo: nil), to: port)
+        #expect(await waitUntil { incoming().count == 3 })
         #expect(incoming().last?.answerAfter == nil)
         await engine.stop()
     }
+
+    /// Asterisk/FreePBX presence: `<rpid:on-the-phone/>` (which pjrpid reports as an unknown
+    /// activity) and the notes "On the phone" / "Ringing" with basic open mean busy.
+    @Test func asteriskStylePresenceMapsToDND() async throws {
+        let stub = try PresenceStub()
+        defer { stub.stop() }
+        let engine = makeEngine()
+        let log = EventLog()
+        let consumer = log.consume(engine)
+        defer { consumer.cancel() }
+        try await engine.start(network: Self.network)
+        let account = AccountConfig(displayName: "W", username: "watcher", domain: "127.0.0.1", enabled: false)
+        try await engine.addAccount(account, password: "")
+        let uri = "buddy@127.0.0.1:\(stub.port)"
+        try await engine.subscribePresence(uri: uri)
+        #expect(await waitUntil { stub.subscribed })
+        func last() -> PresenceStatus? {
+            log.all.lazy.reversed().compactMap { if case let .buddyPresence(u, st) = $0, u == uri { return st }; return nil }.first
+        }
+        let steps: [(String?, String?, Bool, PresenceStatus)] = [
+            (nil, nil, true, .available),
+            ("on-the-phone", nil, true, .dnd),          // activity only: found in the NOTIFY body
+            (nil, nil, true, .available),               // flag cleared by the next NOTIFY
+            (nil, "Ringing", true, .dnd),
+            ("away", nil, true, .away),
+            (nil, "On the phone", true, .dnd),
+            ("on-the-phone", "On the phone", false, .offline),
+        ]
+        for (activity, note, open, expected) in steps {
+            try await Task.sleep(for: .milliseconds(100))
+            stub.notify(activity: activity, note: note, open: open)
+            #expect(await waitUntil(timeout: 3) { last() == expected },
+                    "activity \(activity ?? "-"), note \(note ?? "-"), open \(open): got \(String(describing: last()))")
+        }
+        await engine.stop()
+    }
+
+    /// A SUBSCRIBE the server refused is retried when the account is updated (pjsua alone
+    /// would wait 300 s).
+    @Test func failedSubscriptionIsRetriedAfterAccountUpdate() async throws {
+        let stub = try RegistrarStub(status: "403 Forbidden", subscribeStatus: "403 Forbidden")
+        defer { stub.stop() }
+        let engine = makeEngine()
+        let log = EventLog()
+        let consumer = log.consume(engine)
+        defer { consumer.cancel() }
+        try await engine.start(network: Self.network)
+        var cfg = AccountConfig(displayName: "W", username: "watcher", domain: "127.0.0.1", enabled: false)
+        try await engine.addAccount(cfg, password: "pw")
+        let uri = "sip:buddy@127.0.0.1:\(stub.port)"
+        try await engine.subscribePresence(uri: uri)
+        #expect(await waitUntil { stub.subscribeCount == 1 })
+        #expect(await waitUntil {
+            log.all.contains { if case let .buddyPresence(u, .offline) = $0 { return u == uri }; return false }
+        })
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(stub.subscribeCount == 1)                      // pjsua waits 300 s on its own
+
+        cfg.displayName = "W2"
+        try await engine.updateAccount(cfg, password: nil)
+        #expect(await waitUntil { stub.subscribeCount == 2 })
+        await engine.stop()
+    }
+}
+
+/// An INVITE with an SDP offer from 127.0.0.1:`from` to the engine on 127.0.0.1:`to`.
+func inviteText(callID: String, from myPort: UInt16, to port: Int, callInfo: String?) -> String {
+    let sdp = "v=0\r\no=- 1 1 IN IP4 127.0.0.1\r\ns=-\r\nc=IN IP4 127.0.0.1\r\nt=0 0\r\n"
+        + "m=audio 40000 RTP/AVP 0\r\na=rtpmap:0 PCMU/8000\r\n"
+    var msg = "INVITE sip:intercom@127.0.0.1:\(port) SIP/2.0\r\n"
+        + "Via: SIP/2.0/UDP 127.0.0.1:\(myPort);rport;branch=z9hG4bK-\(callID)\r\n"
+        + "Max-Forwards: 70\r\n"
+        + "From: \"Pager\" <sip:pager@127.0.0.1:\(myPort)>;tag=t-\(callID)\r\n"
+        + "To: <sip:intercom@127.0.0.1:\(port)>\r\n"
+        + "Call-ID: \(callID)@127.0.0.1\r\n"
+        + "CSeq: 1 INVITE\r\n"
+        + "Contact: <sip:pager@127.0.0.1:\(myPort)>\r\n"
+    if let callInfo { msg += "Call-Info: \(callInfo)\r\n" }
+    return msg + "Content-Type: application/sdp\r\nContent-Length: \(sdp.utf8.count)\r\n\r\n" + sdp
 }
 
 // MARK: - pure parts (no pjsua)
@@ -446,6 +691,18 @@ struct EngineMilestone5HelperTests {
         #expect(M.status(basic: .unknown, activity: .unknown, subscriptionTerminated: false) == .offline)
         #expect(M.status(basic: .online, activity: .unknown, subscriptionTerminated: true) == .offline)
 
+        // Notes (Asterisk/FreePBX: basic open + "On the phone" / "Ringing") and on-the-phone.
+        for note in ["On the phone", " ON THE PHONE ", "Busy", "ringing", "Do Not Disturb"] {
+            #expect(M.status(basic: .online, activity: .unknown, note: note, subscriptionTerminated: false) == .dnd, "\(note)")
+        }
+        for note in ["Ready", "Idle", "", "On hold soon"] {
+            #expect(M.status(basic: .online, activity: .unknown, note: note, subscriptionTerminated: false) == .available, "\(note)")
+        }
+        #expect(M.status(basic: .online, activity: .onThePhone, subscriptionTerminated: false) == .dnd)
+        #expect(M.status(basic: .online, activity: .away, note: "On the phone", subscriptionTerminated: false) == .away)
+        #expect(M.status(basic: .offline, activity: .unknown, note: "On the phone", subscriptionTerminated: false) == .offline)
+        #expect(M.status(basic: .online, activity: .onThePhone, subscriptionTerminated: true) == .offline)
+
         #expect(M.publication(.available) == (true, .unknown, nil))
         #expect(M.publication(.away) == (true, .away, nil))
         #expect(M.publication(.dnd) == (true, .busy, "Do Not Disturb"))
@@ -463,6 +720,52 @@ struct EngineMilestone5HelperTests {
         #expect(PresenceMapping.normalizedURI("http://example.com") == nil)
         #expect(PresenceMapping.normalizedURI("  ") == nil)
         #expect(PresenceMapping.normalizedURI("sip:") == nil)
+    }
+
+    @Test func signallingSourcePeerMatching() {
+        let reg = SignallingSource(address: "192.0.2.10", port: 5060, transport: .udp)
+        #expect(SignallingSource(address: "192.0.2.10", port: 5060, transport: .udp).isSamePeer(as: reg))
+        #expect(!SignallingSource(address: "192.0.2.10", port: 5070, transport: .udp).isSamePeer(as: reg))
+        #expect(!SignallingSource(address: "192.0.2.11", port: 5060, transport: .udp).isSamePeer(as: reg))
+        #expect(!SignallingSource(address: "192.0.2.10", port: 5060, transport: .tcp).isSamePeer(as: reg))
+        let tls = SignallingSource(address: "2001:db8::1", port: 5061, transport: .tls)
+        #expect(SignallingSource(address: "2001:DB8:0::1", port: 49152, transport: .tls).isSamePeer(as: tls))
+        #expect(!SignallingSource(address: "192.0.2.10", port: 5060, transport: nil).isSamePeer(as: reg))
+
+        #expect(SignallingSource.proxy("sip:192.0.2.5:5070;lr", transport: .udp)
+                == SignallingSource(address: "192.0.2.5", port: 5070, transport: .udp))
+        #expect(SignallingSource.proxy("192.0.2.5", transport: .tls)
+                == SignallingSource(address: "192.0.2.5", port: 5061, transport: .tls))
+        #expect(SignallingSource.proxy("<sip:[2001:db8::2]:5080;transport=tcp>", transport: .tcp)
+                == SignallingSource(address: "2001:db8::2", port: 5080, transport: .tcp))
+        #expect(SignallingSource.proxy("sip:proxy.example.com:5060;lr", transport: .udp) == nil)
+        #expect(SignallingSource.proxy(nil, transport: .udp) == nil)
+        #expect(SignallingSource.proxy("", transport: .udp) == nil)
+    }
+
+    @Test func wavHeaderRepairAndEmptyRecordings() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("macrosip-tests-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        // A header as pjmedia writes it before finishing (sizes 0) plus 1000 samples.
+        var data = Data("RIFF".utf8) + Data(count: 4) + Data("WAVEfmt ".utf8)
+        data += Data([16, 0, 0, 0, 1, 0, 1, 0, 0x80, 0x3E, 0, 0, 0, 0x7D, 0, 0, 2, 0, 16, 0])
+        data += Data("data".utf8) + Data(count: 4) + Data(repeating: 1, count: 2000)
+        let wav = dir.appendingPathComponent("unfinished.wav")
+        try data.write(to: wav)
+        #expect(WAVHeader.read(wav)?.isFinal == false)
+        #expect(WAVFile.repair(wav))
+        let fixed = try #require(WAVHeader.read(wav))
+        #expect(fixed.isFinal && fixed.dataSize == 2000 && fixed.sampleRate == 16000)
+        #expect(!Engine.recordingIsEmpty(wav))
+
+        let empty = dir.appendingPathComponent("held.wav")
+        try data.prefix(44).write(to: empty)
+        #expect(Engine.recordingIsEmpty(empty))
+        #expect(Engine.recordingIsEmpty(dir.appendingPathComponent("missing.wav")))
+        let junk = dir.appendingPathComponent("junk.wav")
+        try Data(repeating: 7, count: 100).write(to: junk)
+        #expect(!WAVFile.repair(junk))
     }
 
     @Test func callInfoCarriesConferenceRecordingAndAnswerAfter() {

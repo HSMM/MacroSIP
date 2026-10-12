@@ -80,3 +80,8 @@ struct AutoAnswerCountdown: Equatable {
     var fireAt: Date
     var total: TimeInterval { fireAt.timeIntervalSince(start) }
 }
+
+/// Codes stored in `CallLogEntry.note`; the text is looked up when a row is shown (`L.logNoteText`).
+enum CallLogNote {
+    static let callLimit = "callLimit"
+}

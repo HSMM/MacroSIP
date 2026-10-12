@@ -35,20 +35,26 @@ func tempCABundle() -> URL {
 }
 
 /// A one-socket SIP "registrar" on 127.0.0.1 that answers every REGISTER with a fixed
-/// final response after `delay` seconds.
+/// final response after `delay` seconds (and SUBSCRIBE with `subscribeStatus`). It can also
+/// send requests from its own socket (an INVITE "from the registrar").
 final class RegistrarStub: Sendable {
     let port: UInt16
     private let fd: Int32
     private let delay: TimeInterval
     private let status: String
+    private let subscribeStatus: String
     private let stopped = OSAllocatedUnfairLock(initialState: false)
     private let registers = OSAllocatedUnfairLock(initialState: 0)
+    private let subscribes = OSAllocatedUnfairLock(initialState: 0)
 
     var registerCount: Int { registers.withLock { $0 } }
+    var subscribeCount: Int { subscribes.withLock { $0 } }
 
-    init(status: String = "403 Forbidden", delay: TimeInterval = 0) throws {
+    init(status: String = "403 Forbidden", delay: TimeInterval = 0,
+         subscribeStatus: String = "403 Forbidden") throws {
         self.status = status
         self.delay = delay
+        self.subscribeStatus = subscribeStatus
         let sock = socket(AF_INET, SOCK_DGRAM, 0)
         guard sock >= 0 else { throw EngineError.unsupported("socket") }
         var addr = sockaddr_in()
@@ -89,10 +95,18 @@ final class RegistrarStub: Sendable {
             }
             guard n > 0 else { continue }
             let request = String(decoding: buf[0..<n], as: UTF8.self)
-            guard request.hasPrefix("REGISTER ") else { continue }
-            registers.withLock { $0 += 1 }
-            if delay > 0 { Thread.sleep(forTimeInterval: delay) }
-            var response = "SIP/2.0 \(status)\r\n"
+            let finalStatus: String
+            if request.hasPrefix("REGISTER ") {
+                registers.withLock { $0 += 1 }
+                if delay > 0 { Thread.sleep(forTimeInterval: delay) }
+                finalStatus = status
+            } else if request.hasPrefix("SUBSCRIBE ") {
+                subscribes.withLock { $0 += 1 }
+                finalStatus = subscribeStatus
+            } else {
+                continue
+            }
+            var response = "SIP/2.0 \(finalStatus)\r\n"
             for line in request.components(separatedBy: "\r\n") {
                 let name = line.split(separator: ":", maxSplits: 1).first.map { $0.lowercased() } ?? ""
                 switch name {
@@ -110,6 +124,21 @@ final class RegistrarStub: Sendable {
             }
         }
         close(fd)
+    }
+
+    /// Sends a datagram from the stub's socket to 127.0.0.1:`port`.
+    func send(_ text: String, to port: Int) {
+        var dest = sockaddr_in()
+        dest.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
+        dest.sin_family = sa_family_t(AF_INET)
+        dest.sin_addr.s_addr = inet_addr("127.0.0.1")
+        dest.sin_port = in_port_t(UInt16(port).bigEndian)
+        let bytes = Array(text.utf8)
+        _ = withUnsafePointer(to: &dest) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                sendto(fd, bytes, bytes.count, 0, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
+            }
+        }
     }
 }
 

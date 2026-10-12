@@ -6,12 +6,15 @@ import AVFoundation
 public enum RecordingConverter {
     public enum ConversionError: Error, Equatable, CustomStringConvertible {
         case noAudioTrack
+        /// The WAV holds no samples at all (call held the whole time, Record pressed twice).
+        case empty
         case readerFailed(String)
         case writerFailed(String)
 
         public var description: String {
             switch self {
             case .noAudioTrack: return "The recording contains no audio"
+            case .empty: return "The recording is empty"
             case let .readerFailed(m): return "Cannot read the recording: \(m)"
             case let .writerFailed(m): return "Cannot write the M4A file: \(m)"
             }
@@ -20,9 +23,17 @@ public enum RecordingConverter {
 
     public static let bitRate = 64_000
 
-    /// Writes `m4a` (replacing a file that exists there). The output appears under its final
-    /// name only when it is complete; a failed conversion leaves nothing behind.
-    public static func convert(wav: URL, to m4a: URL) async throws {
+    /// Converts `wav` to M4A next to `m4a` and returns the URL it ended up at. An existing file is
+    /// never replaced: when `m4a` is taken (also by a file that appears meanwhile) the name gets
+    /// " 2", " 3", ... The output appears under its final name only when it is complete; a failed
+    /// conversion leaves nothing behind.
+    ///
+    /// The engine may leave the RIFF and data sizes at zero; they are patched from the file length
+    /// first. A WAV without samples throws `ConversionError.empty`.
+    @discardableResult
+    public static func convert(wav: URL, to m4a: URL) async throws -> URL {
+        let dataBytes = WAVHeader.repairSizes(of: wav)
+        if let n = dataBytes, n < 2 { throw ConversionError.empty }
         let asset = AVURLAsset(url: wav)
         let tracks: [AVAssetTrack]
         do { tracks = try await asset.loadTracks(withMediaType: .audio) }
@@ -45,8 +56,26 @@ public enum RecordingConverter {
         let job = try Job(asset: asset, track: track, output: partial, sampleRate: rate)
         try await job.run()
 
-        if fm.fileExists(atPath: m4a.path) { try fm.removeItem(at: m4a) }
-        try fm.moveItem(at: partial, to: m4a)
+        return try moveWithoutOverwriting(partial, to: m4a)
+    }
+
+    /// `moveItem` fails when the target exists, so a file that appears between two attempts is not overwritten.
+    private static func moveWithoutOverwriting(_ source: URL, to target: URL) throws -> URL {
+        let fm = FileManager.default
+        let base = target.deletingPathExtension()
+        let ext = target.pathExtension
+        var candidate = target
+        var n = 2
+        while true {
+            if !fm.fileExists(atPath: candidate.path) {
+                do { try fm.moveItem(at: source, to: candidate); return candidate }
+                catch let error as NSError where error.code == NSFileWriteFileExistsError { /* taken meanwhile */ }
+            }
+            candidate = base.deletingLastPathComponent()
+                .appendingPathComponent("\(base.lastPathComponent) \(n)").appendingPathExtension(ext)
+            n += 1
+            if n > 10_000 { throw ConversionError.writerFailed("no free file name") }
+        }
     }
 
     /// Owns the reader and writer; everything after `run()` happens on `queue`.
@@ -129,5 +158,42 @@ public enum RecordingConverter {
 
         private func succeed() { continuation?.resume(); continuation = nil }
         private func fail(_ error: Error) { continuation?.resume(throwing: error); continuation = nil }
+    }
+}
+
+/// Minimal RIFF/WAVE header handling for files whose writer has not finished (or never patched) the sizes.
+enum WAVHeader {
+    /// Patches zero or oversized RIFF and data sizes from the file length. Returns the number of data
+    /// bytes, or nil when the file is not a WAV with a data chunk.
+    @discardableResult
+    static func repairSizes(of url: URL) -> Int? {
+        guard let handle = try? FileHandle(forUpdating: url) else { return nil }
+        defer { try? handle.close() }
+        guard let length = try? handle.seekToEnd(), length >= 12 else { return nil }
+        try? handle.seek(toOffset: 0)
+        guard let head = try? handle.read(upToCount: 12), head.count == 12,
+              head.prefix(4) == Data("RIFF".utf8), head.suffix(4) == Data("WAVE".utf8) else { return nil }
+        func le32(_ d: Data) -> UInt32 { d.enumerated().reduce(UInt32(0)) { $0 | UInt32($1.element) << (8 * UInt32($1.offset)) } }
+        var offset: UInt64 = 12
+        while offset + 8 <= length {
+            try? handle.seek(toOffset: offset)
+            guard let chunk = try? handle.read(upToCount: 8), chunk.count == 8 else { return nil }
+            let id = String(decoding: chunk.prefix(4), as: UTF8.self)
+            let size = UInt64(le32(chunk.suffix(4)))
+            let body = offset + 8
+            if id == "data" {
+                let available = length - body
+                let actual = (size == 0 || size == 0xFFFF_FFFF || size > available) ? available : size
+                let riff = UInt32(truncatingIfNeeded: length - 8)
+                if size != actual || le32(head.subdata(in: 4..<8)) != riff {
+                    func bytes(_ v: UInt32) -> Data { withUnsafeBytes(of: v.littleEndian) { Data($0) } }
+                    try? handle.seek(toOffset: 4); try? handle.write(contentsOf: bytes(riff))
+                    try? handle.seek(toOffset: offset + 4); try? handle.write(contentsOf: bytes(UInt32(truncatingIfNeeded: actual)))
+                }
+                return Int(actual)
+            }
+            offset = body + size + (size & 1)
+        }
+        return nil
     }
 }

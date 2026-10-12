@@ -38,7 +38,7 @@ struct RecordingConverterTests {
         #expect(names == ["in.wav", "out.m4a"])
     }
 
-    @Test func replacesExistingOutput() async throws {
+    @Test func neverOverwritesAnExistingFile() async throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("rec-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
@@ -46,8 +46,39 @@ struct RecordingConverterTests {
         let m4a = dir.appendingPathComponent("out.m4a")
         try Self.sineWAV(seconds: 0.5, rate: 8_000).write(to: wav)
         try Data("old".utf8).write(to: m4a)
+        let result = try await RecordingConverter.convert(wav: wav, to: m4a)
+        #expect(result.lastPathComponent == "out 2.m4a")
+        #expect(try Data(contentsOf: m4a) == Data("old".utf8))
+        #expect(((try FileManager.default.attributesOfItem(atPath: result.path)[.size] as? Int) ?? 0) > 1024)
+        let third = try await RecordingConverter.convert(wav: wav, to: m4a)
+        #expect(third.lastPathComponent == "out 3.m4a")
+    }
+
+    @Test func zeroSizedHeaderIsPatchedFromFileLength() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("rec-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        var data = Self.sineWAV(seconds: 1)
+        data.replaceSubrange(4..<8, with: [0, 0, 0, 0])         // RIFF size
+        data.replaceSubrange(40..<44, with: [0, 0, 0, 0])       // data size
+        let wav = dir.appendingPathComponent("stream.wav")
+        try data.write(to: wav)
+        let m4a = dir.appendingPathComponent("out.m4a")
         try await RecordingConverter.convert(wav: wav, to: m4a)
         #expect(((try FileManager.default.attributesOfItem(atPath: m4a.path)[.size] as? Int) ?? 0) > 1024)
+        let patched = try Data(contentsOf: wav)
+        #expect(patched[40..<44] == Data([0x00, 0x7D, 0x00, 0x00]))   // 32000 bytes
+    }
+
+    @Test func wavWithoutSamplesIsEmpty() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("rec-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let wav = dir.appendingPathComponent("silence.wav")
+        try Self.sineWAV(seconds: 0).write(to: wav)
+        let m4a = dir.appendingPathComponent("out.m4a")
+        await #expect(throws: RecordingConverter.ConversionError.empty) { try await RecordingConverter.convert(wav: wav, to: m4a) }
+        #expect(try FileManager.default.contentsOfDirectory(atPath: dir.path) == ["silence.wav"])
     }
 
     @Test func garbageInputFailsAndLeavesNothing() async throws {

@@ -37,14 +37,15 @@ Milestones 4 and 5 run in parallel; 6 is the release. A milestone is done only w
 - Owner's checklist on the real account: incoming call (floating window, ringtone, answer), DTMF to an IVR, blind and attended transfer, the `PJSIP_ETPNOTSUITABLE` diagnostic above.
 - Done when: the `.app` passes the manual checklist on the owner's account.
 
-## 5. Presence, conference, auto-answer, recording — IN PROGRESS (started 2026-10-12)
+## 5. Presence, conference, auto-answer, recording — CODE DONE 2026-10-12 (reviewed, 65 tests, selftest incl. recording/M4A, presence, two-leg conference); awaiting the owner's server check
 Engine (`MacroSIPCore`, replaces the `.unsupported` stubs):
 - Presence: `subscribePresence(uri:)` / `unsubscribePresence(uri:)` over pjsua buddies, `.buddyPresence` events; `publishPresence(_:for:)` via PUBLISH (RPID) for accounts with `publishPresence`; DND publishes `dnd`.
 - Conference: `merge(_:)` connects every listed call's conference port pairwise plus mic/speaker, `split(_:)` takes one call out; `CallInfo.inConference` reflects it; hold/mute keep working per leg.
 - Recording: `startRecording(_:to:)` / `stopRecording(_:)` with `pjsua_recorder` on the call's conference port (both directions); `CallInfo.isRecording`. `RecordingConverter` (AVFoundation) turns the WAV into M4A/AAC and deletes the WAV on success.
 - Auto-answer rules: pure `AutoAnswerPolicy.decide(call:isContact:settings:onAnotherCall:dnd:) -> delay?`; `Call-Info: answer-after=N` parsed from the INVITE into `CallInfo.answerAfter`.
 UI (`MacroSIPApp`, per SCREENS.md `[Full]` rows): presence dot/text and "Watch presence" (contacts), Record button and REC chip, Merge/Split and the conference screen 5.4, auto-answer strip 6.5 with countdown and Cancel, My Status submenu 7.4, Settings panes Recording 8.6 and Auto-answer 8.7, "Publish my presence" in the account editor, recordings sentence in the clear-log alert. Settings model: `AppSettings.recording`, `AppSettings.autoAnswer`.
-- Done when: `scripts/selftest-call.sh` also covers recording (WAV produced, M4A conversion) and presence against `pjsua`; conference verified with two `pjsua` legs; auto-answer policy tests green; each feature then checked on the owner's server (presence may need server support; document if unsupported).
+- Security rule from the review: `Call-Info: answer-after` is honoured only when the INVITE comes from the address that answered the account's REGISTER (same transport and IP; same port over UDP); anything else is logged and ignored.
+- Done when: `scripts/selftest-call.sh` also covers recording (WAV produced, M4A conversion) and presence against `pjsua`; conference verified with two `pjsua` legs; auto-answer policy tests green (all true since 2026-10-12); each feature then checked on the owner's server (presence may need server support; document if unsupported).
 
 ## 6. Polish and release
 - Launch at login, language switch, crash-safe log file, About window with GPL notice.

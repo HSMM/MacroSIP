@@ -182,7 +182,7 @@ struct CallControlGrid: View {
                               isOn: call.isMuted, enabled: ready) { model.toggleMute(call) }
             CallControlButton(symbol: call.isHeldCall ? "play.fill" : "pause.fill",
                               title: call.isHeldCall ? L.callResume : L.callHold,
-                              isOn: false, enabled: ready && !call.inConference) { model.toggleHold(call) }
+                              isOn: false, enabled: ready) { model.toggleHold(call) }
             CallControlButton(symbol: "phone.arrow.right", title: L.callTransfer,
                               isOn: showTransfer, enabled: ready && model.transfer == nil && !call.inConference) { showTransfer = true }
                 .popover(isPresented: $showTransfer, arrowEdge: .top) {

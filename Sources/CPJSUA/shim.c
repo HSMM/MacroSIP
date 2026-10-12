@@ -457,7 +457,7 @@ pj_status_t cpjsua_recorder_destroy_wait(pjsua_recorder_id id, unsigned timeout_
 
 /* ========================================================== presence === */
 
-pj_status_t cpjsua_buddy_add(const char *uri, pjsua_buddy_id *out_id)
+pj_status_t cpjsua_buddy_add(const char *uri, unsigned long long token, pjsua_buddy_id *out_id)
 {
     pjsua_buddy_config cfg;
 
@@ -466,7 +466,42 @@ pj_status_t cpjsua_buddy_add(const char *uri, pjsua_buddy_id *out_id)
     pjsua_buddy_config_default(&cfg);
     cfg.uri = cpjsua_str(uri);
     cfg.subscribe = PJ_TRUE;
+    cfg.user_data = (void *)(pj_size_t)token;
     return pjsua_buddy_add(&cfg, out_id);
+}
+
+unsigned cpjsua_max_buddies(void)
+{
+    return PJSUA_MAX_BUDDIES;
+}
+
+int cpjsua_event_notify_body_contains(const pjsip_event *event, const char *needle)
+{
+    const pjsip_rx_data *rdata;
+    const pjsip_msg *msg;
+    const char *data;
+    size_t len, nlen, i, j;
+
+    if (!event || !needle || event->type != PJSIP_EVENT_TSX_STATE ||
+        event->body.tsx_state.type != PJSIP_EVENT_RX_MSG)
+        return -1;
+    rdata = event->body.tsx_state.src.rdata;
+    if (!rdata || !(msg = rdata->msg_info.msg) || msg->type != PJSIP_REQUEST_MSG ||
+        pjsip_method_cmp(&msg->line.req.method, pjsip_get_notify_method()) != 0 ||
+        !msg->body || !msg->body->data || msg->body->len == 0)
+        return -1;
+    data = (const char *)msg->body->data;
+    len = msg->body->len;
+    nlen = strlen(needle);
+    for (i = 0; nlen > 0 && i + nlen <= len; ++i) {
+        for (j = 0; j < nlen; ++j) {
+            if (tolower((unsigned char)data[i + j]) != tolower((unsigned char)needle[j]))
+                break;
+        }
+        if (j == nlen)
+            return 1;
+    }
+    return 0;
 }
 
 pj_status_t cpjsua_buddy_snapshot_get(pjsua_buddy_id id, cpjsua_buddy_snapshot *out)
@@ -482,6 +517,7 @@ pj_status_t cpjsua_buddy_snapshot_get(pjsua_buddy_id id, cpjsua_buddy_snapshot *
     status = pjsua_buddy_get_info(id, &info);
     if (status != PJ_SUCCESS)
         return status;
+    out->token = (unsigned long long)(pj_size_t)pjsua_buddy_get_user_data(id);
     copy_pjstr(&info.uri, out->uri, sizeof(out->uri));
     out->status = info.status;
     out->activity = info.rpid.activity;
@@ -583,6 +619,22 @@ int cpjsua_rdata_answer_after(const pjsip_rx_data *rdata)
         hdr = (const pjsip_hdr *)pjsip_msg_find_hdr_by_name(msg, &name, hdr->next);
     }
     return -1;
+}
+
+/* ====================================================== packet source === */
+
+pj_status_t cpjsua_rdata_source(const pjsip_rx_data *rdata, cpjsua_pkt_source *out)
+{
+    if (!out)
+        return PJ_EINVAL;
+    pj_bzero(out, sizeof(*out));
+    if (!rdata)
+        return PJ_EINVAL;
+    pj_ansi_strxcpy(out->addr, rdata->pkt_info.src_name, sizeof(out->addr));
+    out->port = rdata->pkt_info.src_port;
+    if (rdata->tp_info.transport)
+        out->transport = (int)(rdata->tp_info.transport->key.type & ~PJSIP_TRANSPORT_IPV6);
+    return PJ_SUCCESS;
 }
 
 /* ============================================================== tones === */

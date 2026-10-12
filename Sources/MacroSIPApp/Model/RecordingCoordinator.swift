@@ -9,9 +9,13 @@ private let recordingLog = Logger(subsystem: "com.hsmm.macrosip", category: "rec
 extension AppModel {
     // MARK: - Folder
 
-    /// The folder chosen in Settings (resolved from its security-scoped bookmark when there is one).
-    /// Demo launches keep recordings inside their throw-away data directory.
-    func recordingsFolder() -> (url: URL, stopAccess: @Sendable () -> Void) {
+    /// Works out the recordings folder once (and again when the setting changes), never while a view
+    /// is being built. A security-scoped bookmark is resolved here and its access is kept for as long as
+    /// the folder is in use; a stale bookmark is created again. Demo launches keep recordings inside
+    /// their throw-away data directory.
+    func refreshRecordingFolder() {
+        recordingFolderScope?.stopAccessingSecurityScopedResource()
+        recordingFolderScope = nil
         var url = settings.recording.folder ?? RecordingFileName.defaultFolder
         if settings.recording.folder == nil, launch.isDemo, let dir = launch.dataDirectory {
             url = dir.appendingPathComponent("Recordings", isDirectory: true)
@@ -21,24 +25,42 @@ extension AppModel {
             if let resolved = try? URL(resolvingBookmarkData: data, options: .withSecurityScope, relativeTo: nil,
                                        bookmarkDataIsStale: &stale) {
                 url = resolved
-                if resolved.startAccessingSecurityScopedResource() {
-                    return (url, { resolved.stopAccessingSecurityScopedResource() })
+                if resolved.startAccessingSecurityScopedResource() { recordingFolderScope = resolved }
+                if stale, let fresh = try? resolved.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil) {
+                    settings.recording.folderBookmark = fresh
+                    do { try settingsStore.save(settings) } catch { recordingLog.error("saving the refreshed bookmark failed: \(describe(error), privacy: .public)") }
                 }
+            } else {
+                recordingLog.error("the recordings folder bookmark could not be resolved; using \(url.path, privacy: .public)")
             }
         }
-        return (url, {})
+        recordingFolderURL = url
     }
 
-    /// The folder shown in Settings (no security-scoped access needed to name it).
-    var recordingsFolderForDisplay: URL {
-        let access = recordingsFolder()
-        access.stopAccess()
-        return access.url
+    /// At launch: half-written `.partial.m4a` files in the recordings folder and temporary WAVs from
+    /// earlier sessions are removed (and logged); nothing of the running session is touched.
+    func cleanUpStaleRecordings() {
+        let fm = FileManager.default
+        func remove(_ url: URL, _ what: String) {
+            recordingLog.notice("removing \(what, privacy: .public) \(url.path, privacy: .public)")
+            try? fm.removeItem(at: url)
+        }
+        if let names = try? fm.contentsOfDirectory(atPath: recordingFolderURL.path) {
+            for name in names where name.hasPrefix(".") && name.hasSuffix(".partial.m4a") {
+                remove(recordingFolderURL.appendingPathComponent(name), "unfinished conversion")
+            }
+        }
+        let temp = temporaryRecordingsDirectory
+        let wavs = (try? fm.contentsOfDirectory(at: temp, includingPropertiesForKeys: [.contentModificationDateKey])) ?? []
+        for url in wavs where url.pathExtension == "wav" {
+            let modified = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate ?? .distantPast
+            if modified < sessionStart { remove(url, "leftover temporary recording") }
+        }
     }
 
     // MARK: - Start and stop
 
-    private var temporaryRecordingsDirectory: URL {
+    var temporaryRecordingsDirectory: URL {
         FileManager.default.temporaryDirectory.appendingPathComponent("MacroSIP-Recording", isDirectory: true)
     }
 
@@ -71,6 +93,7 @@ extension AppModel {
             do { try await self.engine.startRecording(id, to: wav) }
             catch {
                 self.recordingJobs[id] = nil
+                if case EngineError.noSuchCall = error { return }      // the other side hung up meanwhile
                 throw error
             }
         }
@@ -78,8 +101,9 @@ extension AppModel {
 
     func stopRecording(_ call: CallInfo) {
         let id = call.id
-        guard let job = recordingJobs[id] else { return }
+        guard let job = recordingJobs[id], recordingStopping.insert(id).inserted else { return }
         run {
+            defer { self.recordingStopping.remove(id) }
             do {
                 let wav = try await self.engine.stopRecording(id)
                 self.finishRecording(id, call: self.calls.first { $0.id == id } ?? call, wav: wav)
@@ -90,6 +114,7 @@ extension AppModel {
                 } else {
                     self.recordingJobs[id] = nil
                 }
+                if case EngineError.noSuchCall = error { return }      // raced a hang-up; the file is saved
                 throw error
             }
         }
@@ -97,9 +122,15 @@ extension AppModel {
 
     // MARK: - Engine events
 
-    /// Called for every call update: tracks the REC chip and starts "record all calls".
+    /// Called for every call update: tracks the REC chip, starts "record all calls", and keeps a
+    /// conference down to one recording.
     func noteRecordingState(_ info: CallInfo) {
         if info.isRecording {
+            // The engine moves a conference recording to a surviving leg when its owner leaves
+            // (split or hang-up). Follow it: the job (file, start time) now belongs to this call.
+            if recordingJobs[info.id] == nil, let moved = movedRecordingJobOwner(excluding: info.id) {
+                adoptRecordingJob(from: moved, to: info.id)
+            }
             if recordingSince[info.id] == nil { recordingSince[info.id] = recordingJobs[info.id]?.startedAt ?? Date() }
         } else {
             recordingSince[info.id] = nil
@@ -107,42 +138,111 @@ extension AppModel {
         if settings.recording.recordAllCalls, info.state == .connected, !info.isRecording,
            !autoRecordTried.contains(info.id) {
             autoRecordTried.insert(info.id)
-            startRecording(info)
+            // A call that joined a conference which is already recorded is in that recording.
+            let conferenceRecorded = info.inConference && conferenceCalls.contains {
+                $0.id != info.id && ($0.isRecording || recordingJobs[$0.id] != nil)
+            }
+            if !conferenceRecorded { startRecording(info) }
         }
+        keepOneConferenceRecording()
     }
 
-    /// The call is gone: the engine closed the recording with it.
+    /// The engine mixes all legs into any one recording, so after a merge only the primary
+    /// (lowest serial) recording stays; the others are stopped and saved.
+    private func keepOneConferenceRecording() {
+        let recording = conferenceCalls.filter { $0.isRecording || recordingJobs[$0.id] != nil }
+        guard recording.count > 1, let keep = recording.min(by: { $0.id.serial < $1.id.serial }) else { return }
+        for call in recording where call.id != keep.id && call.isRecording { stopRecording(call) }
+    }
+
+    /// The call is gone. `isRecording == true` means the engine closed the recording with it;
+    /// `false` with a job still here means the recording moved to another conference leg.
     func recordingCallEnded(_ info: CallInfo) {
         recordingSince[info.id] = nil
         autoRecordTried.remove(info.id)
-        if let job = recordingJobs[info.id] { finishRecording(info.id, call: info, wav: job.wav) }
+        recordingStopping.remove(info.id)
+        guard let job = recordingJobs[info.id] else { return }
+        if !info.isRecording, let heir = recordingHeir(of: info) {
+            adoptRecordingJob(from: info.id, to: heir)
+            return
+        }
+        finishRecording(info.id, call: info, wav: job.wav)
+    }
+
+    /// A job whose owner no longer records (or is gone) while some other call does: the engine moved it.
+    private func movedRecordingJobOwner(excluding id: CallID) -> CallID? {
+        recordingJobs.keys.first { owner in
+            owner != id && !(calls.first { $0.id == owner }?.isRecording ?? false)
+        }
+    }
+
+    /// The live call that took over `ended`'s recording: one that records without a job, else the
+    /// lowest-serial remaining conference leg (its `.callChanged` may arrive after this `.callEnded`).
+    private func recordingHeir(of ended: CallInfo) -> CallID? {
+        let live = calls.filter { call in
+            if case .disconnected = call.state { return false }
+            return call.id != ended.id
+        }
+        if let taker = live.first(where: { $0.isRecording && recordingJobs[$0.id] == nil }) { return taker.id }
+        guard ended.inConference else { return nil }
+        return live.filter { $0.inConference }.min(by: { $0.id.serial < $1.id.serial })?.id
+    }
+
+    private func adoptRecordingJob(from old: CallID, to new: CallID) {
+        guard let job = recordingJobs.removeValue(forKey: old) else { return }
+        recordingJobs[new] = job
+        recordingSince[new] = recordingSince.removeValue(forKey: old) ?? job.startedAt
+        recordingStopping.remove(old)
+        recordingLog.info("recording of call \(old, privacy: .public) continues on call \(new, privacy: .public)")
     }
 
     // MARK: - Conversion
 
+    /// Converts in the background. A WAV without samples is deleted silently. When the conversion
+    /// fails, the WAV moves into the recordings folder under the M4A's name (never stays in the temp
+    /// folder) and the banner says so.
     @discardableResult
     private func finishRecording(_ id: CallID, call: CallInfo, wav: URL) -> Task<Void, Never>? {
         guard let job = recordingJobs.removeValue(forKey: id) else { return nil }
         let remote = name(for: call.remote)
         let fileName = RecordingFileName.make(date: job.startedAt, remote: remote, direction: job.direction)
-        let folder = recordingsFolder()
+        let folder = recordingFolderURL
         return Task.detached(priority: .utility) {
-            defer { folder.stopAccess() }
+            let fm = FileManager.default
+            guard fm.fileExists(atPath: wav.path) else {
+                recordingLog.error("the temporary recording \(wav.lastPathComponent, privacy: .public) is missing")
+                return
+            }
             do {
-                guard FileManager.default.fileExists(atPath: wav.path) else {
-                    throw RecordingConverter.ConversionError.readerFailed("the temporary recording is missing")
-                }
-                try FileManager.default.createDirectory(at: folder.url, withIntermediateDirectories: true)
-                let target = RecordingFileName.uniqueURL(in: folder.url, name: fileName)
-                try await RecordingConverter.convert(wav: wav, to: target)
-                try? FileManager.default.removeItem(at: wav)
+                try fm.createDirectory(at: folder, withIntermediateDirectories: true)
+                let target = try await RecordingConverter.convert(wav: wav, to: folder.appendingPathComponent(fileName))
+                try? fm.removeItem(at: wav)
                 recordingLog.info("saved \(target.lastPathComponent, privacy: .public)")
                 await AppModel.shared.recordingSaved(target)
+            } catch RecordingConverter.ConversionError.empty {
+                recordingLog.info("\(wav.lastPathComponent, privacy: .public) holds no samples; deleted")
+                try? fm.removeItem(at: wav)
             } catch {
-                recordingLog.error("conversion of \(wav.lastPathComponent, privacy: .public) failed: \(describe(error), privacy: .public); the WAV was kept")
-                await AppModel.shared.showBanner(L.bannerRecordingFailed(describe(error)))
+                let message = describe(error)
+                recordingLog.error("conversion of \(wav.lastPathComponent, privacy: .public) failed: \(message, privacy: .public)")
+                let kept = Self.keepWAV(wav, in: folder, named: fileName)
+                recordingLog.error("the recording was kept as \(kept?.path ?? wav.path, privacy: .public)")
+                await AppModel.shared.showBanner(L.bannerRecordingKeptAsWAV(message, kept?.lastPathComponent ?? wav.lastPathComponent))
             }
         }
+    }
+
+    /// Moves the WAV next to where the M4A would have gone: same name with `.wav`, " 2", " 3" when taken.
+    nonisolated private static func keepWAV(_ wav: URL, in folder: URL, named m4aName: String) -> URL? {
+        let fm = FileManager.default
+        let base = (m4aName as NSString).deletingPathExtension
+        for n in 1...1000 {
+            let name = n == 1 ? "\(base).wav" : "\(base) \(n).wav"
+            let target = folder.appendingPathComponent(name)
+            guard !fm.fileExists(atPath: target.path) else { continue }
+            do { try fm.moveItem(at: wav, to: target); return target } catch { return nil }
+        }
+        return nil
     }
 
     /// Quitting: recordings still running are stopped and converted before the app exits.

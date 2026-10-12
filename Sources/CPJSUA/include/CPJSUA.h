@@ -176,11 +176,21 @@ pj_status_t cpjsua_recorder_destroy_wait(pjsua_recorder_id id, unsigned timeout_
 
 /* ----------------------------------------------------------- presence --- */
 
-/** pjsua_buddy_add with subscribe = PJ_TRUE (account chosen by pjsua per request). */
-pj_status_t cpjsua_buddy_add(const char *uri, pjsua_buddy_id *out_id);
+/** pjsua_buddy_add with subscribe = PJ_TRUE (account chosen by pjsua per request) and
+ *  `token` as user data (MacroSIP identifies watched buddies by it; ids are reused). */
+pj_status_t cpjsua_buddy_add(const char *uri, unsigned long long token, pjsua_buddy_id *out_id);
+
+/** PJSUA_MAX_BUDDIES: pjsua_buddy_add asserts (aborts in debug builds) beyond it. */
+unsigned cpjsua_max_buddies(void);
+
+/** 1 when `event` is a received NOTIFY whose body contains `needle` (ASCII,
+ *  case-insensitive), 0 when it is a NOTIFY with a body without it, -1 otherwise
+ *  (no NOTIFY, no body). Used for RPID activities pjrpid does not know (on-the-phone). */
+int cpjsua_event_notify_body_contains(const pjsip_event *event, const char *needle);
 
 /** Flat copy of the pjsua_buddy_info fields MacroSIP maps to a presence status. */
 typedef struct cpjsua_buddy_snapshot {
+    unsigned long long token;                     /* user data given to cpjsua_buddy_add */
     char               uri[PJSIP_MAX_URL_SIZE];   /* as given to pjsua_buddy_add */
     pjsua_buddy_status status;
     pjrpid_activity    activity;
@@ -205,6 +215,17 @@ int cpjsua_parse_answer_after(const char *value);
 
 /** answer-after of the first Call-Info header of an incoming request that has one, or -1. */
 int cpjsua_rdata_answer_after(const pjsip_rx_data *rdata);
+
+/* ----------------------------------------------------- packet source --- */
+
+/** Where a received message came from (rdata->pkt_info, rdata->tp_info). */
+typedef struct cpjsua_pkt_source {
+    char addr[PJ_INET6_ADDRSTRLEN];
+    int  port;
+    int  transport;   /* PJSIP_TRANSPORT_UDP/TCP/TLS with the IPv6 flag cleared; 0 = unknown */
+} cpjsua_pkt_source;
+
+pj_status_t cpjsua_rdata_source(const pjsip_rx_data *rdata, cpjsua_pkt_source *out);
 
 /* -------------------------------------------------------------- tones --- */
 

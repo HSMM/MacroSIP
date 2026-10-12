@@ -115,7 +115,7 @@ struct CallLogView: View {
                 .foregroundStyle(selected ? Color.white.opacity(0.8) : Theme.label2)
                 .lineLimit(1)
                 if let note = e.note, !note.isEmpty {
-                    Text(note).font(.system(size: 11))
+                    Text(L.logNoteText(note)).font(.system(size: 11))
                         .foregroundStyle(selected ? Color.white.opacity(0.9) : Theme.orange)
                         .lineLimit(1)
                 }

@@ -57,18 +57,25 @@ final class EngineBridge: Sendable {
     struct AccountSlot: Sendable {
         var id: AccountID
         var registrationInterval: Int
+        /// The outbound proxy when configured as an IP literal (a trusted INVITE source).
+        var proxy: SignallingSource? = nil
     }
 
     struct WatchedBuddy: Sendable {
         /// The URI as the caller passed it to `subscribePresence`; `.buddyPresence` carries it.
         var reportedURI: String
         var last: PresenceStatus?
+        /// The last NOTIFY body had an RPID `on-the-phone` activity (pjrpid does not map it).
+        var onThePhone = false
     }
 
     struct State: Sendable {
         var sink: AsyncStream<EngineEvent>.Continuation?
         var engine: Engine?
         var accounts: [Int32: AccountSlot] = [:]                // pjsua_acc_id -> account
+        /// Source of the last REGISTER 2xx per account: the server whose INVITEs may carry a
+        /// Call-Info answer-after that is honoured. Cleared when the account is not registered.
+        var registrarSources: [Int32: SignallingSource] = [:]
         var registration: [AccountID: RegistrationState] = [:]
         /// Registration switch requested while a REGISTER transaction was in flight
         /// (PJSIP answered EBUSY); applied when that transaction completes.
@@ -77,8 +84,8 @@ final class EngineBridge: Sendable {
         /// `.callEnded` of recorded calls, keyed by call serial, held back until the engine
         /// finalised the recording (see `releaseDeferredEnds`).
         var deferredEnds: [UInt64: EngineEvent] = [:]
-        /// Watched presence URIs (as given to pjsua_buddy_add) -> what events report.
-        var watched: [String: WatchedBuddy] = [:]
+        /// Watched buddies by the token stored in their pjsua user data (buddy ids are reused).
+        var watched: [UInt64: WatchedBuddy] = [:]
         /// Never reset, so CallIDs stay unique across engine restarts in one process.
         var nextSerial: UInt64 = 1
     }
@@ -126,14 +133,29 @@ final class EngineBridge: Sendable {
 
     // MARK: accounts
 
-    func setAccount(_ index: Int32, _ id: AccountID, registrationInterval: Int) {
+    func setAccount(_ index: Int32, _ id: AccountID, registrationInterval: Int, proxy: SignallingSource? = nil) {
         state.withLock { st in
-            st.accounts[index] = AccountSlot(id: id, registrationInterval: registrationInterval)
+            st.accounts[index] = AccountSlot(id: id, registrationInterval: registrationInterval, proxy: proxy)
+        }
+    }
+
+    func setRegistrarSource(_ index: Int32, _ source: SignallingSource?) {
+        state.withLock { $0.registrarSources[index] = source }
+    }
+
+    /// The INVITE came from the server that accepted the account's REGISTER, or from its
+    /// outbound proxy (IP literal).
+    func isTrustedSource(_ source: SignallingSource, account index: Int32) -> Bool {
+        state.withLock { st in
+            if let registrar = st.registrarSources[index], source.isSamePeer(as: registrar) { return true }
+            if let proxy = st.accounts[index]?.proxy, source.isSamePeer(as: proxy) { return true }
+            return false
         }
     }
 
     func removeAccount(_ index: Int32) {
         state.withLock { st in
+            st.registrarSources[index] = nil
             if let old = st.accounts.removeValue(forKey: index) {
                 st.registration[old.id] = nil
                 st.pendingRegistration[old.id] = nil
@@ -313,30 +335,56 @@ final class EngineBridge: Sendable {
         }
     }
 
-    // MARK: presence
-
-    func watch(_ uri: String, reportedAs reported: String) {
+    /// Yields one held-back `.callEnded` with `isRecording == false`: its recording moved to a
+    /// leg that stays in the conference.
+    func releaseDeferredEndWithoutRecording(serial: UInt64) {
         state.withLock { st in
-            if st.watched[uri] == nil { st.watched[uri] = WatchedBuddy(reportedURI: reported) }
+            guard let e = st.deferredEnds.removeValue(forKey: serial) else { return }
+            if case .callEnded(var info, let duration) = e {
+                info.isRecording = false
+                st.sink?.yield(.callEnded(info, duration: duration))
+            } else {
+                st.sink?.yield(e)
+            }
         }
     }
 
-    func unwatch(_ uri: String) {
-        _ = state.withLock { $0.watched.removeValue(forKey: uri) }
+    // MARK: presence
+
+    func watch(token: UInt64, reportedAs reported: String) {
+        state.withLock { $0.watched[token] = WatchedBuddy(reportedURI: reported) }
+    }
+
+    func unwatch(token: UInt64) {
+        _ = state.withLock { $0.watched.removeValue(forKey: token) }
     }
 
     func unwatchAll() {
         state.withLock { $0.watched = [:] }
     }
 
-    /// Emits `.buddyPresence` for a watched URI when its status changed.
-    func reportPresence(uri: String, _ status: PresenceStatus) {
+    func setOnThePhone(token: UInt64, _ on: Bool) {
+        state.withLock { st in st.watched[token]?.onThePhone = on }
+    }
+
+    /// Emits `.buddyPresence` for a watched buddy when its status changed.
+    func reportPresence(_ buddy: BuddySnapshot) {
         state.withLock { st in
-            guard var w = st.watched[uri], w.last != status else { return }
+            guard var w = st.watched[buddy.token] else { return }
+            let activity = buddy.activity == .unknown && w.onThePhone ? .onThePhone : buddy.activity
+            let status = PresenceMapping.status(basic: buddy.basic, activity: activity, note: buddy.note,
+                                                subscriptionTerminated: buddy.terminated)
+            guard w.last != status else { return }
             w.last = status
-            st.watched[uri] = w
+            st.watched[buddy.token] = w
             st.sink?.yield(.buddyPresence(contactURI: w.reportedURI, status))
         }
+    }
+
+    /// Logs a warning (os_log + `.log` event) from a callback.
+    func warn(_ text: String) {
+        engineLogger.notice("\(text, privacy: .public)")
+        emit(.log(level: 2, "engine: \(text)"))
     }
 }
 
@@ -375,6 +423,7 @@ func installPJCallbacks(_ cb: inout pjsua_callback) {
     cb.on_dtmf_digit2 = pjOnDtmfDigit2
     cb.on_call_replaced = pjOnCallReplaced
     cb.on_buddy_state = pjOnBuddyState
+    cb.on_buddy_evsub_state = pjOnBuddyEvsubState
     // on_pager (instant messages) stays unset: pjsua answers MESSAGE with 200 and drops it.
 }
 
@@ -425,9 +474,20 @@ private func pjOnIncomingCall(_ accID: pjsua_acc_id, _ callID: pjsua_call_id, _ 
         return
     }
 
-    // Intercom / paging: Call-Info: <...>;answer-after=N (AutoAnswerPolicy decides).
+    // Intercom / paging: Call-Info: <...>;answer-after=N (AutoAnswerPolicy decides). Honoured
+    // only from the account's own server: anyone who reaches the SIP port could otherwise
+    // make us answer with the microphone open.
+    var trustedAfter: Int?
     let after = Int(cpjsua_rdata_answer_after(rdata))
-    let answerAfter: Int? = after >= 0 ? after : nil
+    if after >= 0 {
+        let source = SignallingSource.read(rdata)
+        if let source, bridge.isTrustedSource(source, account: accID) {
+            trustedAfter = after
+        } else {
+            bridge.warn("call \(callID): ignored answer-after from untrusted source \(source?.description ?? "unknown")")
+        }
+    }
+    let answerAfter = trustedAfter
 
     // Ring: 180 Ringing goes out now; the call waits in EARLY until answer()/reject().
     PJ.warn(cpjsua_call_answer(callID, 180), "call \(callID): 180 Ringing")
@@ -475,8 +535,10 @@ private func pjOnRegState2(_ accID: pjsua_acc_id, _ info: UnsafeMutablePointer<p
     guard let account = bridge.account(for: accID) else { return }
     let id = account.id
     let new: RegistrationState
+    var source: SignallingSource?
     if let info, let param = info.pointee.cbparam {
         let p = param.pointee
+        source = SignallingSource.read(p.rdata)
         new = RegistrationMapping.state(
             renew: info.pointee.renew != 0, status: p.status, code: Int(p.code),
             reason: PJ.string(p.reason), expiration: p.expiration,
@@ -486,6 +548,17 @@ private func pjOnRegState2(_ accID: pjsua_acc_id, _ info: UnsafeMutablePointer<p
         new = .unregistered
     } else {
         new = .failed(code: 0, reason: "Registration failed")
+    }
+
+    // The server that accepted the REGISTER is the trusted source of intercom INVITEs.
+    let wasRegistered: Bool
+    if case .registered = bridge.registration(of: id) { wasRegistered = true } else { wasRegistered = false }
+    if case .registered = new {
+        if let source { bridge.setRegistrarSource(accID, source) }
+        // Subscriptions that failed while the account was not registered: retry now, not in 300 s.
+        if !wasRegistered { bridge.hop { await $0.refreshPresenceSubscriptions(accountIndex: accID) } }
+    } else {
+        bridge.setRegistrarSource(accID, nil)
     }
 
     switch bridge.takePendingRegistration(id) {
@@ -530,5 +603,15 @@ private func pjOnDtmfDigit2(_ callID: pjsua_call_id, _ info: UnsafePointer<pjsua
 private func pjOnBuddyState(_ buddyID: pjsua_buddy_id) {
     PJ.registerThread()
     guard let buddy = BuddySnapshot.read(buddyID) else { return }
-    EngineBridge.shared.reportPresence(uri: buddy.uri, buddy.presence)
+    EngineBridge.shared.reportPresence(buddy)
+}
+
+/// Runs right before `on_buddy_state` for the same NOTIFY: remembers whether its PIDF had an
+/// RPID `on-the-phone` activity (Asterisk/FreePBX), which pjrpid reports as unknown.
+private func pjOnBuddyEvsubState(_ buddyID: pjsua_buddy_id, _ sub: OpaquePointer?,
+                                 _ event: UnsafeMutablePointer<pjsip_event>?) {
+    PJ.registerThread()
+    let hit = cpjsua_event_notify_body_contains(event, "on-the-phone")
+    guard hit >= 0, let token = BuddySnapshot.token(buddyID) else { return }
+    EngineBridge.shared.setOnThePhone(token: token, hit == 1)
 }

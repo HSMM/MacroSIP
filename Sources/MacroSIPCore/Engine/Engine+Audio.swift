@@ -58,9 +58,10 @@ extension Engine {
 
     private func startRingtone() {
         guard ringtone == nil else { return }
+        ringtoneDevice = separateRingtoneDevice()
         do {
             ringtone = try TonePlayer(name: "ringtone", source: ringtoneSource,
-                                      deviceID: separateRingtoneDevice())
+                                      deviceID: ringtoneDevice)
         } catch {
             PJ.warn(error, "ringtone")
             // A missing/broken WAV or device must not leave the call silent.
@@ -88,7 +89,7 @@ extension Engine {
     }
 
     /// The ringtone device when it differs from the call output, else nil (conference bridge).
-    private func separateRingtoneDevice() -> Int? {
+    func separateRingtoneDevice() -> Int? {
         guard !nullAudio,
               let dev = AudioDeviceResolver.index(of: ringtoneDeviceName, in: audioDevices(), input: false)
         else { return nil }
@@ -96,7 +97,7 @@ extension Engine {
         return dev
     }
 
-    private func restartRingtoneIfPlaying() {
+    func restartRingtoneIfPlaying() {
         guard ringtone != nil else { return }
         stopRingtone()
         reconcileTones()
@@ -208,13 +209,16 @@ extension Engine {
         do { try applySoundDevices(throwing: false) } catch { PJ.warn(error, "select audio devices") }
     }
 
+    /// A device came or went (often a virtual one from Zoom/Teams). Indices may have shifted,
+    /// so the remembered names are resolved again, but the sound device is reopened only when
+    /// the resolved input or output index actually changed: reopening mid-call is a dropout.
     func handleAudioDevicesChanged() {
         guard isStarted, PJ.registerThread() else { return }
         PJ.warn(pjmedia_aud_dev_refresh(), "audio device refresh")
-        // Indices may have shifted: re-resolve the remembered names.
-        appliedSoundDevices = nil
-        applySoundDevices()
-        restartRingtoneIfPlaying()
+        applySoundDevices()                  // no-op while the resolved indices are the same
+        if ringtone != nil, separateRingtoneDevice() != ringtoneDevice {
+            restartRingtoneIfPlaying()
+        }
         emit(.audioDevicesChanged)
     }
 }

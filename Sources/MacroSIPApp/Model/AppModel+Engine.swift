@@ -11,6 +11,7 @@ extension AppModel {
 
     /// Starts the engine, registers every account, applies audio settings.
     func bootstrap() async {
+        cleanUpStaleRecordings()
         startEventLoop()
         await startEngineAndAccounts()
         #if DEBUG
@@ -113,6 +114,13 @@ extension AppModel {
         if let i = calls.firstIndex(where: { $0.id == info.id }) { calls[i] = info } else { calls.append(info) }
         if info.state != .incoming { clearAutoAnswer(info.id) }
         noteRecordingState(info)
+        updateConferenceClock()
+    }
+
+    /// The conference timer runs from the moment two legs were merged.
+    func updateConferenceClock() {
+        if conferenceCalls.count >= 2 { if conferenceSince == nil { conferenceSince = Date() } }
+        else if conferenceSince != nil { conferenceSince = nil }
     }
 
     private func handleIncoming(_ info: CallInfo) {
@@ -130,11 +138,12 @@ extension AppModel {
         var note: String?
         if !calls.contains(where: { $0.id == info.id }), info.direction == .incoming,
            case .disconnected(486, _) = info.state {
-            note = L.logNoteCallLimit
+            note = CallLogNote.callLimit
         }
         calls.removeAll { $0.id == info.id }
         clearAutoAnswer(info.id)
         recordingCallEnded(info)
+        updateConferenceClock()
         ringtoneSilenced.remove(info.id)
         if let t = transfer, t.original == info.id || t.consult == info.id { transfer = nil }
         if liveCalls.isEmpty { showKeypad = false; dtmfSent = "" }

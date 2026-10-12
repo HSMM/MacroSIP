@@ -6,7 +6,7 @@ import MacroSIPCore
 struct RecordingPane: View {
     @Environment(AppModel.self) private var model
 
-    private var folder: URL { model.recordingsFolderForDisplay }
+    private var folder: URL { model.recordingFolderURL }
     /// The default folder is created on first use, so only a chosen folder can be "missing".
     private var folderMissing: Bool {
         model.settings.recording.folder != nil && !FileManager.default.fileExists(atPath: folder.path)
@@ -77,9 +77,7 @@ struct RecordingPane: View {
     }
 
     private func openInFinder() {
-        let access = model.recordingsFolder()
-        defer { access.stopAccess() }
-        try? FileManager.default.createDirectory(at: access.url, withIntermediateDirectories: true)
-        NSWorkspace.shared.open(access.url)
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        NSWorkspace.shared.open(folder)
     }
 }

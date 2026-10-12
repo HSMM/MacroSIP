@@ -7,7 +7,7 @@ struct AutoAnswerPane: View {
 
     var body: some View {
         PaneContainer {
-            FormGroup(footer: L.autoAnswerFooter) {
+            FormGroup(content: {
                 FormRow(label: L.autoAnswerMode) {
                     SegmentedTabs(items: [
                         .init(value: AutoAnswerMode.off, title: L.autoAnswerOff),
@@ -29,7 +29,12 @@ struct AutoAnswerPane: View {
                 FormRow(label: L.autoAnswerHonour, help: L.autoAnswerHonourHelp) {
                     Toggle("", isOn: model.binding(\.autoAnswer.honourCallInfo)).labelsHidden().toggleStyle(.switch)
                 }
-            }
+            }, footerView: {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(L.autoAnswerFooter).fixedSize(horizontal: false, vertical: true)
+                    Text(L.autoAnswerServerOnly).fixedSize(horizontal: false, vertical: true)
+                }
+            })
         }
     }
 }

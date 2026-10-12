@@ -33,6 +33,9 @@ final class AppModel {
     @ObservationIgnored var recordingJobs: [CallID: RecordingJob] = [:]
     @ObservationIgnored var autoRecordTried: Set<CallID> = []
     @ObservationIgnored var autoAnswerTasks: [CallID: Task<Void, Never>] = [:]
+    @ObservationIgnored var recordingStopping: Set<CallID> = []
+    @ObservationIgnored var recordingFolderScope: URL?          // security-scoped access held while the folder is in use
+    @ObservationIgnored let sessionStart = Date()
 
     // Data
     var accounts: [AccountConfig] = []
@@ -47,6 +50,8 @@ final class AppModel {
     var presence: [String: PresenceStatus] = [:]             // keyed by `presenceKey(_:)`
     var recordingSince: [CallID: Date] = [:]                 // calls being recorded, for the REC chip
     var autoAnswer: [CallID: AutoAnswerCountdown] = [:]      // calls that will be answered by themselves
+    var conferenceSince: Date?                               // when the running conference was formed
+    var recordingFolderURL = RecordingFileName.defaultFolder    // resolved once, see refreshRecordingFolder()
     var savedRecordings: [URL] = []                          // finished M4A files of this session
 
     // UI state
@@ -97,6 +102,7 @@ final class AppModel {
         settings = settingsStore.load()
         seenLogAt = (prefs.object(forKey: "seenLogAt") as? Date) ?? .distantPast
         loadStores()
+        refreshRecordingFolder()
     }
 
     // MARK: - Derived state

@@ -81,14 +81,19 @@ extension AppModel {
 
     func toggleMuteCurrent() { if let c = currentCall { toggleMute(c) } }
 
-    /// Hold toggle. Resuming a call holds the currently active one first.
+    /// Hold toggle. A conference is one unit: holding or resuming one leg does the same to all legs.
+    /// Resuming holds the other active calls first (but never a leg of the same conference).
     func toggleHold(_ call: CallInfo) {
+        let unit = legs(of: call)
         run {
             if call.isHeldCall {
-                for other in self.activeCalls where other.id != call.id { try await self.engine.setHold(other.id, true) }
-                try await self.engine.setHold(call.id, false)
+                for other in self.activeCalls where !unit.contains(where: { $0.id == other.id }) {
+                    try await self.engine.setHold(other.id, true)
+                }
+                if call.inConference, unit.count >= 2 { try await self.engine.merge(unit.map(\.id)) }   // merge un-holds the legs
+                else { try await self.engine.setHold(call.id, false) }
             } else {
-                try await self.engine.setHold(call.id, true)
+                for leg in unit { try await self.engine.setHold(leg.id, true) }
             }
         }
     }
@@ -108,6 +113,7 @@ extension AppModel {
 
     /// Answer holds the active call first (the call becomes active, the other one held).
     func answer(_ id: CallID) {
+        clearAutoAnswer(id)
         run {
             for active in self.activeCalls { try await self.engine.setHold(active.id, true) }
             try await self.engine.answer(id)
@@ -115,9 +121,10 @@ extension AppModel {
         }
     }
 
-    func holdAndAnswer(_ id: CallID) { answer(id) }
+    func holdAndAnswer(_ id: CallID) { clearAutoAnswer(id); answer(id) }
 
     func endCurrentAndAnswer(_ id: CallID) {
+        clearAutoAnswer(id)
         run {
             if let current = self.currentCall { try await self.engine.hangup(current.id) }
             try await self.engine.answer(id)
@@ -126,6 +133,7 @@ extension AppModel {
     }
 
     func decline(_ id: CallID) {
+        clearAutoAnswer(id)
         run { try await self.engine.reject(id, code: 486) }
     }
 
@@ -150,11 +158,23 @@ extension AppModel {
         run { try await self.engine.merge(ids) }
     }
 
-    func split(_ call: CallInfo) { run { try await self.engine.split(call.id) } }
+    /// The leg leaves the conference and stays on hold (SCREENS 5.4).
+    func split(_ call: CallInfo) {
+        run {
+            try await self.engine.split(call.id)
+            try await self.engine.setHold(call.id, true)
+        }
+    }
 
     func endConference() {
         let ids = conferenceCalls.map(\.id)
-        run { for id in ids { try await self.engine.hangup(id) } }
+        run {
+            var firstError: Error?
+            for id in ids {
+                do { try await self.engine.hangup(id) } catch { firstError = firstError ?? error }
+            }
+            if let firstError { throw firstError }
+        }
     }
 
     // MARK: - Transfer

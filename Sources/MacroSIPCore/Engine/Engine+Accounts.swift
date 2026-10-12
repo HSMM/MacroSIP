@@ -17,7 +17,8 @@ extension Engine {
             try PJ.check(pjsua_acc_add(p, cfg.isDefaultOutgoing ? 1 : 0, &index), "pjsua_acc_add")
         }
         accounts[cfg.id] = AccountEntry(index: index, config: cfg, password: password)
-        bridge.setAccount(index, cfg.id, registrationInterval: cfg.registrationInterval)
+        bridge.setAccount(index, cfg.id, registrationInterval: cfg.registrationInterval,
+                          proxy: SignallingSource.proxy(cfg.outboundProxy, transport: cfg.transport))
         bridge.setRegistration(cfg.id, .unregistered, force: true)
         warnIfUnverifiedTLS(cfg)
         // pjsua starts accounts offline; the first PUBLISH (after registering) says available.
@@ -57,16 +58,23 @@ extension Engine {
         if cfg.isDefaultOutgoing {
             PJ.warn(pjsua_acc_set_default(entry.index), "set default account")
         }
+        let serverChanged = entry.config.registrarURI != cfg.registrarURI
+            || entry.config.outboundProxy != cfg.outboundProxy || entry.config.transport != cfg.transport
         entry.config = cfg
         entry.password = pw
         accounts[cfg.id] = entry
-        bridge.setAccount(entry.index, cfg.id, registrationInterval: cfg.registrationInterval)
+        bridge.setAccount(entry.index, cfg.id, registrationInterval: cfg.registrationInterval,
+                          proxy: SignallingSource.proxy(cfg.outboundProxy, transport: cfg.transport))
+        // Another server: trust its INVITEs only after it accepted a REGISTER.
+        if serverChanged { bridge.setRegistrarSource(entry.index, nil) }
         warnIfUnverifiedTLS(cfg)
         // Switching publishing off makes pjsua un-PUBLISH and go offline; switching it back
         // on must not publish "offline": re-apply the last status.
         if cfg.publishPresence {
             do { try applyPresence(entry.presence, index: entry.index) } catch { PJ.warn(error, "presence") }
         }
+        // A SUBSCRIBE that failed with the old settings would wait 300 s for pjsua's retry.
+        refreshPresenceSubscriptions(accountIndex: entry.index)
         if cfg.enabled {
             try applyRegistration(cfg.id, true)
         }
