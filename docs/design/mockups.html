@@ -4,11 +4,11 @@
 <style>
 /* Layout: a review desk. Left rail lists screens; the stage shows one macOS mock at true size,
    with an annotation card beside it (stacked below on narrow widths). Page chrome stays cool and quiet
-   so the native-looking mocks carry the colour. "Full" additions are marked in amber. */
+   so the native-looking mocks carry the colour. */
 :root{
   /* page chrome */
   --desk:#e9ecf1; --panel:#ffffff; --ink:#1a1e25; --ink-2:#596272; --ink-3:#8a93a2; --line:#d6dbe3;
-  --full:#b8580a; --full-bg:#fff0de; --full-ink:#ffffff; --q:#1d5fbf;
+  --q:#1d5fbf;
   --font-ui:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro",system-ui,"Helvetica Neue",Helvetica,Arial,sans-serif;
   --font-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
   /* macOS mock tokens (light) */
@@ -28,7 +28,7 @@
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
   --desk:#131519; --panel:#1c1f25; --ink:#e7eaf0; --ink-2:#a0a8b6; --ink-3:#6e7686; --line:#2d323b;
-  --full:#ffa54a; --full-bg:#3a2612; --full-ink:#1b1108; --q:#7fb0ff;
+  --q:#7fb0ff;
   --m-desktop-a:#1f2c44; --m-desktop-b:#3a2b45; --m-desktop-c:#1d3a3a;
   --m-win:#232325; --m-content:#1c1c1e; --m-group:#2b2b2e; --m-groupbg:#1e1e20;
   --m-winborder:rgba(255,255,255,.14); --m-shadow:0 22px 50px rgba(0,0,0,.55),0 2px 8px rgba(0,0,0,.4);
@@ -43,7 +43,7 @@
 }}
 :root[data-theme="dark"]{
   --desk:#131519; --panel:#1c1f25; --ink:#e7eaf0; --ink-2:#a0a8b6; --ink-3:#6e7686; --line:#2d323b;
-  --full:#ffa54a; --full-bg:#3a2612; --full-ink:#1b1108; --q:#7fb0ff;
+  --q:#7fb0ff;
   --m-desktop-a:#1f2c44; --m-desktop-b:#3a2b45; --m-desktop-c:#1d3a3a;
   --m-win:#232325; --m-content:#1c1c1e; --m-group:#2b2b2e; --m-groupbg:#1e1e20;
   --m-winborder:rgba(255,255,255,.14); --m-shadow:0 22px 50px rgba(0,0,0,.55),0 2px 8px rgba(0,0,0,.4);
@@ -76,21 +76,16 @@ svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stro
 .pseg{display:flex;background:var(--desk);border:1px solid var(--line);border-radius:8px;padding:2px;gap:2px}
 .pseg button{flex:1;border:0;background:transparent;border-radius:6px;padding:5px 6px;font-size:12.5px;cursor:pointer;color:var(--ink-2)}
 .pseg button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12);font-weight:600}
-.pseg.ed button[data-ed="full"][aria-pressed="true"]{color:var(--full)}
-.chk{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-2);cursor:pointer}
-.chk input{accent-color:var(--full);margin:0}
 nav.screens{display:flex;flex-direction:column;gap:1px}
 nav.screens a{display:grid;grid-template-columns:22px 1fr auto;align-items:center;gap:6px;padding:6px 8px;border-radius:7px;color:var(--ink);text-decoration:none;font-size:13px}
 nav.screens a .n{font:500 11px var(--font-mono);color:var(--ink-3)}
 nav.screens a:hover{background:var(--desk)}
 nav.screens a[aria-current="true"]{background:var(--ink);color:var(--panel)}
 nav.screens a[aria-current="true"] .n{color:inherit;opacity:.7}
-nav.screens a.sub{padding-left:30px;font-size:12.5px;color:var(--ink-2)}
+nav.screens a.sub{grid-template-columns:1fr;padding-left:30px;font-size:12.5px;color:var(--ink-2)}
 nav.screens a.sub[aria-current="true"]{color:var(--panel)}
-.ftag{font:600 9.5px/1 var(--font-mono);letter-spacing:.04em;text-transform:uppercase;color:var(--full);background:var(--full-bg);border:1px solid var(--full);border-radius:4px;padding:2px 4px}
 .legend{font-size:12px;color:var(--ink-2);padding:0 6px;display:flex;flex-direction:column;gap:6px;margin-top:auto}
 .legend .row{display:flex;gap:8px;align-items:flex-start}
-.swatch{width:18px;height:12px;border:1.5px dashed var(--full);border-radius:3px;flex:none;margin-top:3px}
 
 main{min-width:0;padding-inline:clamp(16px,3vw,40px);padding-block:28px 64px}
 .screen{display:none}
@@ -112,14 +107,7 @@ main{min-width:0;padding-inline:clamp(16px,3vw,40px);padding-block:28px 64px}
 .notes ol.qs{list-style:none;padding:0;display:flex;flex-direction:column;gap:8px}
 .notes ol.qs li{display:grid;grid-template-columns:40px 1fr;gap:6px}
 .notes ol.qs .qid{font:600 11.5px/1.5 var(--font-mono);color:var(--q)}
-.notes .fnote{border-left:2px solid var(--full);padding-left:10px;color:var(--ink-2)}
 kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 4px;background:var(--desk)}
-
-/* ---------- edition gating ---------- */
-body[data-edition="lite"] .f, body[data-edition="lite"] .f-plain{display:none!important}
-body[data-edition="full"] .l-plain{display:none!important}
-body[data-edition="full"][data-mark="on"] .f{outline:1.5px dashed var(--full);outline-offset:2px;position:relative}
-body[data-edition="full"][data-mark="on"] .f::after{content:"Full";position:absolute;top:-8px;right:-6px;z-index:20;font:600 8.5px/1 var(--font-mono);letter-spacing:.04em;text-transform:uppercase;background:var(--full);color:var(--full-ink);padding:2px 4px;border-radius:3px;pointer-events:none}
 
 /* ---------- macOS mock primitives ---------- */
 .mac{font:13px/1.35 var(--font-ui);color:var(--m-label);letter-spacing:-.003em;text-align:left}
@@ -166,10 +154,11 @@ body[data-edition="full"][data-mark="on"] .f::after{content:"Full";position:abso
 
 /* ---------- main window ---------- */
 .mw{width:340px}
-.mw .numrow{display:flex;gap:6px;padding:4px 10px 10px;align-items:center}
-.mw .numrow .field{flex:1;font-size:17px;min-height:30px;padding:4px 8px}
-.acct-pop{padding:3px 4px 3px 7px;min-height:30px;max-width:112px}
-.acct-pop .nm{overflow:hidden;text-overflow:ellipsis;font-size:12.5px}
+.mw .acctrow{padding:3px 10px 6px}
+.acct-pop{gap:6px;padding:3px 5px 3px 8px;min-height:26px;max-width:100%}
+.acct-pop .nm{font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mw .numrow{display:flex;gap:6px;padding:0 10px 10px;align-items:center}
+.mw .numrow .field{flex:1;min-width:0;font-size:17px;min-height:30px;padding:4px 8px}
 .mw .tabs{padding:0 10px 8px}
 .mw .body{background:var(--m-content);border-top:.5px solid var(--m-sep);border-bottom:.5px solid var(--m-sep)}
 .statusbar{display:flex;align-items:center;gap:12px;padding:0 10px;height:26px;font-size:11.5px;color:var(--m-label2);border-radius:0 0 11px 11px;white-space:nowrap;overflow:hidden}
@@ -220,6 +209,15 @@ body[data-edition="full"][data-mark="on"] .f::after{content:"Full";position:abso
 .mi .chk-sp{width:12px;flex:none;display:grid;place-items:center}
 .msep{height:1px;background:var(--m-sep);margin:5px 9px}
 .mhead{font-size:11px;font-weight:600;color:var(--m-label2);padding:4px 9px 2px}
+.popup.pressed{background:var(--m-fill2)}
+.mi.acct{padding:4px 9px;min-height:30px}
+.mi.acct .tx{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.2}
+.mi.acct .tx b{font-weight:500;font-size:13px}
+.mi.acct .tx small{font-size:11px;color:var(--m-label2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mi.acct.dis .tx small{color:inherit}
+.mi.acct .switch{width:26px;height:16px;margin-left:auto}
+.mi.acct .switch::after{width:12px;height:12px}
+.mi.acct .switch.on::after{left:12px}
 .dir{width:18px;display:grid;place-items:center;flex:none;color:var(--m-label2)}
 .dir svg{width:13px;height:13px;stroke-width:1.8}
 .dir.missed{color:var(--m-red)}
@@ -394,8 +392,7 @@ body[data-edition="full"][data-mark="on"] .f::after{content:"Full";position:abso
 .incall .timer{font-size:22px;font-weight:300;font-variant-numeric:tabular-nums;line-height:1}
 .incall .state{font-size:11px;color:var(--m-green);font-weight:500}
 .incall .cmeta{justify-content:center}
-.cgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 4px;width:100%;margin-top:auto}
-body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
+.cgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 4px;width:100%;margin-top:auto}
 .cgrid .cb{width:auto}
 .incall .endcall{width:100%;margin-top:4px}
 .kp{flex:1;display:flex;flex-direction:column;gap:10px;padding:10px 16px 14px}
@@ -474,14 +471,6 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
     <div class="brand"><svg class="appicon" aria-hidden="true"><use href="#i-mark"/></svg><div><b>MacroSIP</b><small>UI mockups · for approval</small></div></div>
 
     <div class="ctl-group">
-      <span class="ctl-label" id="lbl-ed">Edition</span>
-      <div class="pseg ed" role="group" aria-labelledby="lbl-ed">
-        <button type="button" data-ed="lite" aria-pressed="true" id="ed-lite">Lite</button>
-        <button type="button" data-ed="full" aria-pressed="false" id="ed-full">Full</button>
-      </div>
-      <label class="chk" for="mark-full"><input type="checkbox" id="mark-full" checked> Mark Full-only additions</label>
-    </div>
-    <div class="ctl-group">
       <span class="ctl-label" id="lbl-th">Theme</span>
       <div class="pseg th" role="group" aria-labelledby="lbl-th">
         <button type="button" data-th="system" aria-pressed="true" id="th-system">System</button>
@@ -504,14 +493,13 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
       <a href="#settings" class="sub" data-s="settings" data-pane="audio">Audio</a>
       <a href="#settings" class="sub" data-s="settings" data-pane="network">Network</a>
       <a href="#settings" class="sub" data-s="settings" data-pane="codecs">Codecs</a>
-      <a href="#settings" class="sub f-plain" data-s="settings" data-pane="recording">Recording <span class="ftag">Full</span></a>
-      <a href="#settings" class="sub f-plain" data-s="settings" data-pane="autoanswer">Auto-answer <span class="ftag">Full</span></a>
+      <a href="#settings" class="sub" data-s="settings" data-pane="recording">Recording</a>
+      <a href="#settings" class="sub" data-s="settings" data-pane="autoanswer">Auto-answer</a>
       <a href="#account" data-s="account"><span class="n">9</span>Account editor</a>
       <a href="#firstrun" data-s="firstrun"><span class="n">10</span>First launch</a>
     </nav>
 
     <div class="legend">
-      <div class="row"><span class="swatch"></span><span>Dashed amber outline with a <b>Full</b> tag marks controls that exist only in the Full edition. Switch to Full to see them.</span></div>
       <div class="row"><span class="mono" style="color:var(--q);font-size:11px;font-weight:600;flex:none">Q4.2</span><span>Owner decisions keep the numbers of the questions they answered.</span></div>
     </div>
   </aside>
@@ -524,11 +512,9 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
       <div>
         <p class="cap"><b>Main window</b> · Dialpad tab, idle, typing a number</p>
         <div class="win mw mac">
-          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t"><span class="l-plain">MacroSIP Lite</span><span class="f-plain">MacroSIP</span></div></div>
-          <div class="numrow">
-            <span class="popup acct-pop" title="Outgoing account"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span>
-            <div class="field focus"><span id="dial-out" class="tnum">+7 912 555-01</span><span style="width:1px;height:19px;background:var(--m-blue);margin-left:-4px"></span></div>
-          </div>
+          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t">MacroSIP</div></div>
+          <div class="acctrow"><span class="popup acct-pop" title="Outgoing account"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+          <div class="numrow"><div class="field focus"><span id="dial-out" class="tnum">+7 912 555-01</span><span style="width:1px;height:19px;background:var(--m-blue);margin-left:-4px"></span></div></div>
           <div class="tabs"><div class="seg full"><span class="on">Dialpad</span><span data-go="contacts">Contacts</span><span data-go="calllog">Call Log</span></div></div>
           <div class="body">
             <div class="dialpad">
@@ -561,18 +547,74 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
           </div>
         </div>
       </div>
+      <div>
+        <p class="cap"><b>Account pop-up</b> · open: pick the outgoing account, switch accounts on or off</p>
+        <div class="win mw mac">
+          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t">MacroSIP</div></div>
+          <div class="acctrow"><span class="popup acct-pop pressed" title="Outgoing account"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+          <div class="numrow"><div class="field"><span class="ph">Name or number</span></div></div>
+          <div class="tabs"><div class="seg full"><span class="on">Dialpad</span><span>Contacts</span><span>Call Log</span></div></div>
+          <div class="body">
+            <div class="dialpad">
+              <div class="keys">
+                <button class="key" type="button" tabindex="-1"><b>1</b><small>&nbsp;</small></button>
+                <button class="key" type="button" tabindex="-1"><b>2</b><small>ABC</small></button>
+                <button class="key" type="button" tabindex="-1"><b>3</b><small>DEF</small></button>
+                <button class="key" type="button" tabindex="-1"><b>4</b><small>GHI</small></button>
+                <button class="key" type="button" tabindex="-1"><b>5</b><small>JKL</small></button>
+                <button class="key" type="button" tabindex="-1"><b>6</b><small>MNO</small></button>
+                <button class="key" type="button" tabindex="-1"><b>7</b><small>PQRS</small></button>
+                <button class="key" type="button" tabindex="-1"><b>8</b><small>TUV</small></button>
+                <button class="key" type="button" tabindex="-1"><b>9</b><small>WXYZ</small></button>
+                <button class="key" type="button" tabindex="-1"><b>*</b><small>&nbsp;</small></button>
+                <button class="key" type="button" tabindex="-1"><b>0</b><small>+</small></button>
+                <button class="key" type="button" tabindex="-1"><b>#</b><small>&nbsp;</small></button>
+              </div>
+              <div class="dial-actions">
+                <span></span>
+                <span class="callbtn" aria-hidden="true"><svg class="i"><use href="#i-handset"/></svg></span>
+                <span class="ghost" aria-hidden="true"><svg class="i"><use href="#i-backspace"/></svg></span>
+              </div>
+              <div class="hint">Return calls · empty field + Call redials</div>
+            </div>
+          </div>
+          <div class="statusbar">
+            <span class="acc"><span class="dot ok"></span>Office</span>
+            <span class="acc"><span class="dot ok"></span>Home</span>
+            <span class="acc" style="color:var(--m-red)"><span class="dot err"></span>Backup: 403</span>
+          </div>
+          <div class="menu mac" style="position:absolute;left:10px;top:61px;width:262px">
+            <div class="mhead">Accounts</div>
+            <div class="mi acct"><span class="chk-sp"><svg class="i" style="width:12px;height:12px"><use href="#i-check"/></svg></span><span class="dot ok"></span><span class="tx"><b>Office</b><small>alex@pbx.example.com</small></span><span class="switch on"></span></div>
+            <div class="mi acct"><span class="chk-sp"></span><span class="dot ok"></span><span class="tx"><b>Home</b><small>7741@sip.example.net</small></span><span class="switch on"></span></div>
+            <div class="mi acct"><span class="chk-sp"></span><span class="dot err"></span><span class="tx"><b>Backup</b><small style="color:var(--m-red)">403 Forbidden · alex@voip.example.org</small></span><span class="switch on"></span></div>
+            <div class="mi acct dis"><span class="chk-sp"></span><span class="dot off"></span><span class="tx"><b>Lab</b><small>test@10.0.0.5</small></span><span class="switch"></span></div>
+            <div class="msep"></div>
+            <div class="mi"><span class="chk-sp"></span>Account Settings…<span class="sc">⌘,</span></div>
+          </div>
+        </div>
+      </div>
     </div></div>
     <aside class="notes">
       <div><h3>Intent</h3><p>The fastest path from "I know the number" to a ringing call. The number field is focused whenever the window is key, so typing digits works without clicking.</p></div>
       <div><h3>Interaction</h3><ul>
         <li>Keys on screen and the keyboard both type into the field; <kbd>⌫</kbd> deletes, <kbd>↩</kbd> calls, long-press <b>0</b> gives <b>+</b>.</li>
-        <li>The account picker sets the outgoing account for this call only; its default comes from "Default for outgoing". The dot shows that account's registration.</li>
+        <li>The account picker is a compact pop-up button at the left of its own row above the number field (as in Acrobits Groundwire). It sets the outgoing account for this call only; its default comes from "Default for outgoing". The dot shows that account's registration.</li>
+        <li><b>Call</b> and <kbd>↩</kbd> dial exactly what is typed: a number that matches nothing in Contacts or the Call Log is called as entered, no suggestion needed. On the Contacts and Call Log tabs <kbd>↩</kbd> in the field does the same.</li>
         <li>Pasting <span class="mono">sip:</span> or <span class="mono">tel:</span> URIs and numbers with spaces or dashes is accepted; the dial string is normalised on call.</li>
         <li>Status bar: one item per enabled account. A failed account shows the short reason in red; clicking an item opens that account in Settings.</li>
+      </ul></div>
+      <div><h3>Account pop-up</h3><ul>
+        <li>Lists every account. Clicking a name picks the outgoing account (checkmark) and closes the menu.</li>
+        <li>The switch at the right turns the account on or off without closing the menu. Off means no registration and no outgoing calls; the account stays in the list, dimmed, so it can be turned back on, and it leaves the status bar. A failing account (Backup: 403) is silenced in two clicks.</li>
+        <li>The same state is the "Enabled" switch in the account editor (screen 9) and the Disabled status in Settings › Accounts.</li>
       </ul></div>
       <div><h3>Decided</h3><ol class="qs">
         <li><span class="qid">Q1.1</span><span>Decided: letters typed in the number field show contact suggestions in a dropdown under the field.</span></li>
         <li><span class="qid">Q1.2</span><span>Decided: an empty field + Call redials the last number.</span></li>
+      </ol></div>
+      <div><h3>To decide</h3><ol class="qs">
+        <li><span class="qid">Q1.3</span><span>Where accounts are switched on and off. <b>A</b> (shown): switches in the account pop-up. <b>B</b>: a menu on each status-bar item with Enable / Disable, Retry and Account Settings…; disabled accounts would then also sit in the status bar, dimmed. Recommendation: A, because the 340 pt bar is already crowded with three accounts.</span></li>
       </ol></div>
     </aside>
   </div>
@@ -584,25 +626,23 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
       <div>
         <p class="cap"><b>Main window</b> · Contacts tab, right-click on a row</p>
         <div class="win mw mac">
-          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t"><span class="l-plain">MacroSIP Lite</span><span class="f-plain">MacroSIP</span></div></div>
-          <div class="numrow">
-            <span class="popup acct-pop"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span>
-            <div class="field"><span class="ph">Name or number</span></div>
-          </div>
+          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t">MacroSIP</div></div>
+          <div class="acctrow"><span class="popup acct-pop" title="Outgoing account"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+          <div class="numrow"><div class="field"><span class="ph">Name or number</span></div></div>
           <div class="tabs"><div class="seg full"><span data-go="dialpad">Dialpad</span><span class="on">Contacts</span><span data-go="calllog">Call Log</span></div></div>
           <div class="body">
             <div class="searchrow"><div class="field"><svg class="i"><use href="#i-search"/></svg><span>Search</span></div></div>
             <div class="list">
               <div class="secthead">A</div>
-              <div class="row"><span class="av-wrap"><span class="avatar b">AP</span><span class="pres f-plain" style="background:var(--m-green)"></span></span><span class="tx"><b>Anna Petrova</b><span class="tnum">+7 912 555-01-23</span></span><span class="f" style="font-size:11px;color:var(--m-label2)">Available</span></div>
+              <div class="row"><span class="av-wrap"><span class="avatar b">AP</span><span class="pres" style="background:var(--m-green)"></span></span><span class="tx"><b>Anna Petrova</b><span class="tnum">+7 912 555-01-23</span></span><span style="font-size:11px;color:var(--m-label2)">Available</span></div>
               <div class="secthead">B</div>
-              <div class="row sel ctx"><span class="av-wrap"><span class="avatar o">BI</span><span class="pres f-plain" style="background:var(--m-red)"></span></span><span class="tx"><b>Boris Ivanov</b><span class="tnum">104 · Office</span></span><span class="rbtn" style="background:rgba(255,255,255,.2);color:#fff"><svg class="i"><use href="#i-handset"/></svg></span></div>
+              <div class="row sel ctx"><span class="av-wrap"><span class="avatar o">BI</span><span class="pres" style="background:var(--m-red)"></span></span><span class="tx"><b>Boris Ivanov</b><span class="tnum">104 · Office</span></span><span class="rbtn" style="background:rgba(255,255,255,.2);color:#fff"><svg class="i"><use href="#i-handset"/></svg></span></div>
               <div class="secthead">H</div>
               <div class="row"><span class="av-wrap"><span class="avatar">HD</span></span><span class="tx"><b>Help Desk</b><span class="tnum">sip:helpdesk@pbx.example.com</span></span></div>
               <div class="secthead">M</div>
-              <div class="row"><span class="av-wrap"><span class="avatar g">MC</span><span class="pres f-plain" style="background:var(--m-yellow)"></span></span><span class="tx"><b>Mike Chen</b><span class="tnum">+1 415 555-0142</span></span><span class="f" style="font-size:11px;color:var(--m-label2)">Away</span></div>
+              <div class="row"><span class="av-wrap"><span class="avatar g">MC</span><span class="pres" style="background:var(--m-yellow)"></span></span><span class="tx"><b>Mike Chen</b><span class="tnum">+1 415 555-0142</span></span><span style="font-size:11px;color:var(--m-label2)">Away</span></div>
               <div class="secthead">O</div>
-              <div class="row"><span class="av-wrap"><span class="avatar p">OS</span><span class="pres f-plain" style="background:var(--m-gray)"></span></span><span class="tx"><b>Olga Smirnova</b><span class="tnum">+7 495 555-77-10</span></span></div>
+              <div class="row"><span class="av-wrap"><span class="avatar p">OS</span><span class="pres" style="background:var(--m-gray)"></span></span><span class="tx"><b>Olga Smirnova</b><span class="tnum">+7 495 555-77-10</span></span></div>
               <div class="secthead">R</div>
               <div class="row"><span class="av-wrap"><span class="avatar r">RE</span></span><span class="tx"><b>Reception</b><span class="tnum">100</span></span></div>
               <div class="ctxmenu mac" style="left:150px;top:96px">
@@ -611,7 +651,7 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
                 <div class="mi"><span style="width:14px"></span>Copy Number<span class="sc">⌘C</span></div>
                 <div class="msep"></div>
                 <div class="mi"><svg class="i"><use href="#i-pencil"/></svg>Edit…<span class="sc">⌘E</span></div>
-                <div class="mi f"><span style="width:14px"></span>Watch Presence<span class="sc"><svg class="i" style="width:12px;height:12px"><use href="#i-check"/></svg></span></div>
+                <div class="mi"><span style="width:14px"></span>Watch Presence<span class="sc"><svg class="i" style="width:12px;height:12px"><use href="#i-check"/></svg></span></div>
                 <div class="msep"></div>
                 <div class="mi danger"><svg class="i"><use href="#i-trash"/></svg>Delete<span class="sc">⌘⌫</span></div>
               </div>
@@ -635,7 +675,7 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
               <span style="text-align:right;color:var(--m-label2)">Name</span><div class="field">Boris Ivanov</div>
               <span style="text-align:right;color:var(--m-label2)">Number</span><div class="field tnum">104</div>
               <span style="text-align:right;color:var(--m-label2)">Account</span><span class="popup" style="justify-self:start">Any (use default)<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span>
-              <span class="f-plain"></span><label class="f" style="display:flex;gap:7px;align-items:center;font-size:12.5px"><span class="check on"><svg class="i"><use href="#i-check"/></svg></span>Watch presence (subscribe)</label>
+              <span></span><label style="display:flex;gap:7px;align-items:center;font-size:12.5px"><span class="check on"><svg class="i"><use href="#i-check"/></svg></span>Watch presence (subscribe)</label>
             </div>
             <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px"><span class="btn">Cancel</span><span class="btn primary">Save</span></div>
           </div>
@@ -648,9 +688,9 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
         <li>Search filters by name and number as you type; <kbd>⌘F</kbd> focuses it.</li>
         <li>Hover shows a green call button on the row; the selected row shows it permanently.</li>
         <li>Context menu: Call, Call from (account submenu), Copy Number, Edit, Delete. Delete asks for confirmation inline in the row ("Delete Boris Ivanov?" with Delete / Cancel).</li>
-        <li>Contacts can carry a preferred account; "Any" uses the picker in the number row.</li>
+        <li>Contacts can carry a preferred account; "Any" uses the account picker above the number field.</li>
+        <li>Presence dot on the avatar (green available, yellow away, red busy/DND, grey offline/unknown) and a text status on the right. Subscribing is per contact: "Watch presence" in the sheet and the context menu.</li>
       </ul></div>
-      <div class="fnote f-plain"><b>Full:</b> presence dot on the avatar (green available, yellow away, red busy/DND, grey offline/unknown) and a text status on the right. Subscribing is per contact: "Watch presence" in the sheet and the context menu.</div>
       <div><h3>Decided</h3><ol class="qs">
         <li><span class="qid">Q2.1</span><span>Decided: no import from macOS Contacts in v1.</span></li>
         <li><span class="qid">Q2.2</span><span>Decided: the per-contact preferred account stays.</span></li>
@@ -665,11 +705,9 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
       <div>
         <p class="cap"><b>Main window</b> · Call Log tab, 2 missed calls unseen</p>
         <div class="win mw mac">
-          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t"><span class="l-plain">MacroSIP Lite</span><span class="f-plain">MacroSIP</span></div></div>
-          <div class="numrow">
-            <span class="popup acct-pop"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span>
-            <div class="field"><span class="ph">Name or number</span></div>
-          </div>
+          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t">MacroSIP</div></div>
+          <div class="acctrow"><span class="popup acct-pop" title="Outgoing account"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+          <div class="numrow"><div class="field"><span class="ph">Name or number</span></div></div>
           <div class="tabs"><div class="seg full"><span data-go="dialpad">Dialpad</span><span data-go="contacts">Contacts</span><span class="on">Call Log <b style="display:inline-block;min-width:16px;padding:0 4px;margin-left:3px;border-radius:8px;background:var(--m-red);color:#fff;font-size:10px;line-height:15px">2</b></span></div></div>
           <div class="body">
             <div class="toolrow"><div class="seg"><span class="on" data-filter="all">All</span><span data-filter="missed">Missed</span></div><span class="btn sm"><svg class="i" style="width:12px;height:12px"><use href="#i-trash"/></svg>Clear…</span></div>
@@ -710,11 +748,11 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
         <li>Icons: arrow in (answered), arrow out (outgoing), red dip arrow and red name (missed). Right column: time, then duration or "missed".</li>
         <li>Double-click or <kbd>↩</kbd> calls back through the account the call came in on. Context menu: Call, Call from, Add to Contacts, Copy Number, Delete Entry.</li>
         <li>Opening this tab marks missed calls as seen and clears the tab badge, the Dock badge and the menu bar badge.</li>
-        <li>Clear removes everything after a confirmation alert. In Full, the alert notes that recordings are kept.</li>
+        <li>Clear removes everything after a confirmation alert; the alert notes that recordings are kept.</li>
       </ul></div>
       <div><h3>Decided</h3><ol class="qs">
         <li><span class="qid">Q3.1</span><span>Decided: the call log keeps the last 1,000 entries.</span></li>
-        <li><span class="qid">Q3.2</span><span>Decided: a play button for recordings is Full, later.</span></li>
+        <li><span class="qid">Q3.2</span><span>Decided: a play button for recordings comes later.</span></li>
       </ol></div>
     </aside>
   </div>
@@ -724,13 +762,11 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
   <div class="layout">
     <div class="stage"><div class="stage-inner">
       <div>
-        <p class="cap"><b>Dialpad tab</b> · one connected call, muted<span class="f-plain">, recording</span></p>
+        <p class="cap"><b>Dialpad tab</b> · one connected call, muted, recording</p>
         <div class="win mw mac">
-          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t"><span class="l-plain">MacroSIP Lite</span><span class="f-plain">MacroSIP</span></div></div>
-          <div class="numrow">
-            <span class="popup acct-pop"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span>
-            <div class="field"><span class="ph">Name or number</span></div>
-          </div>
+          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t">MacroSIP</div></div>
+          <div class="acctrow"><span class="popup acct-pop" title="Outgoing account"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+          <div class="numrow"><div class="field"><span class="ph">Name or number</span></div></div>
           <div class="tabs"><div class="seg full"><span class="on">Dialpad</span><span>Contacts</span><span>Call Log</span></div></div>
           <div class="body fixed">
             <div class="incall">
@@ -741,15 +777,15 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
                 <span class="chip">via Office</span>
                 <span class="chip"><span class="bars"><i></i><i></i><i></i><i></i></span>Opus 48 kHz</span>
                 <span class="chip" title="Media encrypted with SRTP"><svg class="i"><use href="#i-lock"/></svg>SRTP</span>
-                <span class="chip rec f">REC 01:37</span>
+                <span class="chip rec">REC 01:37</span>
               </div>
               <div class="cgrid">
                 <span class="cb on"><span class="c"><svg class="i"><use href="#i-mic-off"/></svg></span>Mute</span>
                 <span class="cb"><span class="c"><svg class="i"><use href="#i-pause"/></svg></span>Hold</span>
                 <span class="cb"><span class="c"><svg class="i"><use href="#i-transfer"/></svg></span>Transfer</span>
                 <span class="cb"><span class="c"><svg class="i"><use href="#i-keypad"/></svg></span>Keypad</span>
-                <span class="cb rec f"><span class="c"><svg class="i"><use href="#i-record"/></svg></span>Record</span>
-                <span class="cb dis f"><span class="c"><svg class="i"><use href="#i-merge"/></svg></span>Merge</span>
+                <span class="cb rec"><span class="c"><svg class="i"><use href="#i-record"/></svg></span>Record</span>
+                <span class="cb dis"><span class="c"><svg class="i"><use href="#i-merge"/></svg></span>Merge</span>
               </div>
               <div class="endcall"><svg class="i"><use href="#i-hangup"/></svg>End Call</div>
             </div>
@@ -765,11 +801,9 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
       <div>
         <p class="cap"><b>Keypad</b> · after clicking Keypad (DTMF)</p>
         <div class="win mw mac">
-          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t"><span class="l-plain">MacroSIP Lite</span><span class="f-plain">MacroSIP</span></div></div>
-          <div class="numrow">
-            <span class="popup acct-pop"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span>
-            <div class="field"><span class="ph">Name or number</span></div>
-          </div>
+          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t">MacroSIP</div></div>
+          <div class="acctrow"><span class="popup acct-pop" title="Outgoing account"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+          <div class="numrow"><div class="field"><span class="ph">Name or number</span></div></div>
           <div class="tabs"><div class="seg full"><span class="on">Dialpad</span><span>Contacts</span><span>Call Log</span></div></div>
           <div class="body fixed">
             <div class="kp">
@@ -790,24 +824,22 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
       <div>
         <p class="cap"><b>Contacts tab</b> · during the call</p>
         <div class="win mw mac">
-          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t"><span class="l-plain">MacroSIP Lite</span><span class="f-plain">MacroSIP</span></div></div>
-          <div class="numrow">
-            <span class="popup acct-pop"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span>
-            <div class="field"><span class="ph">Name or number</span></div>
-          </div>
+          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t">MacroSIP</div></div>
+          <div class="acctrow"><span class="popup acct-pop" title="Outgoing account"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+          <div class="numrow"><div class="field"><span class="ph">Name or number</span></div></div>
           <div class="tabs"><div class="seg full"><span>Dialpad</span><span class="on">Contacts</span><span>Call Log</span></div></div>
           <div class="body fixed">
-            <div class="cbar" title="Click to return to the call"><span class="live"></span><b>Anna Petrova</b><span class="t">04:12</span><span class="ic" title="Muted"><svg class="i"><use href="#i-mic-off"/></svg></span><span class="chip rec f" style="font-size:10px">REC</span><span class="mini-end"><svg class="i"><use href="#i-hangup"/></svg></span></div>
+            <div class="cbar" title="Click to return to the call"><span class="live"></span><b>Anna Petrova</b><span class="t">04:12</span><span class="ic" title="Muted"><svg class="i"><use href="#i-mic-off"/></svg></span><span class="chip rec" style="font-size:10px">REC</span><span class="mini-end"><svg class="i"><use href="#i-hangup"/></svg></span></div>
             <div class="searchrow"><div class="field"><svg class="i"><use href="#i-search"/></svg><span>Search</span></div></div>
             <div class="list" style="height:auto;flex:1">
               <div class="secthead">A</div>
-              <div class="row"><span class="av-wrap"><span class="avatar b">AP</span><span class="pres f-plain" style="background:var(--m-green)"></span></span><span class="tx"><b>Anna Petrova</b><span class="tnum">+7 912 555-01-23</span></span></div>
+              <div class="row"><span class="av-wrap"><span class="avatar b">AP</span><span class="pres" style="background:var(--m-green)"></span></span><span class="tx"><b>Anna Petrova</b><span class="tnum">+7 912 555-01-23</span></span></div>
               <div class="secthead">B</div>
-              <div class="row sel"><span class="av-wrap"><span class="avatar o">BI</span><span class="pres f-plain" style="background:var(--m-red)"></span></span><span class="tx"><b>Boris Ivanov</b><span class="tnum">104 · Office</span></span><span class="rbtn" style="background:rgba(255,255,255,.2);color:#fff"><svg class="i"><use href="#i-handset"/></svg></span></div>
+              <div class="row sel"><span class="av-wrap"><span class="avatar o">BI</span><span class="pres" style="background:var(--m-red)"></span></span><span class="tx"><b>Boris Ivanov</b><span class="tnum">104 · Office</span></span><span class="rbtn" style="background:rgba(255,255,255,.2);color:#fff"><svg class="i"><use href="#i-handset"/></svg></span></div>
               <div class="secthead">H</div>
               <div class="row"><span class="av-wrap"><span class="avatar">HD</span></span><span class="tx"><b>Help Desk</b><span class="tnum">sip:helpdesk@pbx.example.com</span></span></div>
               <div class="secthead">M</div>
-              <div class="row"><span class="av-wrap"><span class="avatar g">MC</span><span class="pres f-plain" style="background:var(--m-yellow)"></span></span><span class="tx"><b>Mike Chen</b><span class="tnum">+1 415 555-0142</span></span></div>
+              <div class="row"><span class="av-wrap"><span class="avatar g">MC</span><span class="pres" style="background:var(--m-yellow)"></span></span><span class="tx"><b>Mike Chen</b><span class="tnum">+1 415 555-0142</span></span></div>
             </div>
           </div>
           <div class="statusbar">
@@ -845,8 +877,8 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
         <li>On Contacts or Call Log a one-line bar above the list shows the call (name, timer, mute, end). Clicking the bar returns to the Dialpad tab.</li>
         <li>The number field stays live: typing a number and <kbd>↩</kbd> places a second call and holds this one.</li>
         <li>Quality chip: codec + 3 bars from RTCP loss and jitter; hover shows the numbers. <kbd>⌘D</kbd> ends the call, <kbd>⌘⇧M</kbd> toggles mute while MacroSIP is the frontmost app.</li>
+        <li>While recording, a red <b>REC</b> chip with the elapsed time shows in the call panel and in the summary bar on the other tabs. Merge is disabled with one call and turns on when a second call is connected.</li>
       </ul></div>
-      <div class="fnote f-plain"><b>Full:</b> Record button and a red <b>REC</b> chip (also in the summary bar). Merge is disabled with one call and turns on when a second call is connected.</div>
       <div><h3>Decided</h3><ol class="qs">
         <li><span class="qid">Q4.1</span><span>Decided: the window does not grow; the call panel replaces the dialpad area (shown here).</span></li>
         <li><span class="qid">Q4.2</span><span>Decided: no volume or mic level controls in the call panel.</span></li>
@@ -856,17 +888,15 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
   </div>
 </section>
 <section class="screen" id="s-multicall" data-screen="multicall">
-  <header class="screen-head"><span class="n">05</span><h1>Several calls</h1><span class="meta">Up to 4 calls · one active, others held · attended transfer<span class="f-plain"> · conference</span></span></header>
+  <header class="screen-head"><span class="n">05</span><h1>Several calls</h1><span class="meta">Up to 4 calls · one active, others held · attended transfer · conference</span></header>
   <div class="layout">
     <div class="stage"><div class="stage-inner">
       <div>
         <p class="cap"><b>Dialpad tab</b> · two calls, Boris on hold</p>
         <div class="win mw mac">
-          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t"><span class="l-plain">MacroSIP Lite</span><span class="f-plain">MacroSIP</span></div></div>
-          <div class="numrow">
-            <span class="popup acct-pop"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span>
-            <div class="field"><span class="ph">Name or number</span></div>
-          </div>
+          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t">MacroSIP</div></div>
+          <div class="acctrow"><span class="popup acct-pop" title="Outgoing account"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+          <div class="numrow"><div class="field"><span class="ph">Name or number</span></div></div>
           <div class="tabs"><div class="seg full"><span class="on">Dialpad</span><span>Contacts</span><span>Call Log</span></div></div>
           <div class="body fixed">
             <div class="mcalls">
@@ -880,8 +910,8 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
                 <span class="cb"><span class="c"><svg class="i"><use href="#i-pause"/></svg></span>Hold</span>
                 <span class="cb"><span class="c"><svg class="i"><use href="#i-transfer"/></svg></span>Transfer</span>
                 <span class="cb"><span class="c"><svg class="i"><use href="#i-keypad"/></svg></span>Keypad</span>
-                <span class="cb f"><span class="c"><svg class="i"><use href="#i-record"/></svg></span>Record</span>
-                <span class="cb f"><span class="c" style="background:var(--m-blue);color:#fff"><svg class="i"><use href="#i-merge"/></svg></span>Merge</span>
+                <span class="cb"><span class="c"><svg class="i"><use href="#i-record"/></svg></span>Record</span>
+                <span class="cb"><span class="c" style="background:var(--m-blue);color:#fff"><svg class="i"><use href="#i-merge"/></svg></span>Merge</span>
               </div>
               <div class="endcall"><svg class="i"><use href="#i-hangup"/></svg>End Call with Anna</div>
             </div>
@@ -897,11 +927,9 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
       <div>
         <p class="cap"><b>Call Log tab</b> · summary bar with two calls</p>
         <div class="win mw mac">
-          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t"><span class="l-plain">MacroSIP Lite</span><span class="f-plain">MacroSIP</span></div></div>
-          <div class="numrow">
-            <span class="popup acct-pop"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span>
-            <div class="field"><span class="ph">Name or number</span></div>
-          </div>
+          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t">MacroSIP</div></div>
+          <div class="acctrow"><span class="popup acct-pop" title="Outgoing account"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+          <div class="numrow"><div class="field"><span class="ph">Name or number</span></div></div>
           <div class="tabs"><div class="seg full"><span>Dialpad</span><span>Contacts</span><span class="on">Call Log</span></div></div>
           <div class="body fixed">
             <div class="cbar"><span class="live"></span><b>Anna Petrova</b><span class="t">04:12</span><span class="more">+1 on hold</span><span class="mini-end"><svg class="i"><use href="#i-hangup"/></svg></span></div>
@@ -938,7 +966,7 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
             </div>
           </div>
         </div>
-        <div class="f" style="border-radius:11px">
+        <div>
           <p class="cap"><b>State</b> · merged into a local conference</p>
           <div class="win mac" style="width:320px;padding:10px 0 0">
             <div class="callp" style="gap:8px">
@@ -961,11 +989,11 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
         <li>On Contacts or Call Log the summary bar shows the active call plus "+N on hold"; clicking it returns to the panel.</li>
         <li>A new incoming call while on a call follows screen 6; Answer holds the current call.</li>
         <li>Attended transfer: Transfer → Call First holds the original call and calls the target. The banner completes or cancels the transfer.</li>
+        <li>Merge joins all connected calls into a local conference (mixed on this Mac). Split takes one participant back out as a held call. Ending the conference ends every leg.</li>
       </ul></div>
-      <div class="fnote f-plain"><b>Full:</b> Merge joins all connected calls into a local conference (mixed on this Mac). Split takes one participant back out as a held call. Ending the conference ends every leg.</div>
       <div><h3>Decided</h3><ol class="qs">
         <li><span class="qid">Q5.1</span><span>Decided: at most 4 simultaneous calls.</span></li>
-        <li><span class="qid">Q5.2</span><span>Decided: Merge auto-including held calls is Full, later.</span></li>
+        <li><span class="qid">Q5.2</span><span>Decided: Merge auto-including held calls comes later.</span></li>
       </ol></div>
     </aside>
   </div>
@@ -991,7 +1019,7 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
                 <span class="num tnum">+7 912 555-01-23</span>
               </div>
             </div>
-            <div class="aa f">
+            <div class="aa">
               <svg class="ring" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="9" fill="none" stroke="var(--m-fill3)" stroke-width="2.5"/><circle cx="11" cy="11" r="9" fill="none" stroke="var(--m-green)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="56.5" stroke-dashoffset="22.6" transform="rotate(-90 11 11)"/></svg>
               <span>Auto-answer in <b class="tnum">3 s</b></span><a href="#incoming" onclick="return false">Cancel</a>
             </div>
@@ -1031,8 +1059,8 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
         <li>Shortcuts while it is visible: <kbd>⌘↩</kbd> answer, <kbd>⌘.</kbd> decline. <kbd>Esc</kbd> only silences the ringtone.</li>
         <li>The notification carries Answer / Decline actions, so the call can also be handled from Notification Center or a locked screen. Both disappear when the call is answered, declined or cancelled by the caller.</li>
         <li>Decline sends <span class="mono">486 Busy Here</span>. An unanswered call becomes a missed call (badge on Dock, menu bar, Call Log tab).</li>
+        <li>Countdown ring "Auto-answer in N s" with Cancel when auto-answer applies (mode All, or Contacts only and the caller is a contact). A server <span class="mono">answer-after</span> header shows the same strip.</li>
       </ul></div>
-      <div class="fnote f-plain"><b>Full:</b> countdown ring "Auto-answer in N s" with Cancel when auto-answer applies (mode All, or Contacts only and the caller is a contact). A server <span class="mono">answer-after</span> header shows the same strip.</div>
       <div><h3>Decided</h3><ol class="qs">
         <li><span class="qid">Q6.1</span><span>Decided: the floating window appears only when the main window is not visible or not frontmost; otherwise the call shows inside the main window.</span></li>
         <li><span class="qid">Q6.2</span><span>Decided: notifications use the alert style (they stay until acted on).</span></li>
@@ -1063,7 +1091,7 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
             <div class="mi"><span class="dir"><svg class="i"><use href="#i-out"/></svg></span>Help Desk<span class="sc">Yesterday</span></div>
             <div class="msep"></div>
             <div class="mi"><span class="chk-sp"></span>Do Not Disturb<span class="sc">⌥⌘D</span></div>
-            <div class="mi f" style="flex-direction:column;align-items:flex-start;gap:0"><span style="display:flex;gap:8px;width:100%"><span class="chk-sp"></span>My Status<span class="sc" style="color:var(--m-label2)">Available ›</span></span></div>
+            <div class="mi" style="flex-direction:column;align-items:flex-start;gap:0"><span style="display:flex;gap:8px;width:100%"><span class="chk-sp"></span>My Status<span class="sc" style="color:var(--m-label2)">Available ›</span></span></div>
             <div class="msep"></div>
             <div class="mi"><span class="chk-sp"></span>Show MacroSIP<span class="sc">⌘0</span></div>
             <div class="mi"><span class="chk-sp"></span>Settings…<span class="sc">⌘,</span></div>
@@ -1091,7 +1119,7 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
             <span style="font-size:11.5px;color:var(--m-label2);max-width:150px" class="mac">Badge clears when the Call Log tab is opened. Dock icon can be hidden in Settings › General.</span>
           </div>
         </div>
-        <div class="f" style="border-radius:10px">
+        <div>
           <p class="cap"><b>Submenu</b> · My Status</p>
           <div class="menu mac" style="width:190px">
             <div class="mi"><span class="chk-sp"><svg class="i" style="width:12px;height:12px"><use href="#i-check"/></svg></span><span class="dot ok" style="width:7px;height:7px"></span>Available</div>
@@ -1109,11 +1137,11 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
         <li>Recent Calls: last 5, click calls back. Missed ones are red.</li>
         <li>Do Not Disturb rejects incoming calls with <span class="mono">486 Busy</span> and shows a moon on the icon. It is a checkmark item, like other macOS menus.</li>
         <li>On call, the icon shows the running timer; clicking it during a call brings the main window forward.</li>
+        <li>Turning on DND also publishes <span class="mono">dnd</span> presence. "My Status" sets the published status (Available / Away / Do Not Disturb), kept in sync with the DND item.</li>
       </ul></div>
-      <div class="fnote f-plain"><b>Full:</b> turning on DND also publishes <span class="mono">dnd</span> presence. "My Status" sets the published status (Available / Away / Do Not Disturb), kept in sync with the DND item.</div>
       <div><h3>Decided</h3><ol class="qs">
         <li><span class="qid">Q7.1</span><span>Decided: native menu (shown).</span></li>
-        <li><span class="qid">Q7.2</span><span>Decided: no timed Do Not Disturb in v1. The Full "My Status" submenu stays.</span></li>
+        <li><span class="qid">Q7.2</span><span>Decided: no timed Do Not Disturb in v1. The "My Status" submenu stays.</span></li>
       </ol></div>
     </aside>
   </div>
@@ -1132,8 +1160,8 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
             <span class="tb-tab" data-pane="audio"><svg class="i"><use href="#i-speaker"/></svg><span class="lbl">Audio</span></span>
             <span class="tb-tab" data-pane="network"><svg class="i"><use href="#i-globe"/></svg><span class="lbl">Network</span></span>
             <span class="tb-tab" data-pane="codecs"><svg class="i"><use href="#i-wave"/></svg><span class="lbl">Codecs</span></span>
-            <span class="tb-tab f" data-pane="recording"><svg class="i"><use href="#i-record"/></svg><span class="lbl">Recording</span></span>
-            <span class="tb-tab f" data-pane="autoanswer"><svg class="i"><use href="#i-bolt"/></svg><span class="lbl">Auto-answer</span></span>
+            <span class="tb-tab" data-pane="recording"><svg class="i"><use href="#i-record"/></svg><span class="lbl">Recording</span></span>
+            <span class="tb-tab" data-pane="autoanswer"><svg class="i"><use href="#i-bolt"/></svg><span class="lbl">Auto-answer</span></span>
           </div>
 
           <!-- General -->
@@ -1212,7 +1240,7 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
             </div>
           </div>
 
-          <!-- Recording (Full) -->
+          <!-- Recording -->
           <div class="pane" data-pane-body="recording" hidden>
             <div class="grp"><div class="gbox">
               <div class="gr"><span class="gl">Save recordings to</span><span class="gv"><span class="popup"><svg class="i" style="width:13px;height:13px;color:var(--m-blue)"><use href="#i-folder"/></svg>MacroSIP Recordings<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></span></div>
@@ -1223,7 +1251,7 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
             </div></div>
           </div>
 
-          <!-- Auto-answer (Full) -->
+          <!-- Auto-answer -->
           <div class="pane" data-pane-body="autoanswer" hidden>
             <div class="grp"><div class="gbox">
               <div class="gr"><span class="gl">Answer incoming calls automatically</span><div class="seg"><span>Off</span><span>All calls</span><span class="on">Contacts only</span></div></div>
@@ -1242,7 +1270,7 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
       </ul></div>
       <div data-pane-body="accounts" hidden><h3>Accounts</h3><ul>
         <li>Not in the brief: the account editor needs a home. This pane lists accounts with live status; +, −, Edit… and double-click open the editor sheet (screen 9).</li>
-        <li>Unchecking "Register" in the editor shows the account as Disabled here.</li>
+        <li>Status shows Disabled for an account that is switched off (in the account pop-up on the main window or with "Enabled" in the editor). An enabled account with "Register with server" off shows Outgoing only.</li>
       </ul></div>
       <div data-pane-body="audio" hidden><h3>Audio</h3><ul>
         <li>The level meter is live while this pane is open. Test plays a short tone on the speaker device.</li>
@@ -1254,11 +1282,16 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
       <div data-pane-body="codecs" hidden><h3>Codecs</h3><ul>
         <li>Order sets SDP preference. Bitrate column is informational.</li>
       </ul></div>
-      <div data-pane-body="recording" hidden class="fnote"><b>Full only.</b> Folder picker remembers access with a security-scoped bookmark. A Record button is always available in the call panel even when automatic recording is off.</div>
-      <div data-pane-body="autoanswer" hidden class="fnote"><b>Full only.</b> The incoming window shows a countdown and Cancel whenever auto-answer will fire (screen 6).</div>
+      <div data-pane-body="recording" hidden><h3>Recording</h3><ul>
+        <li>The folder picker remembers access with a security-scoped bookmark.</li>
+        <li>A Record button is always available in the call panel, even when automatic recording is off.</li>
+      </ul></div>
+      <div data-pane-body="autoanswer" hidden><h3>Auto-answer</h3><ul>
+        <li>The incoming window shows a countdown and Cancel whenever auto-answer will fire (screen 6).</li>
+      </ul></div>
       <div><h3>Decided</h3><ol class="qs">
         <li><span class="qid">Q8.1</span><span>Decided: transport and SRTP live only in the account editor; Network keeps STUN, local port, keep-alive and ICE.</span></li>
-        <li><span class="qid">Q8.2</span><span>Decided: a recording notice is Full, later.</span></li>
+        <li><span class="qid">Q8.2</span><span>Decided: a recording notice comes later.</span></li>
         <li><span class="qid">Q8.3</span><span>Decided: only the four codecs are shown.</span></li>
       </ol></div>
     </aside>
@@ -1291,9 +1324,10 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
               <div class="gr"><span class="gl">Registration expiry</span><span class="gv"><div class="field tnum" style="min-width:56px;justify-content:flex-end">300</div><span class="stepper"><i>▲</i><i>▼</i></span>seconds</span></div>
             </div></div>
             <div class="grp"><div class="gbox">
+              <div class="gr"><span class="gl">Enabled<small>Off stops registration and outgoing calls; the account stays in the pop-up, dimmed, and leaves the status bar.</small></span><span class="switch on"></span></div>
               <div class="gr"><span class="gl">Register with server<small>Off keeps the account for outgoing calls only.</small></span><span class="switch on"></span></div>
               <div class="gr"><span class="gl">Default for outgoing calls</span><span class="switch on"></span></div>
-              <div class="gr f"><span class="gl">Publish my presence<small>Lets contacts who watch you see Available / Away / DND.</small></span><span class="switch on"></span></div>
+              <div class="gr"><span class="gl">Publish my presence<small>Lets contacts who watch you see Available / Away / DND.</small></span><span class="switch on"></span></div>
             </div></div>
             <div style="display:flex;gap:8px;align-items:center">
               <span class="btn danger">Delete Account…</span>
@@ -1326,9 +1360,10 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
         <li>Save validates the fields, stores the password in the Keychain and re-registers. The status beside the buttons updates live.</li>
         <li>"Account name" is the short label used in the picker, status bar and call panel ("Office"). Not in the brief, but those places need something shorter than the full address.</li>
         <li>Only one account can be default; turning it on here turns it off on the previous default.</li>
+        <li>"Enabled" is the same switch as in the account pop-up on the main window; a disabled account keeps its settings and Keychain item.</li>
         <li>Delete asks for confirmation and removes the Keychain item too.</li>
+        <li>"Publish my presence" is per account. Contacts' presence subscriptions go through the account they are reached on.</li>
       </ul></div>
-      <div class="fnote f-plain"><b>Full:</b> "Publish my presence" per account. Contacts' presence subscriptions go through the account they are reached on.</div>
       <div><h3>Decided</h3><ol class="qs">
         <li><span class="qid">Q9.1</span><span>Decided: a Test button tries to register without saving and shows the result inline (shown).</span></li>
         <li><span class="qid">Q9.2</span><span>Decided: v1 adds a separate auth username and registration expiry; no voicemail number.</span></li>
@@ -1343,11 +1378,9 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
       <div>
         <p class="cap"><b>Main window</b> · empty state</p>
         <div class="win mw mac">
-          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t"><span class="l-plain">MacroSIP Lite</span><span class="f-plain">MacroSIP</span></div></div>
-          <div class="numrow">
-            <span class="popup acct-pop" style="opacity:.5"><span class="dot off"></span><span class="nm">No account</span><span class="chev" style="background:var(--m-gray)"><svg class="i"><use href="#i-chev"/></svg></span></span>
-            <div class="field dis"><span class="ph">Name or number</span></div>
-          </div>
+          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t">MacroSIP</div></div>
+          <div class="acctrow"><span class="popup acct-pop" style="opacity:.5"><span class="dot off"></span><span class="nm">No account</span><span class="chev" style="background:var(--m-gray)"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+          <div class="numrow"><div class="field dis"><span class="ph">Name or number</span></div></div>
           <div class="tabs"><div class="seg full"><span class="on">Dialpad</span><span>Contacts</span><span>Call Log</span></div></div>
           <div class="body" style="height:398px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px 28px;text-align:center">
             <svg style="width:64px;height:64px" aria-hidden="true"><use href="#i-mark"/></svg>
@@ -1389,21 +1422,14 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
 </div>
 <script>
 (function(){
-  const root=document.documentElement, body=document.body;
+  const root=document.documentElement;
   const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 
-  function setEdition(ed){
-    body.dataset.edition=ed;
-    document.querySelectorAll('[data-ed]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.ed===ed)));
-    store.set('msip-ed',ed);
-    if(ed==='lite' && (currentPane==='recording'||currentPane==='autoanswer')) setPane('general');
-  }
   function setTheme(th){
     if(th==='system') root.removeAttribute('data-theme'); else root.setAttribute('data-theme',th);
     document.querySelectorAll('[data-th]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.th===th)));
     store.set('msip-th',th);
   }
-  function setMark(on){ body.dataset.mark=on?'on':'off'; store.set('msip-mark',on?'on':'off'); }
 
   let currentPane='general';
   function setPane(p){
@@ -1438,20 +1464,18 @@ body[data-edition="full"] .cgrid{grid-template-columns:repeat(3,1fr)}
     const tab=e.target.closest('.tb-tab[data-pane]'); if(tab) setPane(tab.dataset.pane);
     const f=e.target.closest('[data-filter]'); if(f){ const list=f.closest('.win').querySelector('[data-log]'); f.parentElement.querySelectorAll('span').forEach(s=>s.classList.toggle('on',s===f)); if(list) list.dataset.log=f.dataset.filter; }
   });
-  document.querySelectorAll('[data-ed]').forEach(b=>b.addEventListener('click',()=>setEdition(b.dataset.ed)));
   document.querySelectorAll('[data-th]').forEach(b=>b.addEventListener('click',()=>setTheme(b.dataset.th)));
-  const mk=document.getElementById('mark-full'); mk.addEventListener('change',()=>setMark(mk.checked));
 
   // dialpad typing
   const out=document.getElementById('dial-out');
   document.querySelectorAll('#keys .key').forEach(k=>k.addEventListener('click',()=>{ if(out) out.textContent+=k.querySelector('b').textContent; }));
   const back=document.getElementById('dial-back'); if(back) back.addEventListener('click',()=>{ if(out) out.textContent=out.textContent.slice(0,-1); });
 
-  setEdition(store.get('msip-ed')||'lite');
   setTheme(store.get('msip-th')||'system');
-  const m=store.get('msip-mark'); setMark(m!=='off'); mk.checked=m!=='off';
   setPane('general');
   show((location.hash||'').replace('#','')||screens[0]);
   window.addEventListener('hashchange',()=>show(location.hash.replace('#','')));
 })();
 </script>
+
+
