@@ -9,7 +9,7 @@
 ![macOS 14+](https://img.shields.io/badge/macOS-14%2B-lightgrey)
 ![Apple Silicon](https://img.shields.io/badge/arch-arm64-lightgrey)
 ![PJSIP 2.17](https://img.shields.io/badge/PJSIP-2.17-green)
-![Status: in development](https://img.shields.io/badge/status-in%20development-orange)
+![Status: release candidate](https://img.shields.io/badge/status-release%20candidate-yellow)
 
 A MicroSIP-style SIP softphone for macOS on Apple Silicon. Native Swift and
 SwiftUI interface, [PJSIP](https://github.com/pjsip/pjproject) 2.17 engine,
@@ -44,8 +44,8 @@ phone does.
 - Codecs: Opus, G.722, G.711 (PCMU/PCMA). Echo cancellation (WebRTC AEC).
 - English and Russian interface. Launch at login, language switch (Settings › General), log file.
 
-Status: in development, see [docs/ROADMAP.md](docs/ROADMAP.md). The first
-release will be tagged `26.0.0` (see docs/adr/0011-versioning.md).
+Status: release candidate `26.0.0-rc.1`; the final `26.0.0` follows the checks on a
+production PBX. What comes next: [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Installing
 

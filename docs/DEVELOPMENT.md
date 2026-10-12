@@ -4,7 +4,7 @@ MicroSIP-style SIP softphone for macOS 14+ on Apple Silicon. Swift 6, SwiftUI/Ap
 SwiftPM only (no Xcode project), PJSIP 2.17 linked statically through the `CPJSUA` C target.
 
 ## Read first
-- `docs/ROADMAP.md` — milestones and their done criteria.
+- `docs/ROADMAP.md` — what is shipped, what comes next.
 - `docs/GLOSSARY.md` — shared vocabulary. Use these terms in code and docs.
 - `docs/adr/` — settled decisions. Do not reopen them silently; add a new ADR to change one.
 - `docs/design/mockups.html` — approved UI mockups; `docs/design/SCREENS.md` — their text spec (elements, states, strings). UI code follows both.

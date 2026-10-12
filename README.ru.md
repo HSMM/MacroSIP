@@ -9,7 +9,7 @@
 ![macOS 14+](https://img.shields.io/badge/macOS-14%2B-lightgrey)
 ![Apple Silicon](https://img.shields.io/badge/arch-arm64-lightgrey)
 ![PJSIP 2.17](https://img.shields.io/badge/PJSIP-2.17-green)
-![Status: in development](https://img.shields.io/badge/status-in%20development-orange)
+![Status: release candidate](https://img.shields.io/badge/status-release%20candidate-yellow)
 
 SIP-софтфон для macOS на Apple Silicon в духе MicroSIP. Нативный интерфейс на
 Swift и SwiftUI, движок [PJSIP](https://github.com/pjsip/pjproject) 2.17, без
@@ -46,8 +46,8 @@ Electron и Qt. Одно небольшое окно, значок в строк
 - Интерфейс на английском и русском. Запуск при входе в систему, выбор языка,
   файл журнала.
 
-Статус: в разработке, см. [docs/ROADMAP.md](docs/ROADMAP.md). Первый релиз
-получит номер `26.0.0` (схема версий: docs/adr/0011-versioning.md).
+Статус: кандидат в релиз `26.0.0-rc.1`; финальный `26.0.0` выйдет после проверки на
+рабочей АТС. Что дальше: [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Установка
 
