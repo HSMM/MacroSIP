@@ -24,7 +24,11 @@ public struct AccountConfig: Codable, Identifiable, Equatable, Sendable {
     public var authID: String?              // nil = username
     public var transport: TransportKind
     public var srtp: SRTPMode
-    public var enabled: Bool                // register on start
+    /// Master switch. Off: the account is not in the engine at all (no registration, no
+    /// outgoing or incoming calls); it keeps its settings and Keychain item.
+    public var enabled: Bool
+    /// Off keeps an enabled account for outgoing calls only (no REGISTER).
+    public var registerWithServer: Bool
     public var isDefaultOutgoing: Bool
     public var registrationInterval: Int    // seconds
     public var publishPresence: Bool        // publish our own presence status
@@ -43,6 +47,7 @@ public struct AccountConfig: Codable, Identifiable, Equatable, Sendable {
         transport: TransportKind = .udp,
         srtp: SRTPMode = .disabled,
         enabled: Bool = true,
+        registerWithServer: Bool = true,
         isDefaultOutgoing: Bool = false,
         registrationInterval: Int = 300,
         publishPresence: Bool = false,
@@ -58,11 +63,15 @@ public struct AccountConfig: Codable, Identifiable, Equatable, Sendable {
         self.transport = transport
         self.srtp = srtp
         self.enabled = enabled
+        self.registerWithServer = registerWithServer
         self.isDefaultOutgoing = isDefaultOutgoing
         self.registrationInterval = registrationInterval
         self.publishPresence = publishPresence
         self.verifyTLSCertificate = verifyTLSCertificate
     }
+
+    /// The engine sends REGISTER for this account.
+    public var registers: Bool { enabled && registerWithServer }
 
     /// "sip:1001@sip.example.com"
     public var uri: String {
@@ -89,12 +98,17 @@ public struct AccountConfig: Codable, Identifiable, Equatable, Sendable {
 extension AccountConfig {
     private enum CodingKeys: String, CodingKey {
         case id, displayName, username, domain, registrar, outboundProxy, authID, transport, srtp
-        case enabled, isDefaultOutgoing, registrationInterval, publishPresence, verifyTLSCertificate
+        case enabled, registerWithServer, isDefaultOutgoing, registrationInterval, publishPresence, verifyTLSCertificate
     }
 
-    /// Decodes JSON written before `verifyTLSCertificate` existed (it defaults to true).
+    /// Decodes JSON written before `verifyTLSCertificate` and `registerWithServer` existed.
+    /// Before the latter, `enabled == false` meant "do not register"; that becomes an enabled,
+    /// outgoing-only account so nothing silently turns into a disabled one.
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
+        var enabled = try c.decode(Bool.self, forKey: .enabled)
+        var register = try c.decodeIfPresent(Bool.self, forKey: .registerWithServer)
+        if register == nil { register = enabled; enabled = true }
         self.init(
             id: try c.decode(AccountID.self, forKey: .id),
             displayName: try c.decode(String.self, forKey: .displayName),
@@ -105,7 +119,8 @@ extension AccountConfig {
             authID: try c.decodeIfPresent(String.self, forKey: .authID),
             transport: try c.decode(TransportKind.self, forKey: .transport),
             srtp: try c.decode(SRTPMode.self, forKey: .srtp),
-            enabled: try c.decode(Bool.self, forKey: .enabled),
+            enabled: enabled,
+            registerWithServer: register ?? true,
             isDefaultOutgoing: try c.decode(Bool.self, forKey: .isDefaultOutgoing),
             registrationInterval: try c.decode(Int.self, forKey: .registrationInterval),
             publishPresence: try c.decode(Bool.self, forKey: .publishPresence),

@@ -12,7 +12,13 @@ enum L {
     static var tabsCallLog: String { String(localized: "tabs.callLog", defaultValue: "Call Log") }
     static var numberPlaceholder: String { String(localized: "main.numberField.placeholder", defaultValue: "Name or number") }
     static var accountPickerHelp: String { String(localized: "main.accountPicker.help", defaultValue: "Outgoing account") }
-    static var accountPickerNone: String { String(localized: "main.accountPicker.none", defaultValue: "No account") }
+    static var accountPopupHeader: String { String(localized: "account.popup.header", defaultValue: "Accounts") }
+    static var accountPopupSettings: String { String(localized: "account.popup.settings", defaultValue: "Account Settings…") }
+    static var accountPopupNone: String { String(localized: "account.popup.none", defaultValue: "No account") }
+    static func accountPopupFailed(_ reason: String, _ address: String) -> String {
+        String(localized: "account.popup.failed", defaultValue: "\(reason) · \(address)")
+    }
+    static var statusNoneEnabled: String { String(localized: "status.noneEnabled", defaultValue: "All accounts off") }
     static var statusNoAccounts: String { String(localized: "status.noAccounts", defaultValue: "No accounts") }
     static func statusAccountFailed(_ name: String, _ reason: String) -> String {
         String(localized: "status.account.failed", defaultValue: "\(name): \(reason)")
@@ -209,6 +215,7 @@ enum L {
     static var accountsBadgeDefault: String { String(localized: "accounts.badge.default", defaultValue: "Default") }
     static var accountsRegistered: String { String(localized: "accounts.status.registered", defaultValue: "Registered") }
     static var accountsDisabled: String { String(localized: "accounts.status.disabled", defaultValue: "Disabled") }
+    static var accountsOutgoingOnly: String { String(localized: "accounts.status.outgoingOnly", defaultValue: "Outgoing only") }
     static var accountsRegisteringShort: String { String(localized: "accounts.status.registering.short", defaultValue: "…") }
     static func accountsLastErrorHeader(_ name: String) -> String { String(localized: "accounts.lastError.header", defaultValue: "\(name) · last error") }
     static func accountsLastErrorBody(_ time: String) -> String {
@@ -291,6 +298,10 @@ enum L {
     static var srtpOptional: String { String(localized: "account.srtp.optional", defaultValue: "Optional") }
     static var srtpMandatory: String { String(localized: "account.srtp.mandatory", defaultValue: "Mandatory") }
     static var accountExpiry: String { String(localized: "account.field.expiry", defaultValue: "Registration expiry") }
+    static var accountEnabled: String { String(localized: "account.field.enabled", defaultValue: "Enabled") }
+    static var accountEnabledHelp: String {
+        String(localized: "account.field.enabled.help", defaultValue: "Off stops registration and outgoing calls; the account stays in the pop-up, dimmed, and leaves the status bar.")
+    }
     static var accountRegister: String { String(localized: "account.field.register", defaultValue: "Register with server") }
     static var accountRegisterHelp: String { String(localized: "account.field.register.help", defaultValue: "Off keeps the account for outgoing calls only.") }
     static var accountDefaultOutgoing: String { String(localized: "account.field.defaultOutgoing", defaultValue: "Default for outgoing calls") }

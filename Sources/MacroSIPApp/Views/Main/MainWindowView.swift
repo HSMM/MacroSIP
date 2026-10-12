@@ -1,7 +1,7 @@
 import SwiftUI
 import MacroSIPCore
 
-/// Common frame of screens 1 to 5 and 10: number row, tabs, body, status bar. Content size 340 by 520.
+/// Common frame of screens 1 to 5 and 10: account row, number row, tabs, body, status bar. Content size 340 by 520.
 struct MainWindowView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.openSettings) private var openSettings
@@ -9,8 +9,11 @@ struct MainWindowView: View {
     var body: some View {
         @Bindable var model = model
         VStack(spacing: 0) {
-            NumberRow()
-                .zIndex(2)
+            VStack(spacing: 0) {
+                AccountRow()
+                NumberRow()
+            }
+            .zIndex(2)
             SegmentedTabs(
                 items: [
                     .init(value: MainTab.dialpad, title: L.tabsDialpad),
@@ -94,33 +97,34 @@ struct StatusBar: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            if model.accounts.isEmpty {
+            if model.enabledAccounts.isEmpty {
                 HStack(spacing: 5) {
                     StatusDot(kind: .off, size: 7)
-                    Text(L.statusNoAccounts)
+                    Text(model.accounts.isEmpty ? L.statusNoAccounts : L.statusNoneEnabled)
                 }
                 Spacer(minLength: 0)
                 Button { model.openSettings(tab: .accounts) } label: {
                     Text("\(L.menuSettings) ⌘,")
                 }
                 .buttonStyle(.plain)
-            } else if model.accounts.count > 3 {
-                let ok = model.accounts.filter { model.dot(for: $0) == .registered }.count
+            } else if model.enabledAccounts.count > 3 {
+                let shown = model.enabledAccounts
+                let ok = shown.filter { model.dot(for: $0) == .registered }.count
                 Button { model.openSettings(tab: .accounts) } label: {
                     HStack(spacing: 5) {
-                        StatusDot(kind: ok == model.accounts.count ? .registered : (ok == 0 ? .failed : .registering), size: 7)
-                        Text(L.statusSummary(ok, model.accounts.count))
+                        StatusDot(kind: ok == shown.count ? .registered : (ok == 0 ? .failed : .registering), size: 7)
+                        Text(L.statusSummary(ok, shown.count))
                     }
                 }
                 .buttonStyle(.plain)
-                .help(model.accounts.map { "\($0.displayName): \(statusText($0))" }.joined(separator: "\n"))
+                .help(shown.map { "\($0.displayName): \(statusText($0))" }.joined(separator: "\n"))
                 Spacer(minLength: 0)
             } else {
-                ForEach(model.accounts) { account in
+                ForEach(model.enabledAccounts) { account in
                     Button { model.openSettings(tab: .accounts, account: account.id) } label: {
                         HStack(spacing: 5) {
                             StatusDot(kind: model.dot(for: account), size: 7)
-                            if let reason = model.registration[account.id]?.shortReason, account.enabled {
+                            if let reason = model.registration[account.id]?.shortReason, account.registerWithServer {
                                 Text(L.statusAccountFailed(account.displayName, reason)).foregroundStyle(Theme.red)
                             } else {
                                 Text(account.displayName)
@@ -143,6 +147,7 @@ struct StatusBar: View {
 
     private func statusText(_ account: AccountConfig) -> String {
         guard account.enabled else { return L.accountsDisabled }
+        guard account.registerWithServer else { return L.accountsOutgoingOnly }
         switch model.registration[account.id] ?? .unregistered {
         case .registered: return L.accountsRegistered
         case .failed: return model.registration[account.id]?.fullReason ?? ""

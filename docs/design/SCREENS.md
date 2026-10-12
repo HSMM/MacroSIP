@@ -6,9 +6,9 @@ Vocabulary follows `docs/GLOSSARY.md` (account, registration, call, active call,
 
 ## How to read this document
 
-- **`[Full]`** marks anything that exists only in the Full edition. A `[Full]` row, line, menu item, string, pane or tab is absent in Lite. Lite ships first: skip every line tagged `[Full]`. Full-only code lives under `#if FULL`.
+- **`[Full]`** marks the features of milestone 5 (presence, recording, auto-answer, conference); historical label, they are part of the product. Everything marked `[Full]` is built.
 - **`[v2]`** marks anything the notes defer beyond Full or beyond v1. These are not to be built now.
-- Unmarked elements exist in both editions.
+- There is one edition (ADR 0010). Unmarked and `[Full]` elements are all built.
 - Sizes are in points (pt) and are approximate unless stated. The main window is 340 pt wide and 520 pt tall and never grows.
 - Element types use SwiftUI or AppKit names: button, text field, popup (pop-up button), segmented control, toggle (switch), checkbox, list, table, slider, stepper, label, image, menu.
 - "Default button" means the button triggered by Return in a sheet or popover.
@@ -23,32 +23,65 @@ Used by screens 1 to 5 and 10. Window width 340 pt, height 520 pt, fixed.
 | # | Element | Size (approx.) |
 |---|---|---|
 | 1 | Title bar with standard traffic lights. Title centred. | 30 pt high |
-| 2 | Number row: outgoing account popup, then number field | 46 pt high, 10 pt side padding |
-| 3 | Tab control (segmented, three segments) | 36 pt high incl. padding |
-| 4 | Tab body | fills the rest; 392 pt in call states |
-| 5 | Status bar | 26 pt high, full width |
+| 2 | Account row: outgoing account pop-up button at the left, nothing else | 35 pt high (row padding 3 pt top, 10 pt sides, 6 pt bottom; button min height 26 pt) |
+| 3 | Number row: number field | 46 pt high, 10 pt side padding |
+| 4 | Tab control (segmented, three segments) | 36 pt high incl. padding |
+| 5 | Tab body | fills the rest; 392 pt in call states |
+| 6 | Status bar | 26 pt high, full width |
 
 ### Title
 
-| Edition | Title text |
-|---|---|
-| Title | "MacroSIP" (`main.title`) |
+Title text: "MacroSIP" (`main.title`).
+
+### Account row
+
+The account picker is no longer in the number row. It sits in its own row above the number field.
+
+| Element | Type | Behaviour | Enabled / disabled |
+|---|---|---|---|
+| Outgoing account pop-up button | popup (compact pop-up button), at the left of the row, min height 26 pt | Registration dot at the left, short account name ("Office", 12.5 pt, medium, truncates with an ellipsis), chevron at the right. The dot shows that account's registration. Click opens the Account pop-up (below). Choosing an account sets the outgoing account for this call only. The initial value is the account marked "Default for outgoing calls" (see 9). Tooltip: `main.accountPicker.help`. | Disabled when there are no accounts: reads "No account" (`account.popup.none`), grey dot, dimmed (screen 10). |
+
+### Account pop-up
+
+Open state of the pop-up button. A menu anchored under the button, about 262 pt wide. Shown on every main-window screen.
+
+| # | Element | Type | Behaviour |
+|---|---|---|---|
+| 1 | Header "Accounts" (`account.popup.header`) | menu header | Static. |
+| 2 | Account row, one per account, in account order (see 8.2) | menu row | Disabled accounts stay in the list. See the columns below. |
+| 3 | Separator | | |
+| 4 | "Account Settings…" (`account.popup.settings`), shortcut Command-, | menu item | Opens Settings at Accounts. |
+
+Parts of an account row, left to right:
+
+| Part | Content | Behaviour |
+|---|---|---|
+| Checkmark column | checkmark on the chosen outgoing account; empty space on the others | Read-only. |
+| Registration dot | as in the dot mapping below | Read-only. |
+| Name and address | name (13 pt, medium); beneath it the SIP address (11 pt, secondary), for example "alex@pbx.example.com". A failing account shows the error in red in place of the plain address: "403 Forbidden · alex@voip.example.org". | Clicking the name picks the outgoing account and closes the menu. |
+| Switch | small switch (toggle) at the right | Turns the account on or off WITHOUT closing the menu. |
+
+**Behaviour:**
+
+- Off means no registration and no outgoing calls. The row stays in the list, dimmed, so the account can be turned back on, and the account leaves the status bar. A failing account is silenced in two clicks (open the menu, switch it off).
+- The same on/off state is the "Enabled" switch in the account editor (screen 9) and the "Disabled" status in Settings › Accounts (screen 8.2). A disabled account keeps its settings and its Keychain item.
+- The status bar has no menu; switches live only in this pop-up [decided Q1.3].
 
 ### Number row
 
 | Element | Type | Behaviour | Enabled / disabled |
 |---|---|---|---|
-| Outgoing account popup | popup | Shows the short account name ("Office") and a status dot for that account's registration. Max width 112 pt; name truncates with an ellipsis. Selecting an item sets the outgoing account for this call only. The initial value is the account marked "Default for outgoing calls" (see 9). Tooltip: `main.accountPicker.help`. | Disabled when there are no accounts (shows "No account", grey dot, dimmed). |
 | Number field | text field, 17 pt, min height 30 pt | Accepts typed digits, letters, `+`, `*`, `#`, spaces, dashes, and pasted `sip:` or `tel:` URIs. Placeholder "Name or number". Keeps focus whenever the window is key. Return places the call (see screen 1). Letters open a suggestions dropdown (see screen 1). | Disabled when there are no accounts (dimmed). Stays enabled during a call. |
 
-Status dot mapping for the account popup, status bar and Accounts table:
+Status dot mapping for the account pop-up, status bar and Accounts table:
 
 | Registration (glossary) | Dot | Text in status bar |
 |---|---|---|
 | `registered` | green | account name |
 | `registering` | orange (not drawn in mockup; see Open items) | account name |
 | `failed(reason)` | red | account name + ": " + short reason, in red |
-| `unregistered` with Register off (disabled) | grey, hollow | account name, grey |
+| Account switched off (Enabled off) | grey, hollow | not shown: a disabled account leaves the status bar |
+| `unregistered` with Register off and the account enabled ("Outgoing only") | grey, hollow | account name, grey |
 
 ### Tab control
 
@@ -86,7 +119,7 @@ Screen 01. Main window, Dialpad tab, idle, typing a number.
 
 | # | Element | Notes |
 |---|---|---|
-| 1 | Common frame (title, number row, tabs, status bar) | See above. |
+| 1 | Common frame (title, account row, number row, tabs, status bar) | See above. |
 | 2 | Keypad grid | 3 columns by 4 rows, 9 pt gap. Key height 50 pt, corner radius 12 pt. |
 | 3 | Action row | Three equal columns: empty (left), Call button (centre), Delete button (right). |
 | 4 | Hint line | 11 pt, centred, under the action row. |
@@ -116,7 +149,7 @@ Screen 01. Main window, Dialpad tab, idle, typing a number.
 | Idle, typing | Field shows the typed value with a blue focus ring (3 pt tint plus 1 pt accent). Delete enabled. |
 | Idle, letters typed | Suggestions dropdown below the field. |
 | During a call | Dialpad tab body becomes the call panel (screen 4). Keypad and field remain live; see screen 5 for a second call. |
-| No accounts | Number field and account popup disabled (dimmed). Keypad is still visible, but Call is disabled; the body is replaced by the first-launch empty state (screen 10). |
+| No accounts | Number field and account pop-up button disabled (dimmed; the button reads "No account"). Keypad is still visible, but Call is disabled; the body is replaced by the first-launch empty state (screen 10). |
 
 ### Keyboard
 
@@ -201,7 +234,6 @@ Screen 02. Main window, Contacts tab, right-click context menu open on a row. In
 | Hover | Row background subtle; call button shown. |
 | During a call | A summary bar appears above the search row (see screen 4, Contacts tab). |
 | Inline delete | Row shows the confirmation strip. |
-| Lite vs Full | Lite: no presence dot, no presence text, no Watch Presence item, no Watch presence checkbox in the sheet. Full: all four present. |
 
 ### Keyboard
 
@@ -268,7 +300,7 @@ Screen 03. Main window, Call Log tab, two missed calls unseen. Includes the Clea
 | Element | Behaviour |
 |---|---|
 | Title "Clear the call log?" | Static. |
-| Body "All %lld entries are removed." `[Full]` adds "Recordings stay in their folder." | Count is the number of entries. |
+| Body "All %lld entries are removed. Recordings stay in their folder." (`[Full]` sentence: the second) | Count is the number of entries. |
 | Cancel | Closes; keeps the log. |
 | Clear (destructive, red) | Deletes all entries. Escape cancels. |
 
@@ -281,7 +313,7 @@ Screen 03. Main window, Call Log tab, two missed calls unseen. Includes the Clea
 | Missed badge present | Call Log segment shows the count; Dock and menu bar show the same count. |
 | Opened with unseen missed | Opening the tab marks them seen; badges clear (Dock, menu bar, tab). |
 | During a call | Summary bar above the tool row (see screen 5). |
-| Lite vs Full | Full: the Clear alert adds the recordings sentence. Recording play button is deferred `[v2]` (Q3.2); not drawn; do not build. |
+| Recording play button | Deferred `[v2]` (Q3.2); not drawn; do not build. |
 
 ### Keyboard
 
@@ -316,7 +348,7 @@ Body height 392 pt, flexible content, centred column.
 | 4 | Timer, 22 pt light, tabular digits | Call duration `mm:ss`; `h:mm:ss` after one hour (proposed). |
 | 5 | State label, 11 pt, green, medium | "Connected" (`call.state.connected`). |
 | 6 | Chip row, centred, wrapping | See chips below. |
-| 7 | Control grid | 4 columns in Lite; 3 columns in Full. Gap 10 pt (rows) and 4 pt (columns). Pushed to the bottom of the body (`margin-top: auto`). |
+| 7 | Control grid | Always 3 columns, 6 buttons (Mute, Hold, Transfer, Keypad, Record, Merge). Gap 10 pt (rows) and 4 pt (columns). Pushed to the bottom of the body (`margin-top: auto`). |
 | 8 | End Call button | Full width, 30 pt high, red, corner radius 8 pt, white label with hang-up glyph. Pinned at the bottom. |
 
 **Chips:**
@@ -330,14 +362,14 @@ Body height 392 pt, flexible content, centred column.
 
 **Control grid buttons** (icon in a 38 pt circle, label below, 10.5 pt):
 
-| Button | Type | Behaviour | Enabled / disabled | Edition |
-|---|---|---|---|---|
-| Mute | toggle | Toggles the microphone for the active call. When on: circle filled with the inverse label colour and a mic-off glyph; label stays "Mute". | Enabled. | Both |
-| Hold | button | Holds the active call. Hold state: see Open items. | Enabled. | Both |
-| Transfer | button | Opens the transfer popover (below). | Enabled when there is a call to transfer. | Both |
-| Keypad | button | Swaps the panel for the DTMF keypad (4.2). | Enabled. | Both |
-| Record `[Full]` | toggle | Starts or stops recording of the active call. Circle red when on. | Enabled. | Full |
-| Merge `[Full]` | button | Joins all connected calls into a local conference (screen 5). | Disabled with one call; enabled when a second call is connected. | Full |
+| Button | Type | Behaviour | Enabled / disabled |
+|---|---|---|---|
+| Mute | toggle | Toggles the microphone for the active call. When on: circle filled with the inverse label colour and a mic-off glyph; label stays "Mute". | Enabled. |
+| Hold | button | Holds the active call. Hold state: see Open items. | Enabled. |
+| Transfer | button | Opens the transfer popover (below). | Enabled when there is a call to transfer. |
+| Keypad | button | Swaps the panel for the DTMF keypad (4.2). | Enabled. |
+| Record `[Full]` | toggle | Starts or stops recording of the active call. Circle red when on. | Enabled. |
+| Merge `[Full]` | button | Joins all connected calls into a local conference (screen 5). | Disabled with one call; enabled when a second call is connected. |
 
 **End Call:** ends the active call (Command-D). With two calls the button label is "End Call with %@" (screen 5).
 
@@ -401,7 +433,6 @@ Covered in screen 5 (banner).
 | Keypad | 4.2. |
 | Contacts tab | 4.3. |
 | Microphone access denied | Call panel shows "Microphone access is off" and a button "Open System Settings" (from the first-launch notes; not drawn; see Strings). |
-| Lite vs Full | Lite: 4 control buttons, no REC chip, no Record, no Merge. Full: 6 control buttons (3 columns), REC chip. |
 
 ### Keyboard (screen 4)
 
@@ -442,7 +473,7 @@ Body height 392 pt.
 
 | Row state | Second line | Right side | Background |
 |---|---|---|---|
-| Active | "Active · %@" in blue (duration) | Codec chip with bars (Lite and Full) and a red mini end button | Blue tint |
+| Active | "Active · %@" in blue (duration) | Codec chip with bars and a red mini end button | Blue tint |
 | Held | "On hold · %@" in orange | "Resume" small button (play glyph) and red mini end button | none |
 | Consulting (attended transfer) | "Consulting · %@" in blue | red mini end button | Blue tint |
 | In conference `[Full]` | "In conference" | "Split" small button and red mini end button | blue tint |
@@ -451,7 +482,7 @@ Each row's mini end button (22 pt red circle, hang-up glyph) ends that call only
 
 **Limits:** a fifth call is rejected with SIP 486 Busy Here. The UI message for this case is not drawn; see Open items.
 
-**Second call behaviour:** typing a number and pressing Return during a call places a second call and holds the first. The first call moves to the held state and its row appears. This behaviour was added by the designer and accepted by the orchestrator; it is not drawn in the mockup beyond the two-row state.
+**Second call behaviour:** typing a number and pressing Return during a call places a second call and holds the first. The first call moves to the held state and its row appears. This behaviour was added during the mockup review; it is not drawn in the mockup beyond the two-row state.
 
 ### 5.2 Call Log tab with a call and held calls
 
@@ -569,7 +600,7 @@ Notification with alert style: stays until acted on. Title "Incoming call · %@"
 
 ### 6.4 Incoming inside the main window (spec; no mockup picture)
 
-Specified by the orchestrator. Shown on the Dialpad tab in place of the call panel content, in the same 392 pt body. Layout follows 6.1, minus the window chrome:
+Specified during the mockup review. Shown on the Dialpad tab in place of the call panel content, in the same 392 pt body. Layout follows 6.1, minus the window chrome:
 
 | Element | Behaviour |
 |---|---|
@@ -661,14 +692,14 @@ Native NSMenu, width about 286 pt. Structure, top to bottom:
 | 6 | Recent calls, last 5 | menu items | Icon (direction), name or number, time at right. Missed entries in red. Click calls back through the entry's account. | Enabled. |
 | 7 | separator | | | |
 | 8 | Do Not Disturb | checkmark menu item, shortcut Option-Command-D | Toggles DND. Checkmark when on. Rejects incoming calls with 486. No timed DND in v1 [decided Q7.2]. | Enabled. |
-| 9 | My Status ▸ `[Full]` | submenu item, with the current status at right ("Available ›") | See 7.4. | Full only. |
+| 9 | My Status ▸ `[Full]` | submenu item, with the current status at right ("Available ›") | See 7.4. | Enabled. |
 | 10 | separator | | | |
 | 11 | Show MacroSIP | menu item, shortcut Command-0 | Brings up the main window. | Enabled. |
 | 12 | Settings… | menu item, Command-comma | Opens Settings. | Enabled. |
 | 13 | separator | | | |
-| 14 | Quit MacroSIP | menu item, Command-Q | Quits. The title is "Quit %@" with the app name (Lite shows "Quit MacroSIP Lite"). | Enabled. |
+| 14 | Quit MacroSIP | menu item, Command-Q | Quits. The title is "Quit %@" with the app name ("Quit MacroSIP"). | Enabled. |
 
-"Show %@" and "Quit %@" use the bundle display name, so Lite and Full produce the correct app name.
+"Show %@" and "Quit %@" use the bundle display name ("MacroSIP").
 
 ### 7.3 Dock badge
 
@@ -701,7 +732,6 @@ Native NSMenu, width about 286 pt. Structure, top to bottom:
 | No accounts | Account lines absent; the menu shows Quick-dial (disabled) and recent calls if any. Icon offline. |
 | Failed account | Red account line. |
 | Missed calls | Badge on the icon; missed entries red in Recent Calls. |
-| Lite vs Full | Lite: no My Status submenu. Full: My Status shown. |
 
 ---
 
@@ -715,7 +745,7 @@ Screen 08. Standard macOS Settings window: toolbar tabs, grouped forms, changes 
 |---|---|
 | Title | Name of the selected tab (General, Accounts, Audio, Network, Codecs, Recording, Auto-answer). |
 | Toolbar | Tabs with icon above label (20 pt icon, 11 pt label). Selected tab filled. |
-| Tabs | General, Accounts, Audio, Network, Codecs; `[Full]` Recording and Auto-answer. Lite: five tabs. |
+| Tabs | General, Accounts, Audio, Network, Codecs; `[Full]` Recording and Auto-answer. Seven tabs. |
 | Pane body | Grouped rows on a grey background, min height 380 pt, 18 pt top and 22 pt side padding. |
 | Save button | None. Changes apply immediately. |
 
@@ -729,11 +759,11 @@ Layout: three groups.
 
 **Group 1, toggles:**
 
-| Row | Type | Behaviour | Edition |
-|---|---|---|---|
-| Launch at login | toggle | Registers the login item. No first-run prompt [decided Q10.2]. | Both |
-| Keep running in the menu bar when the window is closed | toggle | When off, closing the window quits the app. | Both |
-| Show icon in the Dock | toggle | Hides or shows the Dock icon (see 7.3). | Both |
+| Row | Type | Behaviour |
+|---|---|---|
+| Launch at login | toggle | Registers the login item. No first-run prompt [decided Q10.2]. |
+| Keep running in the menu bar when the window is closed | toggle | When off, closing the window quits the app. |
+| Show icon in the Dock | toggle | Hides or shows the Dock icon (see 7.3). |
 
 **Group 2, language:**
 
@@ -768,11 +798,11 @@ Layout: one table, a footer under it, then a "last error" group. Table width fil
 | Name | account short name; "Default" badge (blue) on the default outgoing account | 1.1 fr |
 | Address | user@domain | 1.8 fr |
 | Transport | UDP, TCP or TLS | 60 pt |
-| Status | "Registered", "403" (short reason, in red), "Disabled" (grey) | 70 pt |
+| Status | "Registered", "403" (short reason, in red), "Disabled" (grey; the account is switched off), "Outgoing only" (grey; enabled, "Register with server" off) | 70 pt |
 
-Rows: one per account, drag to reorder. Order is used in the account picker and the status bar. Selected row: blue, white text.
+Rows: one per account, drag to reorder. Order is used in the account pop-up and the status bar. Selected row: blue, white text.
 
-Table footer: "+" (add account), "−" (remove account, confirms), "Edit…" (opens the account editor sheet, 9). Group footer: "Double-click an account to edit it. Drag to reorder; the order is used in the account picker and the status bar."
+Table footer: "+" (add account), "−" (remove account, confirms), "Edit…" (opens the account editor sheet, 9). Group footer: "Double-click an account to edit it. Drag to reorder; the order is used in the account pop-up and the status bar."
 
 **Last error group** (header "Backup · last error", i.e. the account name and the word "last error"):
 
@@ -786,7 +816,7 @@ Table footer: "+" (add account), "−" (remove account, confirms), "Edit…" (op
 - Status updates live.
 - Double-click an account: opens the editor (9).
 - "−" with a row selected: confirmation before deleting; also removes the Keychain item (see Open items for the wording).
-- Unchecking "Register" in the editor shows the account as Disabled here.
+- Switching an account off (the switch in the account pop-up, or "Enabled" in the editor) shows it as Disabled here. Unchecking "Register with server" on an enabled account shows it as Outgoing only.
 - Only one account is the default outgoing account; setting another as default clears the previous one (in the editor).
 
 **States:**
@@ -796,7 +826,8 @@ Table footer: "+" (add account), "−" (remove account, confirms), "Edit…" (op
 | No accounts | Table empty with message `accounts.empty` (proposed). "−" and "Edit…" disabled. Last error group hidden. |
 | Registered | Green dot, "Registered". |
 | Failed | Red dot, "403" (or short reason), last error group visible for that account. |
-| Disabled | Grey hollow dot, "Disabled". |
+| Disabled | Grey hollow dot, "Disabled". The account is switched off (no registration, no outgoing calls). |
+| Outgoing only | Grey hollow dot, "Outgoing only". Enabled, "Register with server" off. |
 | Registering | Orange dot (proposed; not drawn); see Open items. |
 
 **Keyboard:** Return edits the selected row (proposed; double-click is drawn). Delete key removes the selected row after confirmation (proposed).
@@ -897,8 +928,6 @@ Group header: "Audio codecs, in order of preference". Group footer: "Drag rows o
 
 ### 8.6 Recording `[Full]`
 
-Full only. Lite: no tab, no pane.
-
 Layout: two groups.
 
 | Row | Type | Behaviour |
@@ -919,8 +948,6 @@ Notes: a Record button is always available in the call panel even when automatic
 **States:** folder missing: popup shows the folder name with a warning; choose again (proposed).
 
 ### 8.7 Auto-answer `[Full]`
-
-Full only.
 
 Layout: one group, one footer.
 
@@ -962,14 +989,14 @@ Screen 09. Sheet on Settings › Accounts. 460 pt wide. Opens from "+", "Edit…
 | 2 | Identity group | Account name, Display name. |
 | 3 | Server group | SIP server, Username, Auth username, Password, Domain, Outgoing proxy. |
 | 4 | Connection group | Transport, Media encryption (SRTP), Registration expiry. |
-| 5 | Switches group | Register with server, Default for outgoing calls, Publish my presence `[Full]`. |
+| 5 | Switches group | Enabled, Register with server, Default for outgoing calls, Publish my presence `[Full]`. |
 | 6 | Button row | Delete Account…, Test, status text, Cancel, Save. |
 
 ### Elements
 
 | Element | Type | Behaviour | Required | Default |
 |---|---|---|---|---|
-| Account name (secondary: none) | text field | Short label used in the picker, status bar, call panel and menu bar ("Office"). | Yes (proposed; mockup gives it no marker) | empty |
+| Account name (secondary: none) | text field | Short label used in the account pop-up, status bar, call panel and menu bar ("Office"). | Yes (proposed; mockup gives it no marker) | empty |
 | Display name (secondary "Shown to people you call.") | text field | Caller-ID presented to the remote party. | No | empty |
 | SIP server | text field | Host name or IP. Validated (see States). | Yes | empty |
 | Username | text field | SIP user. | Yes | empty |
@@ -980,7 +1007,8 @@ Screen 09. Sheet on Settings › Accounts. 460 pt wide. Opens from "+", "Edit…
 | Transport | segmented control: UDP, TCP, TLS | One value. | Yes | TLS in the mockup (default for new accounts: see Open items) |
 | Media encryption (SRTP) | popup | Disabled, Optional, Mandatory (glossary modes). | Yes | Mandatory in the mockup |
 | Registration expiry | number field, 56 pt, stepper, unit "seconds" | Expiry in seconds. | Yes | 300 |
-| Register with server (secondary "Off keeps the account for outgoing calls only.") | toggle | Off: account is disabled for incoming calls; shown as Disabled in Settings. | | on |
+| Enabled (secondary "Off stops registration and outgoing calls; the account stays in the pop-up, dimmed, and leaves the status bar.") | toggle | First row of the switches group. The same state as the switch in the account pop-up on the main window. Off: no registration and no outgoing calls; shown as Disabled in Settings › Accounts. The account keeps its settings and its Keychain item. | | on |
+| Register with server (secondary "Off keeps the account for outgoing calls only.") | toggle | Off: the account does not register, so it takes no incoming calls; it is still used for outgoing calls and shows as Outgoing only in Settings › Accounts. | | on |
 | Default for outgoing calls | toggle | Only one account is default; turning on clears the previous one. | | on in mockup |
 | Publish my presence `[Full]` (secondary "Lets contacts who watch you see Available / Away / DND.") | toggle | Per-account presence publish. | | on in mockup |
 | Delete Account… | button, destructive | Asks for confirmation; removes the account and its Keychain item. | | |
@@ -994,6 +1022,7 @@ Screen 09. Sheet on Settings › Accounts. 460 pt wide. Opens from "+", "Edit…
 - Save validates the fields, stores the password in the Keychain and re-registers. The status beside the buttons updates live.
 - Test does not save anything. It uses a temporary registration.
 - Delete asks for confirmation and removes the Keychain item too.
+- "Enabled" off keeps everything stored (settings, Keychain item); only registration and outgoing calls stop.
 - Only one account is default outgoing; turning on "Default for outgoing calls" turns it off on the previous default.
 - Account name must be unique (proposed; see Open items).
 
@@ -1007,7 +1036,6 @@ Screen 09. Sheet on Settings › Accounts. 460 pt wide. Opens from "+", "Edit…
 | Testing in progress | Button "Test" disabled; status text "Testing…" (proposed). |
 | Saved and registered | Status "Registered" with green dot. |
 | Saved, failed | Status shows short reason in red. |
-| Lite vs Full | Lite: no "Publish my presence" row. Full: row present. |
 
 ### Keyboard
 
@@ -1033,7 +1061,7 @@ Screen 10. Main window with no accounts.
 
 | # | Element | Notes |
 |---|---|---|
-| 1 | Common frame | Account popup shows "No account" (dimmed). Number field disabled. Tabs enabled. |
+| 1 | Common frame | Account pop-up button reads "No account" (dimmed). Number field disabled. Tabs enabled. |
 | 2 | Empty-state body | Centred column, 398 pt high, 24 pt padding. |
 | 3 | Status bar | "No accounts" with a grey hollow dot, and "Settings… ⌘," at right. |
 
@@ -1047,7 +1075,7 @@ Screen 10. Main window with no accounts.
 | Add Account… | button, primary (accent), small | Opens the account editor (9) as a sheet on this window. |
 | Footnote | label, 11.5 pt, secondary | "Contacts and the call log work without an account." |
 
-After Save in the editor, the empty state disappears and the Dialpad body (screen 1) becomes live. The account popup and number field become enabled.
+After Save in the editor, the empty state disappears and the Dialpad body (screen 1) becomes live. The account pop-up button and number field become enabled.
 
 ### States
 
@@ -1100,7 +1128,9 @@ Strings marked "(proposed)" are not in the mockups; they are needed by the spec 
 | | Call Log | `tabs.callLog` | |
 | | Name or number | `main.numberField.placeholder` | |
 | | Outgoing account | `main.accountPicker.help` | Tooltip. |
-| | No account | `main.accountPicker.none` | Disabled state. |
+| | Accounts | `account.popup.header` | Account pop-up header. |
+| | Account Settings… | `account.popup.settings` | Account pop-up item, ⌘,. |
+| | No account | `account.popup.none` | Pop-up button label when there are no accounts; dimmed. |
 | | No accounts | `status.noAccounts` | Status bar. |
 | | %@: %@ | `status.account.failed` | Account name, short reason; red. |
 | | Settings… | `menu.settings` | Shown in status bar in first launch as "Settings… ⌘,". |
@@ -1289,11 +1319,12 @@ Strings marked "(proposed)" are not in the mockups; they are needed by the spec 
 | | When a link is opened | `settings.general.links.onOpen` | |
 | | Fills the number field so you can check it first. | `settings.general.links.onOpen.help` | |
 | | Ask before calling | `settings.general.links.askBeforeCalling` | Popup value. |
-| | Accounts list header and footer: "Double-click an account to edit it. Drag to reorder; the order is used in the account picker and the status bar." | `accounts.list.footer` | |
+| | Accounts list header and footer: "Double-click an account to edit it. Drag to reorder; the order is used in the account pop-up and the status bar." | `accounts.list.footer` | |
 | | Name, Address, Transport, Status | `accounts.column.name`, `accounts.column.address`, `accounts.column.transport`, `accounts.column.status` | Table headers. |
 | | Default | `accounts.badge.default` | |
 | | Registered | `accounts.status.registered` | |
-| | Disabled | `accounts.status.disabled` | |
+| | Disabled | `accounts.status.disabled` | Account switched off. |
+| | Outgoing only | `accounts.status.outgoingOnly` | Enabled, "Register with server" off. |
 | | 403 Forbidden | `accounts.lastError.title` | Monospaced in mockup. %@ reason. |
 | | REGISTER rejected at %@. Check the username and password. | `accounts.lastError.body` | %@ time. |
 | | Backup · last error | `accounts.lastError.header` | Mockup group header; %@ account name. |
@@ -1380,6 +1411,8 @@ Strings marked "(proposed)" are not in the mockups; they are needed by the spec 
 | | Registration expiry | `account.field.expiry` | |
 | | Register with server | `account.field.register` | |
 | | Off keeps the account for outgoing calls only. | `account.field.register.help` | |
+| | Enabled | `account.field.enabled` | First switch in the editor. |
+| | Off stops registration and outgoing calls; the account stays in the pop-up, dimmed, and leaves the status bar. | `account.field.enabled.help` | |
 | | Default for outgoing calls | `account.field.defaultOutgoing` | |
 | `[Full]` | Publish my presence | `account.field.publishPresence` | |
 | `[Full]` | Lets contacts who watch you see Available / Away / DND. | `account.field.publishPresence.help` | |
@@ -1397,7 +1430,7 @@ Strings marked "(proposed)" are not in the mockups; they are needed by the spec 
 
 | Ed. | English | Key | Notes |
 |---|---|---|---|
-| | No account | `main.accountPicker.none` | Popup, disabled. Repeated from Common. |
+| | No account | `account.popup.none` | Pop-up button, disabled. Repeated from Common. |
 | | No accounts | `status.noAccounts` | Status bar. |
 | | Add a SIP account to start calling | `firstrun.title` | |
 | | You need the server address, username and password from your phone provider or PBX administrator. | `firstrun.body` | |
@@ -1426,12 +1459,12 @@ These are needed by the spec and have no mockup text. Each is listed in Open ite
 
 ## Open items — resolved
 
-Resolved by the orchestrator on 2026-10-10 as routine UI decisions (none changes scope). Numbers match the writer's list.
+Resolved on 2026-10-10 as routine UI decisions (none changes scope).
 
 1. **Window height.** Fixed 340×520. "Resizable height" in screen 1 is a mockup slip; ignore it.
 2. **Escape in the main window.** Dialpad: clears the dial field if non-empty, otherwise nothing. Contacts: clears the search if non-empty. Call Log: nothing. During an incoming call shown in the main window, Escape silences the ringtone (does not decline).
 3. **Hold button.** Toggle: label "Hold" with pause icon when the call is active, "Resume" with play icon when it is held. With several calls, pressing Resume on a held call holds the currently active one first. When the only call is held, the panel header shows "On hold" and the timer keeps running.
-4. **Registering state.** Orange dot, text "Registering…"; failed = red dot + short reason; registered = green; disabled account = grey, text "Off".
+4. **Registering state.** Orange dot, text "Registering…"; failed = red dot + short reason; registered = green; disabled account = grey, text "Disabled" (see Q1.3 and 8.2).
 5. **Status bar overflow.** Up to three accounts shown as dot + name; from the fourth onward collapse to a single summary "3/4 registered" with a tooltip listing all; clicking opens Settings › Accounts.
 6. **Fifth call.** Rejected silently with 486; a call log entry is written with direction `missed` and a note "Rejected: call limit" visible in the row subtitle.
 7. **Clear log confirmation.** Standard alert sheet "Clear call history?" with Cancel / Clear (destructive). No inline confirm.
@@ -1452,3 +1485,7 @@ Resolved by the orchestrator on 2026-10-10 as routine UI decisions (none changes
 22. **Recording folder missing.** `[Full]` Decide when Full work starts.
 23. **Menu bar icon precedence.** While a call is active the timer wins; the missed badge returns after the call ends if there are still unseen missed calls. Opening the Call Log tab clears the badge.
 24. **Quick dial in the menu bar menu.** No suggestions; the field only takes a number or URI and Return calls it with the default outgoing account. Suggestions exist only in the main window.
+
+## Decided — owner (2026-10-12)
+
+- **Q1.3 = A.** Accounts are switched on and off with the switches in the account pop-up (screen 1); the status bar has no menu and shows enabled accounts only. The same state is "Enabled" in the account editor and "Disabled" in Settings › Accounts.

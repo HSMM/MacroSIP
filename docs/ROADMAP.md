@@ -1,15 +1,15 @@
 # Roadmap
 
-One product, **MacroSIP** (ADR 0010; the Lite/Full split and the `v0.1-lite` gate were dropped on 2026-10-12).
+One product, **MacroSIP** (ADR 0010; the Lite/Full split was dropped on 2026-10-12).
 Milestones 4 and 5 run in parallel; 6 is the release. A milestone is done only when every item in its "Done when" list holds.
 
 ## 1. Skeleton, PJSIP, mockups — DONE 2026-10-10
-- Repo, license, docs (this file, AGENTS, GLOSSARY, ADRs, CLAUDE.md).
+- Repo, license, docs (this file, GLOSSARY, ADRs, DEVELOPMENT.md).
 - `scripts/build-pjsip.sh`: PJSIP 2.17 static arm64 with OpenSSL, Opus, SRTP, WebRTC AEC, no video. Also the `pjsua` CLI for tests.
 - `CPJSUA` target and `pjsip-smoke` executable prove Swift links and runs pjsua.
 - `MacroSIPCore` and `MacroSIPApp` targets exist; `scripts/make-app.sh lite|full` bundles a signed empty window into `dist/`.
 - UI mockups for all screens published and approved by the owner.
-- `docs/design/SCREENS.md`: text spec derived from the approved mockups — per screen: elements, states (empty, loading, error, Lite/Full), control behaviour, shortcuts, and every UI string for localization. Written by the technical writer; it is the UI engineer's primary input.
+- `docs/design/SCREENS.md`: text spec derived from the approved mockups — per screen: elements, states (empty, loading, error, Lite/Full), control behaviour, shortcuts, and every UI string for localization. It is the primary input for UI work.
 - Done when: `swift build` passes, smoke test prints codecs and devices, both `.app` bundles launch, mockups approved, SCREENS.md matches them, pushed to `main`.
 
 ## 2. Engine: registration and a call — DONE 2026-10-10 (reviewed, 36 tests, selftest call)
@@ -50,7 +50,7 @@ UI (`MacroSIPApp`, per SCREENS.md `[Full]` rows): presence dot/text and "Watch p
 ## 6. Polish and release
 - Launch at login, language switch, crash-safe log file, About window with GPL notice.
 - Russian localization complete; README install guide.
-- Done when: tagged `v0.1`; `MacroSIP.app` built from a clean clone by following README only.
+- Done when: tagged `26.0.0`; `MacroSIP.app` built from a clean clone by following README only.
 
 ## Later (v2 candidates)
 Video calls, SIP MESSAGE chat, global hotkeys, MicroSIP.ini / Contacts.xml import, notarized builds, Sparkle updates.

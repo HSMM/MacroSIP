@@ -8,7 +8,7 @@ extension AppModel {
 
     /// Account used for a dial: explicit > contact preference > picker > default.
     func accountForDial(explicit: AccountID? = nil, contact: Contact? = nil) -> AccountConfig? {
-        if let e = explicit, let a = account(e) { return a }
+        if let e = explicit, let a = account(e), a.enabled { return a }
         if let c = contact?.preferredAccountID, let a = account(c), a.enabled { return a }
         return effectiveAccount
     }

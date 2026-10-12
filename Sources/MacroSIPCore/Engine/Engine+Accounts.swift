@@ -2,7 +2,7 @@ internal import CPJSUA
 import Foundation
 
 extension Engine {
-    /// Adds the account to pjsua and registers it when `cfg.enabled`. Atomic: if the
+    /// Adds the account to pjsua and registers it when `cfg.registers`. Atomic: if the
     /// account cannot be added or its registration cannot be started, nothing remains.
     public func addAccount(_ cfg: AccountConfig, password: String) throws {
         try requireStarted()
@@ -25,7 +25,7 @@ extension Engine {
         if cfg.publishPresence {
             do { try applyPresence(.available, index: index) } catch { PJ.warn(error, "initial presence") }
         }
-        guard cfg.enabled else { return }
+        guard cfg.registers else { return }
         do {
             try applyRegistration(cfg.id, true)
         } catch {
@@ -37,13 +37,13 @@ extension Engine {
     }
 
     /// `password == nil` keeps the current one. The new configuration is always applied;
-    /// a failing un-REGISTER of the old one is only logged. Re-registers when `cfg.enabled`.
+    /// a failing un-REGISTER of the old one is only logged. Re-registers when `cfg.registers`.
     public func updateAccount(_ cfg: AccountConfig, password: String?) throws {
         try requireStarted()
         guard var entry = accounts[cfg.id] else { throw EngineError.unknownAccount(cfg.id) }
         let pw = password ?? entry.password
         let settings = try accountSettings(cfg, password: pw)
-        if !cfg.enabled && bridge.registration(of: cfg.id) != .unregistered {
+        if !cfg.registers && bridge.registration(of: cfg.id) != .unregistered {
             do {
                 try applyRegistration(cfg.id, false)
             } catch {
@@ -75,7 +75,7 @@ extension Engine {
         }
         // A SUBSCRIBE that failed with the old settings would wait 300 s for pjsua's retry.
         refreshPresenceSubscriptions(accountIndex: entry.index)
-        if cfg.enabled {
+        if cfg.registers {
             try applyRegistration(cfg.id, true)
         }
     }

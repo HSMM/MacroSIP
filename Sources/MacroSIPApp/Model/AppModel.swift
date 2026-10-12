@@ -23,6 +23,7 @@ final class AppModel {
     @ObservationIgnored var testWaiters: [AccountID: CheckedContinuation<AccountTestResult, Never>] = [:]
     @ObservationIgnored var testActive: Set<AccountID> = []
     @ObservationIgnored var testOutcomes: [AccountID: AccountTestResult] = [:]
+    @ObservationIgnored var accountSync: Task<Void, Never>?
     @ObservationIgnored var networkRestartTask: Task<Void, Never>?
     @ObservationIgnored var networkRestartPending = false
     @ObservationIgnored weak var mainWindow: NSWindow?
@@ -110,9 +111,13 @@ final class AppModel {
     var appName: String { Product.name }
 
     var enabledAccounts: [AccountConfig] { accounts.filter(\.enabled) }
-    var defaultAccount: AccountConfig? { accounts.first(where: \.isDefaultOutgoing) ?? accounts.first }
+    /// The default for outgoing calls among the enabled accounts: the flagged one, else the first.
+    var defaultAccount: AccountConfig? {
+        enabledAccounts.first(where: \.isDefaultOutgoing) ?? enabledAccounts.first
+    }
+    /// Account the next call goes out on: the picked one if it is still enabled, else the default.
     var effectiveAccount: AccountConfig? {
-        selectedAccountID.flatMap(account(_:)) ?? defaultAccount
+        selectedAccountID.flatMap(account(_:)).flatMap { $0.enabled ? $0 : nil } ?? defaultAccount
     }
     var hasAccounts: Bool { !accounts.isEmpty }
 
@@ -129,7 +134,7 @@ final class AppModel {
     var missedUnseen: Int { callLog.filter { $0.direction == .missed && $0.startedAt > seenLogAt }.count }
     var doNotDisturb: Bool { settings.general.doNotDisturb }
     var anyRegistered: Bool {
-        accounts.contains { if case .registered = registration[$0.id] { return true } else { return false } }
+        enabledAccounts.contains { if case .registered = registration[$0.id] { return true } else { return false } }
     }
     var lastDialedNumber: String? { callLog.first { $0.direction == .outgoing }?.remoteNumber }
 
@@ -156,7 +161,7 @@ final class AppModel {
     }
 
     func dot(for account: AccountConfig) -> RegistrationDot {
-        guard account.enabled else { return .off }
+        guard account.enabled, account.registerWithServer else { return .off }
         switch registration[account.id] ?? .unregistered {
         case .registered: return .registered
         case .failed: return .failed
@@ -177,7 +182,7 @@ final class AppModel {
         accounts = list
         contacts = contactStore.all().sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
         callLog = callLogStore.all()
-        if let sel = selectedAccountID, account(sel) == nil { selectedAccountID = nil }
+        if let sel = selectedAccountID, account(sel)?.enabled != true { selectedAccountID = nil }
     }
 
     func reloadCallLog() { callLog = callLogStore.all() }

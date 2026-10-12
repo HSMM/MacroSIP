@@ -25,7 +25,8 @@ public struct AccountConfig: Codable, Identifiable, Equatable {
     public var authID: String?              // nil = username
     public var transport: TransportKind
     public var srtp: SRTPMode
-    public var enabled: Bool                // register on start
+    public var enabled: Bool                // off: not added to the engine at all (no registration, no calls)
+    public var registerWithServer: Bool     // enabled && !registerWithServer = outgoing only (no REGISTER)
     public var isDefaultOutgoing: Bool
     public var registrationInterval: Int    // seconds, default 300
     public var publishPresence: Bool

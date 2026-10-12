@@ -13,7 +13,7 @@ case "$CONFIG" in
   *) echo "usage: $0 [debug|release]" >&2; exit 2 ;;
 esac
 
-VERSION="$(git -C "$ROOT" describe --tags --always 2>/dev/null | sed 's/^v//' || echo 0.0.0)"
+VERSION="$(git -C "$ROOT" describe --tags --always 2>/dev/null | sed "s/^v//" || echo 0.0.0)"
 BUILD_NUMBER="$(git -C "$ROOT" rev-list --count HEAD 2>/dev/null || echo 1)"
 
 echo "==> swift build ($CONFIG)"

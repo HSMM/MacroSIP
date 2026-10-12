@@ -7,6 +7,23 @@ import Testing
         AccountConfig(displayName: name, username: name, domain: "h", isDefaultOutgoing: def)
     }
 
+    @Test func enabledAndRegisterFlagsRoundTripAndLegacyMigrates() throws {
+        var a = acct("a")
+        #expect(a.registers)
+        a.registerWithServer = false
+        #expect(!a.registers && a.enabled)
+        a.registerWithServer = true
+        a.enabled = false
+        #expect(!a.registers)
+        let back = try JSONDecoder().decode(AccountConfig.self, from: JSONEncoder().encode(a))
+        #expect(back == a)
+        // Before `registerWithServer`, enabled == false meant "outgoing only".
+        var legacy = try JSONSerialization.jsonObject(with: JSONEncoder().encode(a)) as! [String: Any]
+        legacy["registerWithServer"] = nil
+        let old = try JSONDecoder().decode(AccountConfig.self, from: JSONSerialization.data(withJSONObject: legacy))
+        #expect(old.enabled && !old.registerWithServer)
+    }
+
     @Test func defaultOutgoingInvariant() throws {
         try withTempDir { dir in
             let s = AccountStore(directory: dir)

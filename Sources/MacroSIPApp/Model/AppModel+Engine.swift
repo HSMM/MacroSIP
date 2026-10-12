@@ -46,7 +46,7 @@ extension AppModel {
         }
         engineReady = true
         engineAccounts = []
-        for cfg in accounts {
+        for cfg in accounts where cfg.enabled {
             do {
                 try await engine.addAccount(cfg, password: vault.password(for: cfg.id) ?? "")
                 engineAccounts.insert(cfg.id)

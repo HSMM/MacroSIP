@@ -1,11 +1,10 @@
-# MacroSIP — notes for Claude Code
+# MacroSIP — development notes
 
 MicroSIP-style SIP softphone for macOS 14+ on Apple Silicon. Swift 6, SwiftUI/AppKit,
 SwiftPM only (no Xcode project), PJSIP 2.17 linked statically through the `CPJSUA` C target.
 
 ## Read first
-- `docs/ROADMAP.md` — milestones and their done criteria. Work on the current milestone only.
-- `docs/AGENTS.md` — who does what: roles, models, effort levels. Delegate by this table.
+- `docs/ROADMAP.md` — milestones and their done criteria.
 - `docs/GLOSSARY.md` — shared vocabulary. Use these terms in code and docs.
 - `docs/adr/` — settled decisions. Do not reopen them silently; add a new ADR to change one.
 - `docs/design/mockups.html` — approved UI mockups; `docs/design/SCREENS.md` — their text spec (elements, states, strings). UI code follows both.
@@ -24,8 +23,9 @@ SwiftPM only (no Xcode project), PJSIP 2.17 linked statically through the `CPJSU
 - Passwords live only in Keychain. Everything else is JSON in `~/Library/Application Support/MacroSIP/`.
 - Strings go through String Catalogs; English is the base, Russian is maintained alongside.
 - Run tests with `scripts/test.sh`, never bare `swift test` (it cannot find the Testing macro plugin under Command Line Tools). A milestone is done only after: `swift build` clean, tests green, `scripts/selftest-call.sh` passes, and a real call verified (pjsua CLI as the second phone, or the owner's SIP account).
-- Commit after each working milestone and push to `main`. Commit messages end with the Co-Authored-By line required by the session.
+- Commit after each working milestone and push to `main`.
 - SwiftUI `@State` does not compile under Command Line Tools (its macro plugin ships only with Xcode). Use the `@Local` wrapper from `Sources/MacroSIPApp/Views/Components/Local.swift`; it is a drop-in for `@State`.
 - Opus and OpenSSL are linked as static archives from Homebrew (Package.swift) so the .app has no /opt/homebrew dylib dependencies; never switch them back to `.linkedLibrary`.
 - Debug builds accept `--mock-engine`, `--demo-state <name>`, `--data-dir <path>`, `--snapshot <prefix>`; all builds accept `--log-level 0-6` (or `MACROSIP_LOG_LEVEL`) for PJSIP verbosity; see `Sources/MacroSIPApp/Model/LaunchOptions.swift`. Demo launches use a temp data dir and never touch the real Keychain.
 - Do not add dependencies without an ADR.
+- Versions are `YY.MINOR.PATCH` (ADR 0011): the first release is `26.0.0`; tags carry the bare number. `make-app.sh` takes the version from `git describe`.

@@ -68,7 +68,7 @@ actor MockEngine: SIPEngine {
         passwords[cfg.id] = password
         registration[cfg.id] = .unregistered
         emit(.registration(cfg.id, .unregistered))
-        if cfg.enabled { try setRegistered(cfg.id, true) }
+        if cfg.registers { try setRegistered(cfg.id, true) }
     }
 
     func updateAccount(_ cfg: AccountConfig, password: String?) throws {
@@ -76,7 +76,7 @@ actor MockEngine: SIPEngine {
         guard accounts[cfg.id] != nil else { throw EngineError.unknownAccount(cfg.id) }
         accounts[cfg.id] = cfg
         if let password { passwords[cfg.id] = password }
-        if cfg.enabled { try setRegistered(cfg.id, true) } else { try setRegistered(cfg.id, false) }
+        if cfg.registers { try setRegistered(cfg.id, true) } else { try setRegistered(cfg.id, false) }
     }
 
     func removeAccount(_ id: AccountID) throws {

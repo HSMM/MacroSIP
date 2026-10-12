@@ -28,6 +28,10 @@ extension AppModel {
         guard engineReady else { return }
         defer { syncPresenceSubscriptions(); publishMyPresence(only: [cfg.id]) }
         let saved = account(cfg.id) ?? cfg
+        if !saved.enabled {
+            try await removeFromEngine(saved.id)
+            return
+        }
         if engineAccounts.contains(cfg.id) {
             try await engine.updateAccount(saved, password: password)
         } else {
@@ -40,6 +44,53 @@ extension AppModel {
                 try? await engine.updateAccount(other, password: nil)
             }
         }
+    }
+
+    // MARK: - Enabled switch (account pop-up)
+
+    /// Switches an account on or off. Off removes it from the engine (un-REGISTER, calls on it end)
+    /// and takes it out of the status bar and the outgoing choices; on adds it back and registers.
+    /// The store and the UI change at once; the engine follows in order, one change at a time.
+    func setAccountEnabled(_ id: AccountID, _ on: Bool) {
+        guard var cfg = account(id), cfg.enabled != on else { return }
+        cfg.enabled = on
+        do { try accountStore.upsert(cfg) } catch { report(error); return }
+        loadStores()
+        if !on { registration[id] = nil }
+        let previous = accountSync
+        accountSync = Task { @MainActor in
+            await previous?.value
+            await self.reconcileEngineAccount(id)
+        }
+    }
+
+    /// Awaits the engine work queued by `setAccountEnabled`.
+    func waitForAccountSync() async { await accountSync?.value }
+
+    /// Brings the engine in line with the stored account: present and registering iff enabled.
+    private func reconcileEngineAccount(_ id: AccountID) async {
+        guard engineReady else { return }
+        do {
+            if let cfg = account(id), cfg.enabled {
+                if engineAccounts.contains(id) {
+                    try await engine.updateAccount(cfg, password: nil)
+                } else {
+                    try await engine.addAccount(cfg, password: vault.password(for: id) ?? "")
+                    engineAccounts.insert(id)
+                }
+            } else {
+                try await removeFromEngine(id)
+            }
+        } catch { report(error) }
+        syncPresenceSubscriptions()
+        publishMyPresence(only: [id])
+    }
+
+    private func removeFromEngine(_ id: AccountID) async throws {
+        guard engineAccounts.contains(id) else { return }
+        try await engine.removeAccount(id)
+        engineAccounts.remove(id)
+        registration[id] = nil
     }
 
     func deleteAccount(_ id: AccountID) async {
@@ -80,6 +131,7 @@ extension AppModel {
         var temp = cfg
         temp.id = AccountID()
         temp.enabled = true
+        temp.registerWithServer = true
         temp.isDefaultOutgoing = false
         let id = temp.id
         let started = Date()

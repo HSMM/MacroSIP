@@ -57,7 +57,7 @@ struct AccountsPane: View {
                     .padding(.horizontal, 6).padding(.vertical, 4)
                 }
             }
-            if let account = selected, account.enabled, let state = model.registration[account.id], let reason = state.fullReason {
+            if let account = selected, account.enabled, account.registerWithServer, let state = model.registration[account.id], let reason = state.fullReason {
                 FormGroup(header: L.accountsLastErrorHeader(account.displayName)) {
                     FormRow(label: reason, help: L.accountsLastErrorBody(
                         (model.registrationTimes[account.id] ?? Date()).formatted(date: .omitted, time: .shortened))) {
@@ -82,7 +82,7 @@ struct AccountsPane: View {
             Text(L.accountsColName).frame(maxWidth: .infinity, alignment: .leading)
             Text(L.accountsColAddress).frame(maxWidth: .infinity, alignment: .leading)
             Text(L.accountsColTransport).frame(width: 60, alignment: .leading)
-            Text(L.accountsColStatus).frame(width: 70, alignment: .leading)
+            Text(L.accountsColStatus).frame(width: 86, alignment: .leading)
         }
         .font(.system(size: 11, weight: .semibold))
         .foregroundStyle(Theme.label2)
@@ -99,7 +99,7 @@ struct AccountTableRow: View {
         HStack(spacing: 10) {
             StatusDot(kind: model.dot(for: account), size: 8).frame(width: 16)
             HStack(spacing: 6) {
-                Text(account.displayName).lineLimit(1)
+                Text(account.displayName).lineLimit(1).foregroundStyle(account.enabled ? .primary : .secondary)
                 if account.isDefaultOutgoing {
                     Text(L.accountsBadgeDefault)
                         .font(.system(size: 10, weight: .semibold))
@@ -112,7 +112,7 @@ struct AccountTableRow: View {
             Text("\(account.username)@\(account.domain)").foregroundStyle(.secondary).lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
             Text(account.transport.rawValue.uppercased()).foregroundStyle(.secondary).frame(width: 60, alignment: .leading)
-            statusText.frame(width: 70, alignment: .leading)
+            statusText.frame(width: 86, alignment: .leading)
         }
         .font(.system(size: 12.5))
         .padding(.horizontal, 12)
@@ -124,6 +124,8 @@ struct AccountTableRow: View {
     private var statusText: some View {
         if !account.enabled {
             Text(L.accountsDisabled).foregroundStyle(.secondary)
+        } else if !account.registerWithServer {
+            Text(L.accountsOutgoingOnly).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.8)
         } else {
             switch model.registration[account.id] ?? .unregistered {
             case .registered: Text(L.accountsRegistered)

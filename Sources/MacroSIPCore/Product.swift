@@ -2,5 +2,5 @@
 public enum Product {
     public static let name = "MacroSIP"
     public static let bundleIdentifier = "com.hsmm.macrosip"
-    public static let version = "0.1"
+    public static let version = "26.0.0"
 }

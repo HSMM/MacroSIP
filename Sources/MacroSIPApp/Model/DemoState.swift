@@ -6,18 +6,19 @@ import MacroSIPCore
 /// DEBUG-only launch states for screenshots and manual checks:
 ///   --demo-state first-launch | dialpad | contacts | calllog | connected | calls | incoming | incoming-hidden
 ///                 | conference | recording | autoAnswer | settings-recording | settings-autoanswer
-///                 | settings-accounts | account-editor | editor-first-launch
+///                 | account-popup | settings-accounts | account-editor | editor-first-launch
 /// Data goes to a throw-away directory (see LaunchOptions); the Keychain is never touched.
 enum DemoState {
     static let officeID = AccountID(raw: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!)
     static let homeID = AccountID(raw: UUID(uuidString: "00000000-0000-0000-0000-000000000002")!)
     static let backupID = AccountID(raw: UUID(uuidString: "00000000-0000-0000-0000-000000000003")!)
+    static let labID = AccountID(raw: UUID(uuidString: "00000000-0000-0000-0000-000000000004")!)
 
     static func seed(stores: (AccountStore, ContactStore, CallLogStore, SettingsStore), vault: PasswordVault) {
         let state = LaunchOptions.current.demoState ?? ""
         if state == "first-launch" || state == "editor-first-launch" { return }
         let (accounts, contacts, log, _) = stores
-        let list = [
+        var list = [
             AccountConfig(id: officeID, displayName: "Office", username: "1001", domain: "pbx.example.com",
                           transport: .tls, srtp: .mandatory, isDefaultOutgoing: true),
             AccountConfig(id: homeID, displayName: "Home", username: "alex", domain: "sip.provider.net",
@@ -25,6 +26,15 @@ enum DemoState {
             AccountConfig(id: backupID, displayName: "Backup", username: "2001", domain: "backup.example.net",
                           transport: .tcp, srtp: .optional),
         ]
+        if state.hasPrefix("account-popup") {       // the four accounts of the mockup (screen 1, Account pop-up)
+            list = [
+                AccountConfig(id: officeID, displayName: "Office", username: "alex", domain: "pbx.example.com",
+                              transport: .tls, srtp: .mandatory, isDefaultOutgoing: true),
+                AccountConfig(id: homeID, displayName: "Home", username: "7741", domain: "sip.example.net"),
+                AccountConfig(id: backupID, displayName: "Backup", username: "alex", domain: "voip.example.org"),
+                AccountConfig(id: labID, displayName: "Lab", username: "test", domain: "10.0.0.5", enabled: false),
+            ]
+        }
         for a in list {
             try? accounts.upsert(a)
             try? vault.set(a.id == backupID ? "wrong" : "demo", for: a.id)
@@ -115,6 +125,11 @@ enum DemoState {
             model.mainWindow?.orderOut(nil)
             try? await Task.sleep(for: .seconds(0.3))
             simulateIncoming(model)
+        case "account-popup":       // the snapshot below also renders the open pop-up
+            try? await Task.sleep(for: .seconds(1.5))
+        case "account-popup-live":  // opens the real menu and drives its rows with timers
+            try? await Task.sleep(for: .seconds(1.5))
+            liveAccountPopup(model)
         case "settings-accounts":
             try? await Task.sleep(for: .seconds(1.5))
             model.openSettings(tab: .accounts, account: officeID)
@@ -135,6 +150,126 @@ enum DemoState {
         if let prefix = model.launch.snapshotPrefix {
             try? await Task.sleep(for: .seconds(model.launch.snapshotDelay))
             snapshot(prefix: prefix)
+            if state == "account-popup" { snapshotAccountPopup(prefix: prefix, model: model) }
+        }
+    }
+
+    /// Opens the real pop-up and checks, while it is open: the switch of "Lab" does not close the menu and
+    /// enables the account; picking "Home" selects it and closes the menu. Writes `<prefix>-live.txt`.
+    @MainActor
+    static func liveAccountPopup(_ model: AppModel) {
+        guard let anchor = model.mainWindow?.contentView else { return }
+        let popup = AccountPopupMenu(model: model)
+        var out: [String] = []
+        var returned = false
+        func add(_ delay: TimeInterval, _ body: @escaping @MainActor () -> Void) {
+            let t = Timer(timeInterval: delay, repeats: false) { _ in MainActor.assumeIsolated { body() } }
+            RunLoop.main.add(t, forMode: .common)
+        }
+        add(0.8) {
+            out.append("rows=\(popup.rows.count)")
+            popup.rows.first { $0.accountID == labID }?.toggle.performClick(nil)
+        }
+        add(2.2) {
+            out.append("menu still open after the switch: \(!returned)")
+            out.append("lab enabled in model: \(model.account(labID)?.enabled == true)")
+            out.append("lab in engine: \(model.engineAccounts.contains(labID))")
+            out.append("lab registration: \(String(describing: model.registration[labID]))")
+            if let r = popup.rows.first(where: { $0.accountID == homeID }) { r.onPick?(r.accountID) }
+        }
+        popup.show(from: anchor)
+        returned = true
+        out.append("menu closed after pick: true; outgoing = \(model.effectiveAccount?.displayName ?? "-")")
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1.5))
+            out.append("after close: lab in engine \(model.engineAccounts.contains(labID)), registration \(String(describing: model.registration[labID]))")
+            if let prefix = model.launch.snapshotPrefix {
+                try? out.joined(separator: "\n").write(toFile: "\(prefix)-live.txt", atomically: true, encoding: .utf8)
+            }
+        }
+    }
+
+    /// An open NSMenu is not part of any window, so the pop-up is rendered from its own row views
+    /// and drawn over the main-window snapshot at the position of the mockup.
+    @MainActor
+    static func snapshotAccountPopup(prefix: String, model: AppModel) {
+        let menu = AccountPopupMenu(model: model).build()
+        let pad: CGFloat = 5
+        let items = menu.items
+        func height(_ item: NSMenuItem) -> CGFloat { item.view?.frame.height ?? (item.isSeparatorItem ? 9 : 22) }
+        let total = items.reduce(pad * 2) { $0 + height($1) }
+        // Each row is rendered on its own and drawn at its place in the menu.
+        func render(_ v: NSView) -> NSImage {
+            v.layoutSubtreeIfNeeded()
+            let image = NSImage(size: v.bounds.size)
+            if let rep = v.bitmapImageRepForCachingDisplay(in: v.bounds) {
+                v.cacheDisplay(in: v.bounds, to: rep)
+                image.addRepresentation(rep)
+            }
+            return image
+        }
+        let size = NSSize(width: AccountPopupMenu.width + pad * 2, height: total)
+        var pieces: [(NSImage, NSRect)] = []
+        var y = total - pad
+        for item in items {
+            let h = height(item)
+            y -= h
+            if let v = item.view {
+                pieces.append((render(v), NSRect(x: pad, y: y, width: v.bounds.width, height: h)))
+            } else {
+                let host = NSView(frame: NSRect(x: 0, y: 0, width: AccountPopupMenu.width, height: h))
+                if item.isSeparatorItem {
+                    let line = NSBox(frame: NSRect(x: 9, y: 4, width: AccountPopupMenu.width - 18, height: 1))
+                    line.boxType = .separator
+                    host.addSubview(line)
+                } else {
+                    let label = NSTextField(labelWithString: item.title)
+                    label.font = .menuFont(ofSize: 13)
+                    label.frame = NSRect(x: 9 + 12 + 8, y: 3, width: 160, height: 16)
+                    host.addSubview(label)
+                    let sc = NSTextField(labelWithString: "⌘,")
+                    sc.font = .menuFont(ofSize: 13); sc.textColor = .secondaryLabelColor
+                    sc.frame = NSRect(x: AccountPopupMenu.width - 49, y: 3, width: 40, height: 16)
+                    sc.alignment = .right
+                    host.addSubview(sc)
+                }
+                pieces.append((render(host), NSRect(x: pad, y: y, width: host.bounds.width, height: h)))
+            }
+        }
+        // Compose over the main window (menu top at 61 pt from the top, left at 10 pt, as in the mockup).
+        let mainURL = URL(fileURLWithPath: "\(prefix)-main.png")
+        guard let base = NSImage(contentsOf: mainURL), let baseRep = base.representations.first else { return }
+        let w = baseRep.pixelsWide, h = baseRep.pixelsHigh
+        guard let out = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: w, pixelsHigh: h, bitsPerSample: 8,
+                                         samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                         colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0),
+              let ctx = NSGraphicsContext(bitmapImageRep: out) else { return }
+        let sx = CGFloat(w) / base.size.width
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = ctx
+        base.draw(in: NSRect(x: 0, y: 0, width: w, height: h))
+        let menuRect = NSRect(x: (10 - pad) * sx, y: CGFloat(h) - (61 - pad + size.height) * sx,
+                              width: size.width * sx, height: size.height * sx)
+        let bubble = NSBezierPath(roundedRect: menuRect.insetBy(dx: pad * sx, dy: pad * sx), xRadius: 9 * sx, yRadius: 9 * sx)
+        NSGraphicsContext.saveGraphicsState()
+        let shadow = NSShadow()
+        shadow.shadowColor = NSColor.black.withAlphaComponent(0.3)
+        shadow.shadowBlurRadius = 18 * sx
+        shadow.shadowOffset = NSSize(width: 0, height: -6 * sx)
+        shadow.set()
+        NSColor.windowBackgroundColor.setFill()
+        bubble.fill()
+        NSGraphicsContext.restoreGraphicsState()
+        NSColor.separatorColor.setStroke()
+        bubble.lineWidth = 0.5 * sx
+        bubble.stroke()
+        for (img, rect) in pieces {
+            img.draw(in: NSRect(x: menuRect.minX + rect.minX * sx, y: menuRect.minY + rect.minY * sx,
+                                width: rect.width * sx, height: rect.height * sx))
+        }
+        NSGraphicsContext.restoreGraphicsState()
+        if let data = out.representation(using: .png, properties: [:]) {
+            try? data.write(to: URL(fileURLWithPath: "\(prefix)-popup.png"))
         }
     }
 
@@ -466,6 +601,26 @@ enum DemoState {
         check("new account registered", { if case .registered = model.registration[cfg.id] ?? .unregistered { return true } else { return false } }())
         await model.deleteAccount(cfg.id)
         check("account deleted", model.accounts.count == 3 && model.vault.password(for: cfg.id) == nil)
+
+        // enabled switch (account pop-up)
+        model.selectedAccountID = homeID
+        check("picked account is the outgoing one", model.effectiveAccount?.id == homeID)
+        model.setAccountEnabled(homeID, false)
+        await model.waitForAccountSync()
+        check("disabled account leaves the engine", !model.engineAccounts.contains(homeID) && model.registration[homeID] == nil)
+        check("disabled account has no status", model.dot(for: model.account(homeID)!) == .off && !model.enabledAccounts.contains { $0.id == homeID })
+        check("disabled account is not the outgoing one", model.effectiveAccount?.id == officeID, "\(String(describing: model.effectiveAccount?.displayName))")
+        check("enabled flag persisted", model.accountStore.all().first { $0.id == homeID }?.enabled == false)
+        model.setAccountEnabled(officeID, false)
+        await model.waitForAccountSync()
+        check("default disabled: first enabled is used", model.effectiveAccount?.id == backupID, "\(String(describing: model.effectiveAccount?.displayName))")
+        model.setAccountEnabled(officeID, true)
+        model.setAccountEnabled(homeID, true)
+        await wait(1.4)
+        check("switched on again: back in the engine and registered", model.engineAccounts.contains(homeID)
+              && { if case .registered = model.registration[homeID] ?? .unregistered { return true } else { return false } }())
+        check("default account is the flagged one again", model.effectiveAccount?.id == officeID)
+        model.selectedAccountID = nil
 
         // settings
         model.updateSettings { $0.codecOrder.swapAt(0, 1) }

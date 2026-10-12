@@ -19,6 +19,7 @@ struct AccountEditorSheet: View {
     @Local private var transport: TransportKind = .udp
     @Local private var srtp: SRTPMode = .disabled
     @Local private var expiry = 300
+    @Local private var enabled = true
     @Local private var register = true
     @Local private var isDefault = false
     @Local private var publishPresence = false
@@ -111,6 +112,10 @@ struct AccountEditorSheet: View {
                         }
                     }
                     FormGroup {
+                        row(L.accountEnabled, help: L.accountEnabledHelp) {
+                            Toggle("", isOn: $enabled).labelsHidden().toggleStyle(.switch)
+                        }
+                        FormDivider()
                         row(L.accountRegister, help: L.accountRegisterHelp) {
                             Toggle("", isOn: $register).labelsHidden().toggleStyle(.switch)
                         }
@@ -215,6 +220,7 @@ struct AccountEditorSheet: View {
 
     private func statusLabel(_ acct: AccountConfig) -> String {
         guard acct.enabled else { return L.accountsDisabled }
+        guard acct.registerWithServer else { return L.accountsOutgoingOnly }
         switch model.registration[acct.id] ?? .unregistered {
         case .registered: return L.accountsRegistered
         case .failed: return model.registration[acct.id]?.shortReason ?? ""
@@ -239,7 +245,8 @@ struct AccountEditorSheet: View {
             transport = a.transport
             srtp = a.srtp
             expiry = a.registrationInterval
-            register = a.enabled
+            enabled = a.enabled
+            register = a.registerWithServer
             isDefault = a.isDefaultOutgoing
             publishPresence = a.publishPresence
             verifyTLS = a.verifyTLSCertificate
@@ -263,7 +270,8 @@ struct AccountEditorSheet: View {
         cfg.authID = au.isEmpty ? nil : au
         cfg.transport = transport
         cfg.srtp = srtp
-        cfg.enabled = register
+        cfg.enabled = enabled
+        cfg.registerWithServer = register
         cfg.isDefaultOutgoing = isDefault
         cfg.registrationInterval = expiry
         cfg.publishPresence = publishPresence

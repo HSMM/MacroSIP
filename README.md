@@ -39,7 +39,7 @@ phone does.
 - English interface; Russian translation is in progress.
 
 Status: in development, see [docs/ROADMAP.md](docs/ROADMAP.md). The first
-release will be tagged `v0.1`.
+release will be tagged `26.0.0` (see docs/adr/0011-versioning.md).
 
 ## Building
 
