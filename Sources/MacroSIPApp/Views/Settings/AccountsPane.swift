@@ -81,8 +81,8 @@ struct AccountsPane: View {
             Color.clear.frame(width: 16)
             Text(L.accountsColName).frame(maxWidth: .infinity, alignment: .leading)
             Text(L.accountsColAddress).frame(maxWidth: .infinity, alignment: .leading)
-            Text(L.accountsColTransport).frame(width: 60, alignment: .leading)
-            Text(L.accountsColStatus).frame(width: 86, alignment: .leading)
+            Text(L.accountsColTransport).frame(width: 72, alignment: .leading)
+            Text(L.accountsColStatus).frame(width: 106, alignment: .leading)
         }
         .font(.system(size: 11, weight: .semibold))
         .foregroundStyle(Theme.label2)
@@ -111,8 +111,8 @@ struct AccountTableRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             Text("\(account.username)@\(account.domain)").foregroundStyle(.secondary).lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            Text(account.transport.rawValue.uppercased()).foregroundStyle(.secondary).frame(width: 60, alignment: .leading)
-            statusText.frame(width: 86, alignment: .leading)
+            Text(account.transport.rawValue.uppercased()).foregroundStyle(.secondary).frame(width: 72, alignment: .leading)
+            statusText.lineLimit(1).minimumScaleFactor(0.8).frame(width: 106, alignment: .leading)
         }
         .font(.system(size: 12.5))
         .padding(.horizontal, 12)

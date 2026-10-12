@@ -789,6 +789,7 @@ pj_status_t cpjsua_err_not_found(void)  { return PJ_ENOTFOUND; }
 pj_status_t cpjsua_err_invalid_op(void)  { return PJ_EINVALIDOP; }
 pj_status_t cpjsua_err_pj_busy(void)     { return PJ_EBUSY; }
 pj_status_t cpjsua_err_sip_busy(void)    { return PJSIP_EBUSY; }
+pj_status_t cpjsua_err_session_state(void) { return PJSIP_ESESSIONSTATE; }
 
 unsigned cpjsua_regc_expiration_not_specified(void)
 {

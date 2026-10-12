@@ -281,6 +281,7 @@ pj_status_t cpjsua_err_not_found(void);    /* PJ_ENOTFOUND */
 pj_status_t cpjsua_err_invalid_op(void);   /* PJ_EINVALIDOP */
 pj_status_t cpjsua_err_pj_busy(void);      /* PJ_EBUSY */
 pj_status_t cpjsua_err_sip_busy(void);     /* PJSIP_EBUSY (transaction in progress) */
+pj_status_t cpjsua_err_session_state(void); /* PJSIP_ESESSIONSTATE */
 
 /** PJSIP_REGC_EXPIRATION_NOT_SPECIFIED (0xFFFFFFFF): 2xx without an Expires value. */
 unsigned cpjsua_regc_expiration_not_specified(void);

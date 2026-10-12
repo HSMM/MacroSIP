@@ -14,7 +14,8 @@ func codecDisplay(_ id: String?) -> String? {
     }
     if parts.count > 1, let hz = Double(parts[1]) {
         let khz = hz / 1000
-        return String(format: khz.rounded() == khz ? "%@ %.0f kHz" : "%@ %.1f kHz", pretty, khz)
+        let value = String(format: khz.rounded() == khz ? "%.0f" : "%.1f", khz)
+        return "\(pretty) \(L.unitKHz(value))"
     }
     return pretty
 }

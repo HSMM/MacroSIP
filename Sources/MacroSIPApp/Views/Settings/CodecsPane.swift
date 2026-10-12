@@ -9,10 +9,10 @@ struct CodecsPane: View {
     private struct Meta { let name: String; let rate: String; let bitrate: String }
     private func meta(_ id: String) -> Meta {
         switch id {
-        case "opus/48000/2": return Meta(name: "Opus", rate: "48 kHz", bitrate: "6–510 kbit/s")
-        case "G722/16000/1": return Meta(name: "G.722", rate: "16 kHz", bitrate: "64 kbit/s")
-        case "PCMU/8000/1": return Meta(name: L.codecsPCMU, rate: "8 kHz", bitrate: "64 kbit/s")
-        case "PCMA/8000/1": return Meta(name: L.codecsPCMA, rate: "8 kHz", bitrate: "64 kbit/s")
+        case "opus/48000/2": return Meta(name: "Opus", rate: L.unitKHz("48"), bitrate: L.unitKbps("6–510"))
+        case "G722/16000/1": return Meta(name: "G.722", rate: L.unitKHz("16"), bitrate: L.unitKbps("64"))
+        case "PCMU/8000/1": return Meta(name: L.codecsPCMU, rate: L.unitKHz("8"), bitrate: L.unitKbps("64"))
+        case "PCMA/8000/1": return Meta(name: L.codecsPCMA, rate: L.unitKHz("8"), bitrate: L.unitKbps("64"))
         default: return Meta(name: id, rate: "", bitrate: "")
         }
     }

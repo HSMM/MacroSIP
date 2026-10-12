@@ -3,7 +3,9 @@ import MacroSIPCore
 
 /// `macrosip-cli --selftest`: real calls against two local phones (pjsua CLI with
 /// --auto-answer 200 and a looped tone, see scripts/selftest-call.sh). Covers RTP, hold,
-/// DTMF, recording, presence and a two-leg conference. Exit 0 only when every step passed.
+/// DTMF, recording, presence, a two-leg conference, incoming calls, blind and attended
+/// transfer (SelfTestCalls.swift), DTMF over SIP INFO and calls of a registered account
+/// (against SIPStub). Exit 0 only when every step passed.
 @MainActor
 enum SelfTest {
     final class Recorder {
@@ -208,6 +210,22 @@ enum SelfTest {
             step("hung up all: callEnded \(describe(ended.0.state)), duration \(String(format: "%.1f", ended.1)) s, "
                  + "isRecording on \(id2) only; conference WAV \(confHeader.fileSize) bytes finalised")
 
+            // Incoming calls and transfers: the pjsua phones are driven through their CLIs.
+            let context = Context(engine: engine, recorder: recorder, account: account, options: options)
+            if let cli1 = options.targetCLI {
+                try await incomingCalls(context, cli: cli1, step: step)
+                if let cli2 = options.target2CLI {
+                    try await blindTransfer(context, cli1: cli1, cli2: cli2, step: step)
+                    try await attendedTransfer(context, cli1: cli1, cli2: cli2, step: step)
+                }
+            }
+
+            // A SIP stub (registrar + PBX-like answering side) for what pjsua cannot show.
+            let stub = try SIPStub()
+            defer { stub.stop() }
+            try await dtmfInfo(context, stub: stub, step: step)
+            try await registeredCalls(context, stub: stub, step: step)
+
             try await engine.unsubscribePresence(uri: options.target)
             await engine.stop()
             step("engine stopped")
@@ -265,8 +283,10 @@ enum SelfTest {
         throw Failure(description: "no matching buddyPresence within \(Int(timeout)) s; seen \(seen.map(\.rawValue))")
     }
 
-    /// Sends one command to a pjsua telnet CLI on 127.0.0.1 (telnet negotiation is ignored).
-    static func pjsuaCLI(_ command: String, port: UInt16) async throws {
+    /// Sends one command to a pjsua telnet CLI on 127.0.0.1 and returns what the CLI printed
+    /// after it (printable text; telnet negotiation and log lines included, banner skipped).
+    @discardableResult
+    static func pjsuaCLI(_ command: String, port: UInt16) async throws -> String {
         let fd = socket(AF_INET, SOCK_STREAM, 0)
         guard fd >= 0 else { throw Failure(description: "socket: \(errno)") }
         defer { close(fd) }
@@ -281,12 +301,26 @@ enum SelfTest {
             }
         }
         guard rc == 0 else { throw Failure(description: "pjsua CLI on port \(port): connect errno \(errno)") }
+        _ = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK)
+        func drain() -> [UInt8] {
+            var out: [UInt8] = []
+            var buf = [UInt8](repeating: 0, count: 4096)
+            while true {
+                let n = read(fd, &buf, buf.count)
+                guard n > 0 else { break }
+                out += buf[0..<n]
+            }
+            return out
+        }
         try await Task.sleep(for: .milliseconds(300))      // banner and option negotiation
+        _ = drain()
         let bytes = Array((command + "\r\n").utf8)
         guard write(fd, bytes, bytes.count) == bytes.count else {
             throw Failure(description: "pjsua CLI on port \(port): write errno \(errno)")
         }
         try await Task.sleep(for: .milliseconds(300))      // let pjsua run it before we hang up
+        let output = drain().filter { $0 == 10 || (32..<127).contains($0) }
+        return String(decoding: output, as: UTF8.self)
     }
 
     static func fileSize(_ url: URL) -> Int {

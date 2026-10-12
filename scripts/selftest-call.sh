@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # End-to-end check: macrosip-cli calls two local pjsua phones that auto-answer and play a tone.
 # Verifies two-way RTP, hold/unhold, DTMF, recording (WAV), presence (SUBSCRIBE/NOTIFY),
-# a two-leg conference (merge/split) and hang-up. Needs scripts/build-pjsip.sh done.
+# a two-leg conference (merge/split), hang-up, incoming calls (answer, reject), blind and
+# attended transfer between the two phones, DTMF over SIP INFO and calls of a registered
+# account (the last two against a SIP stub inside macrosip-cli). Needs scripts/build-pjsip.sh done.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 WORK="${TMPDIR:-/tmp}/macrosip-selftest.$$"
@@ -13,9 +15,10 @@ cleanup() {
 }
 trap cleanup EXIT
 
-PORT1=5080        # first phone: call, recording, presence, conference leg 1
-PORT2=5081        # second phone: conference leg 2
-CLI1=5088         # telnet CLI of the first phone (the selftest changes its presence there)
+PORT1=5080        # first phone: call, recording, presence, conference leg 1, calls us, transferee
+PORT2=5081        # second phone: conference leg 2, transfer target
+CLI1=5088         # telnet CLI of the first phone (presence changes, outgoing calls, call list)
+CLI2=5089         # telnet CLI of the second phone (call list after the transfers)
 
 command -v nc >/dev/null || { echo "selftest needs nc (netcat) to drive the pjsua CLI"; exit 1; }
 
@@ -31,14 +34,16 @@ PY
 swift build --product macrosip-cli >/dev/null
 # --use-cli --no-cli-console: pjsua must not read stdin; a background job of a
 # non-interactive shell gets /dev/null and the classic console quits on EOF at once.
+# --id gives the phones distinct user parts: the incoming-call check matches the caller's
+# number, and after a transfer each phone's "call list" names the other one.
 PJOPTS=(--use-cli --no-cli-console --null-audio --auto-answer 200 --no-tcp
         --ip-addr 127.0.0.1 --bound-addr 127.0.0.1
         --play-file "$WORK/tone600.wav" --auto-play --auto-loop)
 third_party/pjsip/bin/pjsua "${PJOPTS[@]}" --local-port $PORT1 --rtp-port 4000 \
-  --cli-telnet-port $CLI1 > "$WORK/pjsua1.log" 2>&1 &
+  --id "sip:phone1@127.0.0.1:$PORT1" --cli-telnet-port $CLI1 > "$WORK/pjsua1.log" 2>&1 &
 PJ=$!
 third_party/pjsip/bin/pjsua "${PJOPTS[@]}" --local-port $PORT2 --rtp-port 4200 \
-  > "$WORK/pjsua2.log" 2>&1 &
+  --id "sip:phone2@127.0.0.1:$PORT2" --cli-telnet-port $CLI2 > "$WORK/pjsua2.log" 2>&1 &
 PJ2=$!
 sleep 2
 
@@ -51,7 +56,9 @@ grep -q "Online status: Online" "$WORK/cli1.txt" || {
   echo "pjsua CLI on telnet 127.0.0.1:$CLI1 did not report an online account:"; cat "$WORK/cli1.txt"; exit 1; }
 
 # Show the summary (or the "SELFTEST FAILED" line); hide PJSIP logs, events and step lines.
+# SELFTEST_LOG=<file> keeps the full output; SELFTEST_LOG_LEVEL=<0..6> sets the PJSIP log level.
 "$(swift build --product macrosip-cli --show-bin-path)/macrosip-cli" --selftest \
-  --target "sip:test@127.0.0.1:$PORT1" --target2 "sip:test@127.0.0.1:$PORT2" --target-cli $CLI1 \
-  --scratch "$WORK" 2>&1 \
+  --target "sip:phone1@127.0.0.1:$PORT1" --target2 "sip:phone2@127.0.0.1:$PORT2" --target-cli $CLI1 --target2-cli $CLI2 \
+  --scratch "$WORK" --log "${SELFTEST_LOG_LEVEL:-3}" 2>&1 \
+  | tee "${SELFTEST_LOG:-/dev/null}" \
   | grep -vE '^\s*(pj[0-9]\||[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]+ (\[|===))'

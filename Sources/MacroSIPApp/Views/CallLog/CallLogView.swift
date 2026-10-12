@@ -38,7 +38,7 @@ struct CallLogView: View {
             HStack(spacing: 8) {
                 SegmentedTabs(items: [.init(value: Filter.all, title: L.logAll), .init(value: Filter.missed, title: L.logMissed)],
                               selection: $filter)
-                    .frame(width: 130)
+                    .frame(width: 190)      // fits "Пропущенные"
                 Spacer()
                 Button(L.logClear) { confirmClear = true }
                     .controlSize(.small)

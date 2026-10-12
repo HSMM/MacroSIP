@@ -2,7 +2,7 @@ import Foundation
 import os
 import MacroSIPCore
 
-private let presenceLog = Logger(subsystem: "com.hsmm.macrosip", category: "presence")
+private let presenceLog = AppLog.presence
 
 extension AppModel {
     // MARK: - Watching contacts
@@ -93,7 +93,7 @@ extension AppModel {
     /// without it) go to the log, not to a banner.
     func quiet(_ what: String, _ body: @escaping @MainActor () async throws -> Void) {
         Task { @MainActor in
-            do { try await body() } catch { presenceLog.notice("\(what, privacy: .public) failed: \(describe(error), privacy: .public)") }
+            do { try await body() } catch { presenceLog.notice("\(what) failed: \(describe(error))") }
         }
     }
 }

@@ -331,6 +331,74 @@ struct EngineTests {
 
     /// One engine calls itself on 127.0.0.1: answer, wiring, mute race, hold, stale IDs,
     /// DTMF validation, exactly one .callEnded per call, no .callChanged after it.
+    /// Hold and resume without waiting for the hold re-INVITE (and resume -> hold): the
+    /// second request is deferred until the first transaction completes, then sent; the
+    /// call ends in the last requested state with RTP to match.
+    @Test func quickHoldResumeIsDeferredNotLost() async throws {
+        let engine = makeEngine()
+        let log = EventLog()
+        let consumer = log.consume(engine)
+        defer { consumer.cancel() }
+        try await engine.start(network: Self.network)
+        let account = AccountConfig(displayName: "L", username: "loop", domain: "127.0.0.1", enabled: false)
+        try await engine.addAccount(account, password: "")
+        let port = await engine.localPort(of: .udp)
+        let out = try await engine.makeCall(to: DialString(uri: "sip:callee@127.0.0.1:\(port)", display: "callee"),
+                                            from: account.id)
+        func incomingID() -> CallID? {
+            log.all.lazy.compactMap { e -> CallID? in
+                if case let .incomingCall(c) = e { return c.id }
+                return nil
+            }.first
+        }
+        #expect(await waitUntil { incomingID() != nil })
+        let inc = try #require(incomingID())
+        try await engine.answer(inc)
+        func call(_ id: CallID) async -> CallInfo? { await engine.calls().first { $0.id == id } }
+        #expect(await waitUntil {
+            let a = await call(out), b = await call(inc)
+            return a?.state == .connected && a?.codec != nil && b?.state == .connected
+        })
+        func lastChanged(_ id: CallID) -> CallInfo? {
+            log.all.lazy.reversed().compactMap { e -> CallInfo? in
+                if case let .callChanged(c) = e, c.id == id { return c }
+                return nil
+            }.first
+        }
+        func rxIn(_ seconds: Double) async throws -> Int {
+            let a = try await engine.mediaStats(out).rxPackets
+            try await Task.sleep(for: .seconds(seconds))
+            return try await engine.mediaStats(out).rxPackets - a
+        }
+        func deferrals() -> Int {
+            log.all.filter { if case let .log(_, t) = $0 { return t.contains("waits for the re-INVITE in progress") }; return false }.count
+        }
+
+        // hold -> resume back to back
+        try await engine.setHold(out, true)
+        try await engine.setHold(out, false)
+        #expect(deferrals() == 1)
+        try await Task.sleep(for: .seconds(1))           // both re-INVITEs done
+        #expect(await call(out)?.state == .connected)
+        #expect(lastChanged(out)?.state == .connected && lastChanged(out)?.isOnHold == false)
+        let rxActive = try await rxIn(1)
+        #expect(rxActive > 30)
+
+        // resume -> hold back to back (from a settled hold)
+        try await engine.setHold(out, true)
+        try await Task.sleep(for: .seconds(1))
+        try await engine.setHold(out, false)
+        try await engine.setHold(out, true)
+        #expect(deferrals() == 2)
+        try await Task.sleep(for: .seconds(1))
+        #expect(await call(out)?.state == .held)
+        #expect(lastChanged(out)?.state == .held && lastChanged(out)?.isOnHold == true)
+        let rxHeld = try await rxIn(1)
+        #expect(rxHeld < 10)
+
+        await engine.stop()
+    }
+
     @Test func loopbackCall() async throws {
         let engine = makeEngine()
         let log = EventLog()

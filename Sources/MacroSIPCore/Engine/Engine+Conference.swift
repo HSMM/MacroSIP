@@ -42,6 +42,8 @@ extension Engine {
 
         // Rewire whatever happened, also when a leg ended half-way (its update throws).
         defer { reconcileMedia() }
+        // The conference resumes its legs; a hold request still waiting would undo that.
+        for leg in legs { pendingHolds[leg.id] = nil }
         for leg in legs where leg.held {
             try PJ.check(cpjsua_call_unhold(leg.id.raw), "resume \(leg.id) for the conference")
             try updateRecord(leg.id, reconcile: false) { $0.localHold = false }

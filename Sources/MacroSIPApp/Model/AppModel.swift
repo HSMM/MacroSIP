@@ -71,6 +71,8 @@ final class AppModel {
     var settingsEditor: AccountEditorRequest?
     var ringtoneSilenced: Set<CallID> = []
     var focusContactsSearch = 0     // bumped by Command-F
+    var loginItemNeedsApproval = false      // SMAppService.mainApp.status == .requiresApproval
+    var loginItemError: String?             // why macOS refused to (un)register the login item
 
     private init() {
         let launch = LaunchOptions.current
@@ -200,7 +202,10 @@ final class AppModel {
         }
     }
 
-    func report(_ error: Error) { showBanner(describe(error)) }
+    func report(_ error: Error) {
+        AppLog.app.error(describe(error))
+        showBanner(describe(error))
+    }
 
     /// Runs an engine operation off the call stack of the view; failures become a banner.
     func run(_ body: @escaping @MainActor () async throws -> Void) {

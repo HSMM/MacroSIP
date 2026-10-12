@@ -62,6 +62,10 @@ public actor Engine {
     var nextConferenceID: UInt64 = 1
     /// Presence subscriptions by normalised URI.
     var buddies: [String: Buddy] = [:]
+    /// Hold/resume requests that met a re-INVITE in flight (latest request per call wins);
+    /// applied when the call's media or state changes, or by the retry timer.
+    var pendingHolds: [CallID: PendingHold] = [:]
+    var holdRetryScheduled = false
 
     // Audio devices are remembered by name (indices change when devices come and go).
     var inputDeviceName: String?
@@ -155,6 +159,7 @@ public actor Engine {
         // No presence events during shutdown: the subscriptions end with pjsua.
         bridge.unwatchAll()
         buddies = [:]
+        pendingHolds = [:]
         pjsua_call_hangup_all()
         PJ.warn(pjsua_destroy(), "pjsua_destroy")
         bridge.releaseDeferredEnds()
@@ -209,6 +214,13 @@ public actor Engine {
         try withExtendedLifetime(arena) {
             try PJ.check(pjsua_init(ua, log, media), "pjsua_init")
         }
+
+        // RFC 3261 18.1.1: PJSIP puts TCP in front of UDP for a request above 1300 bytes
+        // (an authorised INVITE with SDP easily is). Every account is bound to its own
+        // transport, so for a UDP account that TCP attempt always fails with
+        // PJSIP_ETPNOTSUITABLE ("will try next server") before the UDP copy goes out.
+        // Keep the account's transport (docs/ENGINE.md, "Unsuitable transport").
+        pjsip_cfg().pointee.endpt.disable_tcp_switch = 1
     }
 
     /// UDP is required; TCP and TLS failures are logged and only disable accounts of that kind.

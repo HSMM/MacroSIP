@@ -22,7 +22,10 @@ struct GeneralPane: View {
     var body: some View {
         PaneContainer {
             FormGroup {
-                FormRow(label: L.launchAtLogin) {
+                FormRow(label: L.launchAtLogin, help: loginItemHelp) {
+                    if model.loginItemNeedsApproval {
+                        Button(L.launchAtLoginOpenSettings) { model.openLoginItemsSettings() }
+                    }
                     Toggle("", isOn: model.binding(\.general.launchAtLogin)).labelsHidden().toggleStyle(.switch)
                 }
                 FormDivider()
@@ -58,16 +61,31 @@ struct GeneralPane: View {
                     .labelsHidden().frame(width: 190)
                 }
             }
+            FormGroup(header: L.troubleshootingHeader) {
+                FormRow(label: L.logFileTitle, help: L.logFileHelp) {
+                    Button(L.logOpenFolder) { model.openLogFolder() }
+                }
+                FormDivider()
+                FormRow(label: L.diagnosticsTitle, help: L.diagnosticsHelp) {
+                    Button(L.diagnosticsCopy) { model.copyDiagnostics() }
+                }
+            }
         }
-        .onAppear { refreshHandler() }
+        .onAppear { refreshHandler(); model.syncLoginItemStatus() }
         .alert(L.languageRestartTitle, isPresented: $showRestart) {
             Button(L.languageRestartNow) { relaunch() }
             Button(L.languageRestartLater, role: .cancel) {}
         } message: { Text(L.languageRestartBody) }
     }
 
+    private var loginItemHelp: String? {
+        model.loginItemError ?? (model.loginItemNeedsApproval ? L.launchAtLoginApproval : nil)
+    }
+
     private var systemLanguageName: String {
-        let code = Locale.preferredLanguages.first ?? "en"
+        // The system's own list: the app's AppleLanguages override (set by the picker below) must not leak into this label.
+        let system = UserDefaults.standard.persistentDomain(forName: UserDefaults.globalDomain)?["AppleLanguages"] as? [String]
+        let code = system?.first ?? Locale.preferredLanguages.first ?? "en"
         return (Locale.current.localizedString(forLanguageCode: String(code.prefix(2))) ?? "English").capitalized
     }
 

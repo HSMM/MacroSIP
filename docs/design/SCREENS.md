@@ -122,7 +122,7 @@ Screen 01. Main window, Dialpad tab, idle, typing a number.
 | 1 | Common frame (title, account row, number row, tabs, status bar) | See above. |
 | 2 | Keypad grid | 3 columns by 4 rows, 9 pt gap. Key height 50 pt, corner radius 12 pt. |
 | 3 | Action row | Three equal columns: empty (left), Call button (centre), Delete button (right). |
-| 4 | Hint line | 11 pt, centred, under the action row. |
+| 4 | ~~Hint line~~ | Removed at the owner's request (2026-10-12); Return still calls and Call with an empty field still redials (Behaviour below). |
 
 ### Elements
 
@@ -131,7 +131,6 @@ Screen 01. Main window, Dialpad tab, idle, typing a number.
 | Keys 1 to 9, `*`, 0, `#` | button (12 keys) | Appends the key to the number field. Each key shows its letters beneath the digit (2 ABC, 3 DEF, 4 GHI, 5 JKL, 6 MNO, 7 PQRS, 8 TUV, 9 WXYZ, 0 `+`; 1, `*`, `#` have none). Long-press on 0 inserts `+` instead of 0. | Enabled. |
 | Call button | circular button, 58 pt, green, handset glyph | Places a call to the number field, normalised (see Behaviour below). With an empty field, redials the last number. | Disabled when the field is empty and there is no last number. |
 | Delete button | circular ghost button, 36 pt, backspace glyph; accessibility label "Delete last digit" | Deletes the last character in the number field. Single click per character. | Disabled when the field is empty. |
-| Hint line | label | Static text (`dialpad.hint`). | n/a |
 | Number field | text field (see Common frame) | Typed letters open the contact suggestions dropdown below the field [decided Q1.1]. | Enabled. |
 
 **Behaviour, number handling:**
@@ -979,7 +978,7 @@ Note for incoming window: shows the countdown and Cancel whenever auto-answer wi
 
 ## 9. Account editor
 
-Screen 09. Sheet on Settings › Accounts. 460 pt wide. Opens from "+", "Edit…" and double-click. Title "Edit Account" for existing accounts (`account.title.edit`); "New Account" for new (proposed).
+Screen 09. Sheet on Settings › Accounts. 500 pt wide (460 in the mockup; widened so the Russian button labels fit). Opens from "+", "Edit…" and double-click. Title "Edit Account" for existing accounts (`account.title.edit`); "New Account" for new (proposed).
 
 ### Layout (top to bottom)
 
@@ -1114,7 +1113,7 @@ If denied, the call panel shows "Microphone access is off" with an "Open System 
 
 ## Strings
 
-Every user-visible English string in the mockups and notes. Keys are proposed String Catalog keys in dot notation (camelCase segments). Placeholders use `%@` (string) and `%lld` (integer); numbered `%1$@` form is required where a translation changes word order. Column **Ed.** marks `[Full]` strings.
+Every user-visible English string in the mockups and notes. Keys are the `.strings` keys (dot notation; `Sources/MacroSIPApp/Resources/{en,ru}.lproj`) (camelCase segments). Placeholders use `%@` (string) and `%lld` (integer); numbered `%1$@` form is required where a translation changes word order. Column **Ed.** marks `[Full]` strings.
 
 Strings marked "(proposed)" are not in the mockups; they are needed by the spec and are in the Open items list where a decision is needed. Strings shown only as sample data (e.g. "Anna Petrova", "+7 912 555-01-23", "pbx.example.com") are not strings and are not listed.
 
@@ -1143,7 +1142,6 @@ Strings marked "(proposed)" are not in the mockups; they are needed by the spec 
 |---|---|---|---|
 | | Call | `dialpad.call.help` | Accessibility label of the Call button. |
 | | Delete last digit | `dialpad.delete.help` | Accessibility label. |
-| | Return calls · empty field + Call redials | `dialpad.hint` | Hint line. |
 | | ABC, DEF, GHI, JKL, MNO, PQRS, TUV, WXYZ, + | `dialpad.key.letters.2` … `dialpad.key.letters.9`, `dialpad.key.letters.0` | Letter sets are per locale; Russian letters are an Open item. |
 
 ### 2 Contacts

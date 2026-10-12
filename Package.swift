@@ -46,6 +46,7 @@ let pjsipSwiftSettings: [SwiftSetting] = [
 
 let package = Package(
     name: "MacroSIP",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .executable(name: "MacroSIPApp", targets: ["MacroSIPApp"]),
@@ -84,6 +85,7 @@ let package = Package(
             name: "MacroSIPApp",
             dependencies: ["MacroSIPCore"],
             path: "Sources/MacroSIPApp",
+            resources: [.process("Resources")],     // en.lproj / ru.lproj Localizable.strings and .stringsdict
             swiftSettings: pjsipSwiftSettings
         ),
         .testTarget(

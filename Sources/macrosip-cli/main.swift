@@ -2,13 +2,15 @@
 //
 //   macrosip-cli [--null-audio] [--log N] [--port P] [--stun host:port] [--bind ADDR]
 //   macrosip-cli --selftest [--target sip:test@127.0.0.1:5080] [--target2 sip:test@127.0.0.1:5081]
-//                [--scratch DIR] [--target-cli PORT] [--bind ADDR|any] [--log N]
+//                [--scratch DIR] [--target-cli PORT] [--target2-cli PORT] [--bind ADDR|any] [--log N]
 //
 // The self-test calls --target (recording, presence of --target), then --target2 and merges
 // both into a conference. --scratch is where recordings go (default: a temporary directory).
-// --target-cli is the telnet port of the --target pjsua CLI: presence changes are driven there.
+// --target-cli is the telnet port of the --target pjsua CLI: presence changes, incoming calls
+// and the transfer checks are driven there; --target2-cli is the one of --target2 (transfers).
+// Without both CLI ports the incoming-call and transfer steps are skipped.
 // --bind binds SIP/RTP to ADDR and advertises it (the self-test uses 127.0.0.1 so a VPN
-// default route cannot swallow localhost traffic; "any" turns that off).
+// default route cannot swallow localhost traffic; "any" = all interfaces, the interactive default).
 //
 // Interactive commands: type `help`.
 
@@ -26,6 +28,8 @@ struct Options {
     var scratch: String?
     /// Telnet port of the --target pjsua's CLI; lets the self-test change its presence.
     var targetCLI: UInt16?
+    /// Telnet port of the --target2 pjsua's CLI (transfer checks).
+    var target2CLI: UInt16?
     var bind: String?
 
     static func parse(_ args: [String]) -> Options {
@@ -42,12 +46,13 @@ struct Options {
             case "--target2": o.target2 = it.next() ?? o.target2
             case "--scratch": o.scratch = it.next()
             case "--target-cli": o.targetCLI = it.next().flatMap(UInt16.init)
+            case "--target2-cli": o.target2CLI = it.next().flatMap(UInt16.init)
             case "--bind": o.bind = it.next()
             case "-h", "--help":
                 print("""
                 usage: macrosip-cli [--null-audio] [--log N] [--port P] [--stun host:port] [--bind ADDR]
                        macrosip-cli --selftest [--target URI] [--target2 URI] [--scratch DIR] [--target-cli PORT]
-                                               [--bind ADDR|any] [--log N]
+                                               [--target2-cli PORT] [--bind ADDR|any] [--log N]
                 """)
                 exit(0)
             default:

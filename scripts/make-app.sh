@@ -28,10 +28,12 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN_DIR/MacroSIPApp" "$APP/Contents/MacOS/$NAME"
 
-# SwiftPM resource bundles (String Catalogs, assets) live next to the binary.
+# SwiftPM resource bundle MacroSIP_MacroSIPApp.bundle (Localizable.strings per language); Bundle.module finds it in Contents/Resources.
 for bundle in "$BIN_DIR"/*.bundle; do
   [ -d "$bundle" ] && cp -R "$bundle" "$APP/Contents/Resources/"
 done
+# Localized Info.plist strings (microphone prompt) for en and ru.
+cp -R "$ROOT"/packaging/InfoPlist/*.lproj "$APP/Contents/Resources/"
 if [ -f "$ROOT/packaging/AppIcon.icns" ]; then
   cp "$ROOT/packaging/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 fi
@@ -55,7 +57,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>LSApplicationCategoryType</key><string>public.app-category.social-networking</string>
   <key>NSPrincipalClass</key><string>NSApplication</string>
   <key>NSHighResolutionCapable</key><true/>
-  <key>NSHumanReadableCopyright</key><string>GPLv2 or later</string>
+  <key>NSHumanReadableCopyright</key><string>© 2026 HSMM</string>
   <key>NSMicrophoneUsageDescription</key>
   <string>$NAME needs the microphone to make and receive calls.</string>
   <key>CFBundleURLTypes</key>

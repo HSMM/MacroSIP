@@ -49,9 +49,6 @@ struct DialpadView: View {
                 .help(L.dialpadDeleteHelp)
                 .accessibilityLabel(L.dialpadDeleteHelp)
             }
-            Text(L.dialpadHint)
-                .font(.system(size: 11))
-                .foregroundStyle(Theme.label2)
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 22)

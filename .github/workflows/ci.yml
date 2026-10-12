@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and test (macOS 15, arm64)
+    runs-on: macos-15
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0      # make-app.sh derives version and build number from git
+
+      - name: Toolchain
+        run: |
+          set -euo pipefail
+          uname -m
+          sw_vers
+          swift --version
+
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          brew update
+          brew install openssl@3 opus pkgconf
+
+      - name: Cache PJSIP build
+        id: pjsip-cache
+        uses: actions/cache@v4
+        with:
+          path: third_party/pjsip
+          key: pjsip-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/build-pjsip.sh', 'third_party/pjsip/config_site.h') }}
+
+      - name: Build PJSIP
+        if: steps.pjsip-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          "$GITHUB_WORKSPACE/scripts/build-pjsip.sh"
+
+      - name: Swift build
+        run: |
+          set -euo pipefail
+          swift build
+
+      - name: Tests
+        run: |
+          set -euo pipefail
+          "$GITHUB_WORKSPACE/scripts/test.sh"
+
+      - name: Self-test call (pjsua loopback)
+        run: |
+          set -euo pipefail
+          "$GITHUB_WORKSPACE/scripts/selftest-call.sh"
+
+      - name: Build the app
+        run: |
+          set -euo pipefail
+          "$GITHUB_WORKSPACE/scripts/make-app.sh" release
+          defaults read "$GITHUB_WORKSPACE/dist/MacroSIP.app/Contents/Info" CFBundleShortVersionString
+          ditto -c -k --keepParent "$GITHUB_WORKSPACE/dist/MacroSIP.app" "$RUNNER_TEMP/MacroSIP-app.zip"
+
+      - name: Upload the app
+        uses: actions/upload-artifact@v4
+        with:
+          name: MacroSIP-app
+          path: ${{ runner.temp }}/MacroSIP-app.zip
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload PJSIP build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pjsip-build-logs
+          path: third_party/build-logs
+          if-no-files-found: ignore

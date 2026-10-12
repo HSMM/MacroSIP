@@ -28,6 +28,9 @@ struct AppCommands: Commands {
     let model: AppModel
 
     var body: some Commands {
+        CommandGroup(replacing: .appInfo) {
+            Button(L.menuAbout(model.appName)) { AboutPanel.show() }
+        }
         CommandGroup(replacing: .newItem) {}
         CommandMenu(L.menuCall) {
             Button(L.menuEndCall) { model.endCurrentCall() }

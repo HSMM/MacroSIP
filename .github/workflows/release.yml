@@ -1,0 +1,139 @@
+name: Release
+
+# A tag such as 26.0.0 (final) or 26.0.0-rc.1 (release candidate) builds the DMG, publishes a
+# GitHub Release and updates the Homebrew cask in HSMM/homebrew-tap (see README, "Releasing").
+on:
+  push:
+    tags:
+      - '[0-9]*.[0-9]*.[0-9]*'
+
+permissions:
+  contents: read
+
+jobs:
+  dmg:
+    name: Build the DMG and publish the release
+    runs-on: macos-15
+    timeout-minutes: 60
+    permissions:
+      contents: write     # create the GitHub Release
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0      # make-app.sh derives version and build number from git
+
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          brew update
+          brew install openssl@3 opus pkgconf
+
+      - name: Cache PJSIP build
+        id: pjsip-cache
+        uses: actions/cache@v4
+        with:
+          path: third_party/pjsip
+          key: pjsip-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/build-pjsip.sh', 'third_party/pjsip/config_site.h') }}
+
+      - name: Build PJSIP
+        if: steps.pjsip-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          "$GITHUB_WORKSPACE/scripts/build-pjsip.sh"
+
+      - name: Swift build
+        run: |
+          set -euo pipefail
+          swift build
+
+      - name: Tests
+        run: |
+          set -euo pipefail
+          "$GITHUB_WORKSPACE/scripts/test.sh"
+
+      - name: Self-test call (pjsua loopback)
+        run: |
+          set -euo pipefail
+          "$GITHUB_WORKSPACE/scripts/selftest-call.sh"
+
+      - name: Build the DMG
+        run: |
+          set -euo pipefail
+          "$GITHUB_WORKSPACE/scripts/make-dmg.sh" release
+          built="$(defaults read "$GITHUB_WORKSPACE/dist/MacroSIP.app/Contents/Info" CFBundleShortVersionString)"
+          if [ "$built" != "$GITHUB_REF_NAME" ]; then
+            echo "the app says version $built but the tag is $GITHUB_REF_NAME" >&2
+            exit 1
+          fi
+          ls -l "$GITHUB_WORKSPACE/dist/MacroSIP-$GITHUB_REF_NAME.dmg"
+
+      - name: Upload the DMG for the cask job
+        uses: actions/upload-artifact@v4
+        with:
+          name: MacroSIP-dmg
+          path: dist/MacroSIP-${{ github.ref_name }}.dmg
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          flags=(--title "$TAG" --generate-notes --verify-tag)
+          case "$TAG" in
+            *-*) flags+=(--prerelease) ;;      # 26.0.0-rc.1 is a pre-release
+          esac
+          gh release create "$TAG" "$GITHUB_WORKSPACE/dist/MacroSIP-$TAG.dmg" "${flags[@]}"
+
+  homebrew:
+    name: Update the Homebrew cask
+    needs: dmg
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      HAS_TAP_TOKEN: ${{ secrets.TAP_TOKEN != '' }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Skip when TAP_TOKEN is not set
+        if: env.HAS_TAP_TOKEN != 'true'
+        run: echo "TAP_TOKEN is not set; the Homebrew cask is not updated."
+
+      - name: Check out MacroSIP (cask template and scripts)
+        if: env.HAS_TAP_TOKEN == 'true'
+        uses: actions/checkout@v4
+        with:
+          path: macrosip
+
+      - name: Check out the tap
+        if: env.HAS_TAP_TOKEN == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: HSMM/homebrew-tap
+          token: ${{ secrets.TAP_TOKEN }}
+          path: tap
+
+      - name: Download the DMG
+        if: env.HAS_TAP_TOKEN == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: MacroSIP-dmg
+          path: ${{ runner.temp }}/dmg
+
+      - name: Update Casks/macrosip.rb and push
+        if: env.HAS_TAP_TOKEN == 'true'
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          git -C "$GITHUB_WORKSPACE/tap" config user.name "github-actions[bot]"
+          git -C "$GITHUB_WORKSPACE/tap" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          TAP_DIR="$GITHUB_WORKSPACE/tap" \
+            "$GITHUB_WORKSPACE/macrosip/scripts/update-cask.sh" "$TAG" "$RUNNER_TEMP/dmg/MacroSIP-$TAG.dmg"

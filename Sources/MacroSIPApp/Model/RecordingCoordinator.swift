@@ -2,7 +2,7 @@ import Foundation
 import os
 import MacroSIPCore
 
-private let recordingLog = Logger(subsystem: "com.hsmm.macrosip", category: "recording")
+private let recordingLog = AppLog.recording
 
 /// Recording of calls (SCREENS.md 4.1, 8.6): the engine writes a temporary WAV; when the recording
 /// stops or the call ends it is converted to M4A in the recordings folder and the WAV is deleted.
@@ -28,10 +28,10 @@ extension AppModel {
                 if resolved.startAccessingSecurityScopedResource() { recordingFolderScope = resolved }
                 if stale, let fresh = try? resolved.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil) {
                     settings.recording.folderBookmark = fresh
-                    do { try settingsStore.save(settings) } catch { recordingLog.error("saving the refreshed bookmark failed: \(describe(error), privacy: .public)") }
+                    do { try settingsStore.save(settings) } catch { recordingLog.error("saving the refreshed bookmark failed: \(describe(error))") }
                 }
             } else {
-                recordingLog.error("the recordings folder bookmark could not be resolved; using \(url.path, privacy: .public)")
+                recordingLog.error("the recordings folder bookmark could not be resolved; using \(url.path)")
             }
         }
         recordingFolderURL = url
@@ -42,7 +42,7 @@ extension AppModel {
     func cleanUpStaleRecordings() {
         let fm = FileManager.default
         func remove(_ url: URL, _ what: String) {
-            recordingLog.notice("removing \(what, privacy: .public) \(url.path, privacy: .public)")
+            recordingLog.notice("removing \(what) \(url.path)")
             try? fm.removeItem(at: url)
         }
         if let names = try? fm.contentsOfDirectory(atPath: recordingFolderURL.path) {
@@ -193,7 +193,7 @@ extension AppModel {
         recordingJobs[new] = job
         recordingSince[new] = recordingSince.removeValue(forKey: old) ?? job.startedAt
         recordingStopping.remove(old)
-        recordingLog.info("recording of call \(old, privacy: .public) continues on call \(new, privacy: .public)")
+        recordingLog.info("recording of call \(old) continues on call \(new)")
     }
 
     // MARK: - Conversion
@@ -210,23 +210,23 @@ extension AppModel {
         return Task.detached(priority: .utility) {
             let fm = FileManager.default
             guard fm.fileExists(atPath: wav.path) else {
-                recordingLog.error("the temporary recording \(wav.lastPathComponent, privacy: .public) is missing")
+                recordingLog.error("the temporary recording \(wav.lastPathComponent) is missing")
                 return
             }
             do {
                 try fm.createDirectory(at: folder, withIntermediateDirectories: true)
                 let target = try await RecordingConverter.convert(wav: wav, to: folder.appendingPathComponent(fileName))
                 try? fm.removeItem(at: wav)
-                recordingLog.info("saved \(target.lastPathComponent, privacy: .public)")
+                recordingLog.info("saved \(target.lastPathComponent)")
                 await AppModel.shared.recordingSaved(target)
             } catch RecordingConverter.ConversionError.empty {
-                recordingLog.info("\(wav.lastPathComponent, privacy: .public) holds no samples; deleted")
+                recordingLog.info("\(wav.lastPathComponent) holds no samples; deleted")
                 try? fm.removeItem(at: wav)
             } catch {
                 let message = describe(error)
-                recordingLog.error("conversion of \(wav.lastPathComponent, privacy: .public) failed: \(message, privacy: .public)")
+                recordingLog.error("conversion of \(wav.lastPathComponent) failed: \(message)")
                 let kept = Self.keepWAV(wav, in: folder, named: fileName)
-                recordingLog.error("the recording was kept as \(kept?.path ?? wav.path, privacy: .public)")
+                recordingLog.error("the recording was kept as \(kept?.path ?? wav.path)")
                 await AppModel.shared.showBanner(L.bannerRecordingKeptAsWAV(message, kept?.lastPathComponent ?? wav.lastPathComponent))
             }
         }

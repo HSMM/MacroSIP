@@ -135,7 +135,7 @@ struct AccountEditorSheet: View {
             testMessage
             buttonRow
         }
-        .frame(width: 460, height: compact ? 470 : 640)
+        .frame(width: 500, height: compact ? 470 : 640)
         .background(Theme.groupBackground)
         .onAppear(perform: load)
         .alert(L.accountDeleteTitle(existing?.displayName ?? name), isPresented: $confirmDelete) {
@@ -193,13 +193,13 @@ struct AccountEditorSheet: View {
         HStack(spacing: 8) {
             if existing != nil {
                 Button(L.accountDelete, role: .destructive) { confirmDelete = true }
-                    .foregroundStyle(Theme.red)
+                    .foregroundStyle(Theme.red).fixedSize()
             }
-            Button(L.accountTest) { runTest() }.disabled(!canTest || testing)
+            Button(L.accountTest) { runTest() }.disabled(!canTest || testing).fixedSize()
             statusText
             Spacer()
-            Button(L.commonCancel) { dismiss() }.keyboardShortcut(.cancelAction)
-            Button(L.commonSave) { save() }.keyboardShortcut(.defaultAction).disabled(!canSave)
+            Button(L.commonCancel) { dismiss() }.keyboardShortcut(.cancelAction).fixedSize()
+            Button(L.commonSave) { save() }.keyboardShortcut(.defaultAction).disabled(!canSave).fixedSize()
         }
         .padding(.horizontal, 22).padding(.vertical, 12)
     }

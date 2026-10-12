@@ -25,16 +25,17 @@ Milestones 4 and 5 run in parallel; 6 is the release. A milestone is done only w
 - Menu bar item: state icon, per-account status, quick dial, last 5 calls, DND, Show, Quit. Closing the window keeps the app running.
 - `sip:`/`sips:`/`tel:` URL handler.
 - Done when: owner completes a real call on their own SIP account from the UI only.
-- Open diagnostic carried into 4: every INVITE logs "Temporary failure … Unsuitable transport selected (PJSIP_ETPNOTSUITABLE), will try next server" before the second attempt succeeds. Not reproducible on localhost; needs a `--log-level 5` capture from the owner's account.
+- Diagnostic closed 2026-10-12: the "Unsuitable transport selected (PJSIP_ETPNOTSUITABLE), will try next server" line before every INVITE was PJSIP's RFC 3261 §18.1.1 switch of requests ≥ 1300 bytes (any INVITE with a digest Authorization header) to TCP, which cannot succeed on an account pinned to UDP. Fixed by disabling the TCP switch (`disable_tcp_switch`); reproduced and covered by self-test step 25. Details in docs/ENGINE.md.
 
 ## 4. History, contacts, settings, localization — IN PROGRESS
 - Call log with direction, time, duration, filter, clear; redial from a row.
 - Contacts: search, add, edit, delete, call; call log resolves numbers to contact names.
 - Blind and attended transfer.
 - Settings window: General, Audio (three devices, ringtone, AEC), Network (transport, STUN, SRTP, port, keep-alive), Codecs (reorderable).
-- Russian localization of everything so far.
+- Russian localization of everything so far: done 2026-10-12 (`Localizable.strings` and `.stringsdict` per language in `Sources/MacroSIPApp/Resources`; `scripts/check-strings.sh`; ADR 0012).
 - Follow-ups from the engine review: switch the UI to the name-based audio device API (`setAudioDevices(inputName:outputName:)`, `setRingtoneDevice(name:)`), add the "Verify server certificate" toggle (`verifyTLSCertificate`) to the account editor, write the "Rejected: call limit" log note for an auto-rejected fifth call.
-- Owner's checklist on the real account: incoming call (floating window, ringtone, answer), DTMF to an IVR, blind and attended transfer, the `PJSIP_ETPNOTSUITABLE` diagnostic above.
+- Self-test (2026-10-12) covers incoming call, 486 reject, blind and attended transfer, DTMF over SIP INFO, and the ≥1300-byte INVITE regression against a local registrar stub.
+- Owner's checklist on the real account: incoming call (floating window, ringtone, answer), DTMF to an IVR, blind and attended transfer.
 - Done when: the `.app` passes the manual checklist on the owner's account.
 
 ## 5. Presence, conference, auto-answer, recording — CODE DONE 2026-10-12 (reviewed, 65 tests, selftest incl. recording/M4A, presence, two-leg conference); awaiting the owner's server check
@@ -48,8 +49,10 @@ UI (`MacroSIPApp`, per SCREENS.md `[Full]` rows): presence dot/text and "Watch p
 - Done when: `scripts/selftest-call.sh` also covers recording (WAV produced, M4A conversion) and presence against `pjsua`; conference verified with two `pjsua` legs; auto-answer policy tests green (all true since 2026-10-12); each feature then checked on the owner's server (presence may need server support; document if unsupported).
 
 ## 6. Polish and release
-- Launch at login, language switch, crash-safe log file, About window with GPL notice.
-- Russian localization complete; README install guide.
+Release order (owner, 2026-10-12): tag `26.0.0-rc.1` as soon as localization, CI and the Homebrew tap are in place; the owner's checks on the real PBX run on the RC and feed the `26.0.0` final.
+- Launch at login (SMAppService, real status shown): done 2026-10-12. Language switch (AppleLanguages, restart prompt): done. Crash-safe log file `~/Library/Logs/MacroSIP/MacroSIP.log` with rotation, Open Log Folder, Copy Diagnostics: done. About panel with GPL notice: done.
+- App icon (`scripts/make-icon.swift` -> `packaging/AppIcon.icns`): done. DMG (`scripts/make-dmg.sh`): done. CI and release workflows, Homebrew cask in `HSMM/homebrew-tap` (`scripts/update-cask.sh`): written, not yet run on GitHub (needs the tap repository and the `TAP_TOKEN` secret, see README "Releasing").
+- Russian localization: done 2026-10-12 (all UI strings, plural forms, microphone prompt; language switch verified with a relaunch). Owner to proofread the wording. README install guide (Homebrew, DMG): done.
 - Done when: tagged `26.0.0`; `MacroSIP.app` built from a clean clone by following README only.
 
 ## Later (v2 candidates)

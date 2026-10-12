@@ -37,15 +37,41 @@ extension AppModel {
         if wanted == .regular { NSApp.activate(ignoringOtherApps: true) }
     }
 
+    private var canUseLoginItem: Bool { Bundle.main.bundleURL.pathExtension == "app" && !launch.isDemo }
+
+    /// Registers or unregisters `SMAppService.mainApp` to match the setting. If macOS refuses, the
+    /// switch goes back to the real state and the reason is shown in the pane.
     func applyLaunchAtLogin() {
-        guard Bundle.main.bundleURL.pathExtension == "app" else { return }
+        guard canUseLoginItem else { return }
+        let service = SMAppService.mainApp
+        let want = settings.general.launchAtLogin
+        var failure: String?
         do {
-            if settings.general.launchAtLogin { try SMAppService.mainApp.register() }
-            else { try SMAppService.mainApp.unregister() }
+            switch (want, service.status) {
+            case (true, .enabled), (true, .requiresApproval), (false, .notRegistered), (false, .notFound): break
+            case (true, _): try service.register(); AppLog.app.info("login item registered")
+            case (false, _): try service.unregister(); AppLog.app.info("login item unregistered")
+            }
         } catch {
-            showBanner(describe(error))
+            failure = L.launchAtLoginFailed(describe(error))
+            AppLog.app.error("login item \(want ? "register" : "unregister") failed: \(describe(error))")
+        }
+        syncLoginItemStatus()
+        loginItemError = failure
+    }
+
+    /// Makes the setting show what macOS really has (the user can remove the item in System Settings).
+    func syncLoginItemStatus() {
+        guard canUseLoginItem else { return }
+        let status = SMAppService.mainApp.status
+        loginItemNeedsApproval = status == .requiresApproval
+        let registered = status == .enabled || status == .requiresApproval
+        if settings.general.launchAtLogin != registered {
+            updateSettings { $0.general.launchAtLogin = registered }
         }
     }
+
+    func openLoginItemsSettings() { SMAppService.openSystemSettingsLoginItems() }
 
     // MARK: - Incoming presentation
 

@@ -117,7 +117,7 @@ struct SegmentedTabs<Value: Hashable>: View {
                 let selected = item.value == selection
                 Button { selection = item.value } label: {
                     HStack(spacing: 5) {
-                        Text(item.title).font(.system(size: 12.5))
+                        Text(item.title).font(.system(size: 12.5)).lineLimit(1).minimumScaleFactor(0.85)
                         if item.badge > 0 { CountPill(count: item.badge) }
                     }
                     .frame(maxWidth: .infinity, minHeight: height - 4)

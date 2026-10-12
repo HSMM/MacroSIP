@@ -1,394 +1,417 @@
 import Foundation
 import MacroSIPCore
 
-// All user-visible strings. Keys follow docs/design/SCREENS.md "Strings"; a String Catalog
-// can be added later without touching the views (the literals below are what Xcode extracts).
+// All user-visible strings. Keys follow docs/design/SCREENS.md "Strings". Every key also lives in
+// Resources/en.lproj and Resources/ru.lproj (Localizable.strings; counts in Localizable.stringsdict).
+// The English default below is only the fallback for a missing key; scripts/check-strings.sh keeps the files in sync.
 
 enum L {
+    /// Looks the key up in the app's resource bundle (`Bundle.module`), in the language chosen by
+    /// `AppleLanguages`. Interpolations become `%@` / `%lld` (or `%1$@` ...) in the .strings value.
+    private static func loc(_ key: StaticString, _ defaultValue: String.LocalizationValue) -> String {
+        String(localized: key, defaultValue: defaultValue, bundle: .module)
+    }
     // MARK: common and main window
-    static var mainTitle: String { String(localized: "main.title", defaultValue: "MacroSIP") }
-    static var tabsDialpad: String { String(localized: "tabs.dialpad", defaultValue: "Dialpad") }
-    static var tabsContacts: String { String(localized: "tabs.contacts", defaultValue: "Contacts") }
-    static var tabsCallLog: String { String(localized: "tabs.callLog", defaultValue: "Call Log") }
-    static var numberPlaceholder: String { String(localized: "main.numberField.placeholder", defaultValue: "Name or number") }
-    static var accountPickerHelp: String { String(localized: "main.accountPicker.help", defaultValue: "Outgoing account") }
-    static var accountPopupHeader: String { String(localized: "account.popup.header", defaultValue: "Accounts") }
-    static var accountPopupSettings: String { String(localized: "account.popup.settings", defaultValue: "Account Settings…") }
-    static var accountPopupNone: String { String(localized: "account.popup.none", defaultValue: "No account") }
+    static var mainTitle: String { loc("main.title", "MacroSIP") }
+    static var tabsDialpad: String { loc("tabs.dialpad", "Dialpad") }
+    static var tabsContacts: String { loc("tabs.contacts", "Contacts") }
+    static var tabsCallLog: String { loc("tabs.callLog", "Call Log") }
+    static var numberPlaceholder: String { loc("main.numberField.placeholder", "Name or number") }
+    static var accountPickerHelp: String { loc("main.accountPicker.help", "Outgoing account") }
+    static var accountPopupHeader: String { loc("account.popup.header", "Accounts") }
+    static var accountPopupSettings: String { loc("account.popup.settings", "Account Settings…") }
+    static var accountPopupNone: String { loc("account.popup.none", "No account") }
     static func accountPopupFailed(_ reason: String, _ address: String) -> String {
-        String(localized: "account.popup.failed", defaultValue: "\(reason) · \(address)")
+        loc("account.popup.failed", "\(reason) · \(address)")
     }
-    static var statusNoneEnabled: String { String(localized: "status.noneEnabled", defaultValue: "All accounts off") }
-    static var statusNoAccounts: String { String(localized: "status.noAccounts", defaultValue: "No accounts") }
+    static var statusNoneEnabled: String { loc("status.noneEnabled", "All accounts off") }
+    static var statusNoAccounts: String { loc("status.noAccounts", "No accounts") }
     static func statusAccountFailed(_ name: String, _ reason: String) -> String {
-        String(localized: "status.account.failed", defaultValue: "\(name): \(reason)")
+        loc("status.account.failed", "\(name): \(reason)")
     }
-    static var statusRegistering: String { String(localized: "accounts.status.registering", defaultValue: "Registering…") }
+    static var statusRegistering: String { loc("accounts.status.registering", "Registering…") }
     static func statusSummary(_ ok: Int, _ total: Int) -> String {
-        String(localized: "status.summary", defaultValue: "\(ok)/\(total) registered")
+        loc("status.summary", "\(ok)/\(total) registered")
     }
-    static var menuSettings: String { String(localized: "menu.settings", defaultValue: "Settings…") }
-    static func menuShowApp(_ name: String) -> String { String(localized: "menu.showApp", defaultValue: "Show \(name)") }
-    static func menuQuitApp(_ name: String) -> String { String(localized: "menu.quitApp", defaultValue: "Quit \(name)") }
-    static var commonCancel: String { String(localized: "common.cancel", defaultValue: "Cancel") }
-    static var commonSave: String { String(localized: "common.save", defaultValue: "Save") }
-    static var commonDelete: String { String(localized: "common.delete", defaultValue: "Delete") }
-    static var commonDone: String { String(localized: "common.done", defaultValue: "Done") }
+    static var menuSettings: String { loc("menu.settings", "Settings…") }
+    static func menuShowApp(_ name: String) -> String { loc("menu.showApp", "Show \(name)") }
+    static func menuQuitApp(_ name: String) -> String { loc("menu.quitApp", "Quit \(name)") }
+    static var commonCancel: String { loc("common.cancel", "Cancel") }
+    static var commonSave: String { loc("common.save", "Save") }
+    static var commonDelete: String { loc("common.delete", "Delete") }
+    static var commonDone: String { loc("common.done", "Done") }
 
     // MARK: dialpad
-    static var dialpadCallHelp: String { String(localized: "dialpad.call.help", defaultValue: "Call") }
-    static var dialpadDeleteHelp: String { String(localized: "dialpad.delete.help", defaultValue: "Delete last digit") }
-    static var dialpadHint: String { String(localized: "dialpad.hint", defaultValue: "Return calls · empty field + Call redials") }
+    static var dialpadCallHelp: String { loc("dialpad.call.help", "Call") }
+    static var dialpadDeleteHelp: String { loc("dialpad.delete.help", "Delete last digit") }
     static func keyLetters(_ digit: Character) -> String {
         switch digit {
-        case "2": return String(localized: "dialpad.key.letters.2", defaultValue: "ABC")
-        case "3": return String(localized: "dialpad.key.letters.3", defaultValue: "DEF")
-        case "4": return String(localized: "dialpad.key.letters.4", defaultValue: "GHI")
-        case "5": return String(localized: "dialpad.key.letters.5", defaultValue: "JKL")
-        case "6": return String(localized: "dialpad.key.letters.6", defaultValue: "MNO")
-        case "7": return String(localized: "dialpad.key.letters.7", defaultValue: "PQRS")
-        case "8": return String(localized: "dialpad.key.letters.8", defaultValue: "TUV")
-        case "9": return String(localized: "dialpad.key.letters.9", defaultValue: "WXYZ")
-        case "0": return String(localized: "dialpad.key.letters.0", defaultValue: "+")
+        case "2": return loc("dialpad.key.letters.2", "ABC")
+        case "3": return loc("dialpad.key.letters.3", "DEF")
+        case "4": return loc("dialpad.key.letters.4", "GHI")
+        case "5": return loc("dialpad.key.letters.5", "JKL")
+        case "6": return loc("dialpad.key.letters.6", "MNO")
+        case "7": return loc("dialpad.key.letters.7", "PQRS")
+        case "8": return loc("dialpad.key.letters.8", "TUV")
+        case "9": return loc("dialpad.key.letters.9", "WXYZ")
+        case "0": return loc("dialpad.key.letters.0", "+")
         default: return ""
         }
     }
 
     // MARK: contacts
-    static var contactsSearch: String { String(localized: "contacts.search.placeholder", defaultValue: "Search") }
+    static var contactsSearch: String { loc("contacts.search.placeholder", "Search") }
     static func contactsCount(_ n: Int) -> String {
-        n == 1 ? String(localized: "contacts.count.one", defaultValue: "1 contact")
-               : String(localized: "contacts.count", defaultValue: "\(n) contacts")
+        loc("contacts.count", "\(n) contacts")
     }
-    static var contactsAddHelp: String { String(localized: "contacts.add.help", defaultValue: "Add contact") }
-    static var contactsDeleteHelp: String { String(localized: "contacts.delete.help", defaultValue: "Delete contact") }
-    static var contactsEditHelp: String { String(localized: "contacts.edit.help", defaultValue: "Edit contact") }
-    static var contactsMenuCall: String { String(localized: "contacts.menu.call", defaultValue: "Call") }
-    static var contactsMenuCallFrom: String { String(localized: "contacts.menu.callFrom", defaultValue: "Call from") }
-    static var contactsMenuCopy: String { String(localized: "contacts.menu.copyNumber", defaultValue: "Copy Number") }
-    static var contactsMenuEdit: String { String(localized: "contacts.menu.edit", defaultValue: "Edit…") }
-    static var contactsMenuDelete: String { String(localized: "contacts.menu.delete", defaultValue: "Delete") }
+    static var contactsAddHelp: String { loc("contacts.add.help", "Add contact") }
+    static var contactsDeleteHelp: String { loc("contacts.delete.help", "Delete contact") }
+    static var contactsEditHelp: String { loc("contacts.edit.help", "Edit contact") }
+    static var contactsMenuCall: String { loc("contacts.menu.call", "Call") }
+    static var contactsMenuCallFrom: String { loc("contacts.menu.callFrom", "Call from") }
+    static var contactsMenuCopy: String { loc("contacts.menu.copyNumber", "Copy Number") }
+    static var contactsMenuEdit: String { loc("contacts.menu.edit", "Edit…") }
+    static var contactsMenuDelete: String { loc("contacts.menu.delete", "Delete") }
     static func contactsDeleteConfirm(_ name: String) -> String {
-        String(localized: "contacts.delete.confirm", defaultValue: "Delete \(name)?")
+        loc("contacts.delete.confirm", "Delete \(name)?")
     }
-    static var contactEditTitle: String { String(localized: "contact.edit.title", defaultValue: "Edit Contact") }
-    static var contactNewTitle: String { String(localized: "contact.new.title", defaultValue: "New Contact") }
-    static var contactName: String { String(localized: "contact.field.name", defaultValue: "Name") }
-    static var contactNumber: String { String(localized: "contact.field.number", defaultValue: "Number") }
-    static var contactAccount: String { String(localized: "contact.field.account", defaultValue: "Account") }
-    static var contactAccountAny: String { String(localized: "contact.account.any", defaultValue: "Any (use default)") }
-    static var contactsEmptyTitle: String { String(localized: "contacts.empty.title", defaultValue: "No contacts yet") }
-    static var contactsEmptyBody: String { String(localized: "contacts.empty.body", defaultValue: "Add a contact to call it in one click.") }
-    static var contactsNoResults: String { String(localized: "contacts.search.noResults", defaultValue: "No matching contacts") }
+    static var contactEditTitle: String { loc("contact.edit.title", "Edit Contact") }
+    static var contactNewTitle: String { loc("contact.new.title", "New Contact") }
+    static var contactName: String { loc("contact.field.name", "Name") }
+    static var contactNumber: String { loc("contact.field.number", "Number") }
+    static var contactAccount: String { loc("contact.field.account", "Account") }
+    static var contactAccountAny: String { loc("contact.account.any", "Any (use default)") }
+    static var contactsEmptyTitle: String { loc("contacts.empty.title", "No contacts yet") }
+    static var contactsEmptyBody: String { loc("contacts.empty.body", "Add a contact to call it in one click.") }
+    static var contactsNoResults: String { loc("contacts.search.noResults", "No matching contacts") }
 
     // MARK: call log
-    static var logAll: String { String(localized: "calllog.filter.all", defaultValue: "All") }
-    static var logMissed: String { String(localized: "calllog.filter.missed", defaultValue: "Missed") }
-    static var logClear: String { String(localized: "calllog.clear", defaultValue: "Clear…") }
-    static var logToday: String { String(localized: "calllog.section.today", defaultValue: "Today") }
-    static var logYesterday: String { String(localized: "calllog.section.yesterday", defaultValue: "Yesterday") }
-    static var logRowMissed: String { String(localized: "calllog.row.missed", defaultValue: "missed") }
-    static var logUnknown: String { String(localized: "calllog.row.unknown", defaultValue: "Unknown") }
-    static var logMenuCall: String { String(localized: "calllog.menu.call", defaultValue: "Call") }
-    static var logMenuCallFrom: String { String(localized: "calllog.menu.callFrom", defaultValue: "Call from") }
-    static var logMenuAddContact: String { String(localized: "calllog.menu.addContact", defaultValue: "Add to Contacts") }
-    static var logMenuCopy: String { String(localized: "calllog.menu.copyNumber", defaultValue: "Copy Number") }
-    static var logMenuDelete: String { String(localized: "calllog.menu.delete", defaultValue: "Delete Entry") }
-    static var logClearTitle: String { String(localized: "calllog.clear.title", defaultValue: "Clear the call log?") }
-    static func logClearBody(_ n: Int) -> String { String(localized: "calllog.clear.body", defaultValue: "All \(n) entries are removed.") }
-    static var logClearConfirm: String { String(localized: "calllog.clear.confirm", defaultValue: "Clear") }
-    static var logEmptyTitle: String { String(localized: "calllog.empty.title", defaultValue: "No calls yet") }
-    static var logEmptyBody: String { String(localized: "calllog.empty.body", defaultValue: "Calls you make and receive appear here.") }
-    static var logEmptyMissed: String { String(localized: "calllog.empty.missed", defaultValue: "No missed calls") }
+    static var logAll: String { loc("calllog.filter.all", "All") }
+    static var logMissed: String { loc("calllog.filter.missed", "Missed") }
+    static var logClear: String { loc("calllog.clear", "Clear…") }
+    static var logToday: String { loc("calllog.section.today", "Today") }
+    static var logYesterday: String { loc("calllog.section.yesterday", "Yesterday") }
+    static var logRowMissed: String { loc("calllog.row.missed", "missed") }
+    static var logUnknown: String { loc("calllog.row.unknown", "Unknown") }
+    static var logMenuCall: String { loc("calllog.menu.call", "Call") }
+    static var logMenuCallFrom: String { loc("calllog.menu.callFrom", "Call from") }
+    static var logMenuAddContact: String { loc("calllog.menu.addContact", "Add to Contacts") }
+    static var logMenuCopy: String { loc("calllog.menu.copyNumber", "Copy Number") }
+    static var logMenuDelete: String { loc("calllog.menu.delete", "Delete Entry") }
+    static var logClearTitle: String { loc("calllog.clear.title", "Clear the call log?") }
+    static func logClearBody(_ n: Int) -> String { loc("calllog.clear.body", "All \(n) entries are removed.") }
+    static var logClearConfirm: String { loc("calllog.clear.confirm", "Clear") }
+    static var logEmptyTitle: String { loc("calllog.empty.title", "No calls yet") }
+    static var logEmptyBody: String { loc("calllog.empty.body", "Calls you make and receive appear here.") }
+    static var logEmptyMissed: String { loc("calllog.empty.missed", "No missed calls") }
 
     // MARK: active call
-    static var callConnected: String { String(localized: "call.state.connected", defaultValue: "Connected") }
-    static var callCalling: String { String(localized: "call.state.outgoing", defaultValue: "Calling…") }
-    static var callRinging: String { String(localized: "call.state.early", defaultValue: "Ringing…") }
-    static var callRingingIn: String { String(localized: "call.state.ringing", defaultValue: "Ringing") }
-    static var callHeld: String { String(localized: "call.state.held", defaultValue: "On hold") }
-    static func callVia(_ account: String) -> String { String(localized: "call.via", defaultValue: "via \(account)") }
-    static var callSRTP: String { String(localized: "call.srtp.label", defaultValue: "SRTP") }
-    static var callSRTPHelp: String { String(localized: "call.srtp.help", defaultValue: "Media encrypted with SRTP") }
-    static var callMute: String { String(localized: "call.mute", defaultValue: "Mute") }
-    static var callHold: String { String(localized: "call.hold", defaultValue: "Hold") }
-    static var callResume: String { String(localized: "calls.resume", defaultValue: "Resume") }
-    static var callTransfer: String { String(localized: "call.transfer", defaultValue: "Transfer") }
-    static var callKeypad: String { String(localized: "call.keypad", defaultValue: "Keypad") }
-    static var callEnd: String { String(localized: "call.end", defaultValue: "End Call") }
-    static func callEndWith(_ name: String) -> String { String(localized: "call.endWith", defaultValue: "End Call with \(name)") }
-    static var keypadBack: String { String(localized: "keypad.back", defaultValue: "Back to call") }
-    static func keypadWho(_ name: String, _ time: String) -> String { String(localized: "keypad.who", defaultValue: "\(name) · \(time)") }
-    static var callbarHelp: String { String(localized: "callbar.help", defaultValue: "Click to return to the call") }
-    static var callbarMuted: String { String(localized: "callbar.muted.help", defaultValue: "Muted") }
-    static func callbarMoreHeld(_ n: Int) -> String { String(localized: "callbar.moreHeld", defaultValue: "+\(n) on hold") }
-    static var callbarIncoming: String { String(localized: "callbar.incoming", defaultValue: "Incoming") }
-    static func transferTitle(_ name: String) -> String { String(localized: "transfer.title", defaultValue: "Transfer \(name) to") }
-    static var transferPlaceholder: String { String(localized: "transfer.placeholder", defaultValue: "Number or contact") }
-    static var transferCallFirst: String { String(localized: "transfer.callFirst", defaultValue: "Call First") }
+    static var callConnected: String { loc("call.state.connected", "Connected") }
+    static var callCalling: String { loc("call.state.outgoing", "Calling…") }
+    static var callRinging: String { loc("call.state.early", "Ringing…") }
+    static var callRingingIn: String { loc("call.state.ringing", "Ringing") }
+    static var callHeld: String { loc("call.state.held", "On hold") }
+    static func callVia(_ account: String) -> String { loc("call.via", "via \(account)") }
+    static var callSRTP: String { loc("call.srtp.label", "SRTP") }
+    static var callSRTPHelp: String { loc("call.srtp.help", "Media encrypted with SRTP") }
+    static var callMute: String { loc("call.mute", "Mute") }
+    static var callHold: String { loc("call.hold", "Hold") }
+    static var callResume: String { loc("calls.resume", "Resume") }
+    static var callTransfer: String { loc("call.transfer", "Transfer") }
+    static var callKeypad: String { loc("call.keypad", "Keypad") }
+    static var callEnd: String { loc("call.end", "End Call") }
+    static func callEndWith(_ name: String) -> String { loc("call.endWith", "End Call with \(name)") }
+    static var keypadBack: String { loc("keypad.back", "Back to call") }
+    static func keypadWho(_ name: String, _ time: String) -> String { loc("keypad.who", "\(name) · \(time)") }
+    static var callbarHelp: String { loc("callbar.help", "Click to return to the call") }
+    static var callbarMuted: String { loc("callbar.muted.help", "Muted") }
+    static func callbarMoreHeld(_ n: Int) -> String { loc("callbar.moreHeld", "+\(n) on hold") }
+    static var callbarIncoming: String { loc("callbar.incoming", "Incoming") }
+    static func transferTitle(_ name: String) -> String { loc("transfer.title", "Transfer \(name) to") }
+    static var transferPlaceholder: String { loc("transfer.placeholder", "Number or contact") }
+    static var transferCallFirst: String { loc("transfer.callFirst", "Call First") }
     static func transferCallFirstHelp(_ target: String) -> String {
-        String(localized: "transfer.callFirst.help", defaultValue: "Attended: call \(target) first, then complete")
+        loc("transfer.callFirst.help", "Attended: call \(target) first, then complete")
     }
-    static var transferNow: String { String(localized: "transfer.now", defaultValue: "Transfer Now") }
-    static var transferNowHelp: String { String(localized: "transfer.now.help", defaultValue: "Blind: hand the call over now") }
+    static var transferNow: String { loc("transfer.now", "Transfer Now") }
+    static var transferNowHelp: String { loc("transfer.now.help", "Blind: hand the call over now") }
     static func transferExplanation(_ target: String) -> String {
-        String(localized: "transfer.explanation", defaultValue: "Transfer Now hands the call over immediately. Call First lets you talk to \(target) before you complete the transfer.")
+        loc("transfer.explanation", "Transfer Now hands the call over immediately. Call First lets you talk to \(target) before you complete the transfer.")
     }
-    static var transferTargetFallback: String { String(localized: "transfer.targetFallback", defaultValue: "the new party") }
-    static var micDenied: String { String(localized: "call.mic.denied", defaultValue: "Microphone access is off") }
-    static var micOpenSettings: String { String(localized: "call.mic.openSettings", defaultValue: "Open System Settings") }
+    static var transferTargetFallback: String { loc("transfer.targetFallback", "the new party") }
+    static var micDenied: String { loc("call.mic.denied", "Microphone access is off") }
+    static var micOpenSettings: String { loc("call.mic.openSettings", "Open System Settings") }
 
     // MARK: several calls
-    static func callsCount(_ n: Int) -> String { String(localized: "calls.count", defaultValue: "\(n) calls") }
-    static var callsSwitchHint: String { String(localized: "calls.switchHint", defaultValue: "Click a row to switch") }
-    static func callsActive(_ time: String) -> String { String(localized: "calls.row.active", defaultValue: "Active · \(time)") }
-    static func callsHeld(_ time: String) -> String { String(localized: "calls.row.held", defaultValue: "On hold · \(time)") }
-    static func callsConsulting(_ time: String) -> String { String(localized: "calls.row.consulting", defaultValue: "Consulting · \(time)") }
-    static var callsWaitingTransfer: String { String(localized: "calls.row.waitingTransfer", defaultValue: "On hold · waiting for transfer") }
-    static var callsEndHelp: String { String(localized: "calls.end.help", defaultValue: "End") }
+    static func callsCount(_ n: Int) -> String { loc("calls.count", "\(n) calls") }
+    static var callsSwitchHint: String { loc("calls.switchHint", "Click a row to switch") }
+    static func callsActive(_ time: String) -> String { loc("calls.row.active", "Active · \(time)") }
+    static func callsHeld(_ time: String) -> String { loc("calls.row.held", "On hold · \(time)") }
+    static func callsConsulting(_ time: String) -> String { loc("calls.row.consulting", "Consulting · \(time)") }
+    static var callsWaitingTransfer: String { loc("calls.row.waitingTransfer", "On hold · waiting for transfer") }
+    static var callsEndHelp: String { loc("calls.end.help", "End") }
     static func transferBannerTitle(_ a: String, _ b: String) -> String {
-        String(localized: "transfer.banner.title", defaultValue: "Transfer \(a) to \(b)?")
+        loc("transfer.banner.title", "Transfer \(a) to \(b)?")
     }
     static func transferBannerBody(_ a: String, _ b: String) -> String {
-        String(localized: "transfer.banner.body", defaultValue: "\(a) and \(b) will be connected and you leave both calls.")
+        loc("transfer.banner.body", "\(a) and \(b) will be connected and you leave both calls.")
     }
-    static var transferComplete: String { String(localized: "transfer.complete", defaultValue: "Complete Transfer") }
+    static var transferComplete: String { loc("transfer.complete", "Complete Transfer") }
 
     // MARK: incoming
-    static func incomingEyebrow(_ account: String) -> String { String(localized: "incoming.eyebrow", defaultValue: "Incoming call on \(account)") }
-    static var incomingAnswer: String { String(localized: "incoming.answer", defaultValue: "Answer") }
-    static var incomingDecline: String { String(localized: "incoming.decline", defaultValue: "Decline") }
+    static func incomingEyebrow(_ account: String) -> String { loc("incoming.eyebrow", "Incoming call on \(account)") }
+    static var incomingAnswer: String { loc("incoming.answer", "Answer") }
+    static var incomingDecline: String { loc("incoming.decline", "Decline") }
     static func incomingNotificationTitle(_ account: String) -> String {
-        String(localized: "incoming.notification.title", defaultValue: "Incoming call · \(account)")
+        loc("incoming.notification.title", "Incoming call · \(account)")
     }
     static func incomingOnCall(_ name: String, _ time: String) -> String {
-        String(localized: "incoming.onCall.status", defaultValue: "You are on a call with \(name) (\(time)).")
+        loc("incoming.onCall.status", "You are on a call with \(name) (\(time)).")
     }
-    static var incomingHoldAnswer: String { String(localized: "incoming.holdAnswer", defaultValue: "Hold & Answer") }
-    static var incomingEndAnswer: String { String(localized: "incoming.endCurrentAnswer", defaultValue: "End Current & Answer") }
-    static var incomingStateRinging: String { String(localized: "incoming.state.ringing", defaultValue: "Ringing") }
+    static var incomingHoldAnswer: String { loc("incoming.holdAnswer", "Hold & Answer") }
+    static var incomingEndAnswer: String { loc("incoming.endCurrentAnswer", "End Current & Answer") }
+    static var incomingStateRinging: String { loc("incoming.state.ringing", "Ringing") }
 
     // MARK: menu bar
-    static func menuAccountFailed(_ reason: String) -> String { String(localized: "menu.account.failed", defaultValue: "Failed: \(reason)") }
-    static var menuQuickDialPlaceholder: String { String(localized: "menu.quickDial.placeholder", defaultValue: "Call number or name…") }
-    static var menuRecentCalls: String { String(localized: "menu.recentCalls", defaultValue: "Recent Calls") }
-    static var menuDND: String { String(localized: "menu.dnd", defaultValue: "Do Not Disturb") }
-    static var menubarOffline: String { String(localized: "menubar.state.offline.help", defaultValue: "Offline") }
-    static var menuCall: String { String(localized: "menu.call", defaultValue: "Call") }
-    static var menuEndCall: String { String(localized: "menu.endCall", defaultValue: "End Call") }
-    static var menuToggleMute: String { String(localized: "menu.toggleMute", defaultValue: "Mute") }
-    static var menuSimulateIncoming: String { String(localized: "menu.debug.simulateIncoming", defaultValue: "Simulate incoming call") }
+    static func menuAccountFailed(_ reason: String) -> String { loc("menu.account.failed", "Failed: \(reason)") }
+    static var menuQuickDialPlaceholder: String { loc("menu.quickDial.placeholder", "Call number or name…") }
+    static var menuRecentCalls: String { loc("menu.recentCalls", "Recent Calls") }
+    static var menuDND: String { loc("menu.dnd", "Do Not Disturb") }
+    static var menubarOffline: String { loc("menubar.state.offline.help", "Offline") }
+    static var menuCall: String { loc("menu.call", "Call") }
+    static var menuEndCall: String { loc("menu.endCall", "End Call") }
+    static var menuToggleMute: String { loc("menu.toggleMute", "Mute") }
+    static var menuSimulateIncoming: String { loc("menu.debug.simulateIncoming", "Simulate incoming call") }
 
     // MARK: settings
-    static var settingsGeneral: String { String(localized: "settings.tab.general", defaultValue: "General") }
-    static var settingsAccounts: String { String(localized: "settings.tab.accounts", defaultValue: "Accounts") }
-    static var settingsAudio: String { String(localized: "settings.tab.audio", defaultValue: "Audio") }
-    static var settingsNetwork: String { String(localized: "settings.tab.network", defaultValue: "Network") }
-    static var settingsCodecs: String { String(localized: "settings.tab.codecs", defaultValue: "Codecs") }
-    static var launchAtLogin: String { String(localized: "settings.general.launchAtLogin", defaultValue: "Launch at login") }
-    static var keepRunning: String { String(localized: "settings.general.keepRunning", defaultValue: "Keep running in the menu bar when the window is closed") }
-    static var showInDock: String { String(localized: "settings.general.showInDock", defaultValue: "Show icon in the Dock") }
-    static var language: String { String(localized: "settings.general.language", defaultValue: "Language") }
-    static var languageHelp: String { String(localized: "settings.general.language.help", defaultValue: "Takes effect after MacroSIP restarts.") }
-    static func languageSystem(_ resolved: String) -> String { String(localized: "settings.general.language.system", defaultValue: "System (\(resolved))") }
-    static var languageFooter: String { String(localized: "settings.general.language.footer", defaultValue: "Choices: System, English, Русский.") }
-    static var languageRestartTitle: String { String(localized: "settings.general.language.restart.title", defaultValue: "Restart to change the language?") }
-    static var languageRestartBody: String { String(localized: "settings.general.language.restart.body", defaultValue: "The new language is used after MacroSIP restarts.") }
-    static var languageRestartNow: String { String(localized: "settings.general.language.restart.now", defaultValue: "Restart Now") }
-    static var languageRestartLater: String { String(localized: "settings.general.language.restart.later", defaultValue: "Later") }
-    static var linksHeader: String { String(localized: "settings.general.links.header", defaultValue: "Links") }
-    static var linksTitle: String { String(localized: "settings.general.links.title", defaultValue: "Open sip: and tel: links with MacroSIP") }
-    static var linksOtherHandler: String { String(localized: "settings.general.links.otherHandler", defaultValue: "Another app currently handles tel: links.") }
-    static var linksIsDefault: String { String(localized: "settings.general.links.isDefault", defaultValue: "MacroSIP handles these links.") }
-    static var linksMakeDefault: String { String(localized: "settings.general.links.makeDefault", defaultValue: "Make Default") }
-    static var linksOnOpen: String { String(localized: "settings.general.links.onOpen", defaultValue: "When a link is opened") }
-    static var linksOnOpenHelp: String { String(localized: "settings.general.links.onOpen.help", defaultValue: "Fills the number field so you can check it first.") }
-    static var linksAsk: String { String(localized: "settings.general.links.askBeforeCalling", defaultValue: "Ask before calling") }
-    static var linksCallNow: String { String(localized: "settings.general.links.callImmediately", defaultValue: "Call immediately") }
-    static var linksFillOnly: String { String(localized: "settings.general.links.fillOnly", defaultValue: "Only fill the dial field") }
-
-    static var accountsFooter: String { String(localized: "accounts.list.footer", defaultValue: "Double-click an account to edit it. Drag to reorder; the order is used in the account picker and the status bar.") }
-    static var accountsColName: String { String(localized: "accounts.column.name", defaultValue: "Name") }
-    static var accountsColAddress: String { String(localized: "accounts.column.address", defaultValue: "Address") }
-    static var accountsColTransport: String { String(localized: "accounts.column.transport", defaultValue: "Transport") }
-    static var accountsColStatus: String { String(localized: "accounts.column.status", defaultValue: "Status") }
-    static var accountsBadgeDefault: String { String(localized: "accounts.badge.default", defaultValue: "Default") }
-    static var accountsRegistered: String { String(localized: "accounts.status.registered", defaultValue: "Registered") }
-    static var accountsDisabled: String { String(localized: "accounts.status.disabled", defaultValue: "Disabled") }
-    static var accountsOutgoingOnly: String { String(localized: "accounts.status.outgoingOnly", defaultValue: "Outgoing only") }
-    static var accountsRegisteringShort: String { String(localized: "accounts.status.registering.short", defaultValue: "…") }
-    static func accountsLastErrorHeader(_ name: String) -> String { String(localized: "accounts.lastError.header", defaultValue: "\(name) · last error") }
-    static func accountsLastErrorBody(_ time: String) -> String {
-        String(localized: "accounts.lastError.body", defaultValue: "REGISTER rejected at \(time). Check the username and password.")
+    static var settingsGeneral: String { loc("settings.tab.general", "General") }
+    static var settingsAccounts: String { loc("settings.tab.accounts", "Accounts") }
+    static var settingsAudio: String { loc("settings.tab.audio", "Audio") }
+    static var settingsNetwork: String { loc("settings.tab.network", "Network") }
+    static var settingsCodecs: String { loc("settings.tab.codecs", "Codecs") }
+    static var launchAtLogin: String { loc("settings.general.launchAtLogin", "Launch at login") }
+    static var keepRunning: String { loc("settings.general.keepRunning", "Keep running in the menu bar when the window is closed") }
+    static var showInDock: String { loc("settings.general.showInDock", "Show icon in the Dock") }
+    static var language: String { loc("settings.general.language", "Language") }
+    static var languageHelp: String { loc("settings.general.language.help", "Takes effect after MacroSIP restarts.") }
+    static func languageSystem(_ resolved: String) -> String { loc("settings.general.language.system", "System (\(resolved))") }
+    static var languageFooter: String { loc("settings.general.language.footer", "Choices: System, English, Русский.") }
+    static var languageRestartTitle: String { loc("settings.general.language.restart.title", "Restart to change the language?") }
+    static var languageRestartBody: String { loc("settings.general.language.restart.body", "The new language is used after MacroSIP restarts.") }
+    static var languageRestartNow: String { loc("settings.general.language.restart.now", "Restart Now") }
+    static var languageRestartLater: String { loc("settings.general.language.restart.later", "Later") }
+    static var linksHeader: String { loc("settings.general.links.header", "Links") }
+    static var linksTitle: String { loc("settings.general.links.title", "Open sip: and tel: links with MacroSIP") }
+    static var linksOtherHandler: String { loc("settings.general.links.otherHandler", "Another app currently handles tel: links.") }
+    static var linksIsDefault: String { loc("settings.general.links.isDefault", "MacroSIP handles these links.") }
+    static var linksMakeDefault: String { loc("settings.general.links.makeDefault", "Make Default") }
+    static var linksOnOpen: String { loc("settings.general.links.onOpen", "When a link is opened") }
+    static var linksOnOpenHelp: String { loc("settings.general.links.onOpen.help", "Fills the number field so you can check it first.") }
+    static var linksAsk: String { loc("settings.general.links.askBeforeCalling", "Ask before calling") }
+    static var linksCallNow: String { loc("settings.general.links.callImmediately", "Call immediately") }
+    static var linksFillOnly: String { loc("settings.general.links.fillOnly", "Only fill the dial field") }
+    static var launchAtLoginApproval: String { loc("settings.general.launchAtLogin.approval", "Allow MacroSIP in System Settings › General › Login Items.") }
+    static var launchAtLoginOpenSettings: String { loc("settings.general.launchAtLogin.openSettings", "Open Login Items…") }
+    static func launchAtLoginFailed(_ reason: String) -> String {
+        loc("settings.general.launchAtLogin.failed", "macOS did not change the login item: \(reason)")
     }
-    static var accountsRetry: String { String(localized: "accounts.retry", defaultValue: "Retry") }
-    static var accountsEdit: String { String(localized: "accounts.edit", defaultValue: "Edit…") }
-    static var accountsEmpty: String { String(localized: "accounts.empty", defaultValue: "No accounts") }
-    static var accountsAddHelp: String { String(localized: "accounts.add.help", defaultValue: "Add account") }
-    static var accountsRemoveHelp: String { String(localized: "accounts.remove.help", defaultValue: "Remove account") }
+    static var troubleshootingHeader: String { loc("settings.general.troubleshooting.header", "Troubleshooting") }
+    static var logFileTitle: String { loc("settings.general.log.title", "Log file") }
+    static var logFileHelp: String { loc("settings.general.log.help", "~/Library/Logs/MacroSIP/MacroSIP.log, 2 MB per file, 3 files.") }
+    static var logOpenFolder: String { loc("settings.general.log.openFolder", "Open Log Folder") }
+    static var diagnosticsTitle: String { loc("settings.general.diagnostics.title", "Diagnostics") }
+    static var diagnosticsHelp: String { loc("settings.general.diagnostics.help", "Versions, accounts and settings, without passwords. Paste it into a bug report.") }
+    static var diagnosticsCopy: String { loc("settings.general.diagnostics.copy", "Copy Diagnostics") }
+    static var diagnosticsCopied: String { loc("settings.general.diagnostics.copied", "Diagnostics copied to the clipboard.") }
+    static func menuAbout(_ name: String) -> String { loc("menu.about", "About \(name)") }
+    static var aboutCredits: String {
+        loc("about.credits", "Built on PJSIP 2.17 (GPLv2+). MacroSIP is free software under the GNU GPL v2 or later.")
+    }
 
-    static var audioDevicesHeader: String { String(localized: "settings.audio.devices.header", defaultValue: "Devices") }
-    static var audioMicrophone: String { String(localized: "settings.audio.microphone", defaultValue: "Microphone") }
-    static var audioSpeaker: String { String(localized: "settings.audio.speaker", defaultValue: "Speaker") }
-    static var audioTest: String { String(localized: "settings.audio.test", defaultValue: "Test") }
-    static var audioRingtoneDevice: String { String(localized: "settings.audio.ringtoneDevice", defaultValue: "Ringtone device") }
-    static var audioRingtoneDeviceHelp: String { String(localized: "settings.audio.ringtoneDevice.help", defaultValue: "Ring through the speakers even when a headset is used for calls.") }
-    static var audioSystemDefault: String { String(localized: "settings.audio.systemDefault", defaultValue: "System default") }
-    static var audioDevicesFooter: String { String(localized: "settings.audio.devices.footer", defaultValue: "“System default” follows macOS Sound settings. If a chosen device is unplugged, MacroSIP falls back to the system default and switches back when it returns.") }
-    static var audioRingtoneHeader: String { String(localized: "settings.audio.ringtone.header", defaultValue: "Ringtone") }
-    static var audioSound: String { String(localized: "settings.audio.ringtoneSound", defaultValue: "Sound") }
-    static var audioPlay: String { String(localized: "settings.audio.ringtonePlay", defaultValue: "Play") }
-    static var ringtoneClassic: String { String(localized: "settings.audio.ringtone.classic", defaultValue: "Classic") }
-    static var ringtoneDigital: String { String(localized: "settings.audio.ringtone.digital", defaultValue: "Digital") }
-    static var ringtoneSoft: String { String(localized: "settings.audio.ringtone.soft", defaultValue: "Soft") }
-    static var ringtoneCustom: String { String(localized: "settings.audio.ringtone.custom", defaultValue: "Custom file…") }
-    static func ringtoneCustomName(_ name: String) -> String { String(localized: "settings.audio.ringtone.customName", defaultValue: "Custom: \(name)") }
-    static var audioVolume: String { String(localized: "settings.audio.ringtoneVolume", defaultValue: "Volume") }
-    static var audioRingtoneFooter: String { String(localized: "settings.audio.ringtone.footer", defaultValue: "Built-in choices: Classic, Digital, Soft. “Custom file…” accepts WAV, AIFF, M4A, MP3.") }
-    static var audioProcessingHeader: String { String(localized: "settings.audio.processing.header", defaultValue: "Processing") }
-    static var audioEcho: String { String(localized: "settings.audio.echoCancellation", defaultValue: "Echo cancellation") }
-    static var audioEchoHelp: String { String(localized: "settings.audio.echoCancellation.help", defaultValue: "Turn off only when using a headset with its own echo cancellation.") }
+    static var accountsFooter: String { loc("accounts.list.footer", "Double-click an account to edit it. Drag to reorder; the order is used in the account picker and the status bar.") }
+    static var accountsColName: String { loc("accounts.column.name", "Name") }
+    static var accountsColAddress: String { loc("accounts.column.address", "Address") }
+    static var accountsColTransport: String { loc("accounts.column.transport", "Transport") }
+    static var accountsColStatus: String { loc("accounts.column.status", "Status") }
+    static var accountsBadgeDefault: String { loc("accounts.badge.default", "Default") }
+    static var accountsRegistered: String { loc("accounts.status.registered", "Registered") }
+    static var accountsDisabled: String { loc("accounts.status.disabled", "Disabled") }
+    static var accountsOutgoingOnly: String { loc("accounts.status.outgoingOnly", "Outgoing only") }
+    static var accountsRegisteringShort: String { loc("accounts.status.registering.short", "…") }
+    static func accountsLastErrorHeader(_ name: String) -> String { loc("accounts.lastError.header", "\(name) · last error") }
+    static func accountsLastErrorBody(_ time: String) -> String {
+        loc("accounts.lastError.body", "REGISTER rejected at \(time). Check the username and password.")
+    }
+    static var accountsRetry: String { loc("accounts.retry", "Retry") }
+    static var accountsEdit: String { loc("accounts.edit", "Edit…") }
+    static var accountsEmpty: String { loc("accounts.empty", "No accounts") }
+    static var accountsAddHelp: String { loc("accounts.add.help", "Add account") }
+    static var accountsRemoveHelp: String { loc("accounts.remove.help", "Remove account") }
 
-    static var netConnectionHeader: String { String(localized: "settings.network.connection.header", defaultValue: "Connection") }
-    static var netSTUN: String { String(localized: "settings.network.stun", defaultValue: "STUN server") }
-    static var netSTUNHelp: String { String(localized: "settings.network.stun.help", defaultValue: "Leave empty if you are not behind NAT.") }
-    static var netPort: String { String(localized: "settings.network.port", defaultValue: "Local SIP port") }
-    static var netPortHelp: String { String(localized: "settings.network.port.help", defaultValue: "0 picks a free port automatically.") }
-    static var netKeepAlive: String { String(localized: "settings.network.keepAlive", defaultValue: "Keep-alive interval") }
-    static var netKeepAliveHelp: String { String(localized: "settings.network.keepAlive.help", defaultValue: "Keeps NAT bindings open between registrations.") }
-    static var unitSeconds: String { String(localized: "settings.unit.seconds", defaultValue: "seconds") }
-    static var netICE: String { String(localized: "settings.network.ice", defaultValue: "Use ICE") }
-    static var netICEHelp: String { String(localized: "settings.network.ice.help", defaultValue: "Finds a working media path through NAT. Uses the STUN server above.") }
-    static var netFooter: String { String(localized: "settings.network.footer", defaultValue: "Changing the port re-registers all accounts. Calls in progress are not interrupted. Transport and SRTP are set per account in the account editor.") }
+    static var audioDevicesHeader: String { loc("settings.audio.devices.header", "Devices") }
+    static var audioMicrophone: String { loc("settings.audio.microphone", "Microphone") }
+    static var audioSpeaker: String { loc("settings.audio.speaker", "Speaker") }
+    static var audioTest: String { loc("settings.audio.test", "Test") }
+    static var audioRingtoneDevice: String { loc("settings.audio.ringtoneDevice", "Ringtone device") }
+    static var audioRingtoneDeviceHelp: String { loc("settings.audio.ringtoneDevice.help", "Ring through the speakers even when a headset is used for calls.") }
+    static var audioSystemDefault: String { loc("settings.audio.systemDefault", "System default") }
+    static var audioDevicesFooter: String { loc("settings.audio.devices.footer", "“System default” follows macOS Sound settings. If a chosen device is unplugged, MacroSIP falls back to the system default and switches back when it returns.") }
+    static var audioRingtoneHeader: String { loc("settings.audio.ringtone.header", "Ringtone") }
+    static var audioSound: String { loc("settings.audio.ringtoneSound", "Sound") }
+    static var audioPlay: String { loc("settings.audio.ringtonePlay", "Play") }
+    static var ringtoneClassic: String { loc("settings.audio.ringtone.classic", "Classic") }
+    static var ringtoneDigital: String { loc("settings.audio.ringtone.digital", "Digital") }
+    static var ringtoneSoft: String { loc("settings.audio.ringtone.soft", "Soft") }
+    static var ringtoneCustom: String { loc("settings.audio.ringtone.custom", "Custom file…") }
+    static func ringtoneCustomName(_ name: String) -> String { loc("settings.audio.ringtone.customName", "Custom: \(name)") }
+    static var audioVolume: String { loc("settings.audio.ringtoneVolume", "Volume") }
+    static var audioRingtoneFooter: String { loc("settings.audio.ringtone.footer", "Built-in choices: Classic, Digital, Soft. “Custom file…” accepts WAV, AIFF, M4A, MP3.") }
+    static var audioProcessingHeader: String { loc("settings.audio.processing.header", "Processing") }
+    static var audioEcho: String { loc("settings.audio.echoCancellation", "Echo cancellation") }
+    static var audioEchoHelp: String { loc("settings.audio.echoCancellation.help", "Turn off only when using a headset with its own echo cancellation.") }
 
-    static var codecsHeader: String { String(localized: "settings.codecs.header", defaultValue: "Audio codecs, in order of preference") }
-    static var codecsColCodec: String { String(localized: "settings.codecs.column.codec", defaultValue: "Codec") }
-    static var codecsColRate: String { String(localized: "settings.codecs.column.sampleRate", defaultValue: "Sample rate") }
-    static var codecsColBitrate: String { String(localized: "settings.codecs.column.bitrate", defaultValue: "Bitrate") }
-    static var codecsPCMU: String { String(localized: "settings.codecs.pcmu", defaultValue: "PCMU (G.711 µ-law)") }
-    static var codecsPCMA: String { String(localized: "settings.codecs.pcma", defaultValue: "PCMA (G.711 A-law)") }
-    static var codecsMoveUp: String { String(localized: "settings.codecs.moveUp", defaultValue: "Move up") }
-    static var codecsMoveDown: String { String(localized: "settings.codecs.moveDown", defaultValue: "Move down") }
-    static var codecsRestore: String { String(localized: "settings.codecs.restoreDefaults", defaultValue: "Restore Defaults") }
-    static var codecsFooter: String { String(localized: "settings.codecs.footer", defaultValue: "Drag rows or use the arrows to reorder. Unchecked codecs are never offered. At least one codec must stay enabled.") }
+    static var netConnectionHeader: String { loc("settings.network.connection.header", "Connection") }
+    static var netSTUN: String { loc("settings.network.stun", "STUN server") }
+    static var netSTUNHelp: String { loc("settings.network.stun.help", "Leave empty if you are not behind NAT.") }
+    static var netPort: String { loc("settings.network.port", "Local SIP port") }
+    static var netPortHelp: String { loc("settings.network.port.help", "0 picks a free port automatically.") }
+    static var netKeepAlive: String { loc("settings.network.keepAlive", "Keep-alive interval") }
+    static var netKeepAliveHelp: String { loc("settings.network.keepAlive.help", "Keeps NAT bindings open between registrations.") }
+    static var unitSeconds: String { loc("settings.unit.seconds", "seconds") }
+    static var netICE: String { loc("settings.network.ice", "Use ICE") }
+    static var netICEHelp: String { loc("settings.network.ice.help", "Finds a working media path through NAT. Uses the STUN server above.") }
+    static var netFooter: String { loc("settings.network.footer", "Changing the port re-registers all accounts. Calls in progress are not interrupted. Transport and SRTP are set per account in the account editor.") }
+
+    static var codecsHeader: String { loc("settings.codecs.header", "Audio codecs, in order of preference") }
+    static var codecsColCodec: String { loc("settings.codecs.column.codec", "Codec") }
+    static var codecsColRate: String { loc("settings.codecs.column.sampleRate", "Sample rate") }
+    static var codecsColBitrate: String { loc("settings.codecs.column.bitrate", "Bitrate") }
+    static func unitKHz(_ value: String) -> String { loc("unit.khz", "\(value) kHz") }
+    static func unitKbps(_ value: String) -> String { loc("unit.kbps", "\(value) kbit/s") }
+    static var codecsPCMU: String { loc("settings.codecs.pcmu", "PCMU (G.711 µ-law)") }
+    static var codecsPCMA: String { loc("settings.codecs.pcma", "PCMA (G.711 A-law)") }
+    static var codecsMoveUp: String { loc("settings.codecs.moveUp", "Move up") }
+    static var codecsMoveDown: String { loc("settings.codecs.moveDown", "Move down") }
+    static var codecsRestore: String { loc("settings.codecs.restoreDefaults", "Restore Defaults") }
+    static var codecsFooter: String { loc("settings.codecs.footer", "Drag rows or use the arrows to reorder. Unchecked codecs are never offered. At least one codec must stay enabled.") }
 
     // MARK: account editor
-    static var accountTitleEdit: String { String(localized: "account.title.edit", defaultValue: "Edit Account") }
-    static var accountTitleNew: String { String(localized: "account.title.new", defaultValue: "New Account") }
-    static var accountGroupIdentity: String { String(localized: "account.group.identity", defaultValue: "Identity") }
-    static var accountName: String { String(localized: "account.field.name", defaultValue: "Account name") }
-    static var accountDisplayName: String { String(localized: "account.field.displayName", defaultValue: "Display name") }
-    static var accountDisplayNameHelp: String { String(localized: "account.field.displayName.help", defaultValue: "Shown to people you call.") }
-    static var accountGroupServer: String { String(localized: "account.group.server", defaultValue: "Server") }
-    static var accountServer: String { String(localized: "account.field.server", defaultValue: "SIP server") }
-    static var accountUsername: String { String(localized: "account.field.username", defaultValue: "Username") }
-    static var accountAuthUsername: String { String(localized: "account.field.authUsername", defaultValue: "Auth username") }
-    static var accountAuthUsernameHelp: String { String(localized: "account.field.authUsername.help", defaultValue: "Only if different from the username.") }
-    static var accountOptional: String { String(localized: "account.field.optional", defaultValue: "Optional") }
-    static var accountPassword: String { String(localized: "account.field.password", defaultValue: "Password") }
-    static var accountPasswordHelp: String { String(localized: "account.field.password.help", defaultValue: "Stored in the Keychain.") }
-    static var accountDomain: String { String(localized: "account.field.domain", defaultValue: "Domain") }
-    static var accountDomainHelp: String { String(localized: "account.field.domain.help", defaultValue: "Empty uses the SIP server.") }
-    static var accountProxy: String { String(localized: "account.field.proxy", defaultValue: "Outgoing proxy") }
-    static var accountProxyPlaceholder: String { String(localized: "account.field.proxy.placeholder", defaultValue: "Optional, e.g. sip:proxy.example.com;lr") }
-    static var accountGroupConnection: String { String(localized: "account.group.connection", defaultValue: "Connection") }
-    static var accountTransport: String { String(localized: "account.field.transport", defaultValue: "Transport") }
-    static var accountSRTP: String { String(localized: "account.field.srtp", defaultValue: "Media encryption (SRTP)") }
-    static var srtpDisabled: String { String(localized: "account.srtp.disabled", defaultValue: "Disabled") }
-    static var srtpOptional: String { String(localized: "account.srtp.optional", defaultValue: "Optional") }
-    static var srtpMandatory: String { String(localized: "account.srtp.mandatory", defaultValue: "Mandatory") }
-    static var accountExpiry: String { String(localized: "account.field.expiry", defaultValue: "Registration expiry") }
-    static var accountEnabled: String { String(localized: "account.field.enabled", defaultValue: "Enabled") }
+    static var accountTitleEdit: String { loc("account.title.edit", "Edit Account") }
+    static var accountTitleNew: String { loc("account.title.new", "New Account") }
+    static var accountGroupIdentity: String { loc("account.group.identity", "Identity") }
+    static var accountName: String { loc("account.field.name", "Account name") }
+    static var accountDisplayName: String { loc("account.field.displayName", "Display name") }
+    static var accountDisplayNameHelp: String { loc("account.field.displayName.help", "Shown to people you call.") }
+    static var accountGroupServer: String { loc("account.group.server", "Server") }
+    static var accountServer: String { loc("account.field.server", "SIP server") }
+    static var accountUsername: String { loc("account.field.username", "Username") }
+    static var accountAuthUsername: String { loc("account.field.authUsername", "Auth username") }
+    static var accountAuthUsernameHelp: String { loc("account.field.authUsername.help", "Only if different from the username.") }
+    static var accountOptional: String { loc("account.field.optional", "Optional") }
+    static var accountPassword: String { loc("account.field.password", "Password") }
+    static var accountPasswordHelp: String { loc("account.field.password.help", "Stored in the Keychain.") }
+    static var accountDomain: String { loc("account.field.domain", "Domain") }
+    static var accountDomainHelp: String { loc("account.field.domain.help", "Empty uses the SIP server.") }
+    static var accountProxy: String { loc("account.field.proxy", "Outgoing proxy") }
+    static var accountProxyPlaceholder: String { loc("account.field.proxy.placeholder", "Optional, e.g. sip:proxy.example.com;lr") }
+    static var accountGroupConnection: String { loc("account.group.connection", "Connection") }
+    static var accountTransport: String { loc("account.field.transport", "Transport") }
+    static var accountSRTP: String { loc("account.field.srtp", "Media encryption (SRTP)") }
+    static var srtpDisabled: String { loc("account.srtp.disabled", "Disabled") }
+    static var srtpOptional: String { loc("account.srtp.optional", "Optional") }
+    static var srtpMandatory: String { loc("account.srtp.mandatory", "Mandatory") }
+    static var accountExpiry: String { loc("account.field.expiry", "Registration expiry") }
+    static var accountEnabled: String { loc("account.field.enabled", "Enabled") }
     static var accountEnabledHelp: String {
-        String(localized: "account.field.enabled.help", defaultValue: "Off stops registration and outgoing calls; the account stays in the pop-up, dimmed, and leaves the status bar.")
+        loc("account.field.enabled.help", "Off stops registration and outgoing calls; the account stays in the pop-up, dimmed, and leaves the status bar.")
     }
-    static var accountRegister: String { String(localized: "account.field.register", defaultValue: "Register with server") }
-    static var accountRegisterHelp: String { String(localized: "account.field.register.help", defaultValue: "Off keeps the account for outgoing calls only.") }
-    static var accountDefaultOutgoing: String { String(localized: "account.field.defaultOutgoing", defaultValue: "Default for outgoing calls") }
-    static var accountDelete: String { String(localized: "account.delete", defaultValue: "Delete Account…") }
-    static func accountDeleteTitle(_ name: String) -> String { String(localized: "account.delete.confirm.title", defaultValue: "Delete account “\(name)”?") }
-    static var accountDeleteBody: String { String(localized: "account.delete.confirm.body", defaultValue: "Its password is removed from Keychain. Call history is kept.") }
-    static var accountTest: String { String(localized: "account.test", defaultValue: "Test") }
-    static var accountUnsaved: String { String(localized: "account.status.unsaved", defaultValue: "Not saved") }
-    static var accountTesting: String { String(localized: "account.test.running", defaultValue: "Testing…") }
-    static func accountTestSuccess(_ ms: Int) -> String { String(localized: "account.test.success", defaultValue: "Registered successfully (\(ms) ms)") }
-    static func accountTestFailed(_ reason: String) -> String { String(localized: "account.test.failed", defaultValue: "Test failed: \(reason)") }
-    static var accountTestFailedHint: String { String(localized: "account.test.failed.hint", defaultValue: "The server rejected the username or password. Nothing was saved.") }
-    static var accountTestTimeoutHint: String { String(localized: "account.test.timeout.hint", defaultValue: "The server did not answer in time. Nothing was saved.") }
-    static var accountTestTimeout: String { String(localized: "account.test.timeout", defaultValue: "No response") }
-    static var accountTestAgain: String { String(localized: "account.test.again", defaultValue: "Test Again") }
-    static var accountErrorServer: String { String(localized: "account.error.server", defaultValue: "Enter a host name like pbx.example.com, or an IP address.") }
-    static var accountErrorExpiry: String { String(localized: "account.error.expiry", defaultValue: "Registration expiry must be 60 to 3600 seconds.") }
+    static var accountRegister: String { loc("account.field.register", "Register with server") }
+    static var accountRegisterHelp: String { loc("account.field.register.help", "Off keeps the account for outgoing calls only.") }
+    static var accountDefaultOutgoing: String { loc("account.field.defaultOutgoing", "Default for outgoing calls") }
+    static var accountDelete: String { loc("account.delete", "Delete Account…") }
+    static func accountDeleteTitle(_ name: String) -> String { loc("account.delete.confirm.title", "Delete account “\(name)”?") }
+    static var accountDeleteBody: String { loc("account.delete.confirm.body", "Its password is removed from Keychain. Call history is kept.") }
+    static var accountTest: String { loc("account.test", "Test") }
+    static var accountUnsaved: String { loc("account.status.unsaved", "Not saved") }
+    static var accountTesting: String { loc("account.test.running", "Testing…") }
+    static func accountTestSuccess(_ ms: Int) -> String { loc("account.test.success", "Registered successfully (\(ms) ms)") }
+    static func accountTestFailed(_ reason: String) -> String { loc("account.test.failed", "Test failed: \(reason)") }
+    static var accountTestFailedHint: String { loc("account.test.failed.hint", "The server rejected the username or password. Nothing was saved.") }
+    static var accountTestTimeoutHint: String { loc("account.test.timeout.hint", "The server did not answer in time. Nothing was saved.") }
+    static var accountTestTimeout: String { loc("account.test.timeout", "No response") }
+    static var accountTestAgain: String { loc("account.test.again", "Test Again") }
+    static var accountErrorServer: String { loc("account.error.server", "Enter a host name like pbx.example.com, or an IP address.") }
+    static var accountErrorExpiry: String { loc("account.error.expiry", "Registration expiry must be 60 to 3600 seconds.") }
 
     // MARK: first launch
-    static var firstRunTitle: String { String(localized: "firstrun.title", defaultValue: "Add a SIP account to start calling") }
-    static var firstRunBody: String { String(localized: "firstrun.body", defaultValue: "You need the server address, username and password from your phone provider or PBX administrator.") }
-    static var firstRunAdd: String { String(localized: "firstrun.addAccount", defaultValue: "Add Account…") }
-    static var firstRunFootnote: String { String(localized: "firstrun.footnote", defaultValue: "Contacts and the call log work without an account.") }
+    static var firstRunTitle: String { loc("firstrun.title", "Add a SIP account to start calling") }
+    static var firstRunBody: String { loc("firstrun.body", "You need the server address, username and password from your phone provider or PBX administrator.") }
+    static var firstRunAdd: String { loc("firstrun.addAccount", "Add Account…") }
+    static var firstRunFootnote: String { loc("firstrun.footnote", "Contacts and the call log work without an account.") }
 
     // MARK: banners (UI-only)
-    static var bannerEngineFallback: String { String(localized: "banner.engine.fallback", defaultValue: "SIP engine unavailable; using the simulated engine.") }
-    static func bannerLinkFilled(_ number: String) -> String { String(localized: "banner.link.filled", defaultValue: "Link opened: \(number). Press Call to dial.") }
-    static var bannerNoAccount: String { String(localized: "banner.noAccount", defaultValue: "Add an account before calling.") }
-    static var bannerTooManyCalls: String { String(localized: "banner.tooManyCalls", defaultValue: "Four calls are already in progress.") }
+    static var bannerEngineFallback: String { loc("banner.engine.fallback", "SIP engine unavailable; using the simulated engine.") }
+    static func bannerLinkFilled(_ number: String) -> String { loc("banner.link.filled", "Link opened: \(number). Press Call to dial.") }
+    static var bannerNoAccount: String { loc("banner.noAccount", "Add an account before calling.") }
+    static var bannerTooManyCalls: String { loc("banner.tooManyCalls", "Four calls are already in progress.") }
 
     // MARK: presence (screens 2, 7)
-    static var presenceAvailable: String { String(localized: "presence.available", defaultValue: "Available") }
-    static var presenceAway: String { String(localized: "presence.away", defaultValue: "Away") }
-    static var presenceDND: String { String(localized: "presence.dnd", defaultValue: "Do Not Disturb") }
-    static var presenceOffline: String { String(localized: "presence.offline", defaultValue: "Offline") }
-    static var contactsMenuWatchPresence: String { String(localized: "contacts.menu.watchPresence", defaultValue: "Watch Presence") }
-    static var contactWatchPresence: String { String(localized: "contact.watchPresence", defaultValue: "Watch presence (subscribe)") }
-    static var menuMyStatus: String { String(localized: "menu.myStatus", defaultValue: "My Status") }
+    static var presenceAvailable: String { loc("presence.available", "Available") }
+    static var presenceAway: String { loc("presence.away", "Away") }
+    static var presenceDND: String { loc("presence.dnd", "Do Not Disturb") }
+    static var presenceOffline: String { loc("presence.offline", "Offline") }
+    static var contactsMenuWatchPresence: String { loc("contacts.menu.watchPresence", "Watch Presence") }
+    static var contactWatchPresence: String { loc("contact.watchPresence", "Watch presence (subscribe)") }
+    static var menuMyStatus: String { loc("menu.myStatus", "My Status") }
 
     // MARK: call log additions (screen 3)
-    static var logClearBodyRecordings: String { String(localized: "calllog.clear.bodyRecordings", defaultValue: "Recordings stay in their folder.") }
-    static var logNoteCallLimit: String { String(localized: "calllog.note.callLimit", defaultValue: "Rejected: call limit") }
+    static var logClearBodyRecordings: String { loc("calllog.clear.bodyRecordings", "Recordings stay in their folder.") }
+    static var logNoteCallLimit: String { loc("calllog.note.callLimit", "Rejected: call limit") }
 
     // MARK: recording, conference (screens 4, 5)
-    static func callRecChip(_ time: String) -> String { String(localized: "call.rec.chip", defaultValue: "REC \(time)") }
-    static var callRecShort: String { String(localized: "callbar.rec", defaultValue: "REC") }
-    static var callRecord: String { String(localized: "call.record", defaultValue: "Record") }
-    static var callMerge: String { String(localized: "call.merge", defaultValue: "Merge") }
-    static var callsInConference: String { String(localized: "calls.row.inConference", defaultValue: "In conference") }
-    static var callsSplit: String { String(localized: "calls.split", defaultValue: "Split") }
-    static func conferenceHeader(_ n: Int) -> String { String(localized: "conference.header", defaultValue: "Conference · \(n) participants") }
-    static var conferenceEnd: String { String(localized: "conference.end", defaultValue: "End Conference") }
+    static func callRecChip(_ time: String) -> String { loc("call.rec.chip", "REC \(time)") }
+    static var callRecShort: String { loc("callbar.rec", "REC") }
+    static var callRecord: String { loc("call.record", "Record") }
+    static var callMerge: String { loc("call.merge", "Merge") }
+    static var callsInConference: String { loc("calls.row.inConference", "In conference") }
+    static var callsSplit: String { loc("calls.split", "Split") }
+    static func conferenceHeader(_ n: Int) -> String { loc("conference.header", "Conference · \(n) participants") }
+    static var conferenceEnd: String { loc("conference.end", "End Conference") }
 
     // MARK: auto-answer (screens 6.5, 8.7)
-    static func autoAnswerCountdown(_ seconds: Int) -> String { String(localized: "incoming.autoAnswer.countdown", defaultValue: "Auto-answer in \(seconds) s") }
-    static var autoAnswerCancel: String { String(localized: "incoming.autoAnswer.cancel", defaultValue: "Cancel") }
-    static var settingsAutoAnswer: String { String(localized: "settings.tab.autoAnswer", defaultValue: "Auto-answer") }
-    static var autoAnswerMode: String { String(localized: "settings.autoAnswer.mode", defaultValue: "Answer incoming calls automatically") }
-    static var autoAnswerOff: String { String(localized: "settings.autoAnswer.off", defaultValue: "Off") }
-    static var autoAnswerAll: String { String(localized: "settings.autoAnswer.all", defaultValue: "All calls") }
-    static var autoAnswerContactsOnly: String { String(localized: "settings.autoAnswer.contactsOnly", defaultValue: "Contacts only") }
-    static var autoAnswerDelay: String { String(localized: "settings.autoAnswer.delay", defaultValue: "Delay before answering") }
-    static var autoAnswerHonour: String { String(localized: "settings.autoAnswer.honourServer", defaultValue: "Honour the server's answer-after request") }
+    static func autoAnswerCountdown(_ seconds: Int) -> String { loc("incoming.autoAnswer.countdown", "Auto-answer in \(seconds) s") }
+    static var autoAnswerCancel: String { loc("incoming.autoAnswer.cancel", "Cancel") }
+    static var settingsAutoAnswer: String { loc("settings.tab.autoAnswer", "Auto-answer") }
+    static var autoAnswerMode: String { loc("settings.autoAnswer.mode", "Answer incoming calls automatically") }
+    static var autoAnswerOff: String { loc("settings.autoAnswer.off", "Off") }
+    static var autoAnswerAll: String { loc("settings.autoAnswer.all", "All calls") }
+    static var autoAnswerContactsOnly: String { loc("settings.autoAnswer.contactsOnly", "Contacts only") }
+    static var autoAnswerDelay: String { loc("settings.autoAnswer.delay", "Delay before answering") }
+    static var autoAnswerHonour: String { loc("settings.autoAnswer.honourServer", "Honour the server's answer-after request") }
     static var autoAnswerHonourHelp: String {
-        String(localized: "settings.autoAnswer.honourServer.help", defaultValue: "Answers when the PBX sends Call-Info: answer-after=N (intercom, paging), even if the mode is Off.")
+        loc("settings.autoAnswer.honourServer.help", "Answers when the PBX sends Call-Info: answer-after=N (intercom, paging), even if the mode is Off.")
     }
     static var autoAnswerFooter: String {
-        String(localized: "settings.autoAnswer.footer", defaultValue: "Do Not Disturb wins over auto-answer. Auto-answer never answers a second call while you are already on one.")
+        loc("settings.autoAnswer.footer", "Do Not Disturb wins over auto-answer. Auto-answer never answers a second call while you are already on one.")
     }
 
     // MARK: recording settings (screen 8.6)
-    static var settingsRecording: String { String(localized: "settings.tab.recording", defaultValue: "Recording") }
-    static var recordingFolder: String { String(localized: "settings.recording.folder", defaultValue: "Save recordings to") }
-    static var recordingChooseFolder: String { String(localized: "settings.recording.chooseFolder", defaultValue: "Choose Folder…") }
-    static var recordingFolderMissing: String { String(localized: "settings.recording.folderMissing", defaultValue: "Folder not found") }
-    static var recordingAuto: String { String(localized: "settings.recording.auto", defaultValue: "Record all calls automatically") }
+    static var settingsRecording: String { loc("settings.tab.recording", "Recording") }
+    static var recordingFolder: String { loc("settings.recording.folder", "Save recordings to") }
+    static var recordingChooseFolder: String { loc("settings.recording.chooseFolder", "Choose Folder…") }
+    static var recordingFolderMissing: String { loc("settings.recording.folderMissing", "Folder not found") }
+    static var recordingAuto: String { loc("settings.recording.auto", "Record all calls automatically") }
     static var recordingFooter: String {
-        String(localized: "settings.recording.footer", defaultValue: "Recordings are saved as M4A (AAC). The temporary WAV is deleted after conversion.")
+        loc("settings.recording.footer", "Recordings are saved as M4A (AAC). The temporary WAV is deleted after conversion.")
     }
-    static func recordingFileName(_ sample: String) -> String { String(localized: "settings.recording.fileName", defaultValue: "File name: \(sample)") }
-    static var recordingShowFolder: String { String(localized: "settings.recording.showFolder", defaultValue: "Show Recordings Folder") }
-    static var recordingOpenFinder: String { String(localized: "settings.recording.openFinder", defaultValue: "Open in Finder") }
+    static func recordingFileName(_ sample: String) -> String { loc("settings.recording.fileName", "File name: \(sample)") }
+    static var recordingShowFolder: String { loc("settings.recording.showFolder", "Show Recordings Folder") }
+    static var recordingOpenFinder: String { loc("settings.recording.openFinder", "Open in Finder") }
     static func bannerRecordingKeptAsWAV(_ reason: String, _ file: String) -> String {
-        String(localized: "banner.recording.keptAsWAV", defaultValue: "Recording could not be converted (\(reason)). It was saved as \(file) in the recordings folder.")
+        loc("banner.recording.keptAsWAV", "Recording could not be converted (\(reason)). It was saved as \(file) in the recordings folder.")
     }
     static var autoAnswerServerOnly: String {
-        String(localized: "settings.autoAnswer.honourServer.note", defaultValue: "Only requests from your own server are honoured.")
+        loc("settings.autoAnswer.honourServer.note", "Only requests from your own server are honoured.")
     }
     static func logNoteText(_ code: String) -> String {
         switch code {
@@ -398,15 +421,15 @@ enum L {
     }
 
     // MARK: menu bar status, account editor additions
-    static var menuStatusAvailable: String { String(localized: "menu.status.available", defaultValue: "Available") }
-    static var menuStatusAway: String { String(localized: "menu.status.away", defaultValue: "Away") }
-    static var menuStatusDND: String { String(localized: "menu.status.dnd", defaultValue: "Do Not Disturb") }
-    static var accountPublishPresence: String { String(localized: "account.field.publishPresence", defaultValue: "Publish my presence") }
+    static var menuStatusAvailable: String { loc("menu.status.available", "Available") }
+    static var menuStatusAway: String { loc("menu.status.away", "Away") }
+    static var menuStatusDND: String { loc("menu.status.dnd", "Do Not Disturb") }
+    static var accountPublishPresence: String { loc("account.field.publishPresence", "Publish my presence") }
     static var accountPublishPresenceHelp: String {
-        String(localized: "account.field.publishPresence.help", defaultValue: "Lets contacts who watch you see Available / Away / DND.")
+        loc("account.field.publishPresence.help", "Lets contacts who watch you see Available / Away / DND.")
     }
-    static var accountVerifyCertificate: String { String(localized: "account.field.verifyCertificate", defaultValue: "Verify server certificate") }
+    static var accountVerifyCertificate: String { loc("account.field.verifyCertificate", "Verify server certificate") }
     static var accountVerifyCertificateHelp: String {
-        String(localized: "account.field.verifyCertificate.help", defaultValue: "Turn off only for a server with a self-signed certificate.")
+        loc("account.field.verifyCertificate.help", "Turn off only for a server with a self-signed certificate.")
     }
 }

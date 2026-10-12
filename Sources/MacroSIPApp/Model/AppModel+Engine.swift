@@ -11,6 +11,8 @@ extension AppModel {
 
     /// Starts the engine, registers every account, applies audio settings.
     func bootstrap() async {
+        AppLog.app.info("\(Product.name) \(AppInfo.versionLine) started, macOS \(ProcessInfo.processInfo.operatingSystemVersionString), PJSIP log level \(launch.logLevel)")
+        syncLoginItemStatus()
         cleanUpStaleRecordings()
         startEventLoop()
         await startEngineAndAccounts()
@@ -64,6 +66,8 @@ extension AppModel {
         eventTask?.cancel()
         await engine.hangupAll()
         await engine.stop()
+        AppLog.app.info("quit")
+        FileLog.shared?.flush()
     }
 
     // MARK: - Events
@@ -85,7 +89,9 @@ extension AppModel {
             if final, code >= 300 { showBanner("Transfer failed (\(code))") }
         case let .buddyPresence(uri, status):
             handlePresence(uri: uri, status: status)
-        case .dtmfReceived, .log:
+        case let .log(level, text):
+            AppLog.record(engineLevel: level, text)
+        case .dtmfReceived:
             break
         case .audioDevicesChanged:
             // The engine re-resolves the stored device names itself; only the lists change.

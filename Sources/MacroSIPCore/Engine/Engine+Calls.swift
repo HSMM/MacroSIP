@@ -41,12 +41,19 @@ extension Engine {
 
     /// Local hold (re-INVITE sendonly) or resume (re-INVITE with PJSUA_CALL_UNHOLD).
     /// Holding one call does not resume another; the UI decides.
+    /// A request that meets a re-INVITE still in flight (a quick hold -> resume, or the
+    /// remote's re-INVITE) does not fail: it is remembered (the latest one wins) and sent
+    /// once that transaction is over. `isOnHold` shows the request at once; `.callChanged`
+    /// follows the media state until the last request is applied.
     public func setHold(_ id: CallID, _ on: Bool) throws {
         let slot = try liveSlot(id)
-        if on {
-            try PJ.check(pjsua_call_set_hold2(slot, 0, nil), "hold")
-        } else {
-            try PJ.check(cpjsua_call_unhold(slot), "unhold")
+        pendingHolds[id] = nil
+        let status = requestHold(slot, on)
+        if status != PJ.success {
+            guard isInviteBusy(status, slot) else { throw PJ.error(status, on ? "hold" : "unhold") }
+            pendingHolds[id] = PendingHold(on: on, since: Date())
+            emit(.log(level: 4, "engine: call \(id): \(on ? "hold" : "resume") waits for the re-INVITE in progress"))
+            scheduleHoldRetry()
         }
         try updateRecord(id) { $0.localHold = on }
     }
@@ -142,11 +149,78 @@ extension Engine {
     func handleCallStateChanged() {
         reconcileTones()
         finishEndedCalls()
+        retryPendingHolds()
     }
 
     func handleMediaStateChanged(_ slot: pjsua_call_id) {
         reconcileMedia()
         reconcileTones()
+        retryPendingHolds()
+    }
+
+    // MARK: deferred hold / resume
+
+    struct PendingHold {
+        var on: Bool
+        var since: Date
+    }
+
+    /// How long a deferred hold/resume keeps waiting for the transaction in flight
+    /// (an unanswered re-INVITE times out after 32 s).
+    static let pendingHoldTimeout: TimeInterval = 40
+
+    func requestHold(_ slot: pjsua_call_id, _ on: Bool) -> pj_status_t {
+        on ? pjsua_call_set_hold2(slot, 0, nil) : cpjsua_call_unhold(slot)
+    }
+
+    /// PJSIP refuses a re-INVITE while another INVITE transaction (ours or the remote's) or
+    /// a media change is in progress: PJ_EINVALIDOP from pjsip_inv_reinvite, sometimes
+    /// PJSIP_EBUSY / PJSIP_ESESSIONSTATE. Only a confirmed call can be waited for.
+    func isInviteBusy(_ status: pj_status_t, _ slot: pjsua_call_id) -> Bool {
+        guard status == cpjsua_err_invalid_op() || status == cpjsua_err_sip_busy()
+                || status == cpjsua_err_pj_busy() || status == cpjsua_err_session_state() else { return false }
+        return CallSnapshot.read(slot)?.state == .confirmed
+    }
+
+    /// Sends the remembered hold/resume requests whose call is free again. Every request is
+    /// sent as asked (even when the media already looks right: a re-INVITE of ours may still
+    /// be on its way and would flip it), so a hold -> resume -> hold ends held.
+    func retryPendingHolds() {
+        guard isStarted, !pendingHolds.isEmpty, PJ.registerThread() else { return }
+        for (id, pending) in pendingHolds {
+            guard let slot = try? liveSlot(id) else {
+                pendingHolds[id] = nil          // the call ended
+                continue
+            }
+            let status = requestHold(slot, pending.on)
+            if status == PJ.success {
+                pendingHolds[id] = nil
+                _ = try? updateRecord(id) { $0.localHold = pending.on }
+            } else if !isInviteBusy(status, slot) || Date().timeIntervalSince(pending.since) > Engine.pendingHoldTimeout {
+                pendingHolds[id] = nil
+                PJ.warn(status, "call \(id): deferred \(pending.on ? "hold" : "resume")")
+                // Show what the media really is instead of the request that could not be sent.
+                let held = CallSnapshot.read(slot)?.mediaStatus == .localHold
+                _ = try? updateRecord(id) { $0.localHold = held }
+            }
+        }
+        if !pendingHolds.isEmpty { scheduleHoldRetry() }
+    }
+
+    /// Fallback when no callback follows (e.g. the transaction in flight failed): retry
+    /// every 250 ms while anything is pending.
+    func scheduleHoldRetry() {
+        guard !holdRetryScheduled else { return }
+        holdRetryScheduled = true
+        Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(250))
+            await self?.holdRetryFired()
+        }
+    }
+
+    private func holdRetryFired() {
+        holdRetryScheduled = false
+        retryPendingHolds()
     }
 
     func handleTransferSucceeded(_ id: CallID) {

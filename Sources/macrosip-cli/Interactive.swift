@@ -14,8 +14,9 @@ final class Interactive {
     }
 
     static func run(_ options: Options) async {
+        // "any" (all interfaces) is the default here; accept it as the self-test does.
         let engine = Engine(logLevel: options.logLevel ?? 3, nullAudio: options.nullAudio,
-                            bindAddress: options.bind)
+                            bindAddress: options.bind == "any" ? nil : options.bind)
         let cli = Interactive(engine: engine)
         let events = Task { @MainActor in
             for await e in engine.events {
