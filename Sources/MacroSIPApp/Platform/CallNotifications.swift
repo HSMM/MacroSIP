@@ -26,7 +26,8 @@ final class CallNotifications: NSObject, UNUserNotificationCenterDelegate {
         center.setNotificationCategories([
             UNNotificationCategory(identifier: categoryID, actions: [answer, decline], intentIdentifiers: [], options: [])
         ])
-        center.requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        // The completion handler runs on a UserNotifications queue, not on the main actor.
+        center.requestAuthorization(options: [.alert, .sound]) { @Sendable _, _ in }
     }
 
     private func identifier(_ id: CallID) -> String { "incoming-\(id.serial)" }

@@ -83,7 +83,11 @@ final class StatusItemController: NSObject, NSMenuDelegate, NSTextFieldDelegate 
         let badgeWidth = badge > 0 ? max(12, (badgeText as NSString).size(withAttributes: [.font: badgeFont]).width + 7) : 0
         let width = 18 + (moonImage != nil ? 11 : 0) + (badge > 0 ? badgeWidth - 5 : 0)
         let size = NSSize(width: width, height: 18)
-        let image = NSImage(size: size, flipped: false) { _ in
+        // Drawn eagerly on the main thread: AppKit may call a lazy drawing handler off-main when
+        // it renders the status item, and a main-actor closure would then trap.
+        let image = NSImage(size: size)
+        image.lockFocus()
+        do {
             if let phone {
                 let r = NSRect(x: 0, y: (size.height - phone.size.height) / 2, width: phone.size.width, height: phone.size.height)
                 phone.draw(in: r)
@@ -101,8 +105,8 @@ final class StatusItemController: NSObject, NSMenuDelegate, NSTextFieldDelegate 
                 let ts = (badgeText as NSString).size(withAttributes: attrs)
                 (badgeText as NSString).draw(at: NSPoint(x: rect.midX - ts.width / 2, y: rect.midY - ts.height / 2), withAttributes: attrs)
             }
-            return true
         }
+        image.unlockFocus()
         image.isTemplate = false
         return image
     }
@@ -247,11 +251,12 @@ final class StatusItemController: NSObject, NSMenuDelegate, NSTextFieldDelegate 
     }()
 
     private static func dotImage(_ color: NSColor) -> NSImage {
-        let img = NSImage(size: NSSize(width: 10, height: 10), flipped: false) { rect in
-            color.setFill()
-            NSBezierPath(ovalIn: rect.insetBy(dx: 1, dy: 1)).fill()
-            return true
-        }
+        let rect = NSRect(x: 0, y: 0, width: 10, height: 10)
+        let img = NSImage(size: rect.size)
+        img.lockFocus()
+        color.setFill()
+        NSBezierPath(ovalIn: rect.insetBy(dx: 1, dy: 1)).fill()
+        img.unlockFocus()
         img.isTemplate = false
         return img
     }
