@@ -166,7 +166,7 @@ public actor Engine {
         ua.pointee.thread_cnt = 1
         // Room above the 4-call policy for calls pjsua creates itself (REFER, Replaces).
         ua.pointee.max_calls = UInt32(PJSUA_MAX_CALLS)
-        ua.pointee.user_agent = arena.pj("\(Edition.current.productName.replacingOccurrences(of: " ", with: "-"))/0.1")
+        ua.pointee.user_agent = arena.pj("MacroSIP/\(Product.version)")
         if let stun = network.stunServer?.trimmingCharacters(in: .whitespaces), !stun.isEmpty {
             ua.pointee.stun_srv_cnt = 1
             ua.pointee.stun_srv.0 = arena.pj(stun)
@@ -246,8 +246,7 @@ public actor Engine {
     }
 }
 
-#if FULL
-// Full-edition API: stubs only until Lite ships (owner's rule, 2026-10-10).
+// Conference, recording and presence: implemented in milestone 5.
 extension Engine {
     public func merge(_ ids: [CallID]) throws { throw EngineError.unsupported("merge") }
     public func split(_ id: CallID) throws { throw EngineError.unsupported("split") }
@@ -259,4 +258,3 @@ extension Engine {
         throw EngineError.unsupported("presence")
     }
 }
-#endif

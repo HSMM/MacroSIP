@@ -93,8 +93,7 @@ final class AppModel {
 
     // MARK: - Derived state
 
-    var edition: Edition { Edition.current }
-    var appName: String { edition.productName }
+    var appName: String { Product.name }
 
     var enabledAccounts: [AccountConfig] { accounts.filter(\.enabled) }
     var defaultAccount: AccountConfig? { accounts.first(where: \.isDefaultOutgoing) ?? accounts.first }

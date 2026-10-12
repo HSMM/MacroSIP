@@ -32,8 +32,7 @@ Used by screens 1 to 5 and 10. Window width 340 pt, height 520 pt, fixed.
 
 | Edition | Title text |
 |---|---|
-| Lite | "MacroSIP Lite" (`main.title.lite`) |
-| Full | "MacroSIP" (`main.title.full`) |
+| Title | "MacroSIP" (`main.title`) |
 
 ### Number row
 
@@ -1095,8 +1094,7 @@ Strings marked "(proposed)" are not in the mockups; they are needed by the spec 
 
 | Ed. | English | Key | Notes |
 |---|---|---|---|
-| | MacroSIP Lite | `main.title.lite` | Title, Lite build. |
-| `[Full]` | MacroSIP | `main.title.full` | Title, Full build. |
+| | MacroSIP | `main.title` | Window title. |
 | | Dialpad | `tabs.dialpad` | |
 | | Contacts | `tabs.contacts` | |
 | | Call Log | `tabs.callLog` | |

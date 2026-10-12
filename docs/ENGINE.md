@@ -28,7 +28,7 @@ public struct AccountConfig: Codable, Identifiable, Equatable {
     public var enabled: Bool                // register on start
     public var isDefaultOutgoing: Bool
     public var registrationInterval: Int    // seconds, default 300
-    public var publishPresence: Bool        // FULL
+    public var publishPresence: Bool
     // password is NOT here; it lives in Keychain under id
 }
 
@@ -49,8 +49,8 @@ public struct CallInfo: Identifiable, Equatable {
     public var startedAt: Date?             // when connected
     public var isMuted: Bool
     public var isOnHold: Bool               // local hold
-    public var isRecording: Bool            // FULL
-    public var inConference: Bool           // FULL
+    public var isRecording: Bool
+    public var inConference: Bool
     public var codec: String?               // "opus/48000"
     public var isSecure: Bool               // SRTP active
 }
@@ -66,7 +66,7 @@ public struct NetworkSettings: Codable, Equatable {
     public var echoCancellation: Bool       // true
 }
 
-public enum PresenceStatus: String, Codable { case available, away, dnd, offline }   // FULL
+public enum PresenceStatus: String, Codable { case available, away, dnd, offline }
 
 public enum EngineEvent: Sendable {
     case registration(AccountID, RegistrationState)
@@ -75,7 +75,7 @@ public enum EngineEvent: Sendable {
     case callEnded(CallInfo, duration: TimeInterval)
     case transferStatus(CallID, code: Int, final: Bool)
     case dtmfReceived(CallID, digit: Character)
-    case buddyPresence(contactURI: String, PresenceStatus)   // FULL
+    case buddyPresence(contactURI: String, PresenceStatus)
     case audioDevicesChanged
     case log(level: Int, String)
 }
@@ -116,7 +116,6 @@ public actor Engine {
     public func codecs() -> [CodecInfo]
     public func setCodecPriorities(_ ordered: [String]) throws
 
-    #if FULL
     public func merge(_ ids: [CallID]) throws        // connect all conf ports pairwise + mic/speaker
     public func split(_ id: CallID) throws
     public func startRecording(_ id: CallID, to wavURL: URL) throws
@@ -124,7 +123,6 @@ public actor Engine {
     public func subscribePresence(uri: String) throws
     public func unsubscribePresence(uri: String) throws
     public func publishPresence(_ status: PresenceStatus, for account: AccountID) throws
-    #endif
 }
 ```
 
@@ -143,7 +141,7 @@ Pure Swift, tested.
 ## Storage (MacroSIPCore, no PJSIP)
 - `JSONStore<T: Codable>`: atomic write to `~/Library/Application Support/MacroSIP/<name>.json` (`FileManager.replaceItemAt`), load with default on missing/corrupt (corrupt file renamed `.broken-<timestamp>`).
 - `AccountStore`, `ContactStore`, `CallLogStore`, `SettingsStore` wrap it.
-- `Keychain`: `set(password:for: AccountID)`, `password(for:)`, `delete(for:)`; service `com.hsmm.macrosip` (edition-independent so accounts carry over), account = UUID string.
+- `Keychain`: `set(password:for: AccountID)`, `password(for:)`, `delete(for:)`; service `com.hsmm.macrosip` (so accounts carry over), account = UUID string.
 
 ## Error handling
 `EngineError.pjsip(status: Int32, message: String)` built from `pj_strerror`. Every `pjsua_*` return value is checked. Errors never crash the engine; a failed registration becomes `RegistrationState.failed`.
@@ -152,7 +150,7 @@ Pure Swift, tested.
 - DialString parsing table.
 - JSONStore round trip, corrupt file recovery.
 - Keychain with a test service name.
-- Auto-answer rules (`AutoAnswerPolicy.decide(call:, contacts:, settings:) -> delay?`), FULL.
+- Auto-answer rules (`AutoAnswerPolicy.decide(call:, contacts:, settings:) -> delay?`).
 - Engine smoke: start, add an account with `enabled=false`, list codecs, stop (no network).
 
 ## Implementation notes (milestone 2)
@@ -161,7 +159,7 @@ Code: `Sources/MacroSIPCore/Engine/` (Engine, EngineBridge, EngineTypes, Account
 - **Executor and threads.** `Engine.unownedExecutor` is a `DispatchSerialQueue("macrosip.engine")`. GCD may run it on different pool threads, so every entry point calls `cpjsua_thread_register()` (C11 `_Thread_local pj_thread_desc`, no-op once registered, re-registers after a pjsua restart).
 - **Callback bridge.** pjsua callbacks are C function pointers without context, so they are global Swift functions that reach the engine through `EngineBridge.shared` (a `Sendable` class over `OSAllocatedUnfairLock`; no `nonisolated(unsafe)`). A callback reads PJSIP data, updates the registry, yields the event and, when the engine must act (conference wiring, ringtone, hang-up after transfer), schedules `Task { await engine.… }`. Follow-up work is idempotent (reconcile current state), so its ordering does not matter.
 - **Events.** Single consumer. They are yielded from PJSIP threads and the actor, so the UI iterates on `@MainActor`. `CallID` is `(raw: pjsua slot, serial)`: slots are reused, serials never are, and a stale `CallID` throws `.noSuchCall`. Upsert UI rows on `.incomingCall`/`.callChanged` (the first `.callChanged` of an outgoing call can arrive before `makeCall` returns) and remove them on `.callEnded`. A fifth incoming call gets 486 and appears only as `.callEnded(... .disconnected(code: 486 ...))`. Incoming calls stay `.incoming` while ringing (pjsua state EARLY after the automatic 180). `.callEnded` repeats the last codec/SRTP state and `duration` is the connected time (0 if never answered). `CallState.held` means local hold (`isOnHold`); remote hold stays `.connected`.
-- **Deviations / additions.** `CallID` gained `serial`. `CallDirection` is the call-log enum from `Model/CallLogEntry.swift` (it also has `missed`, never produced by the engine). `Engine.init` takes `nullAudio` and `bindAddress` (bind SIP and RTP to one address; needed for localhost calls when the default route is a VPN). Additive API: `mediaStats(_:)`, `localPort(of:)`, `setRingtoneFile(_:)` (hook for the bundled WAV; nil = generated tone), `silenceRingtone()`, `inputLevel()`. `EngineError` has more cases than `.pjsip`. FULL members are stubs that throw `.unsupported`.
+- **Deviations / additions.** `CallID` gained `serial`. `CallDirection` is the call-log enum from `Model/CallLogEntry.swift` (it also has `missed`, never produced by the engine). `Engine.init` takes `nullAudio` and `bindAddress` (bind SIP and RTP to one address; needed for localhost calls when the default route is a VPN). Additive API: `mediaStats(_:)`, `localPort(of:)`, `setRingtoneFile(_:)` (hook for the bundled WAV; nil = generated tone), `silenceRingtone()`, `inputLevel()`. `EngineError` has more cases than `.pjsip`. Conference, recording and presence members are stubs that throw `.unsupported` until milestone 5.
 - **PJSIP specifics.** Calls are audio-only with `txt_cnt = 0`; the pjsua default offers an RFC 4103 text m-line that breaks un-hold. RTP base port 4000 is randomized within a 16000-port range. VAD is off. Codec priorities start at 254 because PJSIP demotes 255 and creates a tie; unlisted codecs get 0 (disabled). After a successful transfer (final 2xx NOTIFY) the engine hangs up the transferred leg. `updateAccount` uses `disable_reg_on_modify` and re-registers explicitly. The old binding is not un-REGISTERed when the registrar changes; it expires on the server.
 - **Review fixes (milestone 2.1).**
   - TLS: two listeners. The default one verifies the server: the macOS system roots are exported at `start` to `Application Support/MacroSIP/ca-roots.pem` (path injectable) for OpenSSL, and PJSIP sets SNI and checks CN/SAN against the request's destination host. Accounts with `AccountConfig.verifyTLSCertificate == false` (decodes as `true` from older JSON) use the second, non-verifying listener and get a `.log` warning. If the export fails, verification fails closed.

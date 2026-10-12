@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Screen 8: toolbar tabs, changes apply immediately. Lite has five tabs.
+/// Screen 8: toolbar tabs, changes apply immediately. Five tabs for now.
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
 
@@ -22,7 +22,7 @@ struct SettingsView: View {
             CodecsPane()
                 .tabItem { Label(L.settingsCodecs, systemImage: "waveform") }
                 .tag(SettingsTab.codecs)
-            // [Full] Recording and Auto-answer tabs are intentionally absent in Lite.
+            // TODO(milestone 5): Recording and Auto-answer tabs
         }
         .frame(width: 620)
     }

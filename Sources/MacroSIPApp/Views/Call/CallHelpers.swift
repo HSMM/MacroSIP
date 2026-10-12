@@ -106,7 +106,7 @@ struct CallControlButton: View {
     }
 }
 
-/// Mute, Hold, Transfer, Keypad. Acts on `call`. (Lite: four columns.)
+/// Mute, Hold, Transfer, Keypad. Acts on `call`. (Four columns until milestone 5.)
 struct CallControlGrid: View {
     @Environment(AppModel.self) private var model
     let call: CallInfo

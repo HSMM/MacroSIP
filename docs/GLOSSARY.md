@@ -12,11 +12,11 @@ Shared vocabulary for MacroSIP. Code identifiers follow these names.
 - **Blind transfer** — REFER the current call to a new target without talking to the target first.
 - **Attended transfer** — call the target first, then REFER with Replaces so the two remote parties are joined.
 - **Conference** — local mixing of two or more connected calls on this machine through the PJSIP conference bridge. Not a server-side conference.
-- **Presence** — SIP SIMPLE status. **Subscribe** watches a contact's status; **publish** sends our own status (`available`, `away`, `dnd`). Full edition only.
+- **Presence** — SIP SIMPLE status. **Subscribe** watches a contact's status; **publish** sends our own status (`available`, `away`, `dnd`).
 - **DND (Do Not Disturb)** — incoming calls are rejected with 486 Busy; in Full, presence publishes `dnd`.
-- **Auto-answer** — incoming call is answered automatically after a delay. Modes: `off`, `all`, `contactsOnly`. A server `Call-Info; answer-after=N` header is honoured when enabled. Full edition only.
-- **Recording** — capture of an active call to WAV by PJSIP, converted to M4A afterwards. Full edition only.
+- **Auto-answer** — incoming call is answered automatically after a delay. Modes: `off`, `all`, `contactsOnly`. A server `Call-Info; answer-after=N` header is honoured when enabled.
+- **Recording** — capture of an active call to WAV by PJSIP, converted to M4A afterwards.
 - **Contact** — a saved name and number with optional presence subscription flag.
 - **Call log entry** — one historical call: direction (`incoming`, `outgoing`, `missed`), remote party, account, start time, duration.
-- **Edition** — `lite` or `full`, chosen at compile time with the `FULL` flag.
+- **Product** — one build, `MacroSIP`, bundle id `com.hsmm.macrosip` (the Lite/Full split was dropped on 2026-10-12, ADR 0010).
 - **Engine** — the Swift layer in `MacroSIPCore` that owns the single pjsua instance and exposes accounts, calls and events to the UI.

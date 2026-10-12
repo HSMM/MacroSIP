@@ -3,13 +3,10 @@ import MacroSIPCore
 
 // All user-visible strings. Keys follow docs/design/SCREENS.md "Strings"; a String Catalog
 // can be added later without touching the views (the literals below are what Xcode extracts).
-// Only Lite strings live here; `[Full]` strings are intentionally absent.
 
 enum L {
     // MARK: common and main window
-    static var mainTitleLite: String { String(localized: "main.title.lite", defaultValue: "MacroSIP Lite") }
-    /// Lite uses the catalog key; the Full title string is added with the Full edition work.
-    static var mainTitle: String { Edition.current == .lite ? mainTitleLite : Edition.current.productName }
+    static var mainTitle: String { String(localized: "main.title", defaultValue: "MacroSIP") }
     static var tabsDialpad: String { String(localized: "tabs.dialpad", defaultValue: "Dialpad") }
     static var tabsContacts: String { String(localized: "tabs.contacts", defaultValue: "Contacts") }
     static var tabsCallLog: String { String(localized: "tabs.callLog", defaultValue: "Call Log") }

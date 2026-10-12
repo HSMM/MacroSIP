@@ -4,19 +4,14 @@ A MicroSIP-style SIP softphone for macOS on Apple Silicon. Native Swift/SwiftUI
 interface, [PJSIP](https://github.com/pjsip/pjproject) 2.17 engine, no Electron,
 no Qt.
 
-MacroSIP ships in two editions built from one codebase:
+Features:
 
-| | MacroSIP Lite | MacroSIP |
-|---|---|---|
-| Multiple accounts, simultaneous registration | ✓ | ✓ |
-| Calls, DTMF, mute, hold, blind and attended transfer | ✓ | ✓ |
-| Call history, contacts | ✓ | ✓ |
-| Menu bar icon with quick dial and DND | ✓ | ✓ |
-| TLS, SRTP, STUN, Opus, G.722, G.711 | ✓ | ✓ |
-| Contact presence (subscribe and publish) | | ✓ |
-| Call recording (M4A) | | ✓ |
-| Auto-answer | | ✓ |
-| Local conference | | ✓ |
+- Multiple accounts with simultaneous registration; UDP, TCP, TLS; SRTP; STUN; ICE.
+- Calls, DTMF, mute, hold, blind and attended transfer, up to four simultaneous calls.
+- Call history and contacts; `sip:`, `sips:` and `tel:` links.
+- Menu bar icon with quick dial, recent calls and Do Not Disturb.
+- Contact presence (subscribe and publish), call recording (M4A), auto-answer, local conference.
+- Codecs: Opus, G.722, G.711.
 
 Status: in development. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
@@ -28,10 +23,15 @@ Requirements: macOS 14+, Apple Silicon, Xcode Command Line Tools, Homebrew with
 ```sh
 scripts/build-pjsip.sh      # downloads and builds PJSIP 2.17 (once, several minutes)
 swift build -c release      # builds the Swift packages
-scripts/test.sh && scripts/test.sh full   # Swift Testing suites for both editions
+scripts/test.sh             # Swift Testing suites
 scripts/selftest-call.sh    # real call against a local pjsua: two-way RTP, hold, DTMF
-scripts/make-app.sh lite    # bundles "MacroSIP Lite.app" into dist/
-scripts/make-app.sh full    # bundles "MacroSIP.app" into dist/
+scripts/make-app.sh         # bundles "MacroSIP.app" into dist/
+```
+
+Debugging: `open dist/MacroSIP.app --args --log-level 5` raises the PJSIP log level; read it with
+`log show --last 10m --predicate 'subsystem == "com.hsmm.macrosip"' --info`.
+
+```sh
 ```
 
 Builds are signed ad hoc. On first launch macOS will ask to confirm opening an

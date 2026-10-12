@@ -1,8 +1,7 @@
 # Roadmap
 
-Milestones 1–4 produce **MacroSIP Lite**. Milestones 5–6 produce **MacroSIP** (Full).
-Owner's rule: work on milestones 5–6 starts only after Lite is released (`v0.1-lite` tagged).
-A milestone is done only when every item in its "Done when" list holds.
+One product, **MacroSIP** (ADR 0010; the Lite/Full split and the `v0.1-lite` gate were dropped on 2026-10-12).
+Milestones 4 and 5 run in parallel; 6 is the release. A milestone is done only when every item in its "Done when" list holds.
 
 ## 1. Skeleton, PJSIP, mockups — DONE 2026-10-10
 - Repo, license, docs (this file, AGENTS, GLOSSARY, ADRs, CLAUDE.md).
@@ -19,35 +18,38 @@ A milestone is done only when every item in its "Done when" list holds.
 - Outgoing and incoming calls, answer, hang up, mute, hold, DTMF. Audio device selection.
 - Done when: a call between the app and `pjsua` CLI over UDP on localhost has two-way audio, and tests for models, storage and dial-string parsing are green.
 
-## 3. Call and account UI, menu bar — IN PROGRESS (code done, awaiting the owner's real call)
+## 3. Call and account UI, menu bar — DONE 2026-10-11 (owner's real call: registration 200 OK, 41 s outgoing call, Opus, hold/resume)
 - Main window per mockups: dial field with account picker, Dialpad tab, active-call panel, multiple-call rows.
 - Incoming-call floating window and notification with Answer/Decline. Dock badge for missed calls.
 - Account editor sheet; status bar with registration state per account; first-launch empty state.
 - Menu bar item: state icon, per-account status, quick dial, last 5 calls, DND, Show, Quit. Closing the window keeps the app running.
 - `sip:`/`sips:`/`tel:` URL handler.
 - Done when: owner completes a real call on their own SIP account from the UI only.
+- Open diagnostic carried into 4: every INVITE logs "Temporary failure … Unsuitable transport selected (PJSIP_ETPNOTSUITABLE), will try next server" before the second attempt succeeds. Not reproducible on localhost; needs a `--log-level 5` capture from the owner's account.
 
-## 4. History and contacts — Lite complete
+## 4. History, contacts, settings, localization — IN PROGRESS
 - Call log with direction, time, duration, filter, clear; redial from a row.
 - Contacts: search, add, edit, delete, call; call log resolves numbers to contact names.
 - Blind and attended transfer.
 - Settings window: General, Audio (three devices, ringtone, AEC), Network (transport, STUN, SRTP, port, keep-alive), Codecs (reorderable).
 - Russian localization of everything so far.
 - Follow-ups from the engine review: switch the UI to the name-based audio device API (`setAudioDevices(inputName:outputName:)`, `setRingtoneDevice(name:)`), add the "Verify server certificate" toggle (`verifyTLSCertificate`) to the account editor, write the "Rejected: call limit" log note for an auto-rejected fifth call.
-- Done when: Lite `.app` passes a manual checklist on the owner's account; tagged `v0.1-lite`.
+- Owner's checklist on the real account: incoming call (floating window, ringtone, answer), DTMF to an IVR, blind and attended transfer, the `PJSIP_ETPNOTSUITABLE` diagnostic above.
+- Done when: the `.app` passes the manual checklist on the owner's account.
 
-## 5. Full features: presence, conference, auto-answer, recording
-- Presence subscribe per contact (dot in list) and publish own status; DND publishes `dnd`.
-- Conference: Merge button mixes connected calls locally; split/hang up individually.
-- Auto-answer modes and delay; `Call-Info answer-after` honoured.
-- Recording: button and auto-record setting; WAV via PJSIP, converted to M4A with AVFoundation, WAV removed on success.
-- Done when: each feature verified against the owner's server (presence may need server support; document if unsupported); tests for auto-answer rules green.
+## 5. Presence, conference, auto-answer, recording — IN PROGRESS (started 2026-10-12)
+Engine (`MacroSIPCore`, replaces the `.unsupported` stubs):
+- Presence: `subscribePresence(uri:)` / `unsubscribePresence(uri:)` over pjsua buddies, `.buddyPresence` events; `publishPresence(_:for:)` via PUBLISH (RPID) for accounts with `publishPresence`; DND publishes `dnd`.
+- Conference: `merge(_:)` connects every listed call's conference port pairwise plus mic/speaker, `split(_:)` takes one call out; `CallInfo.inConference` reflects it; hold/mute keep working per leg.
+- Recording: `startRecording(_:to:)` / `stopRecording(_:)` with `pjsua_recorder` on the call's conference port (both directions); `CallInfo.isRecording`. `RecordingConverter` (AVFoundation) turns the WAV into M4A/AAC and deletes the WAV on success.
+- Auto-answer rules: pure `AutoAnswerPolicy.decide(call:isContact:settings:onAnotherCall:dnd:) -> delay?`; `Call-Info: answer-after=N` parsed from the INVITE into `CallInfo.answerAfter`.
+UI (`MacroSIPApp`, per SCREENS.md `[Full]` rows): presence dot/text and "Watch presence" (contacts), Record button and REC chip, Merge/Split and the conference screen 5.4, auto-answer strip 6.5 with countdown and Cancel, My Status submenu 7.4, Settings panes Recording 8.6 and Auto-answer 8.7, "Publish my presence" in the account editor, recordings sentence in the clear-log alert. Settings model: `AppSettings.recording`, `AppSettings.autoAnswer`.
+- Done when: `scripts/selftest-call.sh` also covers recording (WAV produced, M4A conversion) and presence against `pjsua`; conference verified with two `pjsua` legs; auto-answer policy tests green; each feature then checked on the owner's server (presence may need server support; document if unsupported).
 
-## 6. Full polish and release
-- Settings panes Recording and Auto-answer; Full tags in UI where edition differs.
+## 6. Polish and release
 - Launch at login, language switch, crash-safe log file, About window with GPL notice.
-- Russian localization complete; both editions bundled by `make-app.sh`; README install guide.
-- Done when: tagged `v0.1`; both `.app` bundles built from a clean clone by following README only.
+- Russian localization complete; README install guide.
+- Done when: tagged `v0.1`; `MacroSIP.app` built from a clean clone by following README only.
 
 ## Later (v2 candidates)
 Video calls, SIP MESSAGE chat, global hotkeys, MicroSIP.ini / Contacts.xml import, notarized builds, Sparkle updates.

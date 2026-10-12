@@ -27,7 +27,7 @@ public struct AccountConfig: Codable, Identifiable, Equatable, Sendable {
     public var enabled: Bool                // register on start
     public var isDefaultOutgoing: Bool
     public var registrationInterval: Int    // seconds
-    public var publishPresence: Bool        // FULL only; ignored in Lite
+    public var publishPresence: Bool        // publish our own presence status
     /// TLS only: verify the server certificate against the macOS system roots and the
     /// server host name. Opt-out for servers with self-signed certificates (user's choice).
     public var verifyTLSCertificate: Bool

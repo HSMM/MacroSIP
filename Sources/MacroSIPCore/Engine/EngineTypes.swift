@@ -61,16 +61,18 @@ public struct CallInfo: Identifiable, Equatable, Sendable {
     public var startedAt: Date?             // when connected
     public var isMuted: Bool
     public var isOnHold: Bool               // local hold
-    public var isRecording: Bool            // FULL; always false in Lite
-    public var inConference: Bool           // FULL; always false in Lite
+    public var isRecording: Bool            // call is being recorded
+    public var inConference: Bool           // call is part of a conference
     public var codec: String?               // "opus/48000" once media is active
     public var isSecure: Bool               // SRTP active
+    /// Seconds from `Call-Info: ...;answer-after=N` in the INVITE (intercom/paging); nil if absent.
+    public var answerAfter: Int?
 
     public init(
         id: CallID, accountID: AccountID, direction: CallDirection, state: CallState,
         remote: RemoteParty, startedAt: Date? = nil, isMuted: Bool = false,
         isOnHold: Bool = false, isRecording: Bool = false, inConference: Bool = false,
-        codec: String? = nil, isSecure: Bool = false
+        codec: String? = nil, isSecure: Bool = false, answerAfter: Int? = nil
     ) {
         self.id = id
         self.accountID = accountID
@@ -84,6 +86,7 @@ public struct CallInfo: Identifiable, Equatable, Sendable {
         self.inConference = inConference
         self.codec = codec
         self.isSecure = isSecure
+        self.answerAfter = answerAfter
     }
 }
 
@@ -120,7 +123,7 @@ public struct CallMediaStats: Equatable, Sendable {
     public var rttMs: Double
 }
 
-public enum PresenceStatus: String, Codable, Sendable {   // FULL
+public enum PresenceStatus: String, Codable, Sendable {   // presence status of a contact or of our own account
     case available, away, dnd, offline
 }
 
@@ -131,7 +134,7 @@ public enum EngineEvent: Sendable {
     case callEnded(CallInfo, duration: TimeInterval)
     case transferStatus(CallID, code: Int, final: Bool)
     case dtmfReceived(CallID, digit: Character)
-    case buddyPresence(contactURI: String, PresenceStatus)   // FULL; never emitted in Lite
+    case buddyPresence(contactURI: String, PresenceStatus)   // presence update for a watched contact
     case audioDevicesChanged
     case log(level: Int, String)
 }

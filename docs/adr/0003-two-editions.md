@@ -1,6 +1,6 @@
 # ADR 0003 — Lite and Full editions from one codebase
 
-Date: 2026-10-10. Status: accepted.
+Date: 2026-10-10. Status: superseded by ADR 0010 (2026-10-12).
 
 ## Context
 MicroSIP ships Lite and full builds. The owner wants the same split. MacroSIP has no video, so the line is drawn by feature weight instead.

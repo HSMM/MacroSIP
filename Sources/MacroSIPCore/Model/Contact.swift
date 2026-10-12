@@ -6,7 +6,7 @@ public struct Contact: Codable, Identifiable, Equatable, Sendable {
     /// Dial string as typed, e.g. "+7 495 123-45-67" or "sip:bob@host".
     public var number: String
     public var preferredAccountID: AccountID?
-    /// Full-only flag; stored but unused in Lite.
+    /// Whether to watch this contact's presence.
     public var subscribePresence: Bool
     public var createdAt: Date
 

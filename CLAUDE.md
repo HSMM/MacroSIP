@@ -13,18 +13,17 @@ SwiftPM only (no Xcode project), PJSIP 2.17 linked statically through the `CPJSU
 ## Layout
 - `Sources/CPJSUA` — C shim and umbrella header over pjsua. The only place that includes PJSIP headers.
 - `Sources/MacroSIPCore` — Swift engine: accounts, calls, presence, recording, storage. No UI imports.
-- `Sources/MacroSIPApp` — SwiftUI/AppKit app. Edition features are gated with `#if FULL`.
+- `Sources/MacroSIPApp` — SwiftUI/AppKit app.
 - `Tests/` — Swift Testing (`import Testing`) for Core; XCTest is unavailable with Command Line Tools only.
 - `scripts/` — `build-pjsip.sh`, `make-app.sh`. `third_party/` holds the PJSIP build (git-ignored except `pjsip/config_site.h`).
 
 ## Rules
-- Two editions, one codebase: Lite is the default build; Full adds `-D FULL`. Never fork UI files per edition.
-- Owner's rule (2026-10-10): no Full-only code is written until Lite is released and tagged `v0.1-lite`. Until then `#if FULL` blocks may exist only as empty stubs needed to compile.
+- One product, one build: `MacroSIP`, bundle id `com.hsmm.macrosip` (ADR 0010, 2026-10-12). The earlier Lite/Full split is gone; `[Full]` in `docs/design/SCREENS.md` now just marks the features of milestone 5. Never add edition flags back.
 - PJSIP callbacks arrive on PJSIP worker threads. Hop to the main actor before touching app state; never block a PJSIP thread on the main actor.
 - Every `pjsua_*` call that can fail returns `pj_status_t`; check it and surface the error text via `pj_strerror`.
 - Passwords live only in Keychain. Everything else is JSON in `~/Library/Application Support/MacroSIP/`.
 - Strings go through String Catalogs; English is the base, Russian is maintained alongside.
-- Run tests with `scripts/test.sh` and `scripts/test.sh full`, never bare `swift test` (it cannot find the Testing macro plugin under Command Line Tools). A milestone is done only after: `swift build` clean, both test runs green, and a real call verified (pjsua CLI as the second phone, or the owner's SIP account).
+- Run tests with `scripts/test.sh`, never bare `swift test` (it cannot find the Testing macro plugin under Command Line Tools). A milestone is done only after: `swift build` clean, tests green, `scripts/selftest-call.sh` passes, and a real call verified (pjsua CLI as the second phone, or the owner's SIP account).
 - Commit after each working milestone and push to `main`. Commit messages end with the Co-Authored-By line required by the session.
 - SwiftUI `@State` does not compile under Command Line Tools (its macro plugin ships only with Xcode). Use the `@Local` wrapper from `Sources/MacroSIPApp/Views/Components/Local.swift`; it is a drop-in for `@State`.
 - Opus and OpenSSL are linked as static archives from Homebrew (Package.swift) so the .app has no /opt/homebrew dylib dependencies; never switch them back to `.linkedLibrary`.

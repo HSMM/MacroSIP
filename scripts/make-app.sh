@@ -1,25 +1,24 @@
 #!/usr/bin/env bash
 # Bundle the SwiftPM executable into a signed .app.
-# Usage: scripts/make-app.sh lite|full [debug]
+# Usage: scripts/make-app.sh [debug|release]   (produces dist/MacroSIP.app)
 set -euo pipefail
 
-EDITION="${1:-lite}"
-CONFIG="${2:-release}"
+CONFIG="${1:-release}"
+NAME="MacroSIP"
+BUNDLE_ID="com.hsmm.macrosip"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
-
-case "$EDITION" in
-  lite) NAME="MacroSIP Lite"; BUNDLE_ID="com.hsmm.macrosip.lite"; FLAGS=() ;;
-  full) NAME="MacroSIP";      BUNDLE_ID="com.hsmm.macrosip";      FLAGS=(-Xswiftc -DFULL) ;;
-  *) echo "usage: $0 lite|full [debug|release]" >&2; exit 2 ;;
+case "$CONFIG" in
+  debug|release) ;;
+  *) echo "usage: $0 [debug|release]" >&2; exit 2 ;;
 esac
 
 VERSION="$(git -C "$ROOT" describe --tags --always 2>/dev/null | sed 's/^v//' || echo 0.0.0)"
 BUILD_NUMBER="$(git -C "$ROOT" rev-list --count HEAD 2>/dev/null || echo 1)"
 
-echo "==> swift build ($CONFIG, $EDITION)"
-swift build -c "$CONFIG" --product MacroSIPApp ${FLAGS[@]+"${FLAGS[@]}"}
-BIN_DIR="$(swift build -c "$CONFIG" ${FLAGS[@]+"${FLAGS[@]}"} --show-bin-path)"
+echo "==> swift build ($CONFIG)"
+swift build -c "$CONFIG" --product MacroSIPApp
+BIN_DIR="$(swift build -c "$CONFIG" --show-bin-path)"
 
 APP="$ROOT/dist/$NAME.app"
 rm -rf "$APP"
@@ -30,8 +29,8 @@ cp "$BIN_DIR/MacroSIPApp" "$APP/Contents/MacOS/$NAME"
 for bundle in "$BIN_DIR"/*.bundle; do
   [ -d "$bundle" ] && cp -R "$bundle" "$APP/Contents/Resources/"
 done
-if [ -f "$ROOT/packaging/$EDITION.icns" ]; then
-  cp "$ROOT/packaging/$EDITION.icns" "$APP/Contents/Resources/AppIcon.icns"
+if [ -f "$ROOT/packaging/AppIcon.icns" ]; then
+  cp "$ROOT/packaging/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 fi
 
 cat > "$APP/Contents/Info.plist" <<PLIST

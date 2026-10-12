@@ -110,7 +110,7 @@ struct AccountEditorSheet: View {
                         row(L.accountDefaultOutgoing) {
                             Toggle("", isOn: $isDefault).labelsHidden().toggleStyle(.switch)
                         }
-                        // [Full] "Publish my presence" row is intentionally absent in Lite.
+                        // TODO(milestone 5): "Publish my presence" row
                     }
                 }
                 .padding(.horizontal, 22).padding(.bottom, 8)

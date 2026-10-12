@@ -1,7 +1,7 @@
 import Foundation
 import MacroSIPCore
 
-/// What the UI needs from the SIP engine (Lite subset of docs/ENGINE.md "Engine API").
+/// What the UI needs from the SIP engine (docs/ENGINE.md "Engine API").
 ///
 /// `MacroSIPCore.Engine` conforms as is (see EngineFactory.swift); `MockEngine` simulates it.
 /// Value types (`CallInfo`, `RegistrationState`, `EngineEvent`, ...) come from MacroSIPCore.
