@@ -6,11 +6,32 @@ import MacroSIPCore
 // The English default below is only the fallback for a missing key; scripts/check-strings.sh keeps the files in sync.
 
 enum L {
-    /// Looks the key up in the app's resource bundle (`Bundle.module`), in the language chosen by
-    /// `AppleLanguages`. Interpolations become `%@` / `%lld` (or `%1$@` ...) in the .strings value.
+    /// Looks the key up in the language chosen by `AppleLanguages`. Interpolations become
+    /// `%@` / `%lld` (or `%1$@` ...) in the .strings value.
     private static func loc(_ key: StaticString, _ defaultValue: String.LocalizationValue) -> String {
-        String(localized: key, defaultValue: defaultValue, bundle: .module)
+        String(localized: key, defaultValue: defaultValue, bundle: stringsBundle)
     }
+
+    /// The bundle that holds Localizable.strings. In the .app the tables live in
+    /// `Contents/Resources/<lang>.lproj` (make-app.sh copies them there), so `Bundle.main` wins.
+    /// A plain `swift build` / `swift run` finds the SwiftPM resource bundle next to the binary.
+    /// Never traps: a missing bundle only means the English defaults are shown.
+    private static let stringsBundle: Bundle = {
+        let main = Bundle.main
+        if main.url(forResource: "Localizable", withExtension: "strings") != nil
+            || main.url(forResource: "Localizable", withExtension: "stringsdict") != nil {
+            return main
+        }
+        let name = "MacroSIP_MacroSIPApp.bundle"
+        let places = [main.resourceURL, main.bundleURL, main.executableURL?.deletingLastPathComponent()]
+        for place in places {
+            if let url = place?.appendingPathComponent(name), let bundle = Bundle(url: url),
+               bundle.url(forResource: "Localizable", withExtension: "strings") != nil {
+                return bundle
+            }
+        }
+        return main
+    }()
     // MARK: common and main window
     static var mainTitle: String { loc("main.title", "MacroSIP") }
     static var tabsDialpad: String { loc("tabs.dialpad", "Dialpad") }

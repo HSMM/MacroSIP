@@ -28,12 +28,18 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN_DIR/MacroSIPApp" "$APP/Contents/MacOS/$NAME"
 
-# SwiftPM resource bundle MacroSIP_MacroSIPApp.bundle (Localizable.strings per language); Bundle.module finds it in Contents/Resources.
-for bundle in "$BIN_DIR"/*.bundle; do
-  [ -d "$bundle" ] && cp -R "$bundle" "$APP/Contents/Resources/"
+# Localizable.strings / .stringsdict go straight into Contents/Resources/<lang>.lproj, where
+# Bundle.main finds them like in any macOS app (no dependency on SwiftPM's resource bundle, whose
+# minimal Info.plist is not accepted by Bundle(url:) on every macOS release).
+for lproj in "$ROOT"/Sources/MacroSIPApp/Resources/*.lproj; do
+  mkdir -p "$APP/Contents/Resources/$(basename "$lproj")"
+  cp "$lproj"/Localizable.* "$APP/Contents/Resources/$(basename "$lproj")/"
 done
 # Localized Info.plist strings (microphone prompt) for en and ru.
-cp -R "$ROOT"/packaging/InfoPlist/*.lproj "$APP/Contents/Resources/"
+for lproj in "$ROOT"/packaging/InfoPlist/*.lproj; do
+  mkdir -p "$APP/Contents/Resources/$(basename "$lproj")"
+  cp "$lproj"/* "$APP/Contents/Resources/$(basename "$lproj")/"
+done
 if [ -f "$ROOT/packaging/AppIcon.icns" ]; then
   cp "$ROOT/packaging/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 fi
