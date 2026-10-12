@@ -78,11 +78,24 @@ public struct RecordingSettings: Codable, Equatable, Sendable {
     /// Security-scoped bookmark of `folder` when the user picked it in the open panel.
     public var folderBookmark: Data?
     public var recordAllCalls: Bool
+    /// One mixed channel, or me on the left and the caller on the right. Default mono.
+    public var layout: RecordingLayout
 
-    public init(folder: URL? = nil, folderBookmark: Data? = nil, recordAllCalls: Bool = false) {
+    public init(folder: URL? = nil, folderBookmark: Data? = nil, recordAllCalls: Bool = false,
+                layout: RecordingLayout = .mono) {
         self.folder = folder
         self.folderBookmark = folderBookmark
         self.recordAllCalls = recordAllCalls
+        self.layout = layout
+    }
+
+    /// Older settings.json files lack `layout`; they decode as mono.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        folder = try c.decodeIfPresent(URL.self, forKey: .folder)
+        folderBookmark = try c.decodeIfPresent(Data.self, forKey: .folderBookmark)
+        recordAllCalls = try c.decodeIfPresent(Bool.self, forKey: .recordAllCalls) ?? false
+        layout = (try? c.decodeIfPresent(RecordingLayout.self, forKey: .layout)) ?? .mono
     }
 }
 

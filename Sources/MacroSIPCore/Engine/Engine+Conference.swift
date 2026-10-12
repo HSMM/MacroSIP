@@ -100,9 +100,11 @@ extension Engine {
 extension Engine {
     /// Wires the conference bridge from the current state of every call and recording.
     /// Per live call whose media is up (active or remote hold): call -> speaker, microphone ->
-    /// call unless muted; conference legs (media up) transmit to each other; a recorder gets
-    /// its call, the call's conference partners and (unless muted) the microphone. A call on
-    /// local hold or without media is connected to nothing. Idempotent; runs after every
+    /// call unless muted; conference legs (media up) transmit to each other; a mono recorder
+    /// gets its call, the call's conference partners and (unless muted) the microphone. A call on
+    /// local hold or without media is connected to nothing. A stereo split recording has a
+    /// local recorder (microphone only, level 0 while muted) and a remote recorder (call
+    /// and conference partners). Idempotent; runs after every
     /// media, mute, hold, conference and recording change.
     func reconcileMedia() {
         guard isStarted, PJ.registerThread() else { return }
@@ -125,8 +127,10 @@ extension Engine {
                             muted: rec.isMuted, conference: rec.conference))
             owners[snap.confSlot] = .call(serial: rec.serial)
         }
-        for recording in recordings.values where recording.confSlot != PJ.invalidID {
-            owners[recording.confSlot] = .recorder(recording.recorderID)
+        for recording in recordings.values {
+            for port in recording.ports where port.confSlot != PJ.invalidID {
+                owners[port.confSlot] = .recorder(port.recorderID)
+            }
         }
 
         // Requests that involve a port that is gone or now belongs to someone else are void:
@@ -147,13 +151,21 @@ extension Engine {
                 }
             }
         }
-        for (id, recording) in recordings where recording.confSlot != PJ.invalidID {
+        for (id, recording) in recordings {
             guard let leg = legs.first(where: { $0.id == id }), leg.up else { continue }
-            desired.insert(Wire(src: leg.port, sink: recording.confSlot))
-            if !leg.muted { desired.insert(Wire(src: 0, sink: recording.confSlot)) }
-            if let c = leg.conference {
-                for other in legs where other.up && other.conference == c && other.port != leg.port {
-                    desired.insert(Wire(src: other.port, sink: recording.confSlot))
+            for port in recording.ports where port.confSlot != PJ.invalidID {
+                let sink = port.confSlot
+                // The microphone: into the mixed file unless muted; into the local file
+                // always (muted = level 0 below), so both stereo files get every frame.
+                if port.role == .local || (port.role == .mixed && !leg.muted) {
+                    desired.insert(Wire(src: 0, sink: sink))
+                }
+                guard port.role != .local else { continue }
+                desired.insert(Wire(src: leg.port, sink: sink))
+                if let c = leg.conference {
+                    for other in legs where other.up && other.conference == c && other.port != leg.port {
+                        desired.insert(Wire(src: other.port, sink: sink))
+                    }
                 }
             }
         }
@@ -164,6 +176,20 @@ extension Engine {
         }
         for wire in desired.sorted(by: { ($0.src, $0.sink) < ($1.src, $1.sink) }) {
             connect(wire.src, wire.sink, true)
+        }
+
+        // Stereo split, muted call: the local recorder keeps receiving the microphone but at
+        // level 0, i.e. silence. Disconnecting it would make the bridge skip the file
+        // (a port without transmitters gets no frames) and the two files would drift apart.
+        for id in Array(recordings.keys) {
+            guard let recording = recordings[id],
+                  let local = recording.ports.first(where: { $0.role == .local }),
+                  local.confSlot != PJ.invalidID else { continue }
+            let audible = !(legs.first(where: { $0.id == id })?.muted ?? false)
+            guard recording.localAudible != audible else { continue }
+            PJ.warn(pjsua_conf_adjust_tx_level(local.confSlot, audible ? 1 : 0),
+                    "recorder \(local.url.lastPathComponent) level \(audible ? 1 : 0)")
+            recordings[id]?.localAudible = audible
         }
     }
 
@@ -196,15 +222,53 @@ extension Engine {
         return cpjsua_conf_is_connected(a.confSlot, b.confSlot) != 0
     }
 
-    /// Applied connection into the recorder of `recorded` from `source`'s conference port,
-    /// or from the microphone when `source` is nil (tests and diagnostics).
-    func recorderHears(_ recorded: CallID, from source: CallID?) -> Bool {
-        guard isStarted, PJ.registerThread(), let recording = recordings[recorded] else { return false }
+    /// Applied connection into a recorder of `recorded` (the one with `role`; the first one
+    /// when nil) from `source`'s conference port, or from the microphone when `source` is
+    /// nil (tests and diagnostics).
+    func recorderHears(_ recorded: CallID, from source: CallID?, role: RecorderPort.Role? = nil) -> Bool {
+        guard isStarted, PJ.registerThread(), let recording = recordings[recorded],
+              let recorder = recording.ports.first(where: { role == nil || $0.role == role }) else { return false }
         var port: pjsua_conf_port_id = 0
         if let source {
             guard let snap = CallSnapshot.read(source.raw), snap.confSlot != PJ.invalidID else { return false }
             port = snap.confSlot
         }
-        return cpjsua_conf_is_connected(port, recording.confSlot) != 0
+        return cpjsua_conf_is_connected(port, recorder.confSlot) != 0
+    }
+
+    /// Applied tx level of the local (microphone) recorder of a stereo split recording owned
+    /// by `recorded` (1 = normal, 0 = silenced while muted); nil without one (tests).
+    func localRecorderLevel(_ recorded: CallID) -> Float? {
+        guard isStarted, PJ.registerThread(),
+              let local = recordings[recorded]?.ports.first(where: { $0.role == .local }) else { return nil }
+        var info = pjsua_conf_port_info()
+        guard pjsua_conf_get_port_info(local.confSlot, &info) == PJ.success else { return nil }
+        return info.tx_level_adj
+    }
+}
+
+// MARK: - Test hooks
+
+extension Engine {
+    /// Plays a WAV file in a loop into the call's conference port (as if the call's remote
+    /// side spoke, from the other end's point of view). Returns the pjsua player id for
+    /// `stopTestPlayer`. Tests only: the engine does not track or rewire this port.
+    func startTestPlayer(_ wav: URL, into id: CallID) throws -> Int32 {
+        let slot = try liveSlot(id)
+        guard let snap = CallSnapshot.read(slot), snap.confSlot != PJ.invalidID else { throw EngineError.noSuchCall(id) }
+        let arena = CStringArena()
+        var file = arena.pj(wav.path)
+        var player: pjsua_player_id = PJ.invalidID
+        try withExtendedLifetime(arena) {
+            try PJ.check(pjsua_player_create(&file, 0, &player), "player \(wav.lastPathComponent)")
+        }
+        let port = pjsua_player_get_conf_port(player)
+        try PJ.check(pjsua_conf_connect(port, snap.confSlot), "player -> call \(id)")
+        return player
+    }
+
+    func stopTestPlayer(_ player: Int32) {
+        guard isStarted, PJ.registerThread() else { return }
+        PJ.warn(pjsua_player_destroy(player), "destroy player")
     }
 }

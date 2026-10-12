@@ -174,6 +174,16 @@ pj_status_t cpjsua_recorder_create(const char *path, pjsua_recorder_id *out_id,
 pj_status_t cpjsua_recorder_destroy_wait(pjsua_recorder_id id, unsigned timeout_ms,
                                          int *finalised);
 
+/** Most recorders one call can have (stereo split: two). */
+#define CPJSUA_MAX_RECORDERS_PER_CALL 4
+
+/** cpjsua_recorder_destroy_wait for several recorders at once: all are destroyed in one
+ *  go (the bridge removes them on the same audio frame, so recorders that were fed from
+ *  the same clock keep the same length), then the call waits up to `timeout_ms` for all of
+ *  them. finalised[i] as above; the first failing destroy status is returned. 1...4 ids. */
+pj_status_t cpjsua_recorders_destroy_wait(const pjsua_recorder_id *ids, unsigned count,
+                                          unsigned timeout_ms, int *finalised);
+
 /* ----------------------------------------------------------- presence --- */
 
 /** pjsua_buddy_add with subscribe = PJ_TRUE (account chosen by pjsua per request) and

@@ -4,8 +4,9 @@ import MacroSIPCore
 
 private let recordingLog = AppLog.recording
 
-/// Recording of calls (SCREENS.md 4.1, 8.6): the engine writes a temporary WAV; when the recording
-/// stops or the call ends it is converted to M4A in the recordings folder and the WAV is deleted.
+/// Recording of calls (SCREENS.md 4.1, 8.6): the engine writes a temporary WAV (mono) or a pair of
+/// one-channel WAVs (stereo: me left, caller right); when the recording stops or the call ends the set
+/// is converted to one M4A in the recordings folder and the WAVs are deleted.
 extension AppModel {
     // MARK: - Folder
 
@@ -87,11 +88,14 @@ extension AppModel {
     func startRecording(_ call: CallInfo) {
         guard recordingJobs[call.id] == nil, call.isEstablished else { return }
         let wav = temporaryRecordingsDirectory.appendingPathComponent("\(UUID().uuidString).wav")
-        recordingJobs[call.id] = RecordingJob(wav: wav, startedAt: Date(), direction: call.direction)
+        let layout = settings.recording.layout
+        recordingJobs[call.id] = RecordingJob(wav: wav, layout: layout, startedAt: Date(), direction: call.direction)
         let id = call.id
         run {
-            do { try await self.engine.startRecording(id, to: wav) }
-            catch {
+            do {
+                try await self.engine.startRecording(id, to: wav, layout: layout)
+                self.recordingJobs[id]?.files = await self.engine.recordingFiles(of: id)
+            } catch {
                 self.recordingJobs[id] = nil
                 if case EngineError.noSuchCall = error { return }      // the other side hung up meanwhile
                 throw error
@@ -105,12 +109,13 @@ extension AppModel {
         run {
             defer { self.recordingStopping.remove(id) }
             do {
-                let wav = try await self.engine.stopRecording(id)
-                self.finishRecording(id, call: self.calls.first { $0.id == id } ?? call, wav: wav)
+                let files = try await self.engine.stopRecording(id)
+                self.finishRecording(id, call: self.calls.first { $0.id == id } ?? call, files: files)
             } catch {
                 // Whatever the engine had written so far is still worth keeping.
-                if FileManager.default.fileExists(atPath: job.wav.path) {
-                    self.finishRecording(id, call: call, wav: job.wav)
+                let files = await self.engine.recordingFiles(of: id) ?? job.files ?? RecordingFiles.planned(for: job.wav, layout: job.layout)
+                if files.all.contains(where: { FileManager.default.fileExists(atPath: $0.path) }) {
+                    self.finishRecording(id, call: call, files: files)
                 } else {
                     self.recordingJobs[id] = nil
                 }
@@ -166,7 +171,8 @@ extension AppModel {
             adoptRecordingJob(from: info.id, to: heir)
             return
         }
-        finishRecording(info.id, call: info, wav: job.wav)
+        // The engine closed the files with the call; the job remembers what it reported at the start.
+        finishRecording(info.id, call: info, files: job.files)
     }
 
     /// A job whose owner no longer records (or is gone) while some other call does: the engine moved it.
@@ -198,59 +204,77 @@ extension AppModel {
 
     // MARK: - Conversion
 
-    /// Converts in the background. A WAV without samples is deleted silently. When the conversion
-    /// fails, the WAV moves into the recordings folder under the M4A's name (never stays in the temp
-    /// folder) and the banner says so.
+    /// Converts in the background. A set without samples is deleted silently. When the conversion
+    /// fails, every WAV of the set moves into the recordings folder under the M4A's name (`<name>.wav`,
+    /// `<name>-local.wav`, `<name>-remote.wav`; never stays in the temp folder) and the banner says so.
+    /// `files` nil means the engine never reported the set: the job's own paths are used.
     @discardableResult
-    private func finishRecording(_ id: CallID, call: CallInfo, wav: URL) -> Task<Void, Never>? {
+    private func finishRecording(_ id: CallID, call: CallInfo, files: RecordingFiles?) -> Task<Void, Never>? {
         guard let job = recordingJobs.removeValue(forKey: id) else { return nil }
         let remote = name(for: call.remote)
         let fileName = RecordingFileName.make(date: job.startedAt, remote: remote, direction: job.direction)
         let folder = recordingFolderURL
+        let reported = files ?? job.files ?? RecordingFiles.planned(for: job.wav, layout: job.layout)
         return Task.detached(priority: .utility) {
             let fm = FileManager.default
-            guard fm.fileExists(atPath: wav.path) else {
-                recordingLog.error("the temporary recording \(wav.lastPathComponent) is missing")
+            // Only what is on disk (a stereo set may lose a side; a missing set is logged).
+            let present = RecordingFiles(layout: reported.layout,
+                                         mixed: reported.mixed.flatMap { fm.fileExists(atPath: $0.path) ? $0 : nil },
+                                         local: reported.local.flatMap { fm.fileExists(atPath: $0.path) ? $0 : nil },
+                                         remote: reported.remote.flatMap { fm.fileExists(atPath: $0.path) ? $0 : nil })
+            let names = present.all.map(\.lastPathComponent).joined(separator: ", ")
+            guard !present.all.isEmpty else {
+                recordingLog.error("the temporary recording \(reported.all.map(\.lastPathComponent).joined(separator: ", ")) is missing")
                 return
             }
             do {
                 try fm.createDirectory(at: folder, withIntermediateDirectories: true)
-                let target = try await RecordingConverter.convert(wav: wav, to: folder.appendingPathComponent(fileName))
-                try? fm.removeItem(at: wav)
+                let target = try await RecordingConverter.convert(files: present, to: folder.appendingPathComponent(fileName))
+                for url in present.all { try? fm.removeItem(at: url) }
                 recordingLog.info("saved \(target.lastPathComponent)")
                 await AppModel.shared.recordingSaved(target)
             } catch RecordingConverter.ConversionError.empty {
-                recordingLog.info("\(wav.lastPathComponent) holds no samples; deleted")
-                try? fm.removeItem(at: wav)
+                recordingLog.info("\(names) holds no samples; deleted")
+                for url in present.all { try? fm.removeItem(at: url) }
             } catch {
                 let message = describe(error)
-                recordingLog.error("conversion of \(wav.lastPathComponent) failed: \(message)")
-                let kept = Self.keepWAV(wav, in: folder, named: fileName)
-                recordingLog.error("the recording was kept as \(kept?.path ?? wav.path)")
-                await AppModel.shared.showBanner(L.bannerRecordingKeptAsWAV(message, kept?.lastPathComponent ?? wav.lastPathComponent))
+                recordingLog.error("conversion of \(names) failed: \(message)")
+                let kept = Self.keepWAVs(present, in: folder, named: fileName)
+                let keptNames = kept.map(\.lastPathComponent).joined(separator: ", ")
+                recordingLog.error("the recording was kept as \(keptNames.isEmpty ? names : keptNames)")
+                await AppModel.shared.showBanner(L.bannerRecordingKeptAsWAV(message, keptNames.isEmpty ? names : keptNames))
             }
         }
     }
 
-    /// Moves the WAV next to where the M4A would have gone: same name with `.wav`, " 2", " 3" when taken.
-    nonisolated private static func keepWAV(_ wav: URL, in folder: URL, named m4aName: String) -> URL? {
+    /// Moves the WAVs next to where the M4A would have gone: the M4A's name with `.wav` (mixed),
+    /// `-local.wav`, `-remote.wav`; " 2", " 3" after the name when any of them is taken.
+    /// Returns the files that ended up in the folder.
+    nonisolated private static func keepWAVs(_ files: RecordingFiles, in folder: URL, named m4aName: String) -> [URL] {
         let fm = FileManager.default
         let base = (m4aName as NSString).deletingPathExtension
+        let parts: [(url: URL, suffix: String)] = [(files.mixed, ""), (files.local, "-local"), (files.remote, "-remote")]
+            .compactMap { url, suffix in url.map { ($0, suffix) } }
         for n in 1...1000 {
-            let name = n == 1 ? "\(base).wav" : "\(base) \(n).wav"
-            let target = folder.appendingPathComponent(name)
-            guard !fm.fileExists(atPath: target.path) else { continue }
-            do { try fm.moveItem(at: wav, to: target); return target } catch { return nil }
+            let stem = n == 1 ? base : "\(base) \(n)"
+            let targets = parts.map { folder.appendingPathComponent("\(stem)\($0.suffix).wav") }
+            guard !targets.contains(where: { fm.fileExists(atPath: $0.path) }) else { continue }
+            var moved: [URL] = []
+            for (part, target) in zip(parts, targets) {
+                do { try fm.moveItem(at: part.url, to: target); moved.append(target) }
+                catch { recordingLog.error("moving \(part.url.lastPathComponent) failed: \(describe(error))"); moved.append(part.url) }
+            }
+            return moved
         }
-        return nil
+        return parts.map(\.url)
     }
 
     /// Quitting: recordings still running are stopped and converted before the app exits.
     func finishRecordingsForQuit() async {
         var tasks: [Task<Void, Never>] = []
         for call in calls where recordingJobs[call.id] != nil {
-            let wav = (try? await engine.stopRecording(call.id)) ?? recordingJobs[call.id]?.wav
-            if let wav, let t = finishRecording(call.id, call: call, wav: wav) { tasks.append(t) }
+            let files = try? await engine.stopRecording(call.id)
+            if let t = finishRecording(call.id, call: call, files: files) { tasks.append(t) }
         }
         for t in tasks { await t.value }
     }

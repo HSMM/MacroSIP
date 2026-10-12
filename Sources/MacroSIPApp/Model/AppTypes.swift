@@ -67,9 +67,12 @@ func describe(_ error: Error) -> String {
     return error.localizedDescription
 }
 
-/// A recording in progress: the temporary WAV the engine writes and what the file name needs.
+/// A recording in progress: the temporary WAV the engine writes (`wav`; a stereo set derives its
+/// `-local` / `-remote` files from it, `files` once the engine reports them) and what the file name needs.
 struct RecordingJob {
     var wav: URL
+    var layout: RecordingLayout = .mono
+    var files: RecordingFiles?
     var startedAt: Date
     var direction: CallDirection
 }

@@ -35,8 +35,9 @@ protocol SIPEngine: Actor {
     // conference, recording, presence (milestone 5)
     func merge(_ ids: [CallID]) throws
     func split(_ id: CallID) throws
-    func startRecording(_ id: CallID, to wavURL: URL) throws
-    func stopRecording(_ id: CallID) throws -> URL
+    func startRecording(_ id: CallID, to wavURL: URL, layout: RecordingLayout) throws
+    func stopRecording(_ id: CallID) throws -> RecordingFiles
+    func recordingFiles(of id: CallID) -> RecordingFiles?
     func subscribePresence(uri: String) throws
     func unsubscribePresence(uri: String) throws
     func publishPresence(_ status: PresenceStatus, for account: AccountID) throws

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # End-to-end check: macrosip-cli calls two local pjsua phones that auto-answer and play a tone.
-# Verifies two-way RTP, hold/unhold, DTMF, recording (WAV), presence (SUBSCRIBE/NOTIFY),
+# Verifies two-way RTP, hold/unhold, DTMF, recording (mono WAV, stereo split pair -> stereo M4A), presence (SUBSCRIBE/NOTIFY),
 # a two-leg conference (merge/split), hang-up, incoming calls (answer, reject), blind and
 # attended transfer between the two phones, DTMF over SIP INFO and calls of a registered
 # account (the last two against a SIP stub inside macrosip-cli). Needs scripts/build-pjsip.sh done.

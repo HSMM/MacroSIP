@@ -111,7 +111,7 @@ final class Interactive {
             axfer                           attended transfer: current call -> other call
             use <slot>                      make call in slot current
             merge | split                   conference of all connected calls / take current call out
-            rec <file.wav> | stoprec        record the current call (WAV)
+            rec <file.wav> [stereo] | stoprec   record the current call (WAV; stereo: -local/-remote)
             sub <uri> | unsub <uri>         watch / stop watching a contact's presence
             status available|away|dnd|offline   publish presence (account needs publishing on)
             acc publish on|off              PUBLISH presence for the current account
@@ -166,12 +166,15 @@ final class Interactive {
         case "split":
             try await engine.split(try call())
         case "rec":
-            guard let path = args.first else { throw CLIError("rec <file.wav>") }
+            guard let path = args.first else { throw CLIError("rec <file.wav> [stereo]") }
             let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
-            try await engine.startRecording(try call(), to: url)
-            print("recording \(try call()) to \(url.path)")
+            let layout: RecordingLayout = args.dropFirst().first == "stereo" ? .stereoSplit : .mono
+            try await engine.startRecording(try call(), to: url, layout: layout)
+            let files = RecordingFiles.planned(for: url, layout: layout).all.map(\.path)
+            print("recording \(try call()) to \(files.joined(separator: " + "))")
         case "stoprec":
-            print("recorded \(try await engine.stopRecording(try call()).path)")
+            let files = try await engine.stopRecording(try call())
+            print("recorded \(files.all.map(\.path).joined(separator: " + "))")
         case "sub", "unsub":
             guard let uri = args.first else { throw CLIError("\(cmd) <uri>") }
             if cmd == "sub" { try await engine.subscribePresence(uri: uri) } else { try await engine.unsubscribePresence(uri: uri) }

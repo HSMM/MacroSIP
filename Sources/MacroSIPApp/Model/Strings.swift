@@ -422,8 +422,11 @@ enum L {
     static var recordingChooseFolder: String { loc("settings.recording.chooseFolder", "Choose Folder…") }
     static var recordingFolderMissing: String { loc("settings.recording.folderMissing", "Folder not found") }
     static var recordingAuto: String { loc("settings.recording.auto", "Record all calls automatically") }
+    static var recordingLayout: String { loc("settings.recording.layout", "Channels") }
+    static var recordingLayoutMono: String { loc("settings.recording.layout.mono", "Mono (mixed)") }
+    static var recordingLayoutStereo: String { loc("settings.recording.layout.stereo", "Stereo: me left, caller right") }
     static var recordingFooter: String {
-        loc("settings.recording.footer", "Recordings are saved as M4A (AAC). The temporary WAV is deleted after conversion.")
+        loc("settings.recording.footer", "Recordings are saved as M4A (AAC), mono or stereo with you on the left channel and the caller on the right. The temporary WAV files are deleted after conversion.")
     }
     static func recordingFileName(_ sample: String) -> String { loc("settings.recording.fileName", "File name: \(sample)") }
     static var recordingShowFolder: String { loc("settings.recording.showFolder", "Show Recordings Folder") }

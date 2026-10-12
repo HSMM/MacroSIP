@@ -1,13 +1,32 @@
 internal import CPJSUA
 import Foundation
 
-/// One call recording: a pjsua recorder (WAV writer port in the conference bridge).
-struct Recording: Sendable {
+/// One pjsua recorder: a WAV writer port in the conference bridge.
+struct RecorderPort: Sendable {
+    enum Role: Sendable {
+        /// Mono layout: the call, its conference partners and the microphone.
+        case mixed
+        /// Stereo split: the microphone only.
+        case local
+        /// Stereo split: the call and its conference partners.
+        case remote
+    }
+
+    var role: Role
     var recorderID: pjsua_recorder_id
     var confSlot: pjsua_conf_port_id
     var url: URL
+}
+
+/// One call recording: one recorder (`.mono`) or a local/remote pair (`.stereoSplit`).
+struct Recording: Sendable {
+    var files: RecordingFiles
+    var ports: [RecorderPort]
     /// Conference of the owning call when last seen; the recording stays with it.
     var conference: UInt64?
+    /// Stereo split: the tx level last applied to the local recorder's port (false = 0,
+    /// the owning call is muted). nil until the first `reconcileMedia`.
+    var localAudible: Bool?
 }
 
 extension Engine {
@@ -16,16 +35,23 @@ extension Engine {
     /// does that on its next 20 ms frame; after the timeout the header is patched here.
     static let recorderFinaliseTimeoutMs: UInt32 = 150
 
-    /// Records the call into `wavURL` (WAV, 16-bit PCM mono at the conference clock rate,
-    /// 16 kHz by default): the remote side plus our microphone (left out while muted). For a
-    /// conference leg every leg of that conference goes into the same file, and the recording
-    /// belongs to the conference: if its call ends or is split off while other legs remain,
-    /// it moves to one of them (same file). Nothing is written while the call is on hold.
-    /// The parent directory is created when missing; an existing file is overwritten.
+    /// How many finished file sets of ended calls `recordingFiles(of:)` remembers.
+    static let finishedRecordingsKept = 32
+
+    /// Records the call (WAV, 16-bit PCM mono at the conference clock rate, 16 kHz by
+    /// default). `.mono` (the default) writes `wavURL`: the remote side plus our microphone
+    /// (left out while muted). `.stereoSplit` writes two files next to it,
+    /// `<base>-local.wav` (the microphone only; silence while muted) and `<base>-remote.wav`
+    /// (the remote side), created and destroyed together so their lengths match (see
+    /// `RecordingFiles.planned(for:layout:)`). For a conference leg every leg of that
+    /// conference goes into the (remote) file, and the recording belongs to the conference:
+    /// if its call ends or is split off while other legs remain, it moves to one of them
+    /// (same files). Nothing is written while the call is on hold. The parent directory is
+    /// created when missing; existing files are overwritten.
     /// `.invalidArgument` when the call, or its conference, is already being recorded.
     /// The recording stops by itself when the call ends; that call's `.callEnded` then
-    /// reports `isRecording == true` and is emitted only after the WAV is finalised.
-    public func startRecording(_ id: CallID, to wavURL: URL) throws {
+    /// reports `isRecording == true` and is emitted only after the WAVs are finalised.
+    public func startRecording(_ id: CallID, to wavURL: URL, layout: RecordingLayout = .mono) throws {
         let slot = try liveSlot(id)
         guard recordings[id] == nil else {
             throw EngineError.invalidArgument("call \(id) is already being recorded")
@@ -43,26 +69,43 @@ extension Engine {
         } catch {
             throw EngineError.invalidArgument("cannot create \(dir.path): \(error.localizedDescription)")
         }
-        let path = wavURL.path
-        var recorder = PJ.invalidID
-        var confSlot = PJ.invalidID
-        try PJ.check(path.withCString { cpjsua_recorder_create($0, &recorder, &confSlot) }, "create recorder \(path)")
-        recordings[id] = Recording(recorderID: recorder, confSlot: confSlot, url: wavURL, conference: conference)
+        let files = RecordingFiles.planned(for: wavURL, layout: layout)
+        let plan: [(RecorderPort.Role, URL)]
+        switch layout {
+        case .mono: plan = [(.mixed, wavURL)]
+        case .stereoSplit: plan = [(.local, files.local!), (.remote, files.remote!)]
+        }
+        // All recorders in this one engine turn: the bridge adds them on the same frame.
+        var ports: [RecorderPort] = []
+        for (role, url) in plan {
+            let path = url.path
+            var recorder = PJ.invalidID
+            var confSlot = PJ.invalidID
+            let status = path.withCString { cpjsua_recorder_create($0, &recorder, &confSlot) }
+            guard status == PJ.success else {
+                destroyRecorders(ports)
+                for port in ports { try? FileManager.default.removeItem(at: port.url) }
+                throw PJ.error(status, "create recorder \(path)")
+            }
+            ports.append(RecorderPort(role: role, recorderID: recorder, confSlot: confSlot, url: url))
+        }
+        finishedRecordings[id] = nil
+        recordings[id] = Recording(files: files, ports: ports, conference: conference)
         do {
-            try updateRecord(id) { $0.isRecording = true }   // also wires the recorder
+            try updateRecord(id) { $0.isRecording = true }   // also wires the recorders
         } catch {
             finishRecorder(id)                                 // the call ended meanwhile
-            try? FileManager.default.removeItem(at: wavURL)
+            for url in files.all { try? FileManager.default.removeItem(at: url) }
             throw error
         }
     }
 
     /// Stops the recording that covers the call: its own, or the recording of its conference
-    /// (whichever leg owns it), and returns its file. The WAV is complete (header final)
+    /// (whichever leg owns it), and returns its files. The WAVs are complete (headers final)
     /// when this returns. Works for a call that has just ended as long as its recording was
-    /// not finished yet. A file without samples (held all the time) is still returned; see
+    /// not finished yet. Files without samples (held all the time) are still returned; see
     /// `recordingIsEmpty(_:)`.
-    public func stopRecording(_ id: CallID) throws -> URL {
+    public func stopRecording(_ id: CallID) throws -> RecordingFiles {
         try requireStarted()
         guard let owner = recordingOwner(for: id), let recording = recordings[owner] else {
             _ = try liveSlot(id)
@@ -75,7 +118,17 @@ extension Engine {
         }
         releaseFinishedEnds()
         reconcileMedia()
-        return recording.url
+        return recording.files
+    }
+
+    /// The files of the recording that covers the call (its own, or its conference's,
+    /// whichever leg owns it) while it runs. After a recorded call ended (its `.callEnded`
+    /// says `isRecording`), the finished files of that call stay available here (for the
+    /// last 32 such calls, `finishedRecordingsKept`). nil when the call is not being recorded or
+    /// the recording was stopped with `stopRecording`.
+    public func recordingFiles(of id: CallID) -> RecordingFiles? {
+        if let owner = recordingOwner(for: id), let recording = recordings[owner] { return recording.files }
+        return finishedRecordings[id]
     }
 
     /// True when the recording holds no audio samples (missing file or a bare 44-byte
@@ -157,28 +210,47 @@ extension Engine {
             } else {
                 bridge.releaseDeferredEndWithoutRecording(serial: owner.serial)
             }
-            bridge.engineLogger.info("recording \(recording.url.lastPathComponent, privacy: .public) moved from \(owner) to \(heir)")
+            let names = recording.files.all.map(\.lastPathComponent).joined(separator: ", ")
+            bridge.engineLogger.info("recording \(names, privacy: .public) moved from \(owner) to \(heir)")
         }
     }
 
-    /// Destroys the call's recorder and waits for the WAV header (patching it from the file
-    /// length when the bridge did not finish in time). Leaves `isRecording` of the call's
-    /// record alone (an ended call keeps reporting it).
-    func finishRecorder(_ id: CallID) {
+    /// Destroys the call's recorders (together) and waits for the WAV headers (patching
+    /// them from the file length when the bridge did not finish in time). Leaves
+    /// `isRecording` of the call's record alone (an ended call keeps reporting it).
+    /// `keepFiles`: the call ended; remember its files for `recordingFiles(of:)`.
+    func finishRecorder(_ id: CallID, keepFiles: Bool = false) {
         guard let recording = recordings.removeValue(forKey: id) else { return }
-        // Its wires disappear with the port; forget our requests for them.
-        requestedWiring = requestedWiring.filter { $0.key.src != recording.confSlot && $0.key.sink != recording.confSlot }
-        slotOwners[recording.confSlot] = nil
-        var finalised: Int32 = 0
-        let status = cpjsua_recorder_destroy_wait(recording.recorderID, Engine.recorderFinaliseTimeoutMs, &finalised)
-        if status != PJ.success {
-            PJ.warn(status, "stop recording \(recording.url.lastPathComponent)")
+        // Their wires disappear with the ports; forget our requests for them.
+        let slots = Set(recording.ports.map(\.confSlot))
+        requestedWiring = requestedWiring.filter { !slots.contains($0.key.src) && !slots.contains($0.key.sink) }
+        for slot in slots { slotOwners[slot] = nil }
+        destroyRecorders(recording.ports)
+        if keepFiles {
+            finishedRecordings[id] = recording.files
+            if finishedRecordings.count > Engine.finishedRecordingsKept,
+               let oldest = finishedRecordings.keys.min(by: { $0.serial < $1.serial }) {
+                finishedRecordings[oldest] = nil
+            }
         }
-        if finalised == 0 {
+    }
+
+    /// `cpjsua_recorders_destroy_wait` for all ports at once (same bridge frame, so a
+    /// stereo pair ends with the same length), then repairs headers the bridge did not
+    /// finish in time.
+    func destroyRecorders(_ ports: [RecorderPort]) {
+        guard !ports.isEmpty else { return }
+        var ids = ports.map(\.recorderID)
+        var finalised = [Int32](repeating: 0, count: ports.count)
+        let status = cpjsua_recorders_destroy_wait(&ids, UInt32(ids.count), Engine.recorderFinaliseTimeoutMs, &finalised)
+        if status != PJ.success {
+            PJ.warn(status, "stop recording \(ports.map(\.url.lastPathComponent).joined(separator: ", "))")
+        }
+        for (port, done) in zip(ports, finalised) where done == 0 {
             // The bridge did not run (no sound clock). Make the file valid now; PJSIP rewrites
             // the header (and appends what it still buffers) when it processes the removal.
-            let repaired = WAVFile.repair(recording.url)
-            let text = "recording \(recording.url.lastPathComponent): bridge did not finish the WAV within "
+            let repaired = WAVFile.repair(port.url)
+            let text = "recording \(port.url.lastPathComponent): bridge did not finish the WAV within "
                 + "\(Engine.recorderFinaliseTimeoutMs) ms; header \(repaired ? "patched from the file length" : "NOT repaired")"
             bridge.engineLogger.error("\(text, privacy: .public)")
             emit(.log(level: 2, "engine: \(text)"))
@@ -197,7 +269,7 @@ extension Engine {
         guard isStarted, PJ.registerThread() else { return }
         rehomeRecordings()
         for id in Array(recordings.keys) where !isLive(id) {
-            finishRecorder(id)
+            finishRecorder(id, keepFiles: true)
         }
         releaseFinishedEnds()
         dissolveSingleLegConferences()

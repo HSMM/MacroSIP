@@ -16,7 +16,7 @@ actor MockEngine: SIPEngine {
     private var order: [CallID] = []
     private var serial: UInt64 = 0
     private var level: Float = 0
-    private var recordings: [CallID: (url: URL, since: Date)] = [:]
+    private var recordings: [CallID: (files: RecordingFiles, since: Date)] = [:]
     private var presenceTasks: [String: Task<Void, Never>] = [:]
     private(set) var publishedPresence: [AccountID: PresenceStatus] = [:]
 
@@ -243,24 +243,29 @@ actor MockEngine: SIPEngine {
 
     // MARK: recording
 
-    func startRecording(_ id: CallID, to wavURL: URL) throws {
+    /// Mono writes `wavURL`; stereo writes `<name>-local.wav` and `<name>-remote.wav` next to it
+    /// (the real engine's one-channel files, converted into one stereo M4A later).
+    func startRecording(_ id: CallID, to wavURL: URL, layout: RecordingLayout) throws {
         guard let c = callTable[id] else { throw EngineError.noSuchCall(id) }
         guard recordings[id] == nil else { throw EngineError.invalidArgument("call is already being recorded") }
         guard c.state == .connected || c.state == .held else { throw EngineError.invalidArgument("call is not connected") }
         try FileManager.default.createDirectory(at: wavURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try Self.sineWAV(seconds: 0.5).write(to: wavURL)
-        recordings[id] = (wavURL, Date())
+        let files = RecordingFiles.planned(for: wavURL, layout: layout)
+        for url in files.all { try Self.sineWAV(seconds: 0.5).write(to: url) }
+        recordings[id] = (files, Date())
         try change(id) { $0.isRecording = true }
     }
 
-    /// Finishes the WAV (a tone as long as the recording, 1...8 s) and returns its URL.
-    func stopRecording(_ id: CallID) throws -> URL {
+    /// Finishes the WAV files (a tone as long as the recording, 1...8 s) and returns them.
+    func stopRecording(_ id: CallID) throws -> RecordingFiles {
         guard let rec = recordings.removeValue(forKey: id) else { throw EngineError.invalidArgument("call is not being recorded") }
         let seconds = min(8, max(1, Date().timeIntervalSince(rec.since)))
-        try Self.sineWAV(seconds: seconds).write(to: rec.url)
+        for url in rec.files.all { try Self.sineWAV(seconds: seconds).write(to: url) }
         if callTable[id] != nil { try change(id) { $0.isRecording = false } }
-        return rec.url
+        return rec.files
     }
+
+    func recordingFiles(of id: CallID) -> RecordingFiles? { recordings[id]?.files }
 
     /// 16-bit mono 16 kHz PCM WAV with a quiet 440 Hz tone.
     static func sineWAV(seconds: Double, rate: Int = 16_000) -> Data {

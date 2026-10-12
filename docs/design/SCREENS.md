@@ -933,8 +933,9 @@ Layout: two groups.
 |---|---|---|
 | Save recordings to | popup with folder icon, current "MacroSIP Recordings" | Choose folder; the picker remembers access with a security-scoped bookmark. |
 | Record all calls automatically | toggle, off | When on, every call is recorded. |
+| Channels | segmented control: "Mono (mixed)", "Stereo: me left, caller right"; default Mono | Applies to recordings that start after the change. Stereo keeps you on the left channel and the caller (every conference participant) on the right; the temporary files are one WAV per side, converted into a single stereo M4A. If the conversion fails, every WAV is kept in the recordings folder (`<name>.wav` for mono, `<name>-local.wav` and `<name>-remote.wav` for stereo). |
 
-Group footer: "Recordings are saved as M4A (AAC). The temporary WAV is deleted after conversion." then "File name: 2026-10-10 14.52 Anna Petrova (in).m4a" (monospaced). Format: date and time to minutes, remote party name, direction in parentheses ("in" or "out").
+Group footer: "Recordings are saved as M4A (AAC), mono or stereo with you on the left channel and the caller on the right. The temporary WAV files are deleted after conversion." then "File name: 2026-10-10 14.52 Anna Petrova (in).m4a" (monospaced). Format: date and time to minutes, remote party name, direction in parentheses ("in" or "out").
 
 Second group:
 
@@ -1368,7 +1369,10 @@ Strings marked "(proposed)" are not in the mockups; they are needed by the spec 
 | `[Full]` | Save recordings to | `settings.recording.folder` | |
 | `[Full]` | MacroSIP Recordings | `settings.recording.folderName` | Default folder name. |
 | `[Full]` | Record all calls automatically | `settings.recording.auto` | |
-| `[Full]` | Recordings are saved as M4A (AAC). The temporary WAV is deleted after conversion. | `settings.recording.footer` | |
+| `[Full]` | Channels | `settings.recording.layout` | |
+| `[Full]` | Mono (mixed) | `settings.recording.layout.mono` | |
+| `[Full]` | Stereo: me left, caller right | `settings.recording.layout.stereo` | |
+| `[Full]` | Recordings are saved as M4A (AAC), mono or stereo with you on the left channel and the caller on the right. The temporary WAV files are deleted after conversion. | `settings.recording.footer` | |
 | `[Full]` | File name: %@ | `settings.recording.fileName` | %@ sample file name. |
 | `[Full]` | Show Recordings Folder | `settings.recording.showFolder` | |
 | `[Full]` | Open in Finder | `settings.recording.openFinder` | |

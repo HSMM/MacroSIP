@@ -307,7 +307,10 @@
 "settings.recording.chooseFolder" = "Выбрать папку…";
 "settings.recording.folderMissing" = "Папка не найдена";
 "settings.recording.auto" = "Записывать все звонки автоматически";
-"settings.recording.footer" = "Записи сохраняются в M4A (AAC). Временный WAV удаляется после преобразования.";
+"settings.recording.layout" = "Каналы";
+"settings.recording.layout.mono" = "Моно (смешанная)";
+"settings.recording.layout.stereo" = "Стерео: я слева, собеседник справа";
+"settings.recording.footer" = "Записи сохраняются в M4A (AAC), в моно или в стерео: вы на левом канале, собеседник на правом. Временные WAV-файлы удаляются после преобразования.";
 "settings.recording.fileName" = "Имя файла: %@";
 "settings.recording.showFolder" = "Показать папку с записями";
 "settings.recording.openFinder" = "Показать в Finder";

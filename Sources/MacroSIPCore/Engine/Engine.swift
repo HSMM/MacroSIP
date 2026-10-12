@@ -58,6 +58,8 @@ public actor Engine {
     var slotOwners: [pjsua_conf_port_id: PortOwner] = [:]
     /// Active recordings by call (at most one per call).
     var recordings: [CallID: Recording] = [:]
+    /// File sets of recordings that ended with their call (`recordingFiles(of:)`), bounded.
+    var finishedRecordings: [CallID: RecordingFiles] = [:]
     /// Next local conference id (`CallRecord.conference`).
     var nextConferenceID: UInt64 = 1
     /// Presence subscriptions by normalised URI.
@@ -155,7 +157,7 @@ public actor Engine {
         silencedCalls = []
         // Finalise the WAV files while the bridge still runs; the calls' `.callEnded` (held
         // back because they were recorded) is released after pjsua_destroy.
-        for id in Array(recordings.keys) { finishRecorder(id) }
+        for id in Array(recordings.keys) { finishRecorder(id, keepFiles: true) }
         // No presence events during shutdown: the subscriptions end with pjsua.
         bridge.unwatchAll()
         buddies = [:]

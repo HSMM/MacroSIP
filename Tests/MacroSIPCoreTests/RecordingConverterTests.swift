@@ -1,15 +1,16 @@
+import AVFoundation
 import Testing
 import Foundation
 @testable import MacroSIPCore
 
 @Suite("Recording converter")
 struct RecordingConverterTests {
-    /// 16-bit mono PCM WAV with a 440 Hz sine.
-    static func sineWAV(seconds: Double, rate: Int = 16_000) -> Data {
+    /// 16-bit mono PCM WAV with a sine (440 Hz by default).
+    static func sineWAV(seconds: Double, rate: Int = 16_000, frequency: Double = 440) -> Data {
         let count = Int(seconds * Double(rate))
         var pcm = Data(capacity: count * 2)
         for i in 0..<count {
-            let v = Int16(12_000 * sin(2 * Double.pi * 440 * Double(i) / Double(rate)))
+            let v = Int16(12_000 * sin(2 * Double.pi * frequency * Double(i) / Double(rate)))
             withUnsafeBytes(of: v.littleEndian) { pcm.append(contentsOf: $0) }
         }
         func le32(_ v: UInt32) -> Data { withUnsafeBytes(of: v.littleEndian) { Data($0) } }
@@ -91,6 +92,103 @@ struct RecordingConverterTests {
         await #expect(throws: (any Error).self) { try await RecordingConverter.convert(wav: wav, to: m4a) }
         #expect(!FileManager.default.fileExists(atPath: m4a.path))
         #expect(try FileManager.default.contentsOfDirectory(atPath: dir.path) == ["bad.wav"])
+    }
+
+    /// Power of `frequency` in `samples` (Goertzel), normalised by the sample count.
+    static func goertzel(_ samples: UnsafeBufferPointer<Float>, rate: Double, frequency: Double) -> Double {
+        let w = 2 * Double.pi * frequency / rate
+        let coeff = 2 * cos(w)
+        var s1 = 0.0, s2 = 0.0
+        for x in samples {
+            let s0 = Double(x) + coeff * s1 - s2
+            s2 = s1
+            s1 = s0
+        }
+        let power = s1 * s1 + s2 * s2 - coeff * s1 * s2
+        return power / Double(max(samples.count, 1) * max(samples.count, 1))
+    }
+
+    static func tempDir() throws -> URL {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("rec-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+    }
+
+    /// Two 1 s sines (local 440 Hz, remote 880 Hz) -> stereo M4A: two channels, left
+    /// dominated by 440 Hz, right by 880 Hz; the WAVs are left in place.
+    @Test func convertsStereoSplitToStereoM4A() async throws {
+        let dir = try Self.tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let files = RecordingFiles.planned(for: dir.appendingPathComponent("call.wav"), layout: .stereoSplit)
+        #expect(files.local?.lastPathComponent == "call-local.wav")
+        #expect(files.remote?.lastPathComponent == "call-remote.wav")
+        try Self.sineWAV(seconds: 1, frequency: 440).write(to: try #require(files.local))
+        try Self.sineWAV(seconds: 1, frequency: 880).write(to: try #require(files.remote))
+        let m4a = dir.appendingPathComponent("out.m4a")
+
+        let result = try await RecordingConverter.convert(files: files, to: m4a)
+        #expect(result == m4a)
+        #expect(((try FileManager.default.attributesOfItem(atPath: m4a.path)[.size] as? Int) ?? 0) > 1024)
+        #expect(try FileManager.default.contentsOfDirectory(atPath: dir.path).sorted()
+                == ["call-local.wav", "call-remote.wav", "out.m4a"])
+
+        let file = try AVAudioFile(forReading: m4a)
+        #expect(file.fileFormat.channelCount == 2)
+        let rate = file.processingFormat.sampleRate
+        #expect(rate == 44_100)
+        let seconds = Double(file.length) / rate
+        #expect(seconds > 0.9 && seconds < 1.2, "\(seconds) s")
+        let buffer = try #require(AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: AVAudioFrameCount(file.length)))
+        try file.read(into: buffer)
+        let data = try #require(buffer.floatChannelData)
+        let n = Int(buffer.frameLength)
+        let left = UnsafeBufferPointer(start: data[0], count: n)
+        let right = UnsafeBufferPointer(start: data[1], count: n)
+        let l440 = Self.goertzel(left, rate: rate, frequency: 440), l880 = Self.goertzel(left, rate: rate, frequency: 880)
+        let r440 = Self.goertzel(right, rate: rate, frequency: 440), r880 = Self.goertzel(right, rate: rate, frequency: 880)
+        #expect(l440 > 20 * l880, "left: 440 Hz \(l440), 880 Hz \(l880)")
+        #expect(r880 > 20 * r440, "right: 440 Hz \(r440), 880 Hz \(r880)")
+    }
+
+    /// The shorter file is padded with silence; zero RIFF sizes are repaired; the mono
+    /// layout goes through `convert(wav:)`.
+    @Test func stereoSplitPadsTheShorterFile() async throws {
+        let dir = try Self.tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let files = RecordingFiles.planned(for: dir.appendingPathComponent("c.wav"), layout: .stereoSplit)
+        let localURL = try #require(files.local), remoteURL = try #require(files.remote)
+        var local = Self.sineWAV(seconds: 0.5, frequency: 440)
+        local.replaceSubrange(4..<8, with: [0, 0, 0, 0])
+        local.replaceSubrange(40..<44, with: [0, 0, 0, 0])
+        try local.write(to: localURL)
+        try Self.sineWAV(seconds: 1.5, frequency: 880).write(to: remoteURL)
+        let out = try await RecordingConverter.convert(files: files, to: dir.appendingPathComponent("o.m4a"))
+        let file = try AVAudioFile(forReading: out)
+        let seconds = Double(file.length) / file.processingFormat.sampleRate
+        #expect(file.fileFormat.channelCount == 2)
+        #expect(seconds > 1.4 && seconds < 1.7, "\(seconds) s")
+        #expect(try Data(contentsOf: localURL)[40..<44] == Data([0x80, 0x3E, 0x00, 0x00]))  // 16000 bytes
+
+        let mono = RecordingFiles.planned(for: remoteURL, layout: .mono)
+        let monoOut = try await RecordingConverter.convert(files: mono, to: dir.appendingPathComponent("m.m4a"))
+        #expect(try AVAudioFile(forReading: monoOut).fileFormat.channelCount == 1)
+    }
+
+    /// Both files without samples: `.empty`, nothing left behind. One empty side is silence.
+    @Test func stereoSplitWithoutSamplesIsEmpty() async throws {
+        let dir = try Self.tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let files = RecordingFiles.planned(for: dir.appendingPathComponent("e.wav"), layout: .stereoSplit)
+        try Self.sineWAV(seconds: 0).write(to: try #require(files.local))
+        try Self.sineWAV(seconds: 0).write(to: try #require(files.remote))
+        await #expect(throws: RecordingConverter.ConversionError.empty) {
+            try await RecordingConverter.convert(files: files, to: dir.appendingPathComponent("e.m4a"))
+        }
+        #expect(try FileManager.default.contentsOfDirectory(atPath: dir.path).sorted() == ["e-local.wav", "e-remote.wav"])
+
+        try Self.sineWAV(seconds: 1, frequency: 880).write(to: try #require(files.remote))
+        let out = try await RecordingConverter.convert(files: files, to: dir.appendingPathComponent("e.m4a"))
+        #expect(try AVAudioFile(forReading: out).fileFormat.channelCount == 2)
     }
 
     @Test func fileNameFormat() {

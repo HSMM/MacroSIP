@@ -307,7 +307,10 @@
 "settings.recording.chooseFolder" = "Choose Folder…";
 "settings.recording.folderMissing" = "Folder not found";
 "settings.recording.auto" = "Record all calls automatically";
-"settings.recording.footer" = "Recordings are saved as M4A (AAC). The temporary WAV is deleted after conversion.";
+"settings.recording.layout" = "Channels";
+"settings.recording.layout.mono" = "Mono (mixed)";
+"settings.recording.layout.stereo" = "Stereo: me left, caller right";
+"settings.recording.footer" = "Recordings are saved as M4A (AAC), mono or stereo with you on the left channel and the caller on the right. The temporary WAV files are deleted after conversion.";
 "settings.recording.fileName" = "File name: %@";
 "settings.recording.showFolder" = "Show Recordings Folder";
 "settings.recording.openFinder" = "Open in Finder";

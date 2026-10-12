@@ -509,6 +509,28 @@ enum DemoState {
         let wavsAfter = Set((try? FileManager.default.contentsOfDirectory(atPath: tempRecordings.path))?.filter { $0.hasSuffix(".wav") } ?? [])
         check("temporary WAVs are deleted", wavsAfter.subtracting(wavsBefore).isEmpty, "\(wavsAfter.subtracting(wavsBefore))")
 
+        // stereo layout: two one-channel WAVs become one M4A and none stays behind
+        model.updateSettings { $0.recording.layout = .stereoSplit }
+        model.placeCall(to: "305")
+        await wait(2.8)
+        if let c = model.activeCall { model.toggleRecording(c) }
+        await wait(0.3)
+        var stereoFiles = model.activeCall.flatMap { model.recordingJobs[$0.id]?.files }
+        check("stereo recording writes a local and a remote WAV", stereoFiles?.layout == .stereoSplit
+              && stereoFiles?.mixed == nil && stereoFiles?.local != nil && stereoFiles?.remote != nil
+              && stereoFiles?.all.allSatisfy { FileManager.default.fileExists(atPath: $0.path) } == true,
+              "\(String(describing: stereoFiles))")
+        await wait(1.1)
+        if let c = model.activeCall { model.toggleRecording(c) }
+        await wait(1.5)
+        check("stereo recording is converted to one m4a", model.savedRecordings.count == saved + 3
+              && model.savedRecordings.last.map { FileManager.default.fileExists(atPath: $0.path) } == true, "\(model.savedRecordings.count)")
+        check("stereo WAVs are deleted", stereoFiles?.all.allSatisfy { !FileManager.default.fileExists(atPath: $0.path) } == true)
+        stereoFiles = nil
+        Task { await model.engine.hangupAll() }
+        await wait(0.8)
+        model.updateSettings { $0.recording.layout = .mono }
+
         // record all calls
         model.updateSettings { $0.recording.recordAllCalls = true }
         model.placeCall(to: "302")
@@ -517,7 +539,7 @@ enum DemoState {
         Task { await model.engine.hangupAll() }
         await wait(1.5)
         model.updateSettings { $0.recording.recordAllCalls = false }
-        check("record-all call was saved", model.savedRecordings.count == saved + 3, "\(model.savedRecordings.count)")
+        check("record-all call was saved", model.savedRecordings.count == saved + 4, "\(model.savedRecordings.count)")
 
         // record-all with a merge: the conference keeps one recording
         model.updateSettings { $0.recording.recordAllCalls = true }

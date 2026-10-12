@@ -2,7 +2,7 @@ import SwiftUI
 import AppKit
 import MacroSIPCore
 
-/// 8.6 Recording: folder, record all calls, file-name example, Open in Finder.
+/// 8.6 Recording: folder, record all calls, channels, file-name example, Open in Finder.
 struct RecordingPane: View {
     @Environment(AppModel.self) private var model
 
@@ -38,6 +38,14 @@ struct RecordingPane: View {
                 FormDivider()
                 FormRow(label: L.recordingAuto) {
                     Toggle("", isOn: model.binding(\.recording.recordAllCalls)).labelsHidden().toggleStyle(.switch)
+                }
+                FormDivider()
+                FormRow(label: L.recordingLayout) {
+                    SegmentedTabs(items: [
+                        .init(value: RecordingLayout.mono, title: L.recordingLayoutMono),
+                        .init(value: RecordingLayout.stereoSplit, title: L.recordingLayoutStereo),
+                    ], selection: model.binding(\.recording.layout))
+                    .frame(width: 420)
                 }
             }, footerView: {
                 VStack(alignment: .leading, spacing: 2) {

@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 import os
 import Testing
@@ -28,6 +29,21 @@ struct WAVHeader: Equatable {
     var isFinal: Bool {
         dataSize > 0 && Int(dataSize) == fileSize - 44 && Int(riffSize) == fileSize - 8
     }
+}
+
+/// RMS of a 16-bit PCM WAV's samples (after the 44-byte header).
+func wavRMS(_ url: URL) throws -> Int {
+    let data = try Data(contentsOf: url)
+    var sum = 0.0
+    var n = 0
+    var i = 44
+    while i + 1 < data.count {
+        let v = Double(Int16(bitPattern: UInt16(data[i]) | UInt16(data[i + 1]) << 8))
+        sum += v * v
+        n += 1
+        i += 2
+    }
+    return n > 0 ? Int((sum / Double(n)).squareRoot()) : 0
 }
 
 func tempWAV(_ name: String) -> URL {
@@ -302,7 +318,7 @@ extension EngineTests {
         #expect(await waitUntil(timeout: 2) { await engine.recorderHears(out1, from: nil) })
         try await Task.sleep(for: .milliseconds(600))
         let stopped = try await engine.stopRecording(out1)
-        #expect(stopped == wav1)
+        #expect(stopped == RecordingFiles(layout: .mono, mixed: wav1))
         let header = try #require(WAVHeader.read(wav1))
         #expect(header.isFinal, "\(header)")
         #expect(header.channels == 1 && header.bitsPerSample == 16 && header.sampleRate == 16000)
@@ -313,9 +329,20 @@ extension EngineTests {
         }
 
         // Split the recording leg: both leave the conference (two legs), the split leg keeps
-        // mic and speaker, and the recording moves to the remaining leg.
+        // mic and speaker, and the recording moves to the remaining leg. A stereo split
+        // recording: the remote file gets the call and its partner, the local one the mic.
         let wavSplit = tempWAV("split.wav")
-        try await engine.startRecording(out2, to: wavSplit)
+        let splitFiles = RecordingFiles.planned(for: wavSplit, layout: .stereoSplit)
+        try await engine.startRecording(out2, to: wavSplit, layout: .stereoSplit)
+        #expect(await engine.recordingFiles(of: out1) == splitFiles)      // through the conference
+        #expect(await waitUntil(timeout: 2) {
+            let own = await engine.recorderHears(out2, from: out2, role: .remote)
+            let partner = await engine.recorderHears(out2, from: out1, role: .remote)
+            let mic = await engine.recorderHears(out2, from: nil, role: .local)
+            let micInRemote = await engine.recorderHears(out2, from: nil, role: .remote)
+            let callInLocal = await engine.recorderHears(out2, from: out2, role: .local)
+            return own && partner && mic && !micInRemote && !callInLocal
+        })
         try await engine.split(out2)
         #expect(await waitUntil {
             let a = await call(out1), b = await call(out2)
@@ -325,10 +352,17 @@ extension EngineTests {
         #expect(await linked(out1, out2, false))
         #expect(await wired(out2, true, true))
         #expect(log.all.contains { if case let .callChanged(c) = $0 { return c.id == out1 && c.isRecording }; return false })
-        #expect(await waitUntil(timeout: 2) { await engine.recorderHears(out1, from: out1) })
+        #expect(await waitUntil(timeout: 2) { await engine.recorderHears(out1, from: out1, role: .remote) })
+        #expect(await engine.recordingFiles(of: out1) == splitFiles)
+        #expect(await engine.recordingFiles(of: out2) == nil)
         try await Task.sleep(for: .milliseconds(300))
-        #expect(try await engine.stopRecording(out1) == wavSplit)
-        #expect(WAVHeader.read(wavSplit)?.isFinal == true)
+        #expect(try await engine.stopRecording(out1) == splitFiles)
+        let splitHeaders = [splitFiles.local, splitFiles.remote].map { $0.flatMap(WAVHeader.read) }
+        #expect(splitHeaders.allSatisfy { $0?.isFinal == true }, "\(splitHeaders)")
+        if let l = splitHeaders[0], let r = splitHeaders[1] {
+            #expect(abs(l.fileSize - r.fileSize) <= 640, "local \(l.fileSize), remote \(r.fileSize)")
+        }
+        #expect(!FileManager.default.fileExists(atPath: wavSplit.path))
 
         // stopRecording on any leg stops the conference's recording; a second recording of
         // the same conference is refused.
@@ -343,7 +377,7 @@ extension EngineTests {
             try await engine.startRecording(out2, to: tempWAV("second.wav"))
         }
         try await Task.sleep(for: .milliseconds(200))
-        #expect(try await engine.stopRecording(out2) == wav2)
+        #expect(try await engine.stopRecording(out2) == RecordingFiles(layout: .mono, mixed: wav2))
         #expect(await call(out1)?.isRecording == false)
 
         // The recording leg ends: the recording moves to the leg that remains (same file, it
@@ -412,6 +446,115 @@ extension EngineTests {
         let header = try #require(WAVHeader.read(wav))
         #expect(header.isFinal, "\(header)")
         try? FileManager.default.removeItem(at: wav.deletingLastPathComponent().deletingLastPathComponent())
+    }
+
+    /// Stereo split recording of a loopback call: a 600 Hz tone is played into the answering
+    /// leg, so it reaches the recorded leg as remote audio; our side is the null audio device
+    /// (silence). 3 s with the middle second muted: both files final and as long as each
+    /// other (one 20 ms frame = 640 bytes at most), the remote file carries the tone, the
+    /// local one is silent, the local recorder is at level 0 while muted; then a stereo M4A.
+    /// Second recording: the call ends while recording; `.callEnded` (isRecording) arrives
+    /// with both files final, and `recordingFiles(of:)` still names them afterwards.
+    @Test func loopbackStereoSplitRecording() async throws {
+        let engine = makeEngine()
+        let log = EventLog()
+        let base2 = tempWAV("ended.wav")
+        let files2 = RecordingFiles.planned(for: base2, layout: .stereoSplit)
+        let headersAtEnd = OSAllocatedUnfairLock(initialState: [WAVHeader?]())
+        let consumer = Task {
+            for await e in engine.events {
+                if case let .callEnded(c, _) = e, c.isRecording {
+                    let headers = files2.all.map { WAVHeader.read($0) }
+                    headersAtEnd.withLock { $0 = headers }
+                }
+                log.append(e)
+            }
+        }
+        defer { consumer.cancel() }
+        try await engine.start(network: Self.network)
+        let account = AccountConfig(displayName: "L", username: "loop", domain: "127.0.0.1", enabled: false)
+        try await engine.addAccount(account, password: "")
+        let port = await engine.localPort(of: .udp)
+        let out = try await engine.makeCall(to: DialString(uri: "sip:s@127.0.0.1:\(port)", display: "s"),
+                                            from: account.id)
+        func incoming() -> CallID? {
+            log.all.lazy.compactMap { if case let .incomingCall(c) = $0 { return c.id }; return nil }.first
+        }
+        #expect(await waitUntil { incoming() != nil })
+        let inc = try #require(incoming())
+        try await engine.answer(inc)
+        #expect(await waitUntil {
+            let c = await engine.calls().first { $0.id == out }
+            return c?.state == .connected && c?.codec != nil
+        })
+
+        let dir = tempWAV("x").deletingLastPathComponent().deletingLastPathComponent()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let tone = dir.appendingPathComponent("tone.wav")
+        try RecordingConverterTests.sineWAV(seconds: 2, frequency: 600).write(to: tone)
+        let player = try await engine.startTestPlayer(tone, into: inc)
+
+        let base = dir.appendingPathComponent("rec/call.wav")
+        let planned = RecordingFiles.planned(for: base, layout: .stereoSplit)
+        try await engine.startRecording(out, to: base, layout: .stereoSplit)
+        #expect(await engine.calls().first { $0.id == out }?.isRecording == true)
+        #expect(await engine.recordingFiles(of: out) == planned)
+        #expect(await engine.recordingFiles(of: inc) == nil)
+        #expect(await waitUntil(timeout: 2) {
+            let remote = await engine.recorderHears(out, from: out, role: .remote)
+            let local = await engine.recorderHears(out, from: nil, role: .local)
+            let micInRemote = await engine.recorderHears(out, from: nil, role: .remote)
+            let callInLocal = await engine.recorderHears(out, from: out, role: .local)
+            return remote && local && !micInRemote && !callInLocal
+        })
+        try await Task.sleep(for: .seconds(1))
+        try await engine.setMute(out, true)
+        #expect(await engine.localRecorderLevel(out) == 0)
+        #expect(await engine.recorderHears(out, from: nil, role: .local))     // still fed: silence, same length
+        try await Task.sleep(for: .seconds(1))
+        try await engine.setMute(out, false)
+        #expect(await engine.localRecorderLevel(out) == 1)
+        try await Task.sleep(for: .seconds(1))
+        let files = try await engine.stopRecording(out)
+        #expect(files == planned)
+        #expect(await engine.recordingFiles(of: out) == nil)
+        #expect(!FileManager.default.fileExists(atPath: base.path))
+        let localURL = try #require(files.local), remoteURL = try #require(files.remote)
+        let local = try #require(WAVHeader.read(localURL))
+        let remote = try #require(WAVHeader.read(remoteURL))
+        for h in [local, remote] {
+            #expect(h.isFinal, "\(h)")
+            #expect(h.channels == 1 && h.bitsPerSample == 16 && h.sampleRate == 16000)
+            #expect(h.dataSize >= 80_000, "\(h)")                  // >= 2.5 s
+        }
+        #expect(abs(local.fileSize - remote.fileSize) <= 640, "local \(local.fileSize), remote \(remote.fileSize)")
+        let remoteRMS = try wavRMS(remoteURL), localRMS = try wavRMS(localURL)
+        #expect(remoteRMS > 300, "remote RMS \(remoteRMS)")
+        #expect(localRMS < 50, "local RMS \(localRMS)")
+
+        let m4a = try await RecordingConverter.convert(files: files, to: dir.appendingPathComponent("call.m4a"))
+        #expect(((try FileManager.default.attributesOfItem(atPath: m4a.path)[.size] as? Int) ?? 0) > 1024)
+        #expect(try AVAudioFile(forReading: m4a).fileFormat.channelCount == 2)
+
+        // The call ends while a stereo recording runs.
+        try await engine.startRecording(out, to: base2, layout: .stereoSplit)
+        try await Task.sleep(for: .milliseconds(500))
+        await engine.stopTestPlayer(player)
+        try await engine.hangup(out)
+        #expect(await waitUntil {
+            log.all.contains { if case let .callEnded(c, _) = $0 { return c.id == out }; return false }
+        })
+        let ended = log.all.lazy.compactMap { if case let .callEnded(c, _) = $0, c.id == out { return c }; return nil }.first
+        #expect(ended?.isRecording == true)
+        let atEnd = headersAtEnd.withLock { $0 }
+        #expect(atEnd.count == 2 && atEnd.allSatisfy { $0?.isFinal == true }, "\(atEnd)")
+        if atEnd.count == 2, let l = atEnd[0], let r = atEnd[1] {
+            #expect(abs(l.fileSize - r.fileSize) <= 640, "local \(l.fileSize), remote \(r.fileSize)")
+        }
+        #expect(await engine.recordingFiles(of: out) == files2)
+        await engine.stop()
+        try? FileManager.default.removeItem(at: base2.deletingLastPathComponent().deletingLastPathComponent())
     }
 
     /// Without any call: the milestone 5 members validate their arguments.

@@ -165,3 +165,49 @@ public enum EngineError: Error, Equatable, Sendable, CustomStringConvertible {
         }
     }
 }
+
+/// How a call is recorded (`Engine.startRecording`).
+public enum RecordingLayout: String, Codable, Sendable {
+    /// One WAV with everything the call carries: the remote side(s) and our microphone.
+    case mono
+    /// Two time-aligned WAVs from the same base name: `<base>-local.wav` (our microphone
+    /// only) and `<base>-remote.wav` (the remote side, plus every other leg of the call's
+    /// conference). `RecordingConverter.convert(files:to:)` makes a stereo M4A of them
+    /// (left = local, right = remote).
+    case stereoSplit
+}
+
+/// The WAV files of one recording. `.mono`: `mixed` is set, `local`/`remote` are nil.
+/// `.stereoSplit`: `local` and `remote` are set, `mixed` is nil.
+public struct RecordingFiles: Sendable, Equatable {
+    public var layout: RecordingLayout
+    public var mixed: URL?
+    public var local: URL?
+    public var remote: URL?
+
+    public init(layout: RecordingLayout, mixed: URL? = nil, local: URL? = nil, remote: URL? = nil) {
+        self.layout = layout
+        self.mixed = mixed
+        self.local = local
+        self.remote = remote
+    }
+
+    /// The files `Engine.startRecording(_:to: wavURL, layout:)` writes: `.mono` writes
+    /// `wavURL` itself; `.stereoSplit` writes `<base>-local.wav` and `<base>-remote.wav` next
+    /// to it, where `<base>` is `wavURL` without its extension (`wavURL` itself is not created).
+    public static func planned(for wavURL: URL, layout: RecordingLayout) -> RecordingFiles {
+        switch layout {
+        case .mono:
+            return RecordingFiles(layout: .mono, mixed: wavURL)
+        case .stereoSplit:
+            let dir = wavURL.deletingLastPathComponent()
+            let base = wavURL.deletingPathExtension().lastPathComponent
+            return RecordingFiles(layout: .stereoSplit,
+                                  local: dir.appendingPathComponent("\(base)-local.wav"),
+                                  remote: dir.appendingPathComponent("\(base)-remote.wav"))
+        }
+    }
+
+    /// Every file of the set (mono: one, stereo split: local then remote).
+    public var all: [URL] { [mixed, local, remote].compactMap { $0 } }
+}

@@ -18,6 +18,16 @@ struct SettingsCompatTests {
         #expect(back.general.presenceStatus == .away)
     }
 
+    @Test func recordingSettingsWithoutLayoutDecodeAsMono() throws {
+        let old = try JSONDecoder().decode(RecordingSettings.self, from: Data(#"{"recordAllCalls":true}"#.utf8))
+        #expect(old.recordAllCalls && old.layout == .mono)
+        var s = AppSettings()
+        #expect(s.recording.layout == .mono)
+        s.recording.layout = .stereoSplit
+        let back = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(s))
+        #expect(back.recording.layout == .stereoSplit)
+    }
+
     @Test func callLogEntryWithoutNoteDecodes() throws {
         let e = CallLogEntry(direction: .missed, remoteNumber: "100", accountID: AccountID(), note: "Rejected: call limit")
         let data = try JSONEncoder().encode(e)

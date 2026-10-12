@@ -7,7 +7,7 @@ Versions are `YY.MINOR.PATCH` (see [ADR 0011](adr/0011-versioning.md)); the curr
 Shipped in `26.0.0-rc.1`:
 
 - Accounts: several at once, UDP/TCP/TLS with certificate verification, SRTP, STUN, ICE, outgoing-only accounts, per-account on/off in the account pop-up.
-- Calls: up to four, hold, mute, DTMF (RFC 2833 with SIP INFO fallback), blind and attended transfer, local conference, call recording to M4A, auto-answer with `Call-Info: answer-after` from your own PBX.
+- Calls: up to four, hold, mute, DTMF (RFC 2833 with SIP INFO fallback), blind and attended transfer, local conference, call recording to M4A (mono, or stereo with you on the left and the caller on the right), auto-answer with `Call-Info: answer-after` from your own PBX.
 - Presence: watch contacts (Asterisk "on the phone" shown as busy) and publish your own status; Do Not Disturb.
 - Contacts, call history, `sip:`/`sips:`/`tel:` links, menu bar icon, incoming-call window and notifications.
 - English and Russian interface, launch at login, log file with rotation, diagnostics export.

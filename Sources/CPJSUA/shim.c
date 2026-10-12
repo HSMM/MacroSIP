@@ -421,38 +421,64 @@ static void recorder_port_destroyed(void *arg)
 pj_status_t cpjsua_recorder_destroy_wait(pjsua_recorder_id id, unsigned timeout_ms,
                                          int *finalised)
 {
-    pjmedia_port *port = NULL;
-    int *done = NULL;
-    unsigned waited = 0;
-    pj_status_t status;
+    return cpjsua_recorders_destroy_wait(&id, 1, timeout_ms, finalised);
+}
 
-    if (finalised)
-        *finalised = 0;
-    if (pjsua_recorder_get_port(id, &port) == PJ_SUCCESS && port && port->grp_lock) {
-        done = (int *)calloc(1, sizeof(int));
-        if (done && pj_grp_lock_add_handler(port->grp_lock, NULL, done,
-                                            &recorder_port_destroyed) != PJ_SUCCESS)
-        {
-            free(done);
-            done = NULL;
+pj_status_t cpjsua_recorders_destroy_wait(const pjsua_recorder_id *ids, unsigned count,
+                                          unsigned timeout_ms, int *finalised)
+{
+    int *done[CPJSUA_MAX_RECORDERS_PER_CALL] = { NULL };
+    pj_status_t result = PJ_SUCCESS;
+    unsigned waited = 0, i;
+
+    if (!ids || count == 0 || count > CPJSUA_MAX_RECORDERS_PER_CALL)
+        return PJ_EINVAL;
+    for (i = 0; i < count; ++i) {
+        pjmedia_port *port = NULL;
+        if (finalised)
+            finalised[i] = 0;
+        if (pjsua_recorder_get_port(ids[i], &port) == PJ_SUCCESS && port && port->grp_lock) {
+            done[i] = (int *)calloc(1, sizeof(int));
+            if (done[i] && pj_grp_lock_add_handler(port->grp_lock, NULL, done[i],
+                                                   &recorder_port_destroyed) != PJ_SUCCESS)
+            {
+                free(done[i]);
+                done[i] = NULL;
+            }
         }
     }
 
-    status = pjsua_recorder_destroy(id);
-    if (status != PJ_SUCCESS || !done)
-        return status;   /* `done` stays registered (and allocated) if destroy failed */
+    /* All removals are queued in this one call, so the bridge drops the ports on the same
+     * audio frame: recorders fed from the same clock end with the same sample count. */
+    for (i = 0; i < count; ++i) {
+        pj_status_t status = pjsua_recorder_destroy(ids[i]);
+        if (status != PJ_SUCCESS) {
+            if (result == PJ_SUCCESS)
+                result = status;
+            done[i] = NULL;   /* stays registered (and allocated); never waited for */
+        }
+    }
 
-    while (!__atomic_load_n(done, __ATOMIC_ACQUIRE) && waited < timeout_ms) {
+    for (;;) {
+        pj_bool_t all = PJ_TRUE;
+        for (i = 0; i < count; ++i) {
+            if (done[i] && !__atomic_load_n(done[i], __ATOMIC_ACQUIRE))
+                all = PJ_FALSE;
+        }
+        if (all || waited >= timeout_ms)
+            break;
         pj_thread_sleep(2);
         waited += 2;
     }
-    if (__atomic_load_n(done, __ATOMIC_ACQUIRE)) {
-        if (finalised)
-            *finalised = 1;
-        free(done);
+    for (i = 0; i < count; ++i) {
+        if (done[i] && __atomic_load_n(done[i], __ATOMIC_ACQUIRE)) {
+            if (finalised)
+                finalised[i] = 1;
+            free(done[i]);
+        }
+        /* else: the handler still owns done[i] and sets it later; leaked on purpose. */
     }
-    /* else: the handler still owns `done` and sets it later; it is leaked on purpose. */
-    return status;
+    return result;
 }
 
 /* ========================================================== presence === */

@@ -2,7 +2,8 @@ import Foundation
 import AVFoundation
 
 /// Converts the engine's temporary WAV recording into the M4A (AAC) file the user keeps
-/// (SCREENS.md 8.6): mono, 64 kbit/s.
+/// (SCREENS.md 8.6): mono, 64 kbit/s; a stereo split recording (two WAVs) becomes one
+/// stereo M4A, left = our microphone, right = the remote side, 128 kbit/s.
 public enum RecordingConverter {
     public enum ConversionError: Error, Equatable, CustomStringConvertible {
         case noAudioTrack
@@ -22,6 +23,8 @@ public enum RecordingConverter {
     }
 
     public static let bitRate = 64_000
+    /// AAC bit rate of a stereo split recording (64 kbit/s per channel).
+    public static let stereoBitRate = 128_000
 
     /// Converts `wav` to M4A next to `m4a` and returns the URL it ended up at. An existing file is
     /// never replaced: when `m4a` is taken (also by a file that appears meanwhile) the name gets
@@ -57,6 +60,33 @@ public enum RecordingConverter {
         try await job.run()
 
         return try moveWithoutOverwriting(partial, to: m4a)
+    }
+
+    /// Converts a recording's files to M4A, with the same naming, no-overwrite and
+    /// leave-nothing-behind rules as `convert(wav:to:)`; the WAVs are not deleted (the caller
+    /// does that, as with `convert(wav:to:)`). `.mono` converts `files.mixed` with
+    /// `convert(wav:to:)`. `.stereoSplit` makes a stereo AAC M4A (44.1 kHz, or 48 kHz for
+    /// 48 kHz sources; `stereoBitRate`): left = `files.local` (our microphone), right =
+    /// `files.remote`. The shorter file is padded with silence at its end. Zero RIFF/data
+    /// sizes are patched first; when neither file has samples, `ConversionError.empty`.
+    @discardableResult
+    public static func convert(files: RecordingFiles, to m4a: URL) async throws -> URL {
+        switch files.layout {
+        case .mono:
+            guard let mixed = files.mixed else { throw ConversionError.readerFailed("no recording file") }
+            return try await convert(wav: mixed, to: m4a)
+        case .stereoSplit:
+            guard let local = files.local, let remote = files.remote else {
+                throw ConversionError.readerFailed("the stereo recording needs a local and a remote file")
+            }
+            let fm = FileManager.default
+            let partial = m4a.deletingLastPathComponent().appendingPathComponent(".\(UUID().uuidString).partial.m4a")
+            defer { try? fm.removeItem(at: partial) }
+            try await Task.detached(priority: .utility) {
+                try StereoJob.run(left: local, right: remote, output: partial)
+            }.value
+            return try moveWithoutOverwriting(partial, to: m4a)
+        }
     }
 
     /// `moveItem` fails when the target exists, so a file that appears between two attempts is not overwritten.
@@ -158,6 +188,96 @@ public enum RecordingConverter {
 
         private func succeed() { continuation?.resume(); continuation = nil }
         private func fail(_ error: Error) { continuation?.resume(throwing: error); continuation = nil }
+    }
+}
+
+/// Interleaves two mono WAVs into a stereo AAC file, in chunks (memory stays small for long
+/// calls): read both, pad the shorter with silence, resample, encode.
+private enum StereoJob {
+    static let chunkFrames: AVAudioFrameCount = 4096
+
+    static func run(left: URL, right: URL, output: URL) throws {
+        typealias E = RecordingConverter.ConversionError
+        let leftBytes = WAVHeader.repairSizes(of: left)
+        let rightBytes = WAVHeader.repairSizes(of: right)
+        if let l = leftBytes, let r = rightBytes, l < 2, r < 2 { throw E.empty }
+        func open(_ url: URL) throws -> AVAudioFile {
+            do { return try AVAudioFile(forReading: url) }
+            catch { throw E.readerFailed("\(url.lastPathComponent): \(error.localizedDescription)") }
+        }
+        let inputs = [try open(left), try open(right)]
+        let total = inputs.map(\.length).max() ?? 0
+        guard total > 0 else { throw E.empty }
+        let sourceRate = inputs[0].processingFormat.sampleRate
+        guard inputs.allSatisfy({ $0.processingFormat.sampleRate == sourceRate }) else {
+            throw E.readerFailed("the local and remote files have different sample rates")
+        }
+        guard let sourceFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: sourceRate,
+                                               channels: 2, interleaved: false) else {
+            throw E.readerFailed("unsupported format")
+        }
+        let monoFormats = inputs.map(\.processingFormat)
+        let rate = sourceRate >= 47_000 ? 48_000.0 : 44_100.0
+
+        let writer: AVAudioFile
+        do {
+            writer = try AVAudioFile(forWriting: output, settings: [
+                AVFormatIDKey: kAudioFormatMPEG4AAC,
+                AVNumberOfChannelsKey: 2,
+                AVSampleRateKey: rate,
+                AVEncoderBitRateKey: RecordingConverter.stereoBitRate,
+            ], commonFormat: .pcmFormatFloat32, interleaved: false)
+        } catch { throw E.writerFailed(error.localizedDescription) }
+        guard let converter = AVAudioConverter(from: sourceFormat, to: writer.processingFormat) else {
+            throw E.writerFailed("cannot resample \(sourceRate) Hz to \(rate) Hz")
+        }
+
+        var consumed: AVAudioFramePosition = 0
+        var readError: Error?
+        // Next chunk: both channels for the same frames, silence where a file has ended.
+        func nextChunk() -> AVAudioPCMBuffer? {
+            let count = AVAudioFrameCount(min(AVAudioFramePosition(chunkFrames), total - consumed))
+            guard count > 0, let chunk = AVAudioPCMBuffer(pcmFormat: sourceFormat, frameCapacity: count),
+                  let out = chunk.floatChannelData else { return nil }
+            chunk.frameLength = count
+            for (ch, file) in inputs.enumerated() {
+                let dst = out[ch]
+                dst.update(repeating: 0, count: Int(count))
+                guard file.framePosition < file.length,
+                      let mono = AVAudioPCMBuffer(pcmFormat: monoFormats[ch], frameCapacity: count) else { continue }
+                do { try file.read(into: mono, frameCount: count) } catch { readError = error; return nil }
+                if let src = mono.floatChannelData?[0] {
+                    dst.update(from: src, count: Int(min(mono.frameLength, count)))
+                }
+            }
+            consumed += AVAudioFramePosition(count)
+            return chunk
+        }
+
+        let capacity = AVAudioFrameCount(Double(chunkFrames) * rate / sourceRate) + 1024
+        var finished = false
+        while true {
+            guard let out = AVAudioPCMBuffer(pcmFormat: writer.processingFormat, frameCapacity: capacity) else {
+                throw E.writerFailed("out of memory")
+            }
+            var error: NSError?
+            let status = converter.convert(to: out, error: &error) { _, inputStatus in
+                if !finished, let chunk = nextChunk() {
+                    inputStatus.pointee = .haveData
+                    return chunk
+                }
+                finished = true
+                inputStatus.pointee = .endOfStream
+                return nil
+            }
+            if let readError { throw E.readerFailed(readError.localizedDescription) }
+            if status == .error { throw E.writerFailed(error?.localizedDescription ?? "resampling failed") }
+            if out.frameLength > 0 {
+                do { try writer.write(from: out) } catch { throw E.writerFailed(error.localizedDescription) }
+            }
+            if status == .endOfStream || (status == .inputRanDry && finished) { break }
+        }
+        // The writer finishes the file when it is released, i.e. when this function returns.
     }
 }
 

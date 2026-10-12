@@ -130,8 +130,10 @@ enum SelfTest {
                 throw Failure(description: "no two-way RTP: rx \(stats.rxPackets), tx \(stats.txPackets)")
             }
             step("RTP after 3 s: rx \(stats.rxPackets) packets (lost \(stats.rxLost)), tx \(stats.txPackets) packets")
-            let stoppedURL = try await engine.stopRecording(id)
-            guard stoppedURL == wav else { throw Failure(description: "stopRecording returned \(stoppedURL.path)") }
+            let stopped = try await engine.stopRecording(id)
+            guard stopped == RecordingFiles(layout: .mono, mixed: wav) else {
+                throw Failure(description: "stopRecording returned \(stopped)")
+            }
             _ = try await waitFor(engine, id, "isRecording cleared", timeout: 2) { !$0.isRecording }
             let header = try checkWAV(wav, minBytes: 50_000)
             step("recording: \(wav.lastPathComponent) \(header.fileSize) bytes, \(header.sampleRate) Hz, "
@@ -143,6 +145,8 @@ enum SelfTest {
             let m4aSize = (try? FileManager.default.attributesOfItem(atPath: m4a.path))?[.size] as? Int ?? 0
             guard m4aSize > 1_000 else { throw Failure(description: "M4A \(m4a.lastPathComponent): \(m4aSize) bytes") }
             step("M4A conversion: \(m4a.lastPathComponent) \(m4aSize) bytes")
+
+            try await stereoRecording(engine, id, scratch: scratch, step: step)
 
             // Conference: hold the first call (as the UI does), dial the second, merge.
             try await engine.setHold(id, true)
@@ -334,8 +338,9 @@ enum SelfTest {
         var rms: Int
     }
 
-    /// RIFF/WAVE PCM header with sizes that match the file, at least `minBytes`, not silent.
-    static func checkWAV(_ url: URL, minBytes: Int) throws -> WAVHeader {
+    /// RIFF/WAVE PCM header with sizes that match the file, at least `minBytes`, not silent
+    /// (RMS > 300); with `silent` the RMS must be below 50 instead.
+    static func checkWAV(_ url: URL, minBytes: Int, silent: Bool = false) throws -> WAVHeader {
         guard let data = try? Data(contentsOf: url) else { throw Failure(description: "no file \(url.path)") }
         guard data.count >= 44, data[0..<4] == Data("RIFF".utf8), data[8..<12] == Data("WAVE".utf8),
               data[12..<16] == Data("fmt ".utf8), data[36..<40] == Data("data".utf8) else {
@@ -359,7 +364,11 @@ enum SelfTest {
             i += 2
         }
         let rms = n > 0 ? Int((sum / Double(n)).squareRoot()) : 0
-        guard rms > 300 else { throw Failure(description: "\(url.lastPathComponent): silent (RMS \(rms))") }
+        if silent {
+            guard rms < 50 else { throw Failure(description: "\(url.lastPathComponent): not silent (RMS \(rms))") }
+        } else {
+            guard rms > 300 else { throw Failure(description: "\(url.lastPathComponent): silent (RMS \(rms))") }
+        }
         return WAVHeader(fileSize: data.count, sampleRate: rate, dataSize: dataSize, rms: rms)
     }
 }
