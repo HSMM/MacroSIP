@@ -2,9 +2,9 @@
 
 Versions are `YY.MINOR.PATCH` (see [ADR 0011](adr/0011-versioning.md)); the current line is 26.0.
 
-## 26.0 (release candidate out, final after real-PBX checks)
+## 26.0 (released)
 
-Shipped in `26.0.0-rc.1`:
+Shipped in `26.0.0`:
 
 - Accounts: several at once, UDP/TCP/TLS with certificate verification, SRTP, STUN, ICE, outgoing-only accounts, per-account on/off in the account pop-up.
 - Calls: up to four, hold, mute, DTMF (RFC 2833 with SIP INFO fallback), blind and attended transfer, local conference, call recording to M4A (mono, or stereo with you on the left and the caller on the right), auto-answer with `Call-Info: answer-after` from your own PBX.
@@ -12,11 +12,6 @@ Shipped in `26.0.0-rc.1`:
 - Contacts, call history, `sip:`/`sips:`/`tel:` links, menu bar icon, incoming-call window and notifications.
 - English and Russian interface, launch at login, log file with rotation, diagnostics export.
 - Distribution: DMG on GitHub Releases, Homebrew cask (`brew install --cask hsmm/tap/macrosip`), CI on every push.
-
-Before `26.0.0` final:
-
-- Verification on a production Asterisk/FreePBX: incoming calls, transfers, recording, conference, presence (needs hints and PUBLISH enabled on the server), auto-answer.
-- Fixes from that round.
 
 ## 26.1 (next)
 
