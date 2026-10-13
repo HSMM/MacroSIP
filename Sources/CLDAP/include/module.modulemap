@@ -1,0 +1,4 @@
+module CLDAP {
+    header "CLDAP.h"
+    export *
+}

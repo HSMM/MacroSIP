@@ -1,0 +1,2 @@
+"NSMicrophoneUsageDescription" = "MacroSIP needs the microphone to make and receive calls.";
+"NSContactsUsageDescription" = "MacroSIP looks up names and numbers in Contacts when you search from the number field.";
