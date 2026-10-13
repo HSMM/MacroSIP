@@ -36,16 +36,16 @@ phone does.
 ## Screenshots
 
 <p align="center">
-  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/dialpad-calls.png"><img src="docs/screenshots/light/dialpad-calls.png" width="260" alt="Several calls"></picture>
-  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/contacts-presence.png"><img src="docs/screenshots/light/contacts-presence.png" width="260" alt="Contacts with presence"></picture>
-  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/call-recording.png"><img src="docs/screenshots/light/call-recording.png" width="260" alt="Active call with recording"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/dialpad-calls.png?v=1"><img src="docs/screenshots/light/dialpad-calls.png?v=1" width="260" alt="Several calls"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/contacts-presence.png?v=1"><img src="docs/screenshots/light/contacts-presence.png?v=1" width="260" alt="Contacts with presence"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/call-recording.png?v=1"><img src="docs/screenshots/light/call-recording.png?v=1" width="260" alt="Active call with recording"></picture>
 </p>
 
 The app follows the macOS appearance. Light theme on the left, dark theme on the right:
 
 <p align="center">
-  <img src="docs/screenshots/light/account-popup.png" width="260" alt="Account pop-up, light theme">
-  <img src="docs/screenshots/dark/account-popup.png" width="260" alt="Account pop-up, dark theme">
+  <img src="docs/screenshots/light/account-popup.png?v=1" width="260" alt="Account pop-up, light theme">
+  <img src="docs/screenshots/dark/account-popup.png?v=1" width="260" alt="Account pop-up, dark theme">
 </p>
 
 More screenshots, in English and Russian, light and dark: [docs/screenshots](docs/screenshots).

@@ -36,16 +36,16 @@ Electron и Qt. Одно небольшое окно, значок в строк
 ## Скриншоты
 
 <p align="center">
-  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/dialpad-calls.png"><img src="docs/screenshots/ru/light/dialpad-calls.png" width="260" alt="Несколько звонков"></picture>
-  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/contacts-presence.png"><img src="docs/screenshots/ru/light/contacts-presence.png" width="260" alt="Контакты со статусами"></picture>
-  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/call-recording.png"><img src="docs/screenshots/ru/light/call-recording.png" width="260" alt="Активный звонок с записью"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/dialpad-calls.png?v=1"><img src="docs/screenshots/ru/light/dialpad-calls.png?v=1" width="260" alt="Несколько звонков"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/contacts-presence.png?v=1"><img src="docs/screenshots/ru/light/contacts-presence.png?v=1" width="260" alt="Контакты со статусами"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/call-recording.png?v=1"><img src="docs/screenshots/ru/light/call-recording.png?v=1" width="260" alt="Активный звонок с записью"></picture>
 </p>
 
 Приложение следует оформлению macOS. Слева светлая тема, справа тёмная:
 
 <p align="center">
-  <img src="docs/screenshots/ru/light/account-popup.png" width="260" alt="Меню аккаунтов, светлая тема">
-  <img src="docs/screenshots/ru/dark/account-popup.png" width="260" alt="Меню аккаунтов, тёмная тема">
+  <img src="docs/screenshots/ru/light/account-popup.png?v=1" width="260" alt="Меню аккаунтов, светлая тема">
+  <img src="docs/screenshots/ru/dark/account-popup.png?v=1" width="260" alt="Меню аккаунтов, тёмная тема">
 </p>
 
 Больше скриншотов на двух языках и в обеих темах: [docs/screenshots](docs/screenshots).
