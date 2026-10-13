@@ -1,0 +1,201 @@
+name: Release
+
+# A tag such as 26.0.0 (final) or 26.0.0-rc.1 (release candidate) builds the DMG, publishes a
+# GitHub Release, adds it to the Sparkle appcast (ADR 0013: attached to the release and kept at
+# appcast.xml on the gh-pages branch) and updates the Homebrew cask in HSMM/homebrew-tap
+# (see README, "Releasing").
+on:
+  push:
+    tags:
+      - '[0-9]*.[0-9]*.[0-9]*'
+
+permissions:
+  contents: read
+
+# No workflow-level concurrency group: GitHub keeps only one pending run per group and cancels the
+# others, which would drop a tag. Releases that run at once queue on gh-pages instead
+# (scripts/publish-appcast.sh retries its push).
+
+jobs:
+  dmg:
+    name: Build the universal DMG and publish the release
+    if: github.repository == 'HSMM/MacroSIP'
+    runs-on: macos-15
+    timeout-minutes: 75
+    permissions:
+      contents: write     # create the GitHub Release, push the appcast to gh-pages
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0      # make-app.sh derives version and build number from git
+
+      # Versions are N.N.N or N.N.N-rc.N (ADR 0010, 0013); the tag filter above also lets other
+      # suffixes through, so refuse them before building anything.
+      - name: Check the tag
+        env:
+          TAG: ${{ github.ref_name }}
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]]; then
+            echo "::error::tag $TAG is not N.N.N or N.N.N-rc.N"
+            exit 1
+          fi
+          if [ -z "$SPARKLE_PRIVATE_KEY" ]; then
+            echo "::error::SPARKLE_PRIVATE_KEY is not set; installed apps would not see this release (docs/DEVELOPMENT.md, Releasing)"
+            exit 1
+          fi
+
+      # Same cache as ci.yml: OpenSSL, Opus and PJSIP for arm64 and x86_64 plus the universal
+      # archives; build-pjsip.sh skips every component whose stamp matches.
+      - name: Cache PJSIP and dependencies (arm64 + x86_64)
+        uses: actions/cache@v4
+        with:
+          path: |
+            third_party/pjsip
+            third_party/deps
+          key: pjsip-universal-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/build-pjsip.sh', 'third_party/pjsip/config_site.h') }}
+
+      - name: Build PJSIP, OpenSSL and Opus (arm64 + x86_64, universal)
+        run: |
+          set -euo pipefail
+          "$GITHUB_WORKSPACE/scripts/build-pjsip.sh"
+
+      - name: Swift build
+        run: |
+          set -euo pipefail
+          swift build
+
+      - name: Tests
+        run: |
+          set -euo pipefail
+          "$GITHUB_WORKSPACE/scripts/test.sh"
+
+      - name: Self-test call (pjsua loopback)
+        run: |
+          set -euo pipefail
+          "$GITHUB_WORKSPACE/scripts/selftest-call.sh"
+
+      - name: Self-test call, x86_64 slice under Rosetta 2
+        run: |
+          set -euo pipefail
+          arch -x86_64 /usr/bin/true 2>/dev/null || softwareupdate --install-rosetta --agree-to-license
+          SELFTEST_ARCH=x86_64 "$GITHUB_WORKSPACE/scripts/selftest-call.sh"
+
+      - name: Build the DMG (universal)
+        run: |
+          set -euo pipefail
+          "$GITHUB_WORKSPACE/scripts/make-dmg.sh" release
+          lipo -info "$GITHUB_WORKSPACE/dist/MacroSIP.app/Contents/MacOS/MacroSIP"
+          built="$(defaults read "$GITHUB_WORKSPACE/dist/MacroSIP.app/Contents/Info" CFBundleShortVersionString)"
+          if [ "$built" != "$GITHUB_REF_NAME" ]; then
+            echo "the app says version $built but the tag is $GITHUB_REF_NAME" >&2
+            exit 1
+          fi
+          ls -l "$GITHUB_WORKSPACE/dist/MacroSIP-$GITHUB_REF_NAME.dmg"
+
+      - name: Upload the DMG for the cask job
+        uses: actions/upload-artifact@v4
+        with:
+          name: MacroSIP-dmg
+          path: dist/MacroSIP-${{ github.ref_name }}.dmg
+          if-no-files-found: error
+          retention-days: 7
+
+      # Before anything is published: the build number must not be in the appcast under another
+      # version (a final tagged on its candidate's commit), see scripts/make-appcast.sh.
+      - name: Check the appcast for this build
+        run: |
+          set -euo pipefail
+          "$GITHUB_WORKSPACE/scripts/publish-appcast.sh" --check "$GITHUB_REF_NAME" "$GITHUB_WORKSPACE/dist/MacroSIP.app"
+
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          # Prepended to the generated notes; also shown by the in-app updater.
+          notes="With ad hoc signing macOS asks for microphone access again after each update; allow it once more."
+          flags=(--title "$TAG" --generate-notes --notes "$notes" --verify-tag)
+          case "$TAG" in
+            *-*) flags+=(--prerelease) ;;      # 26.0.0-rc.1 is a pre-release
+          esac
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            # A re-run (for example after the appcast step failed): keep the release, replace the DMG.
+            gh release upload "$TAG" "$GITHUB_WORKSPACE/dist/MacroSIP-$TAG.dmg" --clobber
+          else
+            gh release create "$TAG" "$GITHUB_WORKSPACE/dist/MacroSIP-$TAG.dmg" "${flags[@]}"
+          fi
+
+      # Sparkle appcast: the new item is signed with SPARKLE_PRIVATE_KEY (EdDSA), carries the release
+      # body as HTML, and goes to the "beta" channel for -rc. tags. Earlier items come from gh-pages.
+      - name: Update the appcast (Sparkle)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          # Release notes: the GitHub release body (Markdown) rendered to HTML by GitHub.
+          gh release view "$TAG" --json body --jq .body > "$RUNNER_TEMP/notes.md"
+          if [ -s "$RUNNER_TEMP/notes.md" ]; then
+            gh api markdown -f mode=gfm -f context="$GITHUB_REPOSITORY" -F text=@"$RUNNER_TEMP/notes.md" \
+              > "$RUNNER_TEMP/notes.html"
+          else
+            : > "$RUNNER_TEMP/notes.html"
+          fi
+          NOTES_HTML="$RUNNER_TEMP/notes.html" \
+            "$GITHUB_WORKSPACE/scripts/publish-appcast.sh" "$TAG" "$GITHUB_WORKSPACE/dist/MacroSIP-$TAG.dmg"
+
+  homebrew:
+    name: Update the Homebrew cask
+    needs: dmg
+    if: github.repository == 'HSMM/MacroSIP'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      HAS_TAP_TOKEN: ${{ secrets.TAP_TOKEN != '' }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Skip when TAP_TOKEN is not set
+        if: env.HAS_TAP_TOKEN != 'true'
+        run: echo "TAP_TOKEN is not set; the Homebrew cask is not updated."
+
+      - name: Check out MacroSIP (cask template and scripts)
+        if: env.HAS_TAP_TOKEN == 'true'
+        uses: actions/checkout@v4
+        with:
+          path: macrosip
+
+      - name: Check out the tap
+        if: env.HAS_TAP_TOKEN == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: HSMM/homebrew-tap
+          token: ${{ secrets.TAP_TOKEN }}
+          path: tap
+
+      - name: Download the DMG
+        if: env.HAS_TAP_TOKEN == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: MacroSIP-dmg
+          path: ${{ runner.temp }}/dmg
+
+      - name: Update Casks/macrosip.rb and push
+        if: env.HAS_TAP_TOKEN == 'true'
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          git -C "$GITHUB_WORKSPACE/tap" config user.name "github-actions[bot]"
+          git -C "$GITHUB_WORKSPACE/tap" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          TAP_DIR="$GITHUB_WORKSPACE/tap" \
+            "$GITHUB_WORKSPACE/macrosip/scripts/update-cask.sh" "$TAG" "$RUNNER_TEMP/dmg/MacroSIP-$TAG.dmg"

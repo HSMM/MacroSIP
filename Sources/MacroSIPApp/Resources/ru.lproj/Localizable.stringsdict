@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>contacts.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld контакт</string>
+			<key>few</key>
+			<string>%lld контакта</string>
+			<key>many</key>
+			<string>%lld контактов</string>
+			<key>other</key>
+			<string>%lld контакта</string>
+		</dict>
+	</dict>
+	<key>calllog.clear.body</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Будет удалена %lld запись.</string>
+			<key>few</key>
+			<string>Будут удалены %lld записи.</string>
+			<key>many</key>
+			<string>Будут удалены %lld записей.</string>
+			<key>other</key>
+			<string>Будут удалены %lld записи.</string>
+		</dict>
+	</dict>
+	<key>calls.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld звонок</string>
+			<key>few</key>
+			<string>%lld звонка</string>
+			<key>many</key>
+			<string>%lld звонков</string>
+			<key>other</key>
+			<string>%lld звонка</string>
+		</dict>
+	</dict>
+	<key>conference.header</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Конференция · %lld участник</string>
+			<key>few</key>
+			<string>Конференция · %lld участника</string>
+			<key>many</key>
+			<string>Конференция · %lld участников</string>
+			<key>other</key>
+			<string>Конференция · %lld участника</string>
+		</dict>
+	</dict>
+	<key>status.summary.failed</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld ошибка</string>
+			<key>few</key>
+			<string>%lld ошибки</string>
+			<key>many</key>
+			<string>%lld ошибок</string>
+			<key>other</key>
+			<string>%lld ошибки</string>
+		</dict>
+	</dict>
+	<key>contacts.favorites.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld избранный</string>
+			<key>few</key>
+			<string>%lld избранных</string>
+			<key>many</key>
+			<string>%lld избранных</string>
+			<key>other</key>
+			<string>%lld избранных</string>
+		</dict>
+	</dict>
+	<key>directory.results.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld результат</string>
+			<key>few</key>
+			<string>%lld результата</string>
+			<key>many</key>
+			<string>%lld результатов</string>
+			<key>other</key>
+			<string>%lld результата</string>
+		</dict>
+	</dict>
+	<key>directory.results.sources</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>из %lld источника</string>
+			<key>few</key>
+			<string>из %lld источников</string>
+			<key>many</key>
+			<string>из %lld источников</string>
+			<key>other</key>
+			<string>из %lld источника</string>
+		</dict>
+	</dict>
+	<key>voicemail.newCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld новое</string>
+			<key>few</key>
+			<string>%lld новых</string>
+			<key>many</key>
+			<string>%lld новых</string>
+			<key>other</key>
+			<string>%lld новых</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

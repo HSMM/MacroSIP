@@ -1,0 +1,22 @@
+.build/
+.swiftpm/
+*.xcodeproj
+*.xcworkspace
+DerivedData/
+dist/
+*.app
+*.dmg
+.DS_Store
+.local/
+
+# PJSIP sources and build outputs (see scripts/build-pjsip.sh)
+third_party/*
+!third_party/.gitignore
+!third_party/pjsip/
+third_party/pjsip/*
+!third_party/pjsip/config_site.h
+
+# Local tooling notes (never committed)
+CLAUDE.md
+CLAUDE.local.md
+.claude/

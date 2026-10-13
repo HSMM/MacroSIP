@@ -1,0 +1,185 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and test (macOS 15, arm64; universal app)
+    runs-on: macos-15
+    timeout-minutes: 75
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0      # make-app.sh derives version and build number from git
+
+      - name: Toolchain
+        run: |
+          set -euo pipefail
+          uname -m
+          sw_vers
+          swift --version
+
+      # OpenSSL, Opus and PJSIP for arm64 and x86_64 plus the universal archives. The script
+      # skips every component whose stamp matches, so a cache hit makes it a no-op.
+      - name: Cache PJSIP and dependencies (arm64 + x86_64)
+        uses: actions/cache@v4
+        with:
+          path: |
+            third_party/pjsip
+            third_party/deps
+          key: pjsip-universal-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/build-pjsip.sh', 'third_party/pjsip/config_site.h') }}
+
+      - name: Build PJSIP, OpenSSL and Opus (arm64 + x86_64, universal)
+        run: |
+          set -euo pipefail
+          "$GITHUB_WORKSPACE/scripts/build-pjsip.sh"
+
+      - name: Swift build
+        run: |
+          set -euo pipefail
+          swift build
+
+      - name: Tests
+        run: |
+          set -euo pipefail
+          "$GITHUB_WORKSPACE/scripts/test.sh"
+
+      - name: Self-test call (pjsua loopback)
+        run: |
+          set -euo pipefail
+          "$GITHUB_WORKSPACE/scripts/selftest-call.sh"
+
+      - name: Self-test call, x86_64 slice under Rosetta 2
+        run: |
+          set -euo pipefail
+          arch -x86_64 /usr/bin/true 2>/dev/null || softwareupdate --install-rosetta --agree-to-license
+          SELFTEST_ARCH=x86_64 "$GITHUB_WORKSPACE/scripts/selftest-call.sh"
+
+      - name: Build the app (universal)
+        run: |
+          set -euo pipefail
+          "$GITHUB_WORKSPACE/scripts/make-app.sh" release
+          lipo -info "$GITHUB_WORKSPACE/dist/MacroSIP.app/Contents/MacOS/MacroSIP"
+          defaults read "$GITHUB_WORKSPACE/dist/MacroSIP.app/Contents/Info" CFBundleShortVersionString
+          ditto -c -k --keepParent "$GITHUB_WORKSPACE/dist/MacroSIP.app" "$RUNNER_TEMP/MacroSIP-app.zip"
+
+      - name: Upload the app
+        uses: actions/upload-artifact@v4
+        with:
+          name: MacroSIP-app
+          path: ${{ runner.temp }}/MacroSIP-app.zip
+          if-no-files-found: error
+          retention-days: 14
+
+      # The Intel job cannot run build-pjsip.sh (it needs an Apple Silicon host), so it gets the
+      # universal libraries, headers and pjsua from here.
+      - name: Pack the universal PJSIP build for the Intel job
+        run: |
+          set -euo pipefail
+          tar -C "$GITHUB_WORKSPACE" -czf "$RUNNER_TEMP/pjsip-universal.tgz" \
+            --exclude third_party/pjsip/arch \
+            third_party/pjsip third_party/deps/universal
+
+      - name: Upload the universal PJSIP build
+        uses: actions/upload-artifact@v4
+        with:
+          name: pjsip-universal
+          path: ${{ runner.temp }}/pjsip-universal.tgz
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Upload PJSIP build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pjsip-build-logs
+          path: third_party/build-logs
+          if-no-files-found: ignore
+
+  intel:
+    name: Test on Intel (macOS 15, x86_64)
+    needs: build
+    runs-on: macos-15-intel
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: |
+          set -euo pipefail
+          uname -m
+          sw_vers
+          swift --version
+
+      - name: Download the universal PJSIP build
+        uses: actions/download-artifact@v4
+        with:
+          name: pjsip-universal
+          path: ${{ runner.temp }}
+
+      - name: Download the app
+        uses: actions/download-artifact@v4
+        with:
+          name: MacroSIP-app
+          path: ${{ runner.temp }}
+
+      - name: Unpack
+        run: |
+          set -euo pipefail
+          tar -C "$GITHUB_WORKSPACE" -xzf "$RUNNER_TEMP/pjsip-universal.tgz"
+          lipo -info "$GITHUB_WORKSPACE/third_party/pjsip/lib/libpj.a" "$GITHUB_WORKSPACE/third_party/deps/universal/lib/libssl.a"
+          mkdir -p "$GITHUB_WORKSPACE/dist"
+          ditto -x -k "$RUNNER_TEMP/MacroSIP-app.zip" "$GITHUB_WORKSPACE/dist"
+          lipo -info "$GITHUB_WORKSPACE/dist/MacroSIP.app/Contents/MacOS/MacroSIP"
+          codesign --verify --deep --strict "$GITHUB_WORKSPACE/dist/MacroSIP.app"
+
+      - name: Launch the universal app (x86_64 slice)
+        run: |
+          set -euo pipefail
+          data="$RUNNER_TEMP/macrosip-data"; logs="$RUNNER_TEMP/macrosip-logs"
+          mkdir -p "$data" "$logs"
+          MACROSIP_LOG_DIR="$logs" "$GITHUB_WORKSPACE/dist/MacroSIP.app/Contents/MacOS/MacroSIP" \
+            --data-dir "$data" > "$RUNNER_TEMP/app.out" 2>&1 &
+          pid=$!
+          sleep 15
+          if ! kill -0 "$pid" 2>/dev/null; then
+            echo "the app exited within 15 s:"; cat "$RUNNER_TEMP/app.out"; cat "$logs"/*.log 2>/dev/null || true
+            exit 1
+          fi
+          echo "running as: $(ps -o command= -p "$pid")"
+          kill "$pid"; wait "$pid" 2>/dev/null || true
+          tail -n 20 "$logs"/*.log 2>/dev/null || true
+
+      - name: Swift build (native x86_64)
+        run: |
+          set -euo pipefail
+          swift build
+
+      - name: Tests
+        run: |
+          set -euo pipefail
+          "$GITHUB_WORKSPACE/scripts/test.sh"
+
+      - name: Self-test call (pjsua loopback)
+        run: |
+          set -euo pipefail
+          "$GITHUB_WORKSPACE/scripts/selftest-call.sh"

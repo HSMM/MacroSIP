@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# End-to-end check: macrosip-cli calls two local pjsua phones that auto-answer and play a tone.
+# Verifies two-way RTP, hold/unhold, DTMF, recording (mono WAV, stereo split pair -> stereo M4A), presence (SUBSCRIBE/NOTIFY),
+# a two-leg conference (merge/split), hang-up, incoming calls (answer, reject), blind and
+# attended transfer between the two phones, DTMF over SIP INFO and calls of a registered
+# account (the last two against a SIP stub inside macrosip-cli), and simulated network changes during
+# a call and with the registered account. Needs scripts/build-pjsip.sh done.
+#   SELFTEST_ARCH=x86_64  build macrosip-cli universal (arm64 + x86_64) and run it and both pjsua
+#                         phones as x86_64 (on Apple Silicon through Rosetta 2; needs Rosetta).
+#   SELFTEST_CLI=<path>   use a prebuilt macrosip-cli instead of building one.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+WORK="${TMPDIR:-/tmp}/macrosip-selftest.$$"
+mkdir -p "$WORK"
+cleanup() {
+  kill ${PJ:-} ${PJ2:-} 2>/dev/null || true
+  wait ${PJ:-} ${PJ2:-} 2>/dev/null || true
+  rm -rf "$WORK"
+}
+trap cleanup EXIT
+
+PORT1=5080        # first phone: call, recording, presence, conference leg 1, calls us, transferee
+PORT2=5081        # second phone: conference leg 2, transfer target
+CLI1=5088         # telnet CLI of the first phone (presence changes, outgoing calls, call list)
+CLI2=5089         # telnet CLI of the second phone (call list after the transfers)
+
+command -v nc >/dev/null || { echo "selftest needs nc (netcat) to drive the pjsua CLI"; exit 1; }
+
+# 3 s 600 Hz 16 kHz mono WAV for pjsua to play.
+python3 -I - "$WORK/tone600.wav" <<'PY'
+import math, struct, sys
+sr, secs = 16000, 3
+pcm = b''.join(struct.pack('<h', int(8000*math.sin(2*math.pi*600*i/sr))) for i in range(sr*secs))
+hdr = b'RIFF' + struct.pack('<I', 36+len(pcm)) + b'WAVEfmt ' + struct.pack('<IHHIIHH', 16, 1, 1, sr, sr*2, 2, 16) + b'data' + struct.pack('<I', len(pcm))
+open(sys.argv[1], 'wb').write(hdr + pcm)
+PY
+
+RUN=()          # prefix for macrosip-cli and pjsua: "arch -x86_64" with SELFTEST_ARCH
+BUILD_FLAGS=()
+if [ -n "${SELFTEST_ARCH:-}" ]; then
+  RUN=(arch "-$SELFTEST_ARCH")
+  [ "$SELFTEST_ARCH" = "$(uname -m)" ] || BUILD_FLAGS=(--arch arm64 --arch x86_64)
+fi
+if [ -n "${SELFTEST_CLI:-}" ]; then
+  CLI_BIN="$SELFTEST_CLI"
+else
+  swift build ${BUILD_FLAGS[@]+"${BUILD_FLAGS[@]}"} --product macrosip-cli >/dev/null
+  CLI_BIN="$(swift build ${BUILD_FLAGS[@]+"${BUILD_FLAGS[@]}"} --product macrosip-cli --show-bin-path)/macrosip-cli"
+fi
+if [ -n "${SELFTEST_ARCH:-}" ]; then
+  for bin in "$CLI_BIN" third_party/pjsip/bin/pjsua; do
+    case " $(lipo -archs "$bin") " in
+      *" $SELFTEST_ARCH "*) ;;
+      *) echo "$bin has no $SELFTEST_ARCH slice ($(lipo -archs "$bin"))"; exit 1 ;;
+    esac
+  done
+  "${RUN[@]}" /usr/bin/true 2>/dev/null || {
+    echo "cannot run $SELFTEST_ARCH code here (Rosetta 2: softwareupdate --install-rosetta --agree-to-license)"; exit 1; }
+  echo "==> selftest as $SELFTEST_ARCH"
+fi
+# --use-cli --no-cli-console: pjsua must not read stdin; a background job of a
+# non-interactive shell gets /dev/null and the classic console quits on EOF at once.
+# --id gives the phones distinct user parts: the incoming-call check matches the caller's
+# number, and after a transfer each phone's "call list" names the other one.
+PJOPTS=(--use-cli --no-cli-console --null-audio --auto-answer 200 --no-tcp
+        --ip-addr 127.0.0.1 --bound-addr 127.0.0.1
+        --play-file "$WORK/tone600.wav" --auto-play --auto-loop)
+${RUN[@]+"${RUN[@]}"} third_party/pjsip/bin/pjsua "${PJOPTS[@]}" --local-port $PORT1 --rtp-port 4000 \
+  --id "sip:phone1@127.0.0.1:$PORT1" --cli-telnet-port $CLI1 > "$WORK/pjsua1.log" 2>&1 &
+PJ=$!
+${RUN[@]+"${RUN[@]}"} third_party/pjsip/bin/pjsua "${PJOPTS[@]}" --local-port $PORT2 --rtp-port 4200 \
+  --id "sip:phone2@127.0.0.1:$PORT2" --cli-telnet-port $CLI2 > "$WORK/pjsua2.log" 2>&1 &
+PJ2=$!
+sleep 2
+
+# pjsua's app sets its accounts online at start, so it answers SUBSCRIBE with an open status.
+# The selftest changes that status through the telnet CLI ("T 5" away, "T 2" busy, "T 1"
+# available); make sure both CLIs answer before relying on them. Poll for up to ~15 s: an
+# x86_64 pjsua under Rosetta 2 (SELFTEST_ARCH) takes a few seconds longer to come up.
+for cli in $CLI1 $CLI2; do
+  for _ in $(seq 1 12); do
+    { sleep 0.3; printf 'acc show\r\n'; sleep 0.5; } \
+      | nc -w 1 127.0.0.1 $cli 2>/dev/null | LC_ALL=C tr -cd '[:print:]\n' > "$WORK/cli.txt" || true
+    grep -q "Online status: Online" "$WORK/cli.txt" && break
+    sleep 0.5
+  done
+  grep -q "Online status: Online" "$WORK/cli.txt" || {
+    echo "pjsua CLI on telnet 127.0.0.1:$cli did not report an online account:"; cat "$WORK/cli.txt"; exit 1; }
+done
+
+# Show the summary (or the "SELFTEST FAILED" line); hide PJSIP logs, events and step lines.
+# SELFTEST_LOG=<file> keeps the full output; SELFTEST_LOG_LEVEL=<0..6> sets the PJSIP log level.
+${RUN[@]+"${RUN[@]}"} "$CLI_BIN" --selftest \
+  --target "sip:phone1@127.0.0.1:$PORT1" --target2 "sip:phone2@127.0.0.1:$PORT2" --target-cli $CLI1 --target2-cli $CLI2 \
+  --scratch "$WORK" --log "${SELFTEST_LOG_LEVEL:-3}" 2>&1 \
+  | tee "${SELFTEST_LOG:-/dev/null}" \
+  | grep -vE '^\s*(pj[0-9]\||[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]+ (\[|===))'

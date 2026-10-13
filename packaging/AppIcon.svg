@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#25CC98"/>
+      <stop offset="1" stop-color="#07705A"/>
+    </linearGradient>
+    <filter id="sh" x="-10%" y="-10%" width="120%" height="125%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="5"/>
+      <feOffset dy="10"/>
+      <feComponentTransfer result="s"><feFuncA type="linear" slope=".3"/></feComponentTransfer>
+      <feMerge><feMergeNode in="s"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- background: the standard macOS icon shape, 824 px on a 1024 canvas -->
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#bg)" filter="url(#sh)"/>
+
+  <!-- keys that are not part of the route: 2, 5, 0, drawn as rings -->
+  <g fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="14">
+    <circle cx="512" cy="290" r="40"/>
+    <circle cx="512" cy="438" r="40"/>
+    <circle cx="512" cy="734" r="40"/>
+  </g>
+
+  <!-- the route over the keys: the letter M -->
+  <path d="M312 734V290L512 586 712 290V734" fill="none" stroke="#fff"
+        stroke-width="48" stroke-linecap="round" stroke-linejoin="round"/>
+  <g fill="#fff">
+    <circle cx="312" cy="290" r="48"/><circle cx="312" cy="438" r="48"/>
+    <circle cx="312" cy="586" r="48"/><circle cx="312" cy="734" r="48"/>
+    <circle cx="512" cy="586" r="48"/>
+    <circle cx="712" cy="290" r="48"/><circle cx="712" cy="438" r="48"/>
+    <circle cx="712" cy="586" r="48"/><circle cx="712" cy="734" r="48"/>
+  </g>
+</svg>
