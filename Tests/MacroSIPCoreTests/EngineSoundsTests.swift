@@ -31,7 +31,8 @@ extension EngineTests {
 
         try await engine.setHold(out, true)
         #expect(await waitUntil { await lb.call(out)?.state == .held })
-        #expect(await waitUntil { await engine.holdMusicState(of: out) != nil })
+        // The player is created, then connected to the call's port: wait for the wiring, not just the player.
+        #expect(await waitUntil { if let s = await engine.holdMusicState(of: out) { return s.listeners == 1 && !s.toSpeaker } else { return false } })
         let state = try #require(await engine.holdMusicState(of: out))
         #expect(state.listeners == 1 && !state.toSpeaker, "\(state)")
         #expect(await waitUntil { (await engine.holdMusicState(of: out)?.level ?? 0) > 10 })
