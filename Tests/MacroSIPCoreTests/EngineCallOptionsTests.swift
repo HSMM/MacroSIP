@@ -153,7 +153,8 @@ extension EngineTests {
         _ = try await lb.dial("second")
         #expect(await waitUntil { lb.incoming(after: before) != nil })
         let inc2 = try #require(lb.incoming(after: before)).id
-        #expect(await waitUntil { await engine.callWaitingState() != nil })
+        // The tone is created, then wired to the speaker: wait for the wiring, not just the player.
+        #expect(await waitUntil { if let s = await engine.callWaitingState() { return s.toSpeaker && s.listeners == 1 } else { return false } })
         let state = try #require(await engine.callWaitingState())
         #expect(state.toSpeaker && state.listeners == 1, "\(state)")
         #expect(await waitUntil(timeout: 3) { (await engine.callWaitingState()?.level ?? 0) > 10 })
@@ -186,7 +187,9 @@ extension EngineTests {
         try await engine.setHold(out1, true)
         #expect(await waitUntil { await lb.call(out1)?.state == .held })
         try await engine.setHold(inc1, true)
-        #expect(await waitUntil { await engine.ringtoneState() != nil })
+        // inc1's hold may wait for out1's re-INVITE to finish (glare in loopback); give a loaded runner time.
+        #expect(await waitUntil(timeout: 15) { await lb.call(inc1)?.state == .held })
+        #expect(await waitUntil(timeout: 10) { await engine.ringtoneState() != nil })
         #expect(await engine.callWaitingState() == nil)
         try await engine.setHold(inc1, false)
         #expect(await waitUntil { await lb.call(inc1)?.state == .connected })
