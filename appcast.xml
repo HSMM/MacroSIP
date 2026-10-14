@@ -2,5 +2,16 @@
 <rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
     <channel>
         <title>MacroSIP</title>
+        <item>
+            <title>26.0.0</title>
+            <pubDate>Wed, 14 Oct 2026 01:47:12 +0000</pubDate>
+            <link>https://github.com/HSMM/MacroSIP</link>
+            <sparkle:version>7</sparkle:version>
+            <sparkle:shortVersionString>26.0.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<p dir="auto">With ad hoc signing macOS asks for microphone access again after each update; allow it once more.</p>
+<p dir="auto"><strong>Full Changelog</strong>: <a href="https://github.com/HSMM/MacroSIP/commits/26.0.0">https://github.com/HSMM/MacroSIP/commits/26.0.0</a></p>]]></description>
+            <enclosure url="https://github.com/HSMM/MacroSIP/releases/download/26.0.0/MacroSIP-26.0.0.dmg" length="17877264" type="application/octet-stream" sparkle:edSignature="1F5usdrsWGNKwbI0kTAYyKGLSDj/wGF54LkMTKp6GIBLvJ3eDXqgsJpSNXgFkEswNLVxMjinAPeW1AdwkOe1Bw=="/>
+        </item>
     </channel>
 </rss>
