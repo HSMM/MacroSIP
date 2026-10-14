@@ -2,7 +2,7 @@ import Foundation
 import MacroSIPCore
 
 // All user-visible strings. Keys follow docs/design/SCREENS.md "Strings". Every key also lives in
-// Resources/<lang>.lproj for en, ru, be, uk, pl, de, fr, it, es, hi and zh-Hans (Localizable.strings; counts in Localizable.stringsdict).
+// Resources/<lang>.lproj for en and ru (Localizable.strings; counts in Localizable.stringsdict).
 // The English default below is only the fallback for a missing key; scripts/check-strings.sh keeps the files in sync.
 
 enum L {
@@ -217,7 +217,7 @@ enum L {
     static var language: String { loc("settings.general.language", "Language") }
     static var languageHelp: String { loc("settings.general.language.help", "Takes effect after MacroSIP restarts.") }
     static func languageSystem(_ resolved: String) -> String { loc("settings.general.language.system", "System (\(resolved))") }
-    static var languageFooter: String { loc("settings.general.language.footer", "Choices: System, English, Русский, Беларуская, Українська, Polski, Deutsch, Français, Italiano, Español, हिन्दी, 简体中文.") }
+    static var languageFooter: String { loc("settings.general.language.footer", "Choices: System, English, Русский.") }
     static var languageRestartTitle: String { loc("settings.general.language.restart.title", "Restart to change the language?") }
     static var languageRestartBody: String { loc("settings.general.language.restart.body", "The new language is used after MacroSIP restarts.") }
     static var languageRestartNow: String { loc("settings.general.language.restart.now", "Restart Now") }

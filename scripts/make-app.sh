@@ -129,7 +129,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     </dict>
   </array>
   <key>CFBundleLocalizations</key>
-  <array><string>en</string><string>ru</string><string>be</string><string>uk</string><string>pl</string><string>de</string><string>fr</string><string>it</string><string>es</string><string>hi</string><string>zh-Hans</string></array>
+  <array><string>en</string><string>ru</string></array>
   <key>SUFeedURL</key><string>$FEED_URL</string>
   <key>SUPublicEDKey</key><string>$SPARKLE_PUBLIC_KEY</string>
   <key>SUEnableAutomaticChecks</key><true/>

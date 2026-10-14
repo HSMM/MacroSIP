@@ -9,7 +9,7 @@ struct GeneralPane: View {
 
     private var languageSelection: Binding<String> {
         Binding(
-            get: { model.settings.general.language ?? "system" },
+            get: { GeneralSettings.languages.contains(model.settings.general.language ?? "") ? model.settings.general.language! : "system" },
             set: { v in
                 let new: String? = v == "system" ? nil : v
                 guard new != model.settings.general.language else { return }
@@ -45,15 +45,6 @@ struct GeneralPane: View {
                         Text(L.languageSystem(systemLanguageName)).tag("system")
                         Text("English").tag("en")
                         Text("Русский").tag("ru")
-                        Text("Беларуская").tag("be")
-                        Text("Українська").tag("uk")
-                        Text("Polski").tag("pl")
-                        Text("Deutsch").tag("de")
-                        Text("Français").tag("fr")
-                        Text("Italiano").tag("it")
-                        Text("Español").tag("es")
-                        Text("हिन्दी").tag("hi")
-                        Text("简体中文").tag("zh-Hans")
                     }
                     .labelsHidden().frame(width: 190)
                 }

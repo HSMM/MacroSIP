@@ -115,8 +115,10 @@ public struct AudioSettings: Codable, Equatable, Sendable {
 
 public struct GeneralSettings: Codable, Equatable, Sendable {
     public var launchAtLogin: Bool
-    /// A language code (en, ru, be, uk, pl, de, fr, it, es, hi, zh-Hans) or nil = system.
+    /// A language code from `languages` or nil = system.
     public var language: String?
+    /// The interface languages the app ships.
+    public static let languages = ["en", "ru"]
     public var handleURLSchemes: Bool
     public var askBeforeCallingFromURL: Bool
     public var keepRunningInMenuBar: Bool

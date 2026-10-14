@@ -140,7 +140,14 @@ final class AppModel {
         #if DEBUG
         if launch.isDemo { DemoState.seed(stores: (accountStore, contactStore, callLogStore, settingsStore), vault: vault) }
         #endif
-        settings = settingsStore.load()
+        var loaded = settingsStore.load()
+        // A language this build no longer ships (saved by an earlier build) falls back to the system language.
+        if let language = loaded.general.language, !GeneralSettings.languages.contains(language) {
+            loaded.general.language = nil
+            try? settingsStore.save(loaded)
+            prefs.removeObject(forKey: "AppleLanguages")
+        }
+        settings = loaded
         seenLogAt = (prefs.object(forKey: "seenLogAt") as? Date) ?? .distantPast
         // From the first launch with playback on, only recordings stored in an entry are linked; older entries
         // (whose recordings were saved before entries remembered them) are matched by file name.
