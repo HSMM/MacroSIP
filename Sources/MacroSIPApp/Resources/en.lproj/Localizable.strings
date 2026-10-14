@@ -134,7 +134,7 @@
 "settings.general.language" = "Language";
 "settings.general.language.help" = "Takes effect after MacroSIP restarts.";
 "settings.general.language.system" = "System (%@)";
-"settings.general.language.footer" = "Choices: System, English, Русский, Беларуская, Українська, Polski, Deutsch, Français, Italiano, Español, हिन्दी, 简体中文.";
+"settings.general.language.footer" = "Choices: System, English, Русский.";
 "settings.general.language.restart.title" = "Restart to change the language?";
 "settings.general.language.restart.body" = "The new language is used after MacroSIP restarts.";
 "settings.general.language.restart.now" = "Restart Now";
