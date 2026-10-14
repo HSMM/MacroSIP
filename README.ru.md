@@ -9,7 +9,7 @@
 ![macOS 14+](https://img.shields.io/badge/macOS-14%2B-lightgrey)
 ![Universal: Apple Silicon and Intel](https://img.shields.io/badge/arch-universal-lightgrey)
 ![PJSIP 2.17](https://img.shields.io/badge/PJSIP-2.17-green)
-![Release 26.0.0 in preparation](https://img.shields.io/badge/release-26.0.0_%D0%B3%D0%BE%D1%82%D0%BE%D0%B2%D0%B8%D1%82%D1%81%D1%8F-orange)
+![Release 26.0.0](https://img.shields.io/badge/release-26.0.0-brightgreen)
 
 SIP-софтфон для macOS на Apple Silicon и Intel в духе MicroSIP. Нативный интерфейс на
 Swift и SwiftUI, движок [PJSIP](https://github.com/pjsip/pjproject) 2.17, без
@@ -50,12 +50,12 @@ Electron и Qt. Одно небольшое окно, значок в строк
 
 Больше скриншотов на двух языках и в обеих темах: [docs/screenshots](docs/screenshots).
 
-Статус: готовится первый релиз, 26.0.0; до него собирайте из исходников (см. ниже). Что дальше: [docs/ROADMAP.md](docs/ROADMAP.md).
+Статус: выпущена версия `26.0.0` (14 октября 2026). Что дальше: [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Установка
 
 Нужен macOS 14 или новее на Apple Silicon или Intel. Приложение и DMG универсальные
-(одна загрузка для обеих архитектур). Оба способа ниже станут доступны с выходом 26.0.0.
+(одна загрузка для обеих архитектур).
 
 ### Через Homebrew
 

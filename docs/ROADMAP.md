@@ -2,9 +2,9 @@
 
 Versions are `YY.MINOR.PATCH` (see [ADR 0010](adr/0010-versioning.md)); the first release is 26.0.0.
 
-## 26.0 (first release, in preparation)
+## 26.0 (released 2026-10-14)
 
-Everything below is in `main` and goes into `26.0.0`.
+Shipped in `26.0.0`:
 
 Accounts and network:
 
