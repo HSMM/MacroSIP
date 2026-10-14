@@ -802,9 +802,9 @@ Layout: toggles, Do Not Disturb, Language, Updates, then a collapsed "Advanced" 
 
 | Row | Type | Behaviour |
 |---|---|---|
-| Language (secondary label "Takes effect after MacroSIP restarts.") | popup, current value "System (English)" | Choices: System, English, Русский. Changing prompts for restart. |
+| Language (secondary label "Takes effect after MacroSIP restarts.") | popup, current value "System (English)" | Choices: System, English, Русский, Беларуская, Українська, Polski, Deutsch, Français, Italiano, Español, हिन्दी, 简体中文. Changing prompts for restart. |
 
-Group footer: "Choices: System, English, Русский."
+Group footer: "Choices: System, English, Русский, Беларуская, Українська, Polski, Deutsch, Français, Italiano, Español, हिन्दी, 简体中文."
 
 **Group Updates:** see ADR 0013 (automatic checks, release candidates, Check Now).
 

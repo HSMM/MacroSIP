@@ -29,7 +29,7 @@ phone does.
 - Menu bar icon with registration state, quick dial, recent calls and Do Not Disturb; the app keeps working with the window closed.
 - Reconnects after a network drop, an IP change or sleep; calls survive the switch. Network pane: RTP port range, rport, DNS SRV with a custom nameserver.
 - Codecs: Opus (with FEC and DTX), G.722, G.711 and, off by default, G.722.1, GSM, iLBC and Speex. Echo cancellation and noise suppression.
-- English and Russian interface, light and dark themes, launch at login, log file, in-app updates.
+- Interface in English, Russian, Belarusian, Ukrainian, Polish, German, French, Italian, Spanish, Hindi and Simplified Chinese, light and dark themes, launch at login, log file, in-app updates.
 - Hold music for the caller (built-in or your own file), a recording notice tone, voicemail indicator (MWI) with a one-click call to voicemail, USB headset buttons, sound events and an audio test.
 - Universal app for Apple Silicon and Intel.
 

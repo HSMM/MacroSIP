@@ -17,7 +17,7 @@ def strings(path):
 def plural(path):
     return plistlib.load(open(path, "rb"))
 files = {}
-for lang in ("en", "ru"):
+for lang in ("en", "ru", "be", "uk", "pl", "de", "fr", "it", "es", "hi", "zh-Hans"):
     s = strings(f"{root}/{lang}.lproj/Localizable.strings")
     p = plural(f"{root}/{lang}.lproj/Localizable.stringsdict")
     files[lang] = (s, p)
@@ -29,14 +29,16 @@ for lang, (s, p) in files.items():
     for k in sorted(have - code): print(f"{lang}: unused key {k}"); bad += 1
     for k in set(s) & set(p): print(f"{lang}: key {k} in both .strings and .stringsdict"); bad += 1
     for k, v in p.items():
-        need = {"one", "few", "many", "other"} if lang == "ru" else {"one", "other"}
+        slavic = {"one", "few", "many", "other"}
+        need = {"ru": slavic, "be": slavic, "uk": slavic, "pl": slavic, "zh-Hans": {"other"}}.get(lang, {"one", "other"})
         got = set(v["count"]) - {"NSStringFormatSpecTypeKey", "NSStringFormatValueTypeKey"}
         if got != need: print(f"{lang}: {k} plural categories {sorted(got)} != {sorted(need)}"); bad += 1
 en_s = files["en"][0]
 norm = lambda l: [re.sub(r'\d+\$', '', x) for x in l]
-for k, v in files["ru"][0].items():
-    if k in en_s and not set(norm(ph(v))) <= set(norm(ph(en_s[k]))):
-        print(f"ru: {k} uses placeholders English lacks"); bad += 1
+for lang in ("ru", "be", "uk", "pl", "de", "fr", "it", "es", "hi", "zh-Hans"):
+    for k, v in files[lang][0].items():
+        if k in en_s and not set(norm(ph(v))) <= set(norm(ph(en_s[k]))):
+            print(f"{lang}: {k} uses placeholders English lacks"); bad += 1
 print(f"{len(code)} keys checked, {bad} problem(s)")
 sys.exit(1 if bad else 0)
 PY

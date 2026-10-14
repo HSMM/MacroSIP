@@ -115,7 +115,7 @@ public struct AudioSettings: Codable, Equatable, Sendable {
 
 public struct GeneralSettings: Codable, Equatable, Sendable {
     public var launchAtLogin: Bool
-    /// "en", "ru", or nil = system.
+    /// A language code (en, ru, be, uk, pl, de, fr, it, es, hi, zh-Hans) or nil = system.
     public var language: String?
     public var handleURLSchemes: Bool
     public var askBeforeCallingFromURL: Bool
