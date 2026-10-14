@@ -50,6 +50,8 @@ App:
 - Universal build: one app and one DMG for Apple Silicon and Intel Macs; PJSIP, OpenSSL and Opus built for both architectures from pinned sources.
 - Distribution: DMG on GitHub Releases, Homebrew cask (`brew install --cask hsmm/tap/macrosip`), CI on every push.
 
+`26.0.1` (2026-10-14): the interface ships in English and Russian only; the other localizations of 26.0.0 are removed.
+
 ## Later
 
 - Developer ID signing and notarization, so the first launch needs no workaround (when the signing identity is available).
@@ -57,6 +59,5 @@ App:
 - SIP MESSAGE chat.
 - Global hotkeys (answer, hang up, mute).
 - Import from MicroSIP (`MicroSIP.ini`, `Contacts.xml`).
-- More localizations (contributions welcome).
 
 Issues and feature requests: https://github.com/HSMM/MacroSIP/issues
