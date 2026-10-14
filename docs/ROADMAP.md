@@ -45,7 +45,7 @@ Contacts, presence and the directory:
 
 App:
 
-- English and Russian interface, launch at login, log file with rotation, diagnostics export.
+- Interface in English, Russian, Belarusian, Ukrainian, Polish, German, French, Italian, Spanish, Hindi and Simplified Chinese, launch at login, log file with rotation, diagnostics export.
 - In-app updates (Sparkle 2, EdDSA-signed appcast on the `gh-pages` branch; release candidates on the beta channel).
 - Universal build: one app and one DMG for Apple Silicon and Intel Macs; PJSIP, OpenSSL and Opus built for both architectures from pinned sources.
 - Distribution: DMG on GitHub Releases, Homebrew cask (`brew install --cask hsmm/tap/macrosip`), CI on every push.
@@ -57,6 +57,6 @@ App:
 - SIP MESSAGE chat.
 - Global hotkeys (answer, hang up, mute).
 - Import from MicroSIP (`MicroSIP.ini`, `Contacts.xml`).
-- Localizations beyond English and Russian (contributions welcome).
+- More localizations (contributions welcome).
 
 Issues and feature requests: https://github.com/HSMM/MacroSIP/issues

@@ -45,6 +45,15 @@ struct GeneralPane: View {
                         Text(L.languageSystem(systemLanguageName)).tag("system")
                         Text("English").tag("en")
                         Text("Русский").tag("ru")
+                        Text("Беларуская").tag("be")
+                        Text("Українська").tag("uk")
+                        Text("Polski").tag("pl")
+                        Text("Deutsch").tag("de")
+                        Text("Français").tag("fr")
+                        Text("Italiano").tag("it")
+                        Text("Español").tag("es")
+                        Text("हिन्दी").tag("hi")
+                        Text("简体中文").tag("zh-Hans")
                     }
                     .labelsHidden().frame(width: 190)
                 }

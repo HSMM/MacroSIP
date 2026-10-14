@@ -1,0 +1,2 @@
+"NSMicrophoneUsageDescription" = "MacroSIP використовує мікрофон для здійснення та приймання викликів.";
+"NSContactsUsageDescription" = "MacroSIP шукає імена й номери в Контактах, коли ви виконуєте пошук із поля номера.";
