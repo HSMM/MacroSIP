@@ -152,6 +152,15 @@ Owner's checklist; the details are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#
 Design documents: [ROADMAP](docs/ROADMAP.md), [engine design](docs/ENGINE.md),
 [UI spec](docs/design/SCREENS.md), [decisions](docs/adr/).
 
+## Support the project
+
+MacroSIP is free and open source. If it saves you time, you can support development with a donation:
+
+| Coin | Network | Address |
+| --- | --- | --- |
+| BTC | Bitcoin | `16GBSkVAY67ZbGdqxQE17vcZDiZdgn46Wf` |
+| USDT | TRC-20 (Tron) | `TX2hHPpUKXnhCvMb8PWkjSUbnvQ2wxCJr1` |
+
 ## License
 
 GPLv2 or later, because PJSIP is GPLv2+. See [LICENSE](LICENSE).

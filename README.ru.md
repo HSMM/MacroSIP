@@ -155,6 +155,15 @@ unified log с подсистемой `com.hsmm.macrosip`.
 Документация: [ROADMAP](docs/ROADMAP.md), [устройство движка](docs/ENGINE.md),
 [спецификация UI](docs/design/SCREENS.md), [решения](docs/adr/).
 
+## Поддержать проект
+
+MacroSIP бесплатен и открыт. Если он экономит вам время, можно поддержать разработку донатом:
+
+| Монета | Сеть | Адрес |
+| --- | --- | --- |
+| BTC | Bitcoin | `16GBSkVAY67ZbGdqxQE17vcZDiZdgn46Wf` |
+| USDT | TRC-20 (Tron) | `TX2hHPpUKXnhCvMb8PWkjSUbnvQ2wxCJr1` |
+
 ## Лицензия
 
 GPLv2 или новее, потому что PJSIP распространяется под GPLv2+. См. [LICENSE](LICENSE).
