@@ -154,7 +154,7 @@ Design documents: [ROADMAP](docs/ROADMAP.md), [engine design](docs/ENGINE.md),
 
 ## Support the project
 
-MacroSIP is free and open source. If it saves you time, you can support development with a donation:
+MacroSIP is free and open source. If it saves you time, you can support development with a donation. QR codes and preset amounts: [donate page](https://hsmm.github.io/MacroSIP/donate.html).
 
 | Coin | Network | Address |
 | --- | --- | --- |
