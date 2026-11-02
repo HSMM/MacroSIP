@@ -71,7 +71,12 @@ extension AppModel {
 
     // MARK: - In-call actions
 
-    func hangup(_ id: CallID) { run { try await self.engine.hangup(id) } }
+    /// A call that ended on its own a moment before the click is not an error worth a banner.
+    func hangup(_ id: CallID) {
+        run {
+            do { try await self.engine.hangup(id) } catch EngineError.noSuchCall { }
+        }
+    }
 
     func endCurrentCall() {
         guard let c = currentCall else { return }

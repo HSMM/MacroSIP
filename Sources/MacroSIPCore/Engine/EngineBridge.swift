@@ -660,6 +660,13 @@ enum RegistrationBackoff {
     static func delay(attempt: Int) -> TimeInterval {
         delays[min(max(attempt, 1), delays.count) - 1]
     }
+
+    /// `.log` level of the "REGISTER retry N" line: info while the delay still grows and for
+    /// every tenth attempt after that, debug otherwise (a server that is down for a night made
+    /// hundreds of identical info lines).
+    static func logLevel(attempt: Int) -> Int {
+        attempt <= delays.count || attempt % 10 == 0 ? 3 : 4
+    }
 }
 
 // MARK: - C callbacks
@@ -910,7 +917,10 @@ private func pjOnRegState2(_ accID: pjsua_acc_id, _ info: UnsafeMutablePointer<p
         bridge.hop { await $0.applyPendingRegistration(id, false) }
     case true?:
         bridge.setRegistration(id, new)
-        if case .registered = new {} else {
+        // A temporary failure is retried with backoff below; sending it again at once as well
+        // made two REGISTERs race: every retry met PJSIP_EBUSY and a REGISTER left after each
+        // transaction timeout, without any backoff.
+        if case .registered = new {} else if retry == nil {
             bridge.hop { await $0.applyPendingRegistration(id, true) }
         }
     case nil:
@@ -996,7 +1006,7 @@ private func pjOnIPChangeProgress(_ op: pjsua_ip_change_op, _ status: pj_status_
         bridge.emit(.log(level: 4, "engine: network change: TCP/TLS connections shut down (\(result))"))
     case PJSUA_IP_CHANGE_OP_RESTART_LIS:
         let tp = info?.pointee.lis_restart.transport_id ?? -1
-        bridge.emit(.log(level: 3, "engine: network change: listener \(tp) restarted (\(result))"))
+        bridge.emit(.log(level: status == PJ.success ? 4 : 2, "engine: network change: listener \(tp) restarted (\(result))"))
     case PJSUA_IP_CHANGE_OP_ACC_SHUTDOWN_TP:
         let acc = info?.pointee.acc_shutdown_tp.acc_id ?? -1
         bridge.emit(.log(level: 4, "engine: network change: account \(acc) transport shut down (\(result))"))

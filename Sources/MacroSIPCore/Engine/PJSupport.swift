@@ -4,6 +4,8 @@ import Foundation
 /// Small helpers over the CPJSUA shim: status checking, string conversion, thread registration.
 enum PJ {
     static let success: pj_status_t = 0
+    /// PJ_EGONE: `pj_grp_lock_dec_ref` dropped the last reference and destroyed the object.
+    static let gone: pj_status_t = pj_status_t(PJ_EGONE)
     static let invalidID: Int32 = Int32(PJSUA_INVALID_ID.rawValue)
 
     /// pj_strerror text for a status.

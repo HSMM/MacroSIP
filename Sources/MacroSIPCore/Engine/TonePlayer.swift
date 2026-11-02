@@ -171,7 +171,10 @@ final class TonePlayer {
         }
         source = nil
         if let port {
-            PJ.warn(pjmedia_port_destroy(port), "destroy tone port")
+            // PJ_EGONE: ours was the last reference (the bridge had already dropped its own on
+            // a frame between the remove and this call) and the port is gone now, as intended.
+            let status = pjmedia_port_destroy(port)
+            if status != PJ.gone { PJ.warn(status, "destroy tone port") }
             self.port = nil
         }
         if let pool {                       // only when the gain port was never created

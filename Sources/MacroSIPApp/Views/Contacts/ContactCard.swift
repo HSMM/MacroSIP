@@ -355,7 +355,7 @@ struct ContactCardView: View {
             preferredAccountID: accountID, subscribePresence: watch && !numbers.isEmpty)
         let opened = request.contact
         var c = opened.flatMap { o in model.contacts.first { $0.id == o.id } } ?? opened ?? edited
-        func apply<T: Equatable>(_ path: WritableKeyPath<Contact, T>) {
+        func apply<T: Equatable>(_ path: WritableKeyPath<Contact, T> & Sendable) {   // Swift 6.3 release build: a key path crossing into the nested function must be Sendable
             if opened == nil || edited[keyPath: path] != opened![keyPath: path] { c[keyPath: path] = edited[keyPath: path] }
         }
         apply(\.firstName); apply(\.lastName); apply(\.organization); apply(\.numbers); apply(\.email)

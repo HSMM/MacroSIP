@@ -727,7 +727,8 @@ extension Engine {
             scheduleRegistrationRetry(id, attempt: attempt, after: 1)
             return
         }
-        emit(.log(level: 3, "engine: account \(entry.config.uri): REGISTER retry \(attempt + 1)"))
+        emit(.log(level: RegistrationBackoff.logLevel(attempt: attempt + 1),
+                  "engine: account \(entry.config.uri): REGISTER retry \(attempt + 1)"))
         do {
             try applyRegistration(id, true, retrying: true)
         } catch {

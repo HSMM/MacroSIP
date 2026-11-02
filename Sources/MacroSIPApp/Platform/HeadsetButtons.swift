@@ -164,7 +164,8 @@ final class HeadsetButtons: @unchecked Sendable {
                 Unmanaged<HeadsetButtons>.fromOpaque(context).takeUnretainedValue().deviceRemoved(device)
             }, context)
             IOHIDManagerSetDispatchQueue(m, queue)          // devices it finds are scheduled on the same queue
-            IOHIDManagerSetCancelHandler(m) { _ = m }       // after stop(): the manager lives until its last callback is done
+            // After stop(): the manager and this controller live until the last queued callback is done.
+            IOHIDManagerSetCancelHandler(m) { _ = m; _ = self }
             manager = m
             IOHIDManagerActivate(m)
             AppLog.app.info("headset buttons: listening for HID telephony devices")
@@ -172,6 +173,11 @@ final class HeadsetButtons: @unchecked Sendable {
     }
 
     /// Switches the LEDs off, forgets the devices and stops matching. `start()` may be called again later.
+    ///
+    /// The callbacks are not unregistered here: IOKit asserts ("Manager has already been
+    /// activated/cancelled", a SIGTRAP that killed the app at quit on macOS 26) when a callback is
+    /// registered on an activated manager. `IOHIDManagerCancel` ends them; a matching callback that
+    /// is already queued finds `manager == nil` and returns.
     func stop() {
         queue.async { [self] in
             guard let m = manager else { return }
@@ -180,8 +186,6 @@ final class HeadsetButtons: @unchecked Sendable {
             let hadDevices = !devices.isEmpty
             devices.removeAll()
             order.removeAll()
-            IOHIDManagerRegisterDeviceMatchingCallback(m, nil, nil)
-            IOHIDManagerRegisterDeviceRemovalCallback(m, nil, nil)
             IOHIDManagerCancel(m)
             if hadDevices { publishDevice() }
             AppLog.app.info("headset buttons: stopped")

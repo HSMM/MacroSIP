@@ -52,6 +52,8 @@ App:
 
 `26.0.1` (2026-10-14): the interface ships in English and Russian only; the other localizations of 26.0.0 are removed.
 
+`26.0.2` (2026-11-02): fixes from the first weeks of use. Quitting no longer crashes (IOHIDManager assertion in the headset-button controller); a REGISTER that met a REGISTER in flight is no longer sent twice, so retries after a timeout back off as designed instead of hitting PJSIP_EBUSY every time; hanging up a call that just ended shows no error; the log file follows `--log-level` (debug lines only at level 4), skips PJSIP's "Ports connection already exists", drops the false "destroy tone port (PJ_EGONE)" warning and writes REGISTER retries and listener restarts at debug after the first attempts; release builds compile with Swift 6.3.
+
 ## Later
 
 - Developer ID signing and notarization, so the first launch needs no workaround (when the signing identity is available).

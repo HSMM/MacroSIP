@@ -9,9 +9,14 @@ import MacroSIPCore
 /// `MacroSIP.log`, `MacroSIP.1.log`, `MacroSIP.2.log` (newest first).
 /// Line format: `2026-10-12 14:03:22.123 [pjsip] I text`. Multi-line text continues on lines
 /// that start with a tab.
+///
+/// The file follows the log level of the launch (`--log-level`, default 3): debug lines (level
+/// 4 and above, letter D) are written only at level 4 or more, like PJSIP's own.
 final class FileLog: @unchecked Sendable {
     static let maxBytes = 2 * 1024 * 1024
     static let fileCount = 3
+    /// Highest level written to the file (the PJSIP scale).
+    static let maxLevel = LaunchOptions.current.logLevel
 
     /// `MACROSIP_LOG_DIR` overrides the folder (tests, demos); demo launches do not write a file.
     static let shared: FileLog? = {
@@ -34,6 +39,7 @@ final class FileLog: @unchecked Sendable {
     private var fd: Int32 = -1
     private var size = 0
     private let maxBytes: Int
+    private let maxLevel: Int
     private let formatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = Locale(identifier: "en_US_POSIX")
@@ -41,13 +47,15 @@ final class FileLog: @unchecked Sendable {
         return f
     }()
 
-    init(directory: URL, maxBytes: Int = FileLog.maxBytes) {
+    init(directory: URL, maxBytes: Int = FileLog.maxBytes, maxLevel: Int = FileLog.maxLevel) {
         self.directory = directory
         self.maxBytes = maxBytes
+        self.maxLevel = maxLevel
     }
 
     /// Level: 1 error, 2 warning, 3 info, 4 and above debug (the PJSIP scale).
     func write(category: String, level: Int, _ text: String) {
+        guard level <= maxLevel else { return }
         let now = Date()
         queue.async { [self] in
             let letter = level <= 1 ? "E" : level == 2 ? "W" : level == 3 ? "I" : "D"
@@ -114,8 +122,16 @@ struct AppLog: Sendable {
     static func record(engineLevel level: Int, _ text: String) {
         if text.hasPrefix("engine: ") {
             FileLog.shared?.write(category: "engine", level: level, String(text.dropFirst(8)))
-        } else {
+        } else if !isKnownNoise(text) {
             FileLog.shared?.write(category: "pjsip", level: level, text)
         }
+    }
+
+    /// PJSIP lines that carry no information in this app and are not written to the file (they
+    /// stay in the unified log): the engine asks for a conference connection again whenever it
+    /// cannot tell a queued one from a dropped one (`Engine.connect`), and PJSIP 2.17 answers
+    /// "Ports connection N->M already exists" at level 3 for every such request.
+    static func isKnownNoise(_ text: String) -> Bool {
+        text.contains("Ports connection") && text.contains("already exists")
     }
 }
