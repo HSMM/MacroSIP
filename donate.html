@@ -114,7 +114,8 @@
       usdtRate: "В QR-коде адрес, сумму введите в кошельке."
     }
   };
-  var state = { lang: (navigator.language || "en").slice(0, 2) === "ru" ? "ru" : "en",
+  var q = new URLSearchParams(location.search).get("lang");
+  var state = { lang: q === "ru" || q === "en" ? q : ((navigator.language || "en").slice(0, 2) === "ru" ? "ru" : "en"),
                 coin: "btc", usd: 10, rate: null };
   var qr = new QRCode(document.getElementById("qr"),
     { width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
