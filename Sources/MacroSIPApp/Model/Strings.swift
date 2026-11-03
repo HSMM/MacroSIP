@@ -239,12 +239,27 @@ enum L {
     }
     static var troubleshootingHeader: String { loc("settings.general.troubleshooting.header", "Troubleshooting") }
     static var logFileTitle: String { loc("settings.general.log.title", "Log file") }
-    static var logFileHelp: String { loc("settings.general.log.help", "~/Library/Logs/MacroSIP/MacroSIP.log, 2 MB per file, 3 files.") }
+    static var logFileHelp: String { loc("settings.general.log.help", "~/Library/Logs/MacroSIP/MacroSIP.log, 3 files of 2 MB (8 MB in Debug mode).") }
     static var logOpenFolder: String { loc("settings.general.log.openFolder", "Open Log Folder") }
     static var diagnosticsTitle: String { loc("settings.general.diagnostics.title", "Diagnostics") }
     static var diagnosticsHelp: String { loc("settings.general.diagnostics.help", "Versions, accounts and settings, without passwords. Paste it into a bug report.") }
     static var diagnosticsCopy: String { loc("settings.general.diagnostics.copy", "Copy Diagnostics") }
     static var diagnosticsCopied: String { loc("settings.general.diagnostics.copied", "Diagnostics copied to the clipboard.") }
+    static var debugModeTitle: String { loc("settings.general.debug.title", "Debug mode") }
+    static var debugModeHelp: String { loc("settings.general.debug.help", "Writes much more detail to the log, including SIP messages, so the log grows faster. Turn it off after you send the archive.") }
+    static func debugModeFixed(_ level: Int) -> String {
+        String(format: loc("settings.general.debug.fixed", "The log level was set to %lld when MacroSIP started (--log-level or MACROSIP_LOG_LEVEL), so this switch has no effect until MacroSIP is started without it."), level)
+    }
+    static var archiveTitle: String { loc("settings.general.archive.title", "Diagnostics archive") }
+    static var archiveHelp: String { loc("settings.general.archive.help", "A ZIP with the log files, the diagnostics report and recent crash reports. It contains phone numbers and server addresses but no passwords. Send it only to someone you trust.") }
+    static var archiveCreate: String { loc("settings.general.archive.create", "Create Archive…") }
+    static var archiveCreating: String { loc("settings.general.archive.creating", "Creating…") }
+    static func diagnosticsArchiveCreated(_ name: String) -> String {
+        String(format: loc("settings.general.archive.created", "Diagnostics archive saved: %@"), name)
+    }
+    static func diagnosticsArchiveFailed(_ reason: String) -> String {
+        String(format: loc("settings.general.archive.failed", "Could not create the diagnostics archive: %@"), reason)
+    }
     static func menuAbout(_ name: String) -> String { loc("menu.about", "About \(name)") }
     static var aboutCredits: String {
         loc("about.credits", "Built on PJSIP 2.17 (GPLv2+). MacroSIP is free software under the GNU GPL v2 or later.")

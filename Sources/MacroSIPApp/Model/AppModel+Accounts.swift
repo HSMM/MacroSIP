@@ -208,6 +208,7 @@ extension AppModel {
         if new.recording.noticeTone != old.recording.noticeTone
             || new.recording.noticeToneIntervalSeconds != old.recording.noticeToneIntervalSeconds, engineReady { applyRecordingNotice() }
         if new.audio.headsetButtons != old.audio.headsetButtons { setHeadsetButtonsEnabled(new.audio.headsetButtons) }
+        if new.general.debugMode != old.general.debugMode { applyLogLevel() }
         if new.hotkeys != old.hotkeys { applyHotkeys() }
         if new.directory != old.directory { directorySettingsChanged() }
         if new.callOptions != old.callOptions || new.general.doNotDisturb != old.general.doNotDisturb { applyCallOptions() }

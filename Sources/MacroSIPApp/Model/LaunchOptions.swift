@@ -13,6 +13,8 @@ import Foundation
 struct LaunchOptions {
     var mockEngine = false
     var logLevel = 3
+    /// `--log-level` or MACROSIP_LOG_LEVEL was given: Debug mode in Settings does not change the level then.
+    var logLevelIsExplicit = false
     var dataDirectory: URL?
     var demoState: String?
     var demoTab: String?
@@ -42,7 +44,7 @@ struct LaunchOptions {
             case "--appearance" where i + 1 < args.count:
                 i += 1; o.appearance = args[i]
             case "--log-level" where i + 1 < args.count:
-                i += 1; o.logLevel = Int(args[i]) ?? o.logLevel
+                i += 1; o.logLevel = Int(args[i]) ?? o.logLevel; o.logLevelIsExplicit = Int(args[i]) != nil
             default: break
             }
             i += 1
@@ -50,6 +52,7 @@ struct LaunchOptions {
         if !args.contains("--log-level"),
            let env = ProcessInfo.processInfo.environment["MACROSIP_LOG_LEVEL"], let n = Int(env) {
             o.logLevel = n
+            o.logLevelIsExplicit = true
         }
         o.logLevel = max(0, min(6, o.logLevel))
         #if !DEBUG

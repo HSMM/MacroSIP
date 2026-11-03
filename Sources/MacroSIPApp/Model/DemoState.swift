@@ -10,7 +10,7 @@ import SwiftUI
 ///                 | account-popup | settings-accounts | account-editor | account-editor-basic | account-editor-open | editor-first-launch
 ///                 | quality-good | quality-fair | quality-poor | recording-long | many-accounts | many-accounts-settings | quality-poor-calls | network-offline | reconnecting | call-volume | headset | headset-back
 ///                 | settings-audio | settings-codecs | timed-dnd | call-log-playback | busy-mode | quick-keys | quick-keys-bottom | contact-card | contact-card-new
-///                 | settings-hotkeys | import-microsip | import-microsip-done | hotkeys-selftest | import-selftest
+///                 | settings-diagnostics | diagnostics-selftest | settings-hotkeys | import-microsip | import-microsip-done | hotkeys-selftest | import-selftest
 ///                 | directory | directory-done | directory-incoming | directory-sheet | directory-import | settings-directory
 /// Data goes to a throw-away directory (see LaunchOptions); the Keychain is never touched.
 enum DemoState {
@@ -233,6 +233,8 @@ enum DemoState {
             await quickKeysDemo(model, bottom: state == "quick-keys-bottom")
         case let s where isDirectoryState(s) && s != "settings-directory":
             await runDirectory(model, state: s)
+        case let s where isDiagnosticsState(s):
+            await runDiagnostics(model, state: s)
         case let s where isHotkeyImportState(s):
             await runHotkeyImport(model, state: s)
         case "selftest":
@@ -351,7 +353,7 @@ enum DemoState {
             if state == "timed-dnd" || state == "voicemail", let menu = StatusItemController.current?.debugMenuTitles() {
                 try? menu.joined(separator: "\n").write(toFile: "\(prefix)-menu.txt", atomically: true, encoding: .utf8)
             }
-            if state != "selftest", state != "directory-selftest", state != "hotkeys-selftest", state != "import-selftest" { quitLater() }     // the snapshot was the point; those two quit themselves
+            if state != "selftest", state != "directory-selftest", state != "hotkeys-selftest", state != "import-selftest", state != "diagnostics-selftest" { quitLater() }     // the snapshot was the point; those two quit themselves
         }
     }
 

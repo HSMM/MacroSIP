@@ -48,9 +48,9 @@ extension AppModel {
         var lines: [String] = []
         lines.append("\(Product.name) \(AppInfo.versionLine)")
         lines.append("macOS \(os), \(Self.machineArchitecture)")
-        lines.append("PJSIP 2.17, engine: \(isMockEngine ? "mock" : "pjsua"), log level \(launch.logLevel)")
+        lines.append("PJSIP 2.17, engine: \(isMockEngine ? "mock" : "pjsua"), log level \(effectiveLogLevel)\(settings.general.debugMode ? " (debug mode)" : "")")
         lines.append("Generated: \(ISO8601DateFormatter().string(from: Date()))")
-        lines.append("Log file: \((FileLog.shared?.fileURL ?? FileLog.defaultDirectory.appendingPathComponent("MacroSIP.log")).path)")
+        lines.append("Log file: \((fileLog?.fileURL ?? FileLog.defaultDirectory.appendingPathComponent("MacroSIP.log")).path)")
         lines.append("")
         lines.append("Accounts (\(accounts.count)); passwords are in the Keychain and not listed")
         for a in accounts {
@@ -67,7 +67,7 @@ extension AppModel {
         lines.append("")
         lines.append("Settings")
         lines.append(Self.settingsJSON(settings))
-        return lines.joined(separator: "\n") + "\n"
+        return LogRedaction.redact(lines.joined(separator: "\n") + "\n")
     }
 
     private static var machineArchitecture: String {

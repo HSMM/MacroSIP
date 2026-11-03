@@ -39,7 +39,7 @@ public actor Engine {
         queue.asUnownedSerialExecutor()
     }
 
-    let logLevel: Int
+    private(set) var logLevel: Int
     let nullAudio: Bool
     let bindAddress: String?
     let caBundleURL: URL
@@ -244,6 +244,13 @@ public actor Engine {
 
     deinit {
         continuation.finish()
+    }
+
+    /// Changes the PJSIP log level (0...6) at once, also while running; before `start` it sets the level
+    /// `start` begins with. Debug mode of Settings › General uses level 4.
+    public func setLogLevel(_ level: Int) {
+        logLevel = max(0, min(6, level))
+        if isStarted { pj_log_set_level(Int32(logLevel)) }
     }
 
     // MARK: - Lifecycle

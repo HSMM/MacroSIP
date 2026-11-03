@@ -11,6 +11,8 @@ protocol SIPEngine: Actor {
 
     func start(network: NetworkSettings, codecPriorities: [String], codecOptions: CodecOptions, callOptions: CallOptions) throws
     func stop()
+    /// PJSIP's log level (0...6) at once, also while running.
+    func setLogLevel(_ level: Int)
 
     // accounts
     func addAccount(_ cfg: AccountConfig, password: String) throws

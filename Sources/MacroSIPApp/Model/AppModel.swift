@@ -117,6 +117,8 @@ final class AppModel {
     var hotkeyFailures: [HotkeyAction: GlobalHotkeys.Failure] = [:]   // combinations the system refused (another app holds them)
     var hotkeyIssues: [HotkeyAction: HotkeyIssue] = [:]               // the last combination the user typed that was refused
     var hotkeyRecording = false                                       // a recorder is listening: nothing is registered meanwhile
+    var archiveInProgress = false           // Settings › General › Create Archive… is running
+    @ObservationIgnored var fileLogOverride: FileLog?                  // a demo check writes to its own log folder
     var holdMusicError: String?             // why the engine refused the hold music file (Settings › Audio)
 
     private init() {
@@ -143,7 +145,10 @@ final class AppModel {
         callLogStore = CallLogStore(directory: dir, contacts: contactStore)
         settingsStore = SettingsStore(directory: dir)
         isMockEngine = launch.mockEngine
-        engine = EngineFactory.make(useMock: launch.mockEngine)
+        let startLevel = LogLevelPolicy.effectiveLevel(launchLevel: launch.logLevel, explicit: launch.logLevelIsExplicit,
+                                                       debugMode: settingsStore.load().general.debugMode)
+        FileLog.shared?.setLevel(startLevel)
+        engine = EngineFactory.make(useMock: launch.mockEngine, logLevel: startLevel)
         #if DEBUG
         if launch.isDemo { DemoState.seed(stores: (accountStore, contactStore, callLogStore, settingsStore), vault: vault) }
         #endif

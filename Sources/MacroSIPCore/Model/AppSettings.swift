@@ -132,6 +132,8 @@ public struct GeneralSettings: Codable, Equatable, Sendable {
     public var presenceStatus: PresenceStatus
     /// Order and section letters of the Contacts tab (Settings › General › Contacts).
     public var contactSort: ContactSortOrder
+    /// Settings › General › Troubleshooting › Debug mode: log level 4 (file and PJSIP) until switched off.
+    public var debugMode: Bool
 
     public init(
         launchAtLogin: Bool = false,
@@ -144,7 +146,8 @@ public struct GeneralSettings: Codable, Equatable, Sendable {
         doNotDisturbUntil: Date? = nil,
         bringToFrontOnIncoming: Bool = false,
         presenceStatus: PresenceStatus = .available,
-        contactSort: ContactSortOrder = .firstName
+        contactSort: ContactSortOrder = .firstName,
+        debugMode: Bool = false
     ) {
         self.launchAtLogin = launchAtLogin
         self.language = language
@@ -157,9 +160,10 @@ public struct GeneralSettings: Codable, Equatable, Sendable {
         self.bringToFrontOnIncoming = bringToFrontOnIncoming
         self.presenceStatus = presenceStatus
         self.contactSort = contactSort
+        self.debugMode = debugMode
     }
 
-    /// Older settings.json files lack `presenceStatus`, `doNotDisturbUntil` and `bringToFrontOnIncoming`; they decode as defaults.
+    /// Older settings.json files lack `presenceStatus`, `doNotDisturbUntil`, `bringToFrontOnIncoming` and `debugMode`; they decode as defaults.
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         launchAtLogin = try c.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? false
@@ -173,6 +177,7 @@ public struct GeneralSettings: Codable, Equatable, Sendable {
         bringToFrontOnIncoming = try c.decodeIfPresent(Bool.self, forKey: .bringToFrontOnIncoming) ?? false
         presenceStatus = try c.decodeIfPresent(PresenceStatus.self, forKey: .presenceStatus) ?? .available
         contactSort = try c.decodeIfPresent(ContactSortOrder.self, forKey: .contactSort) ?? .firstName
+        debugMode = (try? c.decodeIfPresent(Bool.self, forKey: .debugMode)) ?? false
     }
 }
 

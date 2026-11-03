@@ -10,12 +10,15 @@ import MacroSIPCore
 /// Line format: `2026-10-12 14:03:22.123 [pjsip] I text`. Multi-line text continues on lines
 /// that start with a tab.
 ///
-/// The file follows the log level of the launch (`--log-level`, default 3): debug lines (level
-/// 4 and above, letter D) are written only at level 4 or more, like PJSIP's own.
+/// The file follows the log level (`--log-level`, default 3, or Debug mode's 4, set with `setLevel`
+/// while running): debug lines (level 4 and above, letter D) are written only at level 4 or more,
+/// like PJSIP's own. At level 4 and above a file may grow to `debugMaxBytes`, so a useful span of
+/// the chattier log survives the rotation (3 files: up to 24 MB).
 final class FileLog: @unchecked Sendable {
     static let maxBytes = 2 * 1024 * 1024
+    static let debugMaxBytes = 8 * 1024 * 1024
     static let fileCount = 3
-    /// Highest level written to the file (the PJSIP scale).
+    /// Highest level written to the file at launch (the PJSIP scale).
     static let maxLevel = LaunchOptions.current.logLevel
 
     /// `MACROSIP_LOG_DIR` overrides the folder (tests, demos); demo launches do not write a file.
@@ -39,7 +42,11 @@ final class FileLog: @unchecked Sendable {
     private var fd: Int32 = -1
     private var size = 0
     private let maxBytes: Int
-    private let maxLevel: Int
+    private let debugMaxBytes: Int
+    private let levelLock = OSAllocatedUnfairLock(initialState: 0)
+    /// Highest level written to the file; changes at once (Debug mode).
+    var maxLevel: Int { levelLock.withLock { $0 } }
+    func setLevel(_ level: Int) { levelLock.withLock { $0 = max(0, min(6, level)) } }
     private let formatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = Locale(identifier: "en_US_POSIX")
@@ -47,10 +54,12 @@ final class FileLog: @unchecked Sendable {
         return f
     }()
 
-    init(directory: URL, maxBytes: Int = FileLog.maxBytes, maxLevel: Int = FileLog.maxLevel) {
+    init(directory: URL, maxBytes: Int = FileLog.maxBytes, maxLevel: Int = FileLog.maxLevel,
+         debugMaxBytes: Int = FileLog.debugMaxBytes) {
         self.directory = directory
         self.maxBytes = maxBytes
-        self.maxLevel = maxLevel
+        self.debugMaxBytes = max(debugMaxBytes, maxBytes)
+        levelLock.withLock { $0 = max(0, min(6, maxLevel)) }
     }
 
     /// Level: 1 error, 2 warning, 3 info, 4 and above debug (the PJSIP scale).
@@ -71,7 +80,7 @@ final class FileLog: @unchecked Sendable {
     private func append(_ bytes: [UInt8]) {
         if fd < 0 { open() }
         guard fd >= 0 else { return }
-        if size > 0, size + bytes.count > maxBytes { rotate() }
+        if size > 0, size + bytes.count > (maxLevel >= LogLevelPolicy.debugLevel ? debugMaxBytes : maxBytes) { rotate() }
         guard fd >= 0 else { return }
         let written = bytes.withUnsafeBytes { Darwin.write(fd, $0.baseAddress, bytes.count) }
         if written > 0 { size += written }

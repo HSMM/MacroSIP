@@ -82,8 +82,21 @@ struct GeneralPane: View {
                         Button(L.logOpenFolder) { model.openLogFolder() }
                     }
                     FormDivider()
+                    FormRow(label: L.debugModeTitle,
+                            help: model.logLevelFixedAtLaunch ? L.debugModeFixed(model.launch.logLevel) : L.debugModeHelp) {
+                        Toggle("", isOn: Binding(get: { model.effectiveLogLevel >= LogLevelPolicy.debugLevel },
+                                                 set: { model.setDebugMode($0) }))
+                            .labelsHidden().toggleStyle(.switch)
+                            .disabled(model.logLevelFixedAtLaunch)
+                    }
+                    FormDivider()
                     FormRow(label: L.diagnosticsTitle, help: L.diagnosticsHelp) {
                         Button(L.diagnosticsCopy) { model.copyDiagnostics() }
+                    }
+                    FormDivider()
+                    FormRow(label: L.archiveTitle, help: L.archiveHelp) {
+                        Button(model.archiveInProgress ? L.archiveCreating : L.archiveCreate) { model.createDiagnosticsArchive() }
+                            .disabled(model.archiveInProgress)
                     }
                 }
             }

@@ -72,6 +72,9 @@ actor MockEngine: SIPEngine {
         try setCodecPriorities(codecPriorities)
     }
 
+    private(set) var logLevel = 3
+    func setLogLevel(_ level: Int) { logLevel = max(0, min(6, level)) }
+
     func stop() {
         guard started else { return }
         hangupAll()

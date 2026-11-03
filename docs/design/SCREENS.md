@@ -817,7 +817,16 @@ Group footer: "Choices: System, English, Русский."
 | Open sip: and tel: links with MacroSIP (secondary label with status line) | label and button "Make Default" | Registers MacroSIP for `sip:`, `sips:` and `tel:` through Launch Services. The status line (warning dot, orange) says which other app owns `tel:` when it is not MacroSIP: "Another app currently handles tel: links." | Enabled. |
 | When a link is opened (secondary "Fills the number field so you can check it first.") | popup, current value "Ask before calling" | Ask before calling / Call immediately / Only fill the number. "Ask before calling" fills the number field; it does not place the call. | Enabled. |
 
-**Group Troubleshooting (header "Troubleshooting"):** Open Log Folder (reveals the log in Finder), Copy Diagnostics (versions, macOS, accounts without passwords, settings).
+**Group Troubleshooting (header "Troubleshooting"):** four rows.
+
+| Row | Type | Behaviour |
+|---|---|---|
+| Log file (secondary "~/Library/Logs/MacroSIP/MacroSIP.log, 3 files of 2 MB (8 MB in Debug mode).") | button "Open Log Folder" | Reveals the log in Finder. |
+| Debug mode (secondary "Writes much more detail to the log, including SIP messages, so the log grows faster. Turn it off after you send the archive.") | switch, off by default | Log level 4 for the log file and PJSIP at once, no restart; stored in `settings.json` (`general.debugMode`), so it stays on across launches until switched off. In debug the files rotate at 8 MB instead of 2 MB (3 files). When the app was started with `--log-level` or `MACROSIP_LOG_LEVEL`, that level wins: the switch is disabled, shows the launch level and the secondary text says so. |
+| Diagnostics (secondary "Versions, accounts and settings, without passwords. Paste it into a bug report.") | button "Copy Diagnostics" | Versions, macOS, accounts without passwords, settings, log level. |
+| Diagnostics archive (secondary "A ZIP with the log files, the diagnostics report and recent crash reports. It contains phone numbers and server addresses but no passwords. Send it only to someone you trust.") | button "Create Archive…" (while running "Creating…", disabled) | Save panel, default name `MacroSIP-diagnostics-YYYYMMDD-HHmm.zip` in Desktop. The ZIP holds `logs/` (all rotated log files), `diagnostics.txt` and `crash-reports/` (`MacroSIP-*.ips` of the last 30 days, at most 5). Built off the main thread; then revealed in Finder with the banner "Diagnostics archive saved: name". A failure shows the banner "Could not create the diagnostics archive: reason". Works with no log files and no crash reports. Digest `response`, `nonce`, `cnonce`, `opaque`, Basic/Bearer credentials, `password`-like keys and passwords in URLs are replaced by `<redacted>` in the copies; the log files themselves are not changed. |
+
+Strings: `settings.general.debug.title`, `.debug.help`, `.debug.fixed` (%lld = launch level), `settings.general.archive.title`, `.help`, `.create`, `.creating`, `.created` (%@ file name), `.failed` (%@ reason); `settings.general.log.help` changed.
 
 Language switches the app's own language (macOS per-app language) and asks to restart.
 
@@ -1517,6 +1526,7 @@ Strings marked "(proposed)" are not in the mockups; they are needed by the spec 
 | | During a call | `settings.calls.duringCall.header` | Group header (Calls tab). |
 | | Auto-answer | `settings.autoAnswer.header` | Group header (Calls tab). |
 | | Advanced | `settings.general.advanced.header` | Disclosure group at the bottom of General. |
+| | Debug mode, Diagnostics archive, Create Archive… | `settings.general.debug.*`, `settings.general.archive.*` | Troubleshooting rows (see 8.1). |
 | | Until %1$@ · %2$@ left | `settings.general.dnd.until` | Settings DND row while timed (time, remaining). |
 | | Declines incoming calls with 486 Busy Here and publishes Do Not Disturb. | `settings.general.dnd.help` | |
 | | When a call comes in during a call | `settings.general.calls.incomingWhileOnCall` | |
