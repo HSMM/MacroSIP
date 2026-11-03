@@ -158,6 +158,18 @@
 <h2 dir="auto">Several accounts</h2>
 <p dir="auto">Settings › Accounts lists every account with a status dot, Name (a blue <strong>Default</strong> badge marks the default outgoing account), Address, Transport and Status. Drag rows to reorder; the order is used in the account pop-up and the status bar. With eight or more accounts a <strong>Filter accounts</strong> field narrows the list.</p>
 <p dir="auto"><strong>−</strong> removes the selected account after "Delete account “Office”?" — "Its password is removed from Keychain. Call history is kept."</p>
+<h2 dir="auto">Importing from MicroSIP</h2>
+<p dir="auto">Settings › Accounts › <strong>Import from MicroSIP…</strong> brings in the accounts and contacts of a MicroSIP installation. Nothing else of MicroSIP is read.</p>
+<ol dir="auto">
+<li><strong>Find MicroSIP.ini.</strong> On Windows, MicroSIP keeps it next to MicroSIP.exe or in <code class="notranslate">%APPDATA%\MicroSIP</code>. Copy the file to your Mac and choose it in the file picker.</li>
+<li><strong>Check the preview.</strong> A <strong>Contacts.xml</strong> in the same folder is used automatically; the <strong>Contacts file</strong> row lets you choose another file or <strong>Don't import contacts</strong>. The preview lists the accounts to import, the number of contacts, the <strong>Skipped</strong> items (already in MacroSIP, or listed twice in the file) and the <strong>Warnings</strong>. Nothing is written until you press <strong>Import</strong>; <strong>Cancel</strong> changes nothing.</li>
+<li><strong>Enter the passwords.</strong> Accounts are imported switched off. MicroSIP stores its passwords in a form MacroSIP cannot read, so type each password once to switch its account on. <strong>Enter Password…</strong> opens the first imported account in the editor. The others show "Needs password" in Settings › Accounts until a password is saved.</li>
+</ol>
+<p dir="auto">An account without a server in the file does not register, so it needs no password: it is imported as an outgoing-only account and can be switched on without one. An account with neither a server nor a domain is skipped, with a warning.</p>
+<p dir="auto">For scripts and administrators, the same import runs from the command line:</p>
+<pre class="notranslate"><code class="notranslate">/Applications/MacroSIP.app/Contents/MacOS/MacroSIP --import-microsip MicroSIP.ini [--contacts Contacts.xml] [--dry-run]
+</code></pre>
+<p dir="auto"><code class="notranslate">--dry-run</code> prints the report and writes nothing. The command adds the accounts (switched off, without passwords) and the contacts. It refuses to write while MacroSIP is running, so quit MacroSIP first. It exits with 0 when the import is done, 1 when it was refused or failed, and 2 when the arguments are wrong.</p>
 <h2 dir="auto">The account pop-up</h2>
 <p dir="auto">The button above the number field in the main window shows the outgoing account with its registration dot. Click it to open the pop-up:</p>
 <ul dir="auto">
@@ -207,6 +219,11 @@
 <td>grey, hollow</td>
 <td>"Disabled" (Settings only; the account leaves the status bar)</td>
 <td>Switched off.</td>
+</tr>
+<tr>
+<td>orange</td>
+<td>"Needs password" (Settings only; imported from MicroSIP)</td>
+<td>Switched off until a password is saved.</td>
 </tr>
 <tr>
 <td>grey glyph</td>

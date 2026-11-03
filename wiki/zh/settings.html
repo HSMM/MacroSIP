@@ -59,11 +59,19 @@
 <td><strong>高级 › 故障排除</strong> (Advanced › Troubleshooting)</td>
 <td><strong>打开日志文件夹</strong> (Open Log Folder)（<code class="notranslate">~/Library/Logs/MacroSIP/MacroSIP.log</code>，每个文件 2 MB，3 个文件）和<strong>拷贝诊断信息</strong> (Copy Diagnostics)（版本、账户和设置，不含密码）。</td>
 </tr>
+<tr>
+<td><strong>Debug mode</strong></td>
+<td>开关，默认关闭。向日志写入更多细节，包括 SIP 消息，日志文件每个增长到 8 MB。开启后会跨启动保持，直到关闭为止；如果启动时使用了 <code class="notranslate">--log-level</code>，以该级别为准，此开关将被禁用。见 <a href="troubleshooting.html">故障排除</a>。</td>
+</tr>
+<tr>
+<td><strong>Create Archive…</strong></td>
+<td>保存一个 ZIP 归档，包含日志文件、诊断报告和最近的崩溃报告。归档中的密码和认证值已被移除。见 <a href="troubleshooting.html">故障排除</a>。</td>
+</tr>
 </tbody>
 </table></div></markdown-accessiblity-table>
 <p dir="auto">“高级”组默认折叠。</p>
 <h2 dir="auto">账户</h2>
-<p dir="auto">一个表格，包含状态圆点、<strong>名称</strong> (Name)（默认外拨账户上有蓝色的<strong>默认</strong> (Default) 标记）、<strong>地址</strong> (Address)、<strong>传输</strong> (Transport) 和<strong>状态</strong> (Status)（已注册、正在注册…、简短错误如 403、已停用、仅外拨、正在重新连接…）。拖移可重新排序；此顺序用于账户弹出菜单和状态栏。按钮 <strong>+</strong>、<strong>−</strong>（需确认）和<strong>编辑…</strong> (Edit…)；连按可编辑。账户达到八个或更多时出现<strong>过滤账户</strong> (Filter accounts) 字段。“Office · 上次错误”组显示上次 REGISTER 失败并提供<strong>重试</strong> (Retry)。编辑器的字段在 <a href="accounts.html">账户</a> 中介绍；其“高级”组包含语音信箱行<strong>语音信箱号码</strong> (Voicemail number)（“从菜单栏和状态栏拨打。”）和<strong>语音信箱指示 (MWI)</strong> (Voicemail indicator (MWI))（“显示服务器报告的新留言数量。”）。</p>
+<p dir="auto">一个表格，包含状态圆点、<strong>名称</strong> (Name)（默认外拨账户上有蓝色的<strong>默认</strong> (Default) 标记）、<strong>地址</strong> (Address)、<strong>传输</strong> (Transport) 和<strong>状态</strong> (Status)（已注册、正在注册…、简短错误如 403、已停用、需要密码 (Needs password)、仅外拨、正在重新连接…）。拖移可重新排序；此顺序用于账户弹出菜单和状态栏。按钮 <strong>+</strong>、<strong>−</strong>（需确认）和<strong>编辑…</strong> (Edit…)；连按可编辑。页脚右侧的 <strong>Import from MicroSIP…</strong> 导入 MicroSIP 的账户和联系人（见 <a href="accounts.html">账户</a>）。账户达到八个或更多时出现<strong>过滤账户</strong> (Filter accounts) 字段。“Office · 上次错误”组显示上次 REGISTER 失败并提供<strong>重试</strong> (Retry)。编辑器的字段在 <a href="accounts.html">账户</a> 中介绍；其“高级”组包含语音信箱行<strong>语音信箱号码</strong> (Voicemail number)（“从菜单栏和状态栏拨打。”）和<strong>语音信箱指示 (MWI)</strong> (Voicemail indicator (MWI))（“显示服务器报告的新留言数量。”）。</p>
 <h2 dir="auto">音频</h2>
 <markdown-accessiblity-table><div class="tablewrap"><table role="table">
 <thead>
@@ -178,6 +186,10 @@
 <tr>
 <td><strong>通话期间</strong> (During a call)</td>
 <td><strong>通话期间有来电时</strong> (When a call comes in during a call)：呼叫等待（提示音和窗口）/ 仅窗口 / 忙线（单通话模式）。<strong>DTMF 方式</strong> (DTMF method)：自动 / RFC 2833 / SIP INFO / 带内（“自动使用 RFC 2833 并回退到 SIP INFO。”）。<strong>来电时将主窗口置于最前</strong> (Bring the main window to the front on an incoming call)（“来电窗口仍会一同出现。”）。</td>
+</tr>
+<tr>
+<td><strong>全局热键</strong> (Global hotkeys)</td>
+<td><strong>Use hotkeys in any app</strong>（默认关闭），之后是 <strong>Answer</strong>、<strong>Hang up</strong> 和 <strong>Mute</strong> 的按键框。建议组合为 ⌃⌥A、⌃⌥H 和 ⌃⌥M。见 <a href="calls.html">通话</a>。</td>
 </tr>
 <tr>
 <td><strong>自动接听</strong> (Auto-answer)</td>

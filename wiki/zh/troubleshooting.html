@@ -114,6 +114,22 @@
 <p dir="auto">MacroSIP 无法翻译的库消息（LDAP 诊断信息）按原样显示。失败的来源会被跳过 60 秒，然后重试。</p>
 <h2 dir="auto">日志文件与拷贝诊断信息</h2>
 <p dir="auto">MacroSIP 将日志写入 <code class="notranslate">~/Library/Logs/MacroSIP/MacroSIP.log</code>（每个文件 2 MB，保留 3 个文件）。设置 › 通用 › 高级 › <strong>打开日志文件夹</strong> (Open Log Folder) 在访达中显示它；<strong>拷贝诊断信息</strong> (Copy Diagnostics) 将版本、macOS、不含密码的账户和设置拷贝到剪贴板（“诊断信息已拷贝到剪贴板。”）。如需更深入的 SIP 跟踪，请用 <code class="notranslate">open /Applications/MacroSIP.app --args --log-level 5</code>（0–6）启动应用。应用也会以子系统 <code class="notranslate">com.hsmm.macrosip</code> 写入统一日志。</p>
+<h2 dir="auto">调试模式与诊断归档</h2>
+<p dir="auto">调试模式会向日志写入更多细节，包括 SIP 消息。问题需要更细致地排查时请打开它，然后向开发者发送一个归档：</p>
+<ol dir="auto">
+<li>打开 Settings › General › Advanced › Troubleshooting，开启 <strong>Debug mode</strong>。它立即生效，无需重启，并会跨启动保持，直到您将其关闭。此时日志文件每个增长到 8 MB，保留 3 个文件。如果 MacroSIP 是以 <code class="notranslate">--log-level</code> 或 <code class="notranslate">MACROSIP_LOG_LEVEL</code> 启动的，则以该级别为准：开关被禁用，并显示启动时的级别。</li>
+<li>重现问题：拨打出现故障的通话，或尝试出现故障的注册。</li>
+<li>在同一组中点按 <strong>Create Archive…</strong>，并选择保存 ZIP 的位置。默认文件名为 <code class="notranslate">MacroSIP-diagnostics-YYYYMMDD-HHmm.zip</code>，位于桌面。保存后，MacroSIP 会在访达中显示该归档，并弹出横幅“Diagnostics archive saved: …”。</li>
+<li>将 ZIP 随问题报告一同发送，方法见下文“报告问题”。请只发送给您信任的人。</li>
+<li>关闭 <strong>Debug mode</strong>。在关闭之前，日志会持续增长。</li>
+</ol>
+<p dir="auto">归档包含：</p>
+<ul dir="auto">
+<li><code class="notranslate">logs/</code>：所有日志文件，包括轮转的旧文件；</li>
+<li><code class="notranslate">diagnostics.txt</code>：诊断报告（版本、账户、设置和日志级别）；</li>
+<li><code class="notranslate">crash-reports/</code>：MacroSIP 最近 30 天的崩溃报告，最多 5 个，原样包含。</li>
+</ul>
+<p dir="auto">电话号码和服务器地址会保留在归档中。副本中的密码和认证值会被移除（替换为 <code class="notranslate">&lt;redacted&gt;</code>）：digest 的 response、nonce、cnonce 和 opaque 值，Basic 与 Bearer 凭据，以及 URL 中的密码。您 Mac 上的日志文件不会被更改。</p>
 <h2 dir="auto">设置与联系人的存储位置</h2>
 <markdown-accessiblity-table><div class="tablewrap"><table role="table">
 <thead>

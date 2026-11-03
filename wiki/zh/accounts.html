@@ -158,6 +158,18 @@
 <h2 dir="auto">多个账户</h2>
 <p dir="auto">设置 › 账户列出所有账户，包括状态圆点、名称（蓝色的<strong>默认</strong> (Default) 标记表示默认外拨账户）、地址、传输和状态。拖移行可重新排序；此顺序用于账户弹出菜单和状态栏。账户达到八个或更多时会出现<strong>过滤账户</strong> (Filter accounts) 字段来缩小列表。</p>
 <p dir="auto"><strong>−</strong> 在确认“删除账户‘Office’？”——“其密码将从钥匙串中移除。通话记录会保留。”后移除所选账户。</p>
+<h2 dir="auto">从 MicroSIP 导入</h2>
+<p dir="auto">在 Settings › Accounts 中点击 <strong>Import from MicroSIP…</strong>，即可导入 MicroSIP 安装中的账户和联系人。MacroSIP 不读取 MicroSIP 的其他任何内容。</p>
+<ol dir="auto">
+<li><strong>找到 MicroSIP.ini。</strong> 在 Windows 上，MicroSIP 通常将它放在 MicroSIP.exe 旁边，或放在 <code class="notranslate">%APPDATA%\MicroSIP</code> 中。将该文件复制到您的 Mac，并在文件选择器中选中它。</li>
+<li><strong>检查预览。</strong> 同一文件夹中的 <strong>Contacts.xml</strong> 会被自动使用；<strong>Contacts file</strong> 一行可以选择其他文件，或选择 <strong>Don't import contacts</strong>。预览列出待导入的账户、联系人数量、<strong>Skipped</strong>（MacroSIP 中已存在，或在文件中重复列出）以及 <strong>Warnings</strong>。点按 <strong>Import</strong> 之前不会写入任何内容。</li>
+<li><strong>输入密码。</strong> 账户以停用状态导入。MicroSIP 以 MacroSIP 无法读取的形式保存密码，因此请为每个账户输入一次密码以启用它。<strong>Enter Password…</strong> 会在编辑器中打开第一个导入的账户。其余账户在保存密码之前，会在 Settings › Accounts 列表中显示 <strong>Needs password</strong>。</li>
+</ol>
+<p dir="auto">文件中没有服务器的账户不会注册，因此不需要密码：它以“仅外拨”账户导入，无需密码即可启用。既没有服务器也没有域的账户会被跳过并给出警告。</p>
+<p dir="auto">对于脚本和管理员，同样的导入也可以在命令行中执行：</p>
+<pre class="notranslate"><code class="notranslate">/Applications/MacroSIP.app/Contents/MacOS/MacroSIP --import-microsip MicroSIP.ini [--contacts Contacts.xml] [--dry-run]
+</code></pre>
+<p dir="auto"><code class="notranslate">--dry-run</code> 只打印报告，不写入任何内容。该命令会添加账户（停用、无密码）和联系人。MacroSIP 运行期间它拒绝写入，因此请先退出 MacroSIP。退出码：0 表示导入完成，1 表示被拒绝或失败，2 表示参数错误。</p>
 <h2 dir="auto">账户弹出菜单</h2>
 <p dir="auto">主窗口号码栏上方的按钮显示外拨账户及其注册圆点。点按它打开弹出菜单：</p>
 <ul dir="auto">
@@ -207,6 +219,11 @@
 <td>灰色空心</td>
 <td>“已停用”（仅在设置中显示；账户从状态栏消失）</td>
 <td>已关闭。</td>
+</tr>
+<tr>
+<td>橙色</td>
+<td><strong>Needs password</strong>（仅在设置中显示；从 MicroSIP 导入）</td>
+<td>在保存密码之前保持停用。</td>
 </tr>
 <tr>
 <td>灰色图形</td>

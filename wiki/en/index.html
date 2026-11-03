@@ -18,13 +18,13 @@
 <h1 dir="auto">MacroSIP</h1>
 <p dir="auto">MacroSIP is a SIP softphone for macOS 14 and newer. It registers several SIP accounts at the same time, handles up to four calls with hold, transfer, local conference and recording, and fits into one small window plus a menu bar icon. The interface is native Swift and SwiftUI, and the SIP engine is <a href="https://github.com/pjsip/pjproject">PJSIP</a> 2.17; there is no Electron and no Qt.</p>
 <h2 dir="auto">Versions</h2>
-<p dir="auto">Versions read <code class="notranslate">YY.MINOR.PATCH</code>, so the line of 2026 is <strong>26</strong>. The first public release is <strong>26.0.0</strong> (14 October 2026); it contains everything this guide describes. <strong>26.0.1</strong> (the same day) ships the interface in English and Russian only.</p>
-<p dir="auto">Later releases bring notarization, video, chat, global hotkeys, MicroSIP import and Bluetooth headset buttons. The full plan is in <a href="https://github.com/HSMM/MacroSIP/blob/main/docs/ROADMAP.md">docs/ROADMAP.md</a>.</p>
+<p dir="auto">Versions read <code class="notranslate">YY.MINOR.PATCH</code>, so the line of 2026 is <strong>26</strong>. The current release is <strong>26.1.0</strong> (3 November 2026); it adds global hotkeys, import from MicroSIP, and debug mode with a diagnostics archive. The first public release was <strong>26.0.0</strong> (14 October 2026). <strong>26.0.1</strong> (the same day) ships the interface in English and Russian only.</p>
+<p dir="auto">Later releases bring notarization, video, chat and Bluetooth headset buttons. The full plan is in <a href="https://github.com/HSMM/MacroSIP/blob/main/docs/ROADMAP.md">docs/ROADMAP.md</a>.</p>
 <h2 dir="auto">User guide</h2>
 <ul dir="auto">
 <li><a href="installation.html">Installation</a> — requirements, Homebrew or DMG, the first launch, updates, the log file.</li>
-<li><a href="accounts.html">Accounts</a> — adding a SIP account, the Advanced group, several accounts, the account pop-up, status bar states.</li>
-<li><a href="calls.html">Calls</a> — dialing, the call panel, hold, mute, DTMF, transfers, several calls, conference, volumes, quality, recording.</li>
+<li><a href="accounts.html">Accounts</a> — adding a SIP account, the Advanced group, several accounts, importing from MicroSIP, the account pop-up, status bar states.</li>
+<li><a href="calls.html">Calls</a> — dialing, the call panel, hold, mute, DTMF, transfers, several calls, conference, volumes, quality, recording, global hotkeys.</li>
 <li><a href="incoming-calls.html">Incoming calls</a> — the floating window and notification, auto-answer, Do Not Disturb, deny rules, the voicemail indicator.</li>
 <li><a href="contacts-and-call-log.html">Contacts and call log</a> — the contact card, favourites, presence, call log entries and playback.</li>
 <li><a href="directory.html">Directory</a> — LDAP, URL (CSV or JSON), Google Contacts and macOS Contacts sources, search and import.</li>
@@ -32,7 +32,7 @@
 <li><a href="audio.html">Audio</a> — devices, headset buttons, ringtone, hold music, sound events, audio test, echo cancellation, codecs, network settings that affect audio.</li>
 <li><a href="settings.html">Settings</a> — every pane and every row, in order.</li>
 <li><a href="menu-bar.html">Menu bar</a> — the status item, its menu, the Dock badge.</li>
-<li><a href="troubleshooting.html">Troubleshooting</a> — first launch, microphone, 403 and 401, TLS, one-way audio, logs, where data is stored, how to report an issue.</li>
+<li><a href="troubleshooting.html">Troubleshooting</a> — first launch, microphone, 403 and 401, TLS, one-way audio, logs, debug mode and the diagnostics archive, where data is stored, how to report an issue.</li>
 </ul>
 <h2 dir="auto">For developers</h2>
 <ul dir="auto">

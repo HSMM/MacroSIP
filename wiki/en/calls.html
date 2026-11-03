@@ -117,7 +117,37 @@
 <li>Files are M4A (AAC), named like <code class="notranslate">2026-10-10 14.52 Alesia Kazlouskaya (in).m4a</code>, in <code class="notranslate">~/Music/MacroSIP Recordings</code> or the folder you choose. If the conversion fails the WAV is kept and a banner says so.</li>
 <li>A call log entry with a recording shows a play button and an inline player; the context menu adds <strong>Play recording</strong> and <strong>Show in Finder</strong> (<a href="contacts-and-call-log.html">Contacts and call log</a>).</li>
 </ul>
-<p dir="auto">Headset buttons (answer, hang up, hold, mute and redial from a USB headset) are described in <a href="audio.html">Audio</a>. Video calls and global hotkeys are planned for later releases.</p>
+<p dir="auto">Headset buttons (answer, hang up, hold, mute and redial from a USB headset) are described in <a href="audio.html">Audio</a>. Video calls are planned for later releases.</p>
+<h2 dir="auto">Global hotkeys</h2>
+<p dir="auto">Global hotkeys answer, hang up and mute a call while another app is in front, so you do not have to switch to MacroSIP. They are off by default. Turn on <strong>Use hotkeys in any app</strong> in Settings › Calls › <strong>Global hotkeys</strong>; the first time, the three fields fill in with the suggested combinations:</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Suggested</th>
+<th>What a press does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Answer</strong></td>
+<td>⌃⌥A</td>
+<td>Answers the call that has been ringing longest. The active call is held first.</td>
+</tr>
+<tr>
+<td><strong>Hang up</strong></td>
+<td>⌃⌥H</td>
+<td>Ends the current call. With no connected call, declines the oldest ringing call. In a conference, ends the whole conference.</td>
+</tr>
+<tr>
+<td><strong>Mute</strong></td>
+<td>⌃⌥M</td>
+<td>Turns the microphone of the current call off or on. In a conference, all legs.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">To change a combination, click its field and press the new keys; Esc cancels and Delete clears it. A combination needs ⌘, ⌃ or ⌥, one combination cannot serve two actions, and combinations used by MacroSIP's menus or by standard macOS shortcuts are refused with a short reason under the field. If macOS refuses a saved combination, that field says so and the other two keep working.</p>
+<p dir="auto">Hotkeys need no permission. They do nothing when there is no call to act on. macOS does not report when another app uses the same keys, so that app can receive the press too; choose keys that no other app uses.</p>
 <footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
 </main>
 </div>

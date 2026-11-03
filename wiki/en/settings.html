@@ -59,11 +59,19 @@
 <td><strong>Advanced › Troubleshooting</strong></td>
 <td><strong>Open Log Folder</strong> (<code class="notranslate">~/Library/Logs/MacroSIP/MacroSIP.log</code>, 2 MB per file, 3 files) and <strong>Copy Diagnostics</strong> (versions, accounts and settings, without passwords).</td>
 </tr>
+<tr>
+<td><strong>Debug mode</strong></td>
+<td>Switch, off by default. Writes much more detail to the log, including SIP messages, and the log files grow to 8 MB each. It stays on across launches until you switch it off; if MacroSIP was started with <code class="notranslate">--log-level</code>, that level wins and the switch is disabled. See <a href="troubleshooting.html">Troubleshooting</a>.</td>
+</tr>
+<tr>
+<td><strong>Create Archive…</strong></td>
+<td>Saves a ZIP with the log files, the diagnostics report and recent crash reports. Passwords and authentication values are removed from it. See <a href="troubleshooting.html">Troubleshooting</a>.</td>
+</tr>
 </tbody>
 </table></div></markdown-accessiblity-table>
 <p dir="auto">The Advanced group is collapsed by default.</p>
 <h2 dir="auto">Accounts</h2>
-<p dir="auto">A table with a status dot, <strong>Name</strong> (blue <strong>Default</strong> badge on the default outgoing account), <strong>Address</strong>, <strong>Transport</strong> and <strong>Status</strong> (Registered, Registering…, a short error such as 403, Disabled, Outgoing only, Reconnecting…). Drag to reorder; the order is used in the account pop-up and the status bar. Buttons <strong>+</strong>, <strong>−</strong> (confirms) and <strong>Edit…</strong>; double-click edits. With eight or more accounts a <strong>Filter accounts</strong> field appears. The group "Office · last error" shows the last REGISTER failure with <strong>Retry</strong>. The editor's fields are described in <a href="accounts.html">Accounts</a>; its Advanced group includes the Voicemail rows <strong>Voicemail number</strong> ("Dialled from the menu bar and the status bar.") and <strong>Voicemail indicator (MWI)</strong> ("Shows the number of new messages the server reports.").</p>
+<p dir="auto">A table with a status dot, <strong>Name</strong> (blue <strong>Default</strong> badge on the default outgoing account), <strong>Address</strong>, <strong>Transport</strong> and <strong>Status</strong> (Registered, Registering…, a short error such as 403, Disabled, Needs password, Outgoing only, Reconnecting…). Drag to reorder; the order is used in the account pop-up and the status bar. Buttons <strong>+</strong>, <strong>−</strong> (confirms) and <strong>Edit…</strong>; double-click edits. <strong>Import from MicroSIP…</strong> at the right of the footer brings in the accounts and contacts of a MicroSIP installation (see <a href="accounts.html">Accounts</a>). With eight or more accounts a <strong>Filter accounts</strong> field appears. The group "Office · last error" shows the last REGISTER failure with <strong>Retry</strong>. The editor's fields are described in <a href="accounts.html">Accounts</a>; its Advanced group includes the Voicemail rows <strong>Voicemail number</strong> ("Dialled from the menu bar and the status bar.") and <strong>Voicemail indicator (MWI)</strong> ("Shows the number of new messages the server reports.").</p>
 <h2 dir="auto">Audio</h2>
 <markdown-accessiblity-table><div class="tablewrap"><table role="table">
 <thead>
@@ -178,6 +186,10 @@
 <tr>
 <td><strong>During a call</strong></td>
 <td><strong>When a call comes in during a call</strong>: Call waiting (tone and window) / Window only / Busy (single-call mode). <strong>DTMF method</strong>: Automatic / RFC 2833 / SIP INFO / In-band ("Automatic uses RFC 2833 and falls back to SIP INFO."). <strong>Bring the main window to the front on an incoming call</strong> ("The incoming-call window still appears as well.").</td>
+</tr>
+<tr>
+<td><strong>Global hotkeys</strong></td>
+<td><strong>Use hotkeys in any app</strong> (off by default), then the <strong>Answer</strong>, <strong>Hang up</strong> and <strong>Mute</strong> key fields. The suggested combinations are ⌃⌥A, ⌃⌥H and ⌃⌥M. See <a href="calls.html">Calls</a>.</td>
 </tr>
 <tr>
 <td><strong>Auto-answer</strong></td>

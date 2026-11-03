@@ -114,6 +114,22 @@
 <p dir="auto">A library message that MacroSIP cannot translate (an LDAP diagnostic) is shown as it is. A failed source is skipped for 60 s and then retried.</p>
 <h2 dir="auto">The log file and Copy Diagnostics</h2>
 <p dir="auto">MacroSIP writes <code class="notranslate">~/Library/Logs/MacroSIP/MacroSIP.log</code> (2 MB per file, 3 files kept). Settings › General › Advanced › <strong>Open Log Folder</strong> reveals it in Finder; <strong>Copy Diagnostics</strong> copies versions, macOS, accounts without passwords and settings to the clipboard ("Diagnostics copied to the clipboard."). For a deeper SIP trace start the app with <code class="notranslate">open /Applications/MacroSIP.app --args --log-level 5</code> (0–6). The app also logs to the unified log under the subsystem <code class="notranslate">com.hsmm.macrosip</code>.</p>
+<h2 dir="auto">Debug mode and the diagnostics archive</h2>
+<p dir="auto">Debug mode writes much more detail to the log, including SIP messages. Turn it on when a problem needs a closer look, then send the developers an archive:</p>
+<ol dir="auto">
+<li>Open Settings › General › Advanced › Troubleshooting and switch on <strong>Debug mode</strong>. It takes effect at once, without a restart, and stays on across launches until you switch it off. The log files then grow to 8 MB each, with 3 files kept. If MacroSIP was started with <code class="notranslate">--log-level</code> or <code class="notranslate">MACROSIP_LOG_LEVEL</code>, that level wins: the switch is disabled and shows the level it was started with.</li>
+<li>Reproduce the problem: make the call, or try the registration, that fails.</li>
+<li>Click <strong>Create Archive…</strong> in the same group and choose where to save the ZIP. The default name is <code class="notranslate">MacroSIP-diagnostics-YYYYMMDD-HHmm.zip</code>, on the Desktop. When the archive is saved, MacroSIP shows it in Finder with the banner "Diagnostics archive saved: …".</li>
+<li>Send the ZIP with your issue report, as described in <em>Reporting an issue</em> below. Send it only to someone you trust.</li>
+<li>Switch <strong>Debug mode</strong> off. Until you do, the log keeps growing.</li>
+</ol>
+<p dir="auto">The archive contains:</p>
+<ul dir="auto">
+<li><code class="notranslate">logs/</code>: all the log files, including the rotated ones;</li>
+<li><code class="notranslate">diagnostics.txt</code>: the diagnostics report (versions, accounts, settings and log level);</li>
+<li><code class="notranslate">crash-reports/</code>: MacroSIP crash reports from the last 30 days, at most 5, included as they are.</li>
+</ul>
+<p dir="auto">Phone numbers and server addresses stay in the archive. Passwords and authentication values are removed from the copies: digest response, nonce, cnonce and opaque values, Basic and Bearer credentials, and passwords in URLs are replaced with <code class="notranslate">&lt;redacted&gt;</code>. The log files on your Mac are not changed.</p>
 <h2 dir="auto">Where settings and contacts are stored</h2>
 <markdown-accessiblity-table><div class="tablewrap"><table role="table">
 <thead>

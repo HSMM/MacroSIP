@@ -117,7 +117,37 @@
 <li>文件为 M4A (AAC)，命名如 <code class="notranslate">2026-10-10 14.52 Alesia Kazlouskaya (in).m4a</code>，保存在 <code class="notranslate">~/Music/MacroSIP Recordings</code> 或您选择的文件夹中。转换失败时保留 WAV 并以横幅提示。</li>
 <li>带录音的通话记录条目显示播放按钮和内嵌播放器；右键菜单增加<strong>播放录音</strong> (Play recording) 和<strong>在访达中显示</strong> (Show in Finder)（<a href="contacts-and-call-log.html">联系人与通话记录</a>）。</li>
 </ul>
-<p dir="auto">耳机按键（通过 USB 耳机接听、挂断、保持、静音和重拨）在 <a href="audio.html">音频</a> 中介绍。视频通话和全局热键计划在后续版本中实现。</p>
+<p dir="auto">耳机按键（通过 USB 耳机接听、挂断、保持、静音和重拨）在 <a href="audio.html">音频</a> 中介绍。视频通话计划在后续版本中实现。</p>
+<h2 dir="auto">全局热键</h2>
+<p dir="auto">全局热键可以在其他应用位于最前面时应答、挂断或静音通话，无需切换到 MacroSIP。它们默认关闭。在 Settings › Calls › <strong>Global hotkeys</strong> 中打开 <strong>Use hotkeys in any app</strong>；首次开启时，三个字段会填入建议的组合：</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>字段</th>
+<th>建议组合</th>
+<th>按下后的效果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Answer</strong></td>
+<td>⌃⌥A</td>
+<td>应答响铃时间最长的来电。活动通话会先被保持。</td>
+</tr>
+<tr>
+<td><strong>Hang up</strong></td>
+<td>⌃⌥H</td>
+<td>挂断当前通话。没有已接通的通话时，拒接最早的响铃来电。在会议中，结束整个会议。</td>
+</tr>
+<tr>
+<td><strong>Mute</strong></td>
+<td>⌃⌥M</td>
+<td>开启或关闭当前通话的麦克风。在会议中，作用于所有参与方。</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">要更改组合，请点按对应字段后按下新的按键；Esc 取消，Delete 清除。组合必须包含 ⌘、⌃ 或 ⌥，同一组合不能用于两个操作；MacroSIP 菜单或标准 macOS 快捷键使用的组合会被拒绝，并在字段下方显示简短原因。如果 macOS 拒绝已保存的组合，该字段会显示提示，其他两个仍可使用。</p>
+<p dir="auto">全局热键无需任何权限。没有可作用的通话时，它们不做任何事。macOS 不会报告其他应用何时使用相同的按键，因此该应用同样可能收到这次按键；请选择其他应用不使用的按键。</p>
 <p dir="auto">其他页面：<a href="index.html">首页</a> · <a href="../en/index.html">Home</a> (English)</p>
 <footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
 </main>
