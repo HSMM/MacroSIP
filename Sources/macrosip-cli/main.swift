@@ -3,6 +3,11 @@
 //   macrosip-cli [--null-audio] [--log N] [--port P] [--stun host:port] [--bind ADDR]
 //   macrosip-cli --selftest [--target sip:test@127.0.0.1:5080] [--target2 sip:test@127.0.0.1:5081]
 //                [--scratch DIR] [--target-cli PORT] [--target2-cli PORT] [--bind ADDR|any] [--log N]
+//   macrosip-cli --import-microsip MicroSIP.ini [--contacts Contacts.xml] [--data-dir DIR] [--dry-run]
+//
+// --import-microsip adds the accounts (disabled, no passwords) and contacts of a MicroSIP installation to the
+// app's stores without starting the engine; --data-dir defaults to ~/Library/Application Support/MacroSIP,
+// --dry-run only prints the report. Refused while MacroSIP is running on the default directory. Repeatable.
 //
 // The self-test calls --target (recording, presence of --target), then --target2 and merges
 // both into a conference. --scratch is where recordings go (default: a temporary directory).
@@ -51,6 +56,7 @@ struct Options {
             case "-h", "--help":
                 print("""
                 usage: macrosip-cli [--null-audio] [--log N] [--port P] [--stun host:port] [--bind ADDR]
+                       macrosip-cli --import-microsip FILE.ini [--contacts FILE.xml] [--data-dir DIR] [--dry-run]
                        macrosip-cli --selftest [--target URI] [--target2 URI] [--scratch DIR] [--target-cli PORT]
                                                [--target2-cli PORT] [--bind ADDR|any] [--log N]
                 """)
@@ -134,6 +140,9 @@ func printEvent(_ e: EngineEvent) {
 
 // MARK: - main
 
+if CommandLine.arguments.contains("--import-microsip") {
+    exit(ImportCommand.run(CommandLine.arguments))
+}
 let options = Options.parse(CommandLine.arguments)
 setvbuf(stdout, nil, _IOLBF, 0)
 
