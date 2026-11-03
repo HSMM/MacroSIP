@@ -9,8 +9,30 @@
             <sparkle:version>13</sparkle:version>
             <sparkle:shortVersionString>26.0.2</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<p dir="auto">With ad hoc signing macOS asks for microphone access again after each update; allow it once more.</p>
-<p dir="auto"><strong>Full Changelog</strong>: <a class="commit-link" href="https://github.com/HSMM/MacroSIP/compare/26.0.1...26.0.2"><tt>26.0.1...26.0.2</tt></a></p>]]></description>
+            <description><![CDATA[<h2 dir="auto">What's fixed</h2>
+<ul dir="auto">
+<li>Quitting no longer crashes: the headset-button controller tripped an IOKit assertion ("Manager has already been activated/cancelled") on every quit on macOS 26/27.</li>
+<li>REGISTER retries after a timeout back off as designed; a request that met one in flight was sent twice and hit PJSIP_EBUSY every time.</li>
+<li>Hanging up a call that has just ended shows no error.</li>
+<li>Quieter log: the file follows --log-level (debug lines only at level 4), skips PJSIP's "Ports connection already exists", drops the false "destroy tone port (PJ_EGONE)" warning, and writes REGISTER retries and listener restarts at debug after the first attempts.</li>
+<li>Release builds compile with Swift 6.3.</li>
+</ul>
+<h2 dir="auto">Support the project</h2>
+<p dir="auto">A Sponsor button and a donate page with QR codes (BTC, USDT TRC-20) are in the README.</p>
+<p dir="auto">With ad hoc signing macOS asks for microphone access again after each update; allow it once more.</p>
+<p dir="auto"><strong>Full Changelog</strong>: <a class="commit-link" href="https://github.com/HSMM/MacroSIP/compare/26.0.1...26.0.2"><tt>26.0.1...26.0.2</tt></a></p>
+<hr>
+<h2 dir="auto">Исправлено</h2>
+<ul dir="auto">
+<li>Выход из приложения больше не падает: контроллер кнопок гарнитуры ловил ассерт IOKit («Manager has already been activated/cancelled») при каждом выходе на macOS 26/27.</li>
+<li>Повторы REGISTER после таймаута идут с задержкой, как задумано; запрос, заставший другой в полёте, отправлялся дважды и каждый раз получал PJSIP_EBUSY.</li>
+<li>Сброс звонка, который только что завершился сам, не показывает ошибку.</li>
+<li>Тише лог: файл следует --log-level (отладочные строки только на уровне 4), пропускает «Ports connection already exists» от PJSIP, убрано ложное предупреждение «destroy tone port (PJ_EGONE)», повторы REGISTER и рестарты листенера после первых попыток пишутся на уровне отладки.</li>
+<li>Release-сборка собирается на Swift 6.3.</li>
+</ul>
+<h2 dir="auto">Поддержать проект</h2>
+<p dir="auto">В README появились кнопка Sponsor и страница донатов с QR-кодами (BTC, USDT TRC-20).</p>
+<p dir="auto">При ad hoc подписи macOS после каждого обновления заново спрашивает доступ к микрофону, разрешите один раз.</p>]]></description>
             <enclosure url="https://github.com/HSMM/MacroSIP/releases/download/26.0.2/MacroSIP-26.0.2.dmg" length="17733574" type="application/octet-stream" sparkle:edSignature="oErZN2MzfzbydYv0bgCfNRJgbPb8oUWnQeTaYrRRSZu8G471bxRsyhB9qAfZ23GoRqpDSWl50sy8P4f/3QEaAA=="/>
         </item>
         <item>
