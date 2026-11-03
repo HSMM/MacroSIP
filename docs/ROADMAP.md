@@ -56,7 +56,7 @@ App:
 
 ## 26.1 (released 2026-11-03)
 
-- Global hotkeys: answer, hang up and mute from any app (Carbon `RegisterEventHotKey`, no permission needed); off by default, ⌃⌥A / ⌃⌥H / ⌃⌥M offered when switched on, each changeable or clearable in Settings › Calls; a combination another app holds is reported next to its field.
+- Global hotkeys: answer, hang up and mute from any app (Carbon `RegisterEventHotKey`, no permission needed); off by default, ⌃⌥A / ⌃⌥H / ⌃⌥M offered when switched on, each changeable or clearable in Settings › Calls; a combination the system refuses is reported next to its field; another app using the same keys can receive the press too, macOS gives no way to detect that.
 - Import from MicroSIP: accounts and contacts from `MicroSIP.ini` and `Contacts.xml` (Settings › Accounts › Import from MicroSIP…) with a preview before anything is written; accounts come in switched off and ask for their password (MicroSIP's cannot be read).
 - Debug mode and diagnostics archive (Settings › General › Advanced › Troubleshooting): a Debug mode switch raises the log level to 4 for the log file and PJSIP at once, no restart, and stays on until switched off (an explicit `--log-level` / `MACROSIP_LOG_LEVEL` wins and the switch says so); Create Archive… saves a ZIP with the log files, the diagnostics report and up to 5 recent MacroSIP crash reports. Passwords, digest responses, nonces and similar secrets are removed from the copies in the archive; phone numbers and server addresses stay.
 
