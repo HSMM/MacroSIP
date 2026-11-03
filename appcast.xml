@@ -3,6 +3,17 @@
     <channel>
         <title>MacroSIP</title>
         <item>
+            <title>26.1.0</title>
+            <pubDate>Tue, 03 Nov 2026 17:22:56 +0000</pubDate>
+            <link>https://github.com/HSMM/MacroSIP</link>
+            <sparkle:version>20</sparkle:version>
+            <sparkle:shortVersionString>26.1.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<p dir="auto">With ad hoc signing macOS asks for microphone access again after each update; allow it once more.</p>
+<p dir="auto"><strong>Full Changelog</strong>: <a class="commit-link" href="https://github.com/HSMM/MacroSIP/compare/26.0.2...26.1.0"><tt>26.0.2...26.1.0</tt></a></p>]]></description>
+            <enclosure url="https://github.com/HSMM/MacroSIP/releases/download/26.1.0/MacroSIP-26.1.0.dmg" length="18357238" type="application/octet-stream" sparkle:edSignature="1PgMQFQfFUcjuWKPGe29bO7hALywuSfEN2ix5KpdFRBE6bnDYBfzebyEJs5a3ilF/yQxd4nJyNlopwhiZkS8Cg=="/>
+        </item>
+        <item>
             <title>26.0.2</title>
             <pubDate>Mon, 02 Nov 2026 11:19:03 +0000</pubDate>
             <link>https://github.com/HSMM/MacroSIP</link>
