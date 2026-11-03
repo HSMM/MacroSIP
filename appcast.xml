@@ -9,8 +9,38 @@
             <sparkle:version>20</sparkle:version>
             <sparkle:shortVersionString>26.1.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<p dir="auto">With ad hoc signing macOS asks for microphone access again after each update; allow it once more.</p>
-<p dir="auto"><strong>Full Changelog</strong>: <a class="commit-link" href="https://github.com/HSMM/MacroSIP/compare/26.0.2...26.1.0"><tt>26.0.2...26.1.0</tt></a></p>]]></description>
+            <description><![CDATA[<h2 dir="auto">What's new</h2>
+<ul dir="auto">
+<li><strong>Global hotkeys.</strong> Answer, hang up and mute from any app, in Settings › Calls. Off by default; ⌃⌥A, ⌃⌥H and ⌃⌥M are offered when you switch them on, and you can change or clear each one. No system permission is needed. macOS does not report a combination that another app also uses, so that app can receive the press too.</li>
+<li><strong>Import from MicroSIP.</strong> Accounts and contacts from <code class="notranslate">MicroSIP.ini</code> and <code class="notranslate">Contacts.xml</code>, in Settings › Accounts, with a preview before anything is written. MicroSIP's stored passwords cannot be read, so imported accounts stay off until you type a password; accounts without a server need none. For scripts and MDM: <code class="notranslate">/Applications/MacroSIP.app/Contents/MacOS/MacroSIP --import-microsip MicroSIP.ini</code>.</li>
+<li><strong>Debug mode and a diagnostics archive.</strong> In Settings › General › Advanced › Troubleshooting. Debug mode takes effect at once, without a restart. Create Archive makes a ZIP with the logs, diagnostics and recent crash reports. Passwords and authentication values are removed from logs and diagnostics; phone numbers and server addresses stay, and crash reports are included as they are, so send it only to someone you trust.</li>
+</ul>
+<h2 dir="auto">What's fixed</h2>
+<ul dir="auto">
+<li>Turning an account off and on in one open account menu no longer leaves it on "registering" (<a href="https://github.com/HSMM/MacroSIP/issues/2" data-hovercard-type="issue" data-hovercard-url="/HSMM/MacroSIP/issues/2/hovercard">#2</a>).</li>
+<li>A call whose media stops always ends as "connection lost", not with a raw 481 error.</li>
+<li>The account menu keeps working for as long as it is open.</li>
+</ul>
+<h2 dir="auto">Documentation</h2>
+<p dir="auto">The guide is now a public site in English, Russian and Chinese: <a href="https://hsmm.github.io/MacroSIP/wiki/" rel="nofollow">https://hsmm.github.io/MacroSIP/wiki/</a></p>
+<p dir="auto">With ad hoc signing macOS asks for microphone access again after each update; allow it once more.</p>
+<p dir="auto"><strong>Full Changelog</strong>: <a class="commit-link" href="https://github.com/HSMM/MacroSIP/compare/26.0.2...26.1.0"><tt>26.0.2...26.1.0</tt></a></p>
+<hr>
+<h2 dir="auto">Что нового</h2>
+<ul dir="auto">
+<li><strong>Глобальные хоткеи.</strong> Ответ, сброс и выключение микрофона из любого приложения, в разделе Настройки › Звонки. По умолчанию выключены; при включении предлагаются ⌃⌥A, ⌃⌥H и ⌃⌥M, каждое сочетание можно изменить или убрать. Системные разрешения не нужны. macOS не сообщает, если то же сочетание использует другое приложение, поэтому нажатие может получить и оно.</li>
+<li><strong>Импорт из MicroSIP.</strong> Аккаунты и контакты из <code class="notranslate">MicroSIP.ini</code> и <code class="notranslate">Contacts.xml</code>, в разделе Настройки › Аккаунты, с предварительным просмотром перед записью. Сохранённые пароли MicroSIP прочитать нельзя, поэтому импортированные аккаунты выключены, пока вы не введёте пароль; аккаунтам без сервера он не нужен. Для скриптов и MDM: <code class="notranslate">/Applications/MacroSIP.app/Contents/MacOS/MacroSIP --import-microsip MicroSIP.ini</code>.</li>
+<li><strong>Режим отладки и архив диагностики.</strong> В разделе Настройки › Основные › Дополнительно › Устранение неполадок. Режим отладки включается сразу, без перезапуска. Кнопка создания архива собирает ZIP с логами, диагностикой и недавними отчётами о сбоях. Пароли и данные авторизации удаляются из логов и диагностики; номера телефонов и адреса серверов остаются, а отчёты о сбоях добавляются как есть, поэтому отправляйте архив только тому, кому доверяете.</li>
+</ul>
+<h2 dir="auto">Что исправлено</h2>
+<ul dir="auto">
+<li>Если выключить и включить аккаунт в одном открытом меню, он больше не зависает в состоянии «регистрация» (<a href="https://github.com/HSMM/MacroSIP/issues/2" data-hovercard-type="issue" data-hovercard-url="/HSMM/MacroSIP/issues/2/hovercard">#2</a>).</li>
+<li>Звонок, в котором пропало медиа, всегда завершается с пометкой «Связь потеряна», а не с технической ошибкой 481.</li>
+<li>Меню аккаунтов продолжает работать всё время, пока открыто.</li>
+</ul>
+<h2 dir="auto">Документация</h2>
+<p dir="auto">Руководство теперь открыто как сайт на английском, русском и китайском: <a href="https://hsmm.github.io/MacroSIP/wiki/" rel="nofollow">https://hsmm.github.io/MacroSIP/wiki/</a></p>
+<p dir="auto">При ad hoc подписи macOS после каждого обновления заново спрашивает доступ к микрофону, разрешите его ещё раз.</p>]]></description>
             <enclosure url="https://github.com/HSMM/MacroSIP/releases/download/26.1.0/MacroSIP-26.1.0.dmg" length="18357238" type="application/octet-stream" sparkle:edSignature="1PgMQFQfFUcjuWKPGe29bO7hALywuSfEN2ix5KpdFRBE6bnDYBfzebyEJs5a3ilF/yQxd4nJyNlopwhiZkS8Cg=="/>
         </item>
         <item>
