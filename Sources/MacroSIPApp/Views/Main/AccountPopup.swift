@@ -50,7 +50,8 @@ struct AccountRow: View {
         pressed = true
         // Leave the button's own click handling before the menu starts its tracking loop.
         DispatchQueue.main.async {
-            AccountPopupMenu(model: model).show(from: view)
+            let popup = AccountPopupMenu(model: model)
+            withExtendedLifetime(popup) { popup.show(from: view) }
             pressed = false
         }
     }
@@ -153,7 +154,10 @@ final class AccountPopupMenu: NSObject {
         // Menu tracking does not service the main actor's queue: the engine work started by a switch
         // runs when the menu closes. The rows therefore follow the model (store), not the engine.
         let y = above ? -3 : anchor.bounds.height + 3
-        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: y), in: anchor)
+        // Callers hold a temporary and the rows reference self weakly: keep it through the tracking loop.
+        withExtendedLifetime(self) {
+            _ = menu.popUp(positioning: nil, at: NSPoint(x: 0, y: y), in: anchor)
+        }
     }
 
     private func viewItem(_ view: NSView) -> NSMenuItem {

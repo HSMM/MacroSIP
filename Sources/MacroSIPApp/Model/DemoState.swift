@@ -385,7 +385,8 @@ enum DemoState {
         guard let anchor = model.mainWindow?.contentView else { return }
         let popup = AccountPopupMenu(model: model)
         var out: [String] = []
-        var returned = false
+        final class Flag { var isSet = false }
+        let returned = Flag()
         func add(_ delay: TimeInterval, _ body: @escaping @MainActor () -> Void) {
             let t = Timer(timeInterval: delay, repeats: false) { _ in MainActor.assumeIsolated { body() } }
             RunLoop.main.add(t, forMode: .common)
@@ -395,14 +396,14 @@ enum DemoState {
             popup.rows.first { $0.accountID == labID }?.toggle.performClick(nil)
         }
         add(2.2) {
-            out.append("menu still open after the switch: \(!returned)")
+            out.append("menu still open after the switch: \(!returned.isSet)")
             out.append("lab enabled in model: \(model.account(labID)?.enabled == true)")
             out.append("lab in engine: \(model.engineAccounts.contains(labID))")
             out.append("lab registration: \(String(describing: model.registration[labID]))")
             if let r = popup.rows.first(where: { $0.accountID == homeID }) { r.onPick?(r.accountID) }
         }
         popup.show(from: anchor)
-        returned = true
+        returned.isSet = true
         out.append("menu closed after pick: true; outgoing = \(model.effectiveAccount?.displayName ?? "-")")
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(1.5))

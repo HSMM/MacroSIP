@@ -4,6 +4,11 @@ import os
 import Testing
 @testable import MacroSIPCore
 
+/// Largest length difference of a stereo pair, in bytes: 200 ms at 16 kHz, 16 bit. The two recorders
+/// are created one after the other, so on a loaded runner the clock can tick between them
+/// (5 frames, 3200 bytes, were seen on the Intel CI runner).
+private let stereoLengthTolerance = 6400
+
 // Milestone 5: conference, recording, presence, Call-Info answer-after.
 
 /// The 44-byte PCM WAV header pjmedia's WAV writer produces.
@@ -360,7 +365,7 @@ extension EngineTests {
         let splitHeaders = [splitFiles.local, splitFiles.remote].map { $0.flatMap(WAVHeader.read) }
         #expect(splitHeaders.allSatisfy { $0?.isFinal == true }, "\(splitHeaders)")
         if let l = splitHeaders[0], let r = splitHeaders[1] {
-            #expect(abs(l.fileSize - r.fileSize) <= 640, "local \(l.fileSize), remote \(r.fileSize)")
+            #expect(abs(l.fileSize - r.fileSize) <= stereoLengthTolerance, "local \(l.fileSize), remote \(r.fileSize)")
         }
         #expect(!FileManager.default.fileExists(atPath: wavSplit.path))
 
@@ -530,7 +535,7 @@ extension EngineTests {
             #expect(h.channels == 1 && h.bitsPerSample == 16 && h.sampleRate == 16000)
             #expect(h.dataSize >= 80_000, "\(h)")                  // >= 2.5 s
         }
-        #expect(abs(local.fileSize - remote.fileSize) <= 640, "local \(local.fileSize), remote \(remote.fileSize)")
+        #expect(abs(local.fileSize - remote.fileSize) <= stereoLengthTolerance, "local \(local.fileSize), remote \(remote.fileSize)")
         let remoteRMS = try wavRMS(remoteURL), localRMS = try wavRMS(localURL)
         #expect(remoteRMS > 300, "remote RMS \(remoteRMS)")
         #expect(localRMS < 50, "local RMS \(localRMS)")
@@ -552,7 +557,7 @@ extension EngineTests {
         let atEnd = headersAtEnd.withLock { $0 }
         #expect(atEnd.count == 2 && atEnd.allSatisfy { $0?.isFinal == true }, "\(atEnd)")
         if atEnd.count == 2, let l = atEnd[0], let r = atEnd[1] {
-            #expect(abs(l.fileSize - r.fileSize) <= 640, "local \(l.fileSize), remote \(r.fileSize)")
+            #expect(abs(l.fileSize - r.fileSize) <= stereoLengthTolerance, "local \(l.fileSize), remote \(r.fileSize)")
         }
         #expect(await engine.recordingFiles(of: out) == files2)
         await engine.stop()

@@ -6,9 +6,10 @@ import Testing
 // the call-waiting tone, the DTMF method.
 
 /// Largest per-block amplitude of `frequency` in a 16-bit mono WAV (Goertzel over 40 ms blocks).
-func wavToneAmplitude(_ url: URL, frequency: Double) throws -> Double {
+/// 16-bit PCM samples and the sample rate of a canonical WAV file.
+private func wavSamples(_ url: URL) throws -> (samples: [Double], rate: Double) {
     let data = try Data(contentsOf: url)
-    guard data.count > 44 else { return 0 }
+    guard data.count > 44 else { return ([], 0) }
     let rate = Double(UInt32(data[24]) | UInt32(data[25]) << 8 | UInt32(data[26]) << 16 | UInt32(data[27]) << 24)
     var samples: [Double] = []
     samples.reserveCapacity((data.count - 44) / 2)
@@ -17,22 +18,49 @@ func wavToneAmplitude(_ url: URL, frequency: Double) throws -> Double {
         samples.append(Double(Int16(bitPattern: UInt16(data[i]) | UInt16(data[i + 1]) << 8)))
         i += 2
     }
-    let n = Int(rate * 0.04)
+    return (samples, rate)
+}
+
+/// Goertzel amplitude of `frequency` in `samples[range]`.
+private func toneAmplitude(_ samples: [Double], _ range: Range<Int>, frequency: Double, rate: Double) -> Double {
     let coeff = 2 * cos(2 * Double.pi * frequency / rate)
-    var best = 0.0
-    var start = 0
-    while start + n <= samples.count {
-        var s1 = 0.0, s2 = 0.0
-        for k in start..<(start + n) {
-            let s0 = samples[k] + coeff * s1 - s2
-            s2 = s1
-            s1 = s0
-        }
-        let power = s1 * s1 + s2 * s2 - coeff * s1 * s2
-        best = max(best, 2 * power.squareRoot() / Double(n))
-        start += n / 2
+    var s1 = 0.0, s2 = 0.0
+    for k in range {
+        let s0 = samples[k] + coeff * s1 - s2
+        s2 = s1
+        s1 = s0
     }
-    return best
+    let power = s1 * s1 + s2 * s2 - coeff * s1 * s2
+    return 2 * power.squareRoot() / Double(range.count)
+}
+
+/// The start of each 40 ms analysis window, advancing by 20 ms.
+private func analysisWindows(count: Int, rate: Double) -> [Range<Int>] {
+    let n = Int(rate * 0.04)
+    guard n > 0, count >= n else { return [] }
+    return stride(from: 0, through: count - n, by: n / 2).map { $0..<($0 + n) }
+}
+
+func wavToneAmplitude(_ url: URL, frequency: Double) throws -> Double {
+    let (samples, rate) = try wavSamples(url)
+    return analysisWindows(count: samples.count, rate: rate)
+        .map { toneAmplitude(samples, $0, frequency: frequency, rate: rate) }
+        .max() ?? 0
+}
+
+/// Windows in which all `tones` sound (above 300), and those of them where each tone is also
+/// more than twice as strong as every one of `others` in that same window.
+func wavToneWindows(_ url: URL, tones: [Double], others: [Double]) throws -> (withTones: Int, dominant: Int) {
+    let (samples, rate) = try wavSamples(url)
+    var withTones = 0, dominant = 0
+    for window in analysisWindows(count: samples.count, rate: rate) {
+        let toneLevels = tones.map { toneAmplitude(samples, window, frequency: $0, rate: rate) }
+        guard let weakest = toneLevels.min(), weakest > 300 else { continue }
+        withTones += 1
+        let strongestOther = others.map { toneAmplitude(samples, window, frequency: $0, rate: rate) }.max() ?? 0
+        if weakest > 2 * strongestOther { dominant += 1 }
+    }
+    return (withTones, dominant)
 }
 
 extension EngineTests {
@@ -233,10 +261,10 @@ extension EngineTests {
         let far = try #require(files.mixed)
         let low = try wavToneAmplitude(far, frequency: 697)
         let high = try wavToneAmplitude(far, frequency: 1209)
-        let others = try [770.0, 852, 941, 1336, 1477].map { try wavToneAmplitude(far, frequency: $0) }.max() ?? 0
         #expect(low > 300 && high > 300, "697 Hz \(low), 1209 Hz \(high)")
-        // The two tones of "1" dominate every other DTMF frequency; a loaded runner records a shorter, noisier clip, so 2x is enough.
-        #expect(low > 2 * others && high > 2 * others, "697 Hz \(low), 1209 Hz \(high), other DTMF tones \(others)")
+        // Compared window by window: one click on a loaded runner lifts every frequency in its own window only.
+        let windows = try wavToneWindows(far, tones: [697, 1209], others: [770, 852, 941, 1336, 1477])
+        #expect(windows.withTones > 0 && windows.dominant * 2 > windows.withTones, "\(windows)")
         #expect(received() == "579", "in-band digits must not arrive as telephone-events")
 
         try await engine.hangup(out)
