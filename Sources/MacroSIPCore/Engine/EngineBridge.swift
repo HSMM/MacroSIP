@@ -55,6 +55,16 @@ struct CallRecord: Sendable {
     var inviteState: InviteState = .null
 
     var reinvitePending: Bool { reinviteWanted != nil || reinviteInFlight != nil }
+
+    /// An answer to the watchdog's OPTIONS probe that says the far end lost the dialog.
+    static func probeMeansLost(code: Int) -> Bool { code == 408 || code == 481 }
+
+    /// The watchdog's OPTIONS got its answer. The probe's verdict is recorded in the same
+    /// mutation that ends the probe, so no reader can see a call that is neither probing nor lost.
+    mutating func finishProbe(code: Int) {
+        probing = false
+        if CallRecord.probeMeansLost(code: code) { connectionLost = true }
+    }
 }
 
 /// How `EngineBridge.updateCall` treats the call's record.

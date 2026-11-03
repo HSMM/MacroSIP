@@ -112,7 +112,10 @@ struct StatusBar: View {
     /// The summary of many accounts opens the account pop-up (upward: the bar is at the window's bottom).
     private func openAccountMenu() {
         guard let view = anchor.view else { return }
-        DispatchQueue.main.async { AccountPopupMenu(model: model).show(from: view, above: true) }
+        DispatchQueue.main.async {
+            let popup = AccountPopupMenu(model: model)
+            withExtendedLifetime(popup) { popup.show(from: view, above: true) }
+        }
     }
 
     var body: some View {

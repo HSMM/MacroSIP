@@ -664,13 +664,13 @@
 "settings.hotkeys.recording" = "Press the keys…";
 "settings.hotkeys.record.help" = "Click, then press the shortcut. Esc cancels, Delete clears.";
 "settings.hotkeys.clear.help" = "Clear";
-"settings.hotkeys.error.inUse" = "Already used by another app";
+"settings.hotkeys.error.inUse" = "This combination could not be registered";
 "settings.hotkeys.error.system" = "Could not be registered (error %lld)";
 "settings.hotkeys.issue.needsModifier" = "Include ⌘, ⌃ or ⌥";
 "settings.hotkeys.issue.unsupportedKey" = "This key cannot be used";
 "settings.hotkeys.issue.usedByMenu" = "Used by a MacroSIP menu";
 "settings.hotkeys.issue.duplicate" = "Already assigned to “%@”";
-"settings.hotkeys.footer" = "Hotkeys do nothing when there is no call to act on.";
+"settings.hotkeys.footer" = "Hotkeys do nothing when there is no call to act on. Another app using the same keys can receive the press too.";
 "accounts.import.microsip" = "Import from MicroSIP…";
 "accounts.status.needsPassword" = "Needs password";
 "account.field.password.importedHelp" = "Imported from MicroSIP, which keeps passwords in a form no other app can read. Type it once to switch the account on.";
@@ -711,3 +711,8 @@
 "import.microsip.warn.contactsTooLarge" = "The contacts file is too large (over 10 MB), so no contacts are imported.";
 "import.microsip.warn.contactsMalformed" = "The contacts file is not valid, so no contacts are imported.";
 "import.microsip.doneBanner" = "Imported: %@.";
+"import.microsip.error.save" = "Not everything was saved: %@";
+"import.microsip.loading" = "Reading the file…";
+"import.microsip.andMore" = "and %lld more";
+"import.microsip.warn.tooManyAccounts" = "Too many accounts in the file: only the first %lld are read.";
+"import.microsip.warn.tooManyContacts" = "Too many contacts in the file: only the first %lld are read.";

@@ -4,7 +4,7 @@ import MacroSIPCore
 import AppKit
 
 /// Demo states of the global hotkeys and the MicroSIP import (26.1):
-///   settings-hotkeys      Settings › Calls with the hotkeys on; the Mute field shows the "used by another app" message
+///   settings-hotkeys      Settings › Calls with the hotkeys on; the Mute field shows the "could not be registered" message
 ///   import-microsip       Settings › Accounts with the Import from MicroSIP preview open (sample files in a temp folder)
 ///   import-microsip-done  the same after pressing Import (the report step)
 ///   hotkeys-selftest      only the hotkey checks of `selftest` (registers real hotkeys briefly: Control-Option-Shift-Command with F13 to F16)
@@ -27,6 +27,7 @@ extension DemoState {
             model.openSettings(tab: .accounts)
             try? await Task.sleep(for: .seconds(0.8))
             model.beginMicroSIPImport(ini: ini)
+            await model.waitForMicroSIPPreview()
             if state == "import-microsip-done" {
                 try? await Task.sleep(for: .seconds(0.5))
                 model.applyMicroSIPImport()
@@ -126,6 +127,11 @@ extension DemoState {
         let f13 = HotkeyCombo(keyCode: 105, modifiers: all), f14 = HotkeyCombo(keyCode: 107, modifiers: all)
         let f15 = HotkeyCombo(keyCode: 113, modifiers: all), f16 = HotkeyCombo(keyCode: 106, modifiers: all)
         guard let hotkeys = model.globalHotkeys else { check("controller exists", false); return }
+        // Each check's press stands alone: the half-second repeat filter has its own check below.
+        func press(_ action: HotkeyAction) {
+            model.hotkeyPresses = HotkeyPressFilter()
+            hotkeys.simulatePress(action)
+        }
 
         // Off by default; demo launches register nothing even when switched on.
         check("off by default, nothing registered", !model.settings.hotkeys.enabled && hotkeys.activeCombos.isEmpty)
@@ -143,7 +149,8 @@ extension DemoState {
         check("registered with the system: all three", hotkeys.activeCombos == [.answer: f13, .hangUp: f14, .mute: f15] && model.hotkeyFailures.isEmpty,
               "\(hotkeys.activeCombos) \(model.hotkeyFailures)")
 
-        // Conflict: another holder of a combination. A second controller stands in for another app.
+        // Conflict: a second controller in this process, which the system refuses. (A second process is not refused:
+        // macOS does not report another app's use of the same keys, so that case has no error to show.)
         let other = GlobalHotkeys { _ in }
         let probe = GlobalHotkeys { _ in }
         let blocker = other.apply([.mute: f16])
@@ -169,45 +176,72 @@ extension DemoState {
         check("a menu shortcut is refused", model.hotkeyIssues[.answer] == .usedByMenu)
         model.setHotkey(f13, for: .answer)
         check("a valid choice clears the message", model.hotkeyIssues[.answer] == nil)
-        model.setHotkeyRecording(true)
+        model.setHotkeyListening(true, for: .answer)
         check("nothing is registered while a recorder listens", hotkeys.activeCombos.isEmpty)
-        model.setHotkeyRecording(false)
-        check("registered again afterwards", hotkeys.activeCombos.count == 3)
+        model.setHotkeyListening(true, for: .hangUp)
+        model.setHotkeyListening(false, for: .answer)       // the first row's delayed cancel
+        check("a click on another row hands over: the first row's late cancel leaves hotkeys off",
+              hotkeys.activeCombos.isEmpty && model.hotkeyListening == .hangUp, "\(hotkeys.activeCombos) \(String(describing: model.hotkeyListening))")
+        model.setHotkeyListening(false, for: .hangUp)
+        check("registered again when no row listens", hotkeys.activeCombos.count == 3 && model.hotkeyListening == nil)
+        let stray = NSWindow()      // the notification needs a window as its object; this one never shows
+        for (name, object) in [(NSApplication.didResignActiveNotification, NSApp as AnyObject), (NSWindow.didResignKeyNotification, stray as AnyObject)] {
+            model.setHotkeyListening(true, for: .mute)
+            NotificationCenter.default.post(name: name, object: object)
+            check("\(name.rawValue) ends the listening", model.hotkeyListening == nil && hotkeys.activeCombos.count == 3)
+        }
 
         // Actions.
         await model.engine.hangupAll()
         await until { model.calls.isEmpty }
-        hotkeys.simulatePress(.answer); hotkeys.simulatePress(.hangUp); hotkeys.simulatePress(.mute)
+        press(.answer); press(.hangUp); press(.mute)
         await settle()
         check("with no call, all three do nothing", model.calls.isEmpty && model.banner == nil, "\(model.calls.count) \(String(describing: model.banner))")
 
         await mock?.simulateIncoming(name: nil, number: "701", account: officeID)
         await mock?.simulateIncoming(name: nil, number: "702", account: officeID)
         await until { model.ringingCalls.count == 2 }
-        hotkeys.simulatePress(.mute)
+        press(.mute)
         await settle()
         check("mute does nothing while calls only ring", model.ringingCalls.count == 2 && model.liveCalls.isEmpty)
-        hotkeys.simulatePress(.answer)
+        press(.answer)
         await until { model.activeCall?.remote.number == "701" }
         check("answer takes the oldest ringing call", model.activeCall?.remote.number == "701" && model.ringingCalls.map(\.remote.number) == ["702"],
               "\(model.calls.map { ($0.remote.number, $0.state) })")
-        hotkeys.simulatePress(.mute)
+        press(.mute)
         await until { model.currentCall?.isMuted == true }
         check("mute toggles the current call on", model.currentCall?.isMuted == true)
-        hotkeys.simulatePress(.mute)
+        press(.mute)
         await until { model.currentCall?.isMuted == false }
         check("and off again", model.currentCall?.isMuted == false)
-        hotkeys.simulatePress(.hangUp)
+        press(.hangUp)
         await until { model.liveCalls.isEmpty }
         check("hang up ends the connected call and leaves the ringing one", model.liveCalls.isEmpty && model.ringingCalls.map(\.remote.number) == ["702"],
               "\(model.calls.map { ($0.remote.number, $0.state) })")
-        hotkeys.simulatePress(.hangUp)
+        press(.hangUp)
         await until { model.calls.isEmpty }
         check("with only a ringing call, hang up declines it", model.calls.isEmpty && model.callLog.first?.remoteNumber == "702" ,
               "\(model.calls.count) \(String(describing: model.callLog.first?.remoteNumber))")
-        hotkeys.simulatePress(.answer)
+        press(.answer)
         await settle()
         check("answer with nothing ringing does nothing", model.calls.isEmpty)
+
+        // A double press counts once, and a press that waited behind an open menu is dropped.
+        model.placeCall(to: "711")
+        await until { model.activeCall?.remote.number == "711" && model.activeCall?.state == .connected }
+        await mock?.simulateIncoming(name: nil, number: "712", account: officeID)
+        await until { model.ringingCalls.count == 1 }
+        hotkeys.simulatePress(.hangUp, age: 2)
+        await settle()
+        check("a press older than a second is dropped", model.activeCall?.remote.number == "711" && model.ringingCalls.count == 1, "\(model.calls.map(\.remote.number))")
+        press(.hangUp)
+        hotkeys.simulatePress(.hangUp)
+        await until { model.liveCalls.isEmpty }
+        await settle()
+        check("a double press of hang up ends the call and does not decline the ringing one",
+              model.liveCalls.isEmpty && model.ringingCalls.map(\.remote.number) == ["712"], "\(model.calls.map { ($0.remote.number, $0.state) })")
+        await model.engine.hangupAll()
+        await until { model.calls.isEmpty }
 
         // Attended transfer: Hang up does what End Call does (the consultation call, the original stays held).
         model.placeCall(to: "703")
@@ -216,7 +250,7 @@ extension DemoState {
             model.startAttendedTransfer(first, to: "704")
             await until { model.liveCalls.count == 2 && model.activeCall?.remote.number == "704" }
             check("attended transfer set up", model.transfer != nil && model.activeCall?.remote.number == "704", "\(model.liveCalls.map(\.remote.number))")
-            hotkeys.simulatePress(.hangUp)
+            press(.hangUp)
             await until { model.liveCalls.map(\.remote.number) == ["703"] }
             check("during an attended transfer hang up ends the consultation call, like End Call", model.liveCalls.map(\.remote.number) == ["703"],
                   "\(model.liveCalls.map(\.remote.number))")
@@ -233,7 +267,18 @@ extension DemoState {
         model.mergeCalls()
         await until { model.conferenceCalls.count == 2 }
         check("conference set up", model.conferenceCalls.count == 2, "\(model.liveCalls.map { ($0.remote.number, $0.inConference) })")
-        hotkeys.simulatePress(.hangUp)
+        // A new call placed from it: the conference is on hold, Hang up ends the new call only.
+        model.placeCall(to: "707")
+        await until { model.liveCalls.count == 3 && model.activeCall?.remote.number == "707" && model.activeCall?.state == .connected }
+        check("new call from a conference set up", model.activeCall?.remote.number == "707" && model.conferenceCalls.count == 2,
+              "\(model.liveCalls.map { ($0.remote.number, $0.inConference, $0.state) })")
+        check("the state a press sees: the current call is no leg, so it alone ends",
+              HotkeyEffect.resolve(.hangUp, model.hotkeyCallState) == (model.activeCall.map { .hangUp($0.id) } ?? .none))
+        press(.hangUp)
+        await until { model.liveCalls.count == 2 }
+        check("with a held conference and another active call, hang up ends that call and keeps the legs",
+              Set(model.liveCalls.map(\.remote.number)) == ["705", "706"] && model.conferenceCalls.count == 2, "\(model.liveCalls.map(\.remote.number))")
+        press(.hangUp)
         await until { model.calls.isEmpty }
         check("during a conference hang up ends all legs, like End Conference", model.calls.isEmpty, "\(model.calls.map(\.remote.number))")
 
@@ -265,6 +310,7 @@ extension DemoState {
         let samples = ini.deletingLastPathComponent()
 
         model.beginMicroSIPImport(ini: ini)
+        await model.waitForMicroSIPPreview()
         guard let session = model.microSIPImport, case let .preview(merge) = session.outcome else { check("preview opens", false); return }
         check("Contacts.xml next to the ini is found", session.contactsURL?.lastPathComponent == "Contacts.xml")
         check("preview: two new accounts, one duplicate, contacts 2 + 4 skipped/dropped",
@@ -276,9 +322,11 @@ extension DemoState {
         check("nothing written by the preview", model.accounts.count == accountsBefore && model.contacts.count == contactsBefore)
 
         model.setMicroSIPContacts(nil)
+        await model.waitForMicroSIPPreview()
         if case let .preview(m)? = model.microSIPImport?.outcome { check("choosing no contacts file drops the contacts", m.contacts.isEmpty && model.microSIPImport?.contactsURL == nil) }
         else { check("choosing no contacts file drops the contacts", false) }
         model.setMicroSIPContacts(samples.appendingPathComponent("Contacts.xml"))
+        await model.waitForMicroSIPPreview()
         if case let .preview(m)? = model.microSIPImport?.outcome { check("choosing the file again brings them back", m.contacts.count == 2) }
         else { check("choosing the file again brings them back", false) }
 
@@ -290,6 +338,7 @@ extension DemoState {
         let bad = samples.appendingPathComponent("Other.ini")
         try? "[Settings]\nfoo=1\n".write(to: bad, atomically: true, encoding: .utf8)
         model.beginMicroSIPImport(ini: bad)
+        await model.waitForMicroSIPPreview()
         if case .failed(.noAccountSections)? = model.microSIPImport?.outcome {
             check("an ini without accounts is a localized error", !MicroSIPImportSheet.text(for: .noAccountSections).isEmpty)
         } else { check("an ini without accounts is a localized error", false, "\(String(describing: model.microSIPImport?.outcome))") }
@@ -297,6 +346,7 @@ extension DemoState {
 
         // The import itself.
         model.beginMicroSIPImport(ini: ini)
+        await model.waitForMicroSIPPreview()
         model.applyMicroSIPImport()
         let added = model.accounts.filter { ($0.username == "2001" && $0.domain == "pbx2.example.org") || ($0.username == "andrei2" && $0.domain == "provider.org") }
         check("two accounts and two contacts added", model.accounts.count == accountsBefore + 2 && model.contacts.count == contactsBefore + 2 && added.count == 2,
@@ -322,6 +372,7 @@ extension DemoState {
 
         // Importing the same files again adds nothing.
         model.beginMicroSIPImport(ini: ini)
+        await model.waitForMicroSIPPreview()
         if case let .preview(again)? = model.microSIPImport?.outcome { check("the same files again: nothing new", again.isEmpty, "\(again.accounts.count) \(again.contacts.count)") }
         else { check("the same files again: nothing new", false) }
         model.cancelMicroSIPImport()
@@ -349,6 +400,57 @@ extension DemoState {
             await model.deleteAccount(work.id)
             check("deleting it forgets the flag", !model.accountNeedsPassword(work.id))
         }
+
+        // An account without a server does not register: no password is asked for, and it switches on without one.
+        let noServer = samples.appendingPathComponent("NoServer.ini")
+        try? "[Account1]\nusername=9000\ndomain=noserver.example.org\n".write(to: noServer, atomically: true, encoding: .utf8)
+        model.beginMicroSIPImport(ini: noServer)
+        await model.waitForMicroSIPPreview()
+        model.setMicroSIPContacts(nil)
+        await model.waitForMicroSIPPreview()
+        model.applyMicroSIPImport()
+        if let local = model.accounts.first(where: { $0.username == "9000" }) {
+            check("an account without a server is not flagged", !local.registerWithServer && !model.accountNeedsPassword(local.id)
+                  && model.microSIPImport?.report?.firstAccount == nil && model.microSIPImport?.report?.accounts.first?.needsPassword == false)
+            check("the editor lets it save without a password, a registering one not",
+                  AccountEditorSheet.passwordSufficient("", registers: false) && !AccountEditorSheet.passwordSufficient("", registers: true))
+            model.cancelMicroSIPImport()
+            model.settingsEditor = nil
+            model.setAccountEnabled(local.id, true)
+            await model.waitForAccountSync()
+            check("it switches on without a password", model.account(local.id)?.enabled == true && model.settingsEditor == nil && model.engineAccounts.contains(local.id))
+        } else { check("an account without a server is imported", false, "\(model.accounts.map(\.username))") }
+
+        // The contacts write fails after the accounts were saved: what was saved is complete, and the error shows.
+        let readOnly = samples.appendingPathComponent("read-only", isDirectory: true)
+        try? FileManager.default.createDirectory(at: readOnly, withIntermediateDirectories: true)
+        let failing = ContactStore(directory: readOnly)
+        try? FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: readOnly.path)
+        let partly = samples.appendingPathComponent("Partly.ini")
+        try? "[Account1]\nserver=partly.example.org\nusername=8000\ndisplayName=Partly\n".write(to: partly, atomically: true, encoding: .utf8)
+        let xml = samples.appendingPathComponent("Partly.xml")
+        try? "<contacts><contact name=\"Partly\" number=\"8001\"/></contacts>".write(to: xml, atomically: true, encoding: .utf8)
+        model.beginMicroSIPImport(ini: partly)
+        await model.waitForMicroSIPPreview()
+        model.setMicroSIPContacts(xml)
+        await model.waitForMicroSIPPreview()
+        let contactsBeforeFailure = model.contacts.count
+        model.applyMicroSIPImport(contactsTo: failing)
+        let saved = model.accounts.first { $0.username == "8000" }
+        check("a failed contacts write: the saved account is listed, flagged and has its caller name",
+              saved.map { model.accountNeedsPassword($0.id) && model.callerName(for: $0.id) == "Partly" } == true, "\(String(describing: saved))")
+        check("a failed contacts write: the sheet and a banner show the error, the report counts what was saved",
+              model.microSIPImport?.saveError != nil && model.banner?.isError == true && model.microSIPImport?.report?.accounts.count == 1
+              && model.microSIPImport?.report?.contacts == 0 && model.contacts.count == contactsBeforeFailure,
+              "\(String(describing: model.microSIPImport?.saveError)) \(String(describing: model.microSIPImport?.report))")
+        model.cancelMicroSIPImport()
+        try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: readOnly.path)
+
+        // The command-line import shares its code with the app and uses the app's own defaults domain.
+        check("inside the app the import writes to the standard defaults", MicroSIPImportCommand.appDefaults() === UserDefaults.standard,
+              "bundle \(String(describing: Bundle.main.bundleIdentifier))")
+        check("the running-app check leaves this process out", !MicroSIPImportCommand.isOtherProcess(among: [getpid()], current: getpid())
+              && MicroSIPImportCommand.isOtherProcess(among: [getpid(), getpid() + 1], current: getpid()))
         try? FileManager.default.removeItem(at: samples)
     }
 }

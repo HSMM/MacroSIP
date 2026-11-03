@@ -647,6 +647,23 @@ extension EngineTests {
         await engine.stop()
     }
 
+    /// PJSIP answers a 481 with a BYE at once, so its DISCONNECTED can come at any moment after the probe's answer:
+    /// there must be no moment in which the record is neither probing nor marked as lost.
+    @Test func probeVerdictIsRecordedInOneStep() {
+        var rec = CallRecord(serial: 1, accountID: AccountID(), direction: .outgoing, announced: true)
+        rec.probing = true
+        rec.finishProbe(code: 481)
+        #expect(!rec.probing && rec.connectionLost)
+        rec = CallRecord(serial: 1, accountID: AccountID(), direction: .outgoing, announced: true)
+        rec.probing = true
+        rec.finishProbe(code: 408)
+        #expect(!rec.probing && rec.connectionLost)
+        rec = CallRecord(serial: 1, accountID: AccountID(), direction: .outgoing, announced: true)
+        rec.probing = true
+        rec.finishProbe(code: 200)
+        #expect(!rec.probing && !rec.connectionLost)
+    }
+
     /// The same silence, but the far end answers the OPTIONS probe: the call stays.
     @Test func silentMediaProbeAnsweredKeepsCall() async throws {
         let stub = try NetworkStub()

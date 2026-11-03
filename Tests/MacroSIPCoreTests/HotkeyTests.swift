@@ -94,8 +94,105 @@ struct HotkeyTests {
         #expect(HotkeyEffect.resolve(.hangUp, HotkeyCallState(ringing: [call(2)], current: call(9))) == .hangUp(call(9)))
         #expect(HotkeyEffect.resolve(.hangUp, HotkeyCallState(ringing: [call(2), call(3)], current: nil)) == .decline(call(2)))
         #expect(HotkeyEffect.resolve(.hangUp, HotkeyCallState(ringing: [], current: nil)) == .none)
-        #expect(HotkeyEffect.resolve(.hangUp, HotkeyCallState(ringing: [], current: call(9), conferenceLegs: 3)) == .endConference)
-        #expect(HotkeyEffect.resolve(.hangUp, HotkeyCallState(ringing: [], current: call(9), conferenceLegs: 1)) == .hangUp(call(9)))
+        #expect(HotkeyEffect.resolve(.hangUp, HotkeyCallState(ringing: [], current: call(9), conferenceLegs: [call(9), call(1), call(2)])) == .endConference)
+        #expect(HotkeyEffect.resolve(.hangUp, HotkeyCallState(ringing: [], current: call(9), conferenceLegs: [call(9)])) == .hangUp(call(9)))
+    }
+
+    /// A consultation or a new call placed from a conference: the held legs stay.
+    @Test func hangUpEndsConferenceOnlyWhenTheCurrentCallIsALeg() {
+        let legs = [call(1), call(2)]
+        #expect(HotkeyEffect.resolve(.hangUp, HotkeyCallState(ringing: [], current: call(3), conferenceLegs: legs)) == .hangUp(call(3)))
+        #expect(HotkeyEffect.resolve(.hangUp, HotkeyCallState(ringing: [], current: call(1), conferenceLegs: legs)) == .endConference)
+        #expect(HotkeyEffect.resolve(.hangUp, HotkeyCallState(ringing: [call(4)], current: nil, conferenceLegs: [])) == .decline(call(4)))
+    }
+
+    @Test func repeatsWithinHalfASecondCountOnce() {
+        var f = HotkeyPressFilter()
+        func accept(_ action: HotkeyAction, _ now: TimeInterval) -> Bool { f.accept(action, at: now) }
+        let answers = [accept(.hangUp, 100), accept(.hangUp, 100.2),
+                       accept(.mute, 100.3),            // per action
+                       accept(.hangUp, 100.6),          // the window slides: a held key stays one press
+                       accept(.hangUp, 101.2)]
+        #expect(answers == [true, false, true, false, true])
+    }
+
+    @Test func oldPressesAreStale() {
+        #expect(!HotkeyPressFilter.isStale(age: 0))
+        #expect(!HotkeyPressFilter.isStale(age: 1))
+        #expect(HotkeyPressFilter.isStale(age: 1.1))
+    }
+
+    @Test func recorderSwallowsRepeatsOfTheRecordedKey() {
+        var k = HotkeyRecorderKeys()
+        var v = k.keyDown(keyCode: 12, isRepeat: true, listening: true)
+        #expect(v == .swallow && !k.isHolding)                              // held since before the click
+        v = k.keyDown(keyCode: 12, isRepeat: false, listening: true)
+        #expect(v == .record && k.isHolding)
+        v = k.keyDown(keyCode: 12, isRepeat: true, listening: false)
+        #expect(v == .swallow)                                              // ⌘Q held: must not reach the menu
+        v = k.keyDown(keyCode: 13, isRepeat: true, listening: false)
+        #expect(v == .pass && !k.isHolding)                                 // another key: not ours
+
+        var up = HotkeyRecorderKeys()
+        _ = up.keyDown(keyCode: 12, isRepeat: false, listening: true)
+        up.keyUp(keyCode: 12)
+        #expect(!up.isHolding)
+        v = up.keyDown(keyCode: 12, isRepeat: false, listening: false)
+        #expect(v == .pass)                                                 // a new press is the user's
+    }
+
+    @Test func menuShortcutsOfTheCallAndContactViews() {
+        for (code, name) in [(47, "⌘."), (36, "⌘↩"), (14, "⌘E"), (51, "⌘⌫")] {
+            #expect(HotkeyCombo(keyCode: code, modifiers: .command).issue == .usedByMenu, "\(name)")
+        }
+    }
+
+    /// Every `.keyboardShortcut` and `keyEquivalent` literal with ⌘, ⌃ or ⌥ in the app's sources is in `menuShortcuts`.
+    @Test func menuShortcutsListEveryShortcutInTheSources() throws {
+        let sources = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .deletingLastPathComponent().appendingPathComponent("Sources/MacroSIPApp")
+        let named = ["return": 36, "delete": 51, "upArrow": 126, "downArrow": 125, "escape": 53, "tab": 48, "space": 49,
+                     "leftArrow": 123, "rightArrow": 124]
+        func code(_ key: String) -> Int? {
+            HotkeyCombo.keyNames.first { $0.value == key.uppercased() }?.key
+        }
+        let shortcut = try NSRegularExpression(pattern: #"\.keyboardShortcut\((?:"([^"]+)"|\.(\w+))(?:, modifiers: ([^)]+))?\)"#)
+        let item = try NSRegularExpression(pattern: #"keyEquivalent: "([^"]+)""#)
+        func modifiers(_ text: String) -> HotkeyModifiers {
+            var m: HotkeyModifiers = []
+            if text.contains(".command") { m.insert(.command) }
+            if text.contains(".control") { m.insert(.control) }
+            if text.contains(".option") { m.insert(.option) }
+            if text.contains(".shift") { m.insert(.shift) }
+            return m
+        }
+        var found = 0
+        let files = FileManager.default.enumerator(at: sources, includingPropertiesForKeys: nil)
+        while let url = files?.nextObject() as? URL {
+            guard url.pathExtension == "swift" else { continue }
+            let text = try String(contentsOf: url, encoding: .utf8)
+            let all = NSRange(text.startIndex..., in: text)
+            func group(_ m: NSTextCheckingResult, _ i: Int) -> String? { Range(m.range(at: i), in: text).map { String(text[$0]) } }
+            for m in shortcut.matches(in: text, range: all) {
+                let mods = modifiers(group(m, 3) ?? ".command")     // SwiftUI's default is ⌘
+                guard mods.hasCommandControlOrOption else { continue }
+                guard let key = group(m, 1).flatMap(code) ?? group(m, 2).flatMap({ named[$0] }) else {
+                    if group(m, 2) == "defaultAction" || group(m, 2) == "cancelAction" { continue }
+                    Issue.record("unknown key in \(url.lastPathComponent): \(group(m, 0) ?? "")")
+                    continue
+                }
+                found += 1
+                #expect(HotkeyCombo.menuShortcuts.contains(HotkeyCombo(keyCode: key, modifiers: mods)),
+                        "\(url.lastPathComponent): \(group(m, 0) ?? "") is missing from menuShortcuts")
+            }
+            for m in item.matches(in: text, range: all) {
+                guard let key = group(m, 1).flatMap(code) else { continue }
+                found += 1
+                #expect(HotkeyCombo.menuShortcuts.contains(HotkeyCombo(keyCode: key, modifiers: .command)),     // NSMenuItem's default is ⌘
+                        "\(url.lastPathComponent): \(group(m, 0) ?? "") is missing from menuShortcuts")
+            }
+        }
+        #expect(found > 10)
     }
 
     @Test func muteNeedsACall() {

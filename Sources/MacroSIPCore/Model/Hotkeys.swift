@@ -66,8 +66,9 @@ public struct HotkeyCombo: Codable, Hashable, Sendable {
         return s + (Self.keyNames[keyCode] ?? "?")
     }
 
-    /// Shortcuts of the app's menus (MacroSIPApp.swift, the Quick keys items) and the standard ones every
-    /// Mac app shows. A global hotkey on one of these would take it away from the menu.
+    /// Shortcuts of the app's menus and buttons (`keyboardShortcut` and `keyEquivalent` in MacroSIPApp; a test
+    /// keeps this in step) and the standard ones every Mac app shows. A global hotkey on one of these would take it
+    /// away from the app.
     public static let menuShortcuts: Set<HotkeyCombo> = {
         var set: Set<HotkeyCombo> = [
             HotkeyCombo(keyCode: 2, modifiers: .command),                    // ⌘D End Call
@@ -76,6 +77,10 @@ public struct HotkeyCombo: Codable, Hashable, Sendable {
             HotkeyCombo(keyCode: 125, modifiers: .command),                  // ⌘↓ volume down
             HotkeyCombo(keyCode: 2, modifiers: [.command, .option]),         // ⌥⌘D Do Not Disturb
             HotkeyCombo(keyCode: 29, modifiers: .command),                   // ⌘0 show the app
+            HotkeyCombo(keyCode: 47, modifiers: .command),                   // ⌘. decline in the incoming window
+            HotkeyCombo(keyCode: 36, modifiers: .command),                   // ⌘↩ answer in the incoming window
+            HotkeyCombo(keyCode: 14, modifiers: .command),                   // ⌘E edit a contact
+            HotkeyCombo(keyCode: 51, modifiers: .command),                   // ⌘⌫ delete a contact
         ]
         for code in [18, 19, 20, 21, 23, 22, 26, 28, 25] {                   // ⌘1…⌘9 quick keys
             set.insert(HotkeyCombo(keyCode: code, modifiers: .command))
@@ -197,10 +202,10 @@ public struct HotkeyCallState: Equatable, Sendable {
     public var ringing: [CallID]
     /// The call a command applies to (the active one, else the first held one); nil = no call.
     public var current: CallID?
-    /// Calls in the running conference (0 = none).
-    public var conferenceLegs: Int
+    /// Calls in the running conference (empty = none).
+    public var conferenceLegs: [CallID]
 
-    public init(ringing: [CallID], current: CallID?, conferenceLegs: Int = 0) {
+    public init(ringing: [CallID], current: CallID?, conferenceLegs: [CallID] = []) {
         self.ringing = ringing
         self.current = current
         self.conferenceLegs = conferenceLegs
@@ -221,18 +226,73 @@ public enum HotkeyEffect: Equatable, Sendable {
     /// Call › Mute (the current call).
     case toggleMute
 
-    /// Answer: the oldest ringing call. Hang up: a conference ends as a whole, else the current call, else
-    /// a ringing call is declined. Mute: the current call. No call, no effect.
+    /// Answer: the oldest ringing call. Hang up: when the current call is a leg of a conference, the conference
+    /// ends as a whole; else the current call ends (a conference on hold behind a consultation or a new call stays);
+    /// with no current call a ringing call is declined. Mute: the current call. No call, no effect.
     public static func resolve(_ action: HotkeyAction, _ state: HotkeyCallState) -> HotkeyEffect {
         switch action {
         case .answer:
             return state.ringing.first.map(HotkeyEffect.answer) ?? .none
         case .hangUp:
-            if state.conferenceLegs >= 2 { return .endConference }
-            if let current = state.current { return .hangUp(current) }
+            if let current = state.current {
+                return state.conferenceLegs.count >= 2 && state.conferenceLegs.contains(current) ? .endConference : .hangUp(current)
+            }
             return state.ringing.first.map(HotkeyEffect.decline) ?? .none
         case .mute:
             return state.current == nil ? .none : .toggleMute
         }
+    }
+}
+
+/// Which hotkey presses count. A double press of Hang up must not end the consultation and then the held original,
+/// or the active call and then decline a ringing one.
+public struct HotkeyPressFilter: Sendable {
+    /// A press of the same action this soon after the last one (counted or not) is ignored.
+    public static let repeatWindow: TimeInterval = 0.5
+    /// A press that took longer than this to reach the app is dropped: while a menu is open Carbon holds the event
+    /// back, and by the time it arrives the calls it was meant for may have changed.
+    public static let maxAge: TimeInterval = 1
+
+    private var last: [HotkeyAction: TimeInterval] = [:]
+
+    public init() {}
+
+    /// `now` on a monotonic clock, in seconds. The window slides, so a stream of events from a held key stays one press.
+    public mutating func accept(_ action: HotkeyAction, at now: TimeInterval) -> Bool {
+        defer { last[action] = now }
+        guard let previous = last[action] else { return true }
+        return now - previous >= Self.repeatWindow
+    }
+
+    public static func isStale(age: TimeInterval) -> Bool { age > maxAge }
+}
+
+/// What a key recorder does with key events. It takes the first press while listening. Holding that key then sends
+/// repeats, which must not reach the menus: ⌘Q held past the first event would quit the app.
+public struct HotkeyRecorderKeys: Sendable {
+    public enum Verdict: Equatable, Sendable {
+        case record, swallow, pass
+    }
+
+    private var held: Int?
+
+    public init() {}
+
+    /// A recorded key is still down, so its repeats have to be watched for.
+    public var isHolding: Bool { held != nil }
+
+    public mutating func keyDown(keyCode: Int, isRepeat: Bool, listening: Bool) -> Verdict {
+        if listening {
+            if isRepeat { return .swallow }         // a key held since before the click is no choice
+            held = keyCode
+            return .record
+        }
+        if isRepeat, keyCode == held { return .swallow }
+        held = nil
+        return .pass
+    }
+
+    public mutating func keyUp(keyCode: Int) {
+        if keyCode == held { held = nil }
     }
 }

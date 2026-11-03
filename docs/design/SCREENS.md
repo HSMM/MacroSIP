@@ -857,13 +857,13 @@ Table footer: "+" (add account), "−" (remove account, confirms), "Edit…" (op
 | Part | Content |
 |---|---|
 | File group | Name and folder of the ini. Row "Contacts file": the file name or "None", buttons "Choose…" and "Don't import contacts". Changing it rebuilds the preview. |
-| Accounts to import · N | One row per new account: name, `user@domain · TRANSPORT`, "Needs password" in orange. "No new accounts in this file." when empty. |
+| Accounts to import · N | One row per new account: name, `user@domain · TRANSPORT`, "Needs password" in orange unless the account does not register (no server in the INI: it may stay without a password). "No new accounts in this file." when empty. Every list shows at most 50 rows, then "and N more". |
 | Contacts | "N contacts" (plural strings). |
-| Warnings | One row per `MicroSIPImport.Warning` with an orange triangle: unknown transport (UDP is used), unknown SRTP (SRTP off), dial prefix / dial plan not imported, account skipped (no user name, no server or domain), contacts file missing / unreadable / too large / malformed, contacts without a number skipped, entries from a server directory skipped. Section names are shown as `[Account2]`. |
+| Warnings | One row per `MicroSIPImport.Warning` with an orange triangle: unknown transport (UDP is used), unknown SRTP (SRTP off), dial prefix / dial plan not imported, account skipped (no user name, no server or domain), contacts file missing / unreadable / too large / malformed, contacts without a number skipped, entries from a server directory skipped, too many accounts or contacts (over 1000 and 20000; the first ones are read). Section names are shown as `[Account2]`. |
 | Skipped · N | Accounts and contacts that exist already or appear twice in the file, with the reason. |
 | Footer | "Accounts are imported switched off. MicroSIP stores passwords in a form MacroSIP cannot read, so type each one once to switch its account on." |
 | Buttons | Cancel (changes nothing), Import (default; off when there is nothing new). |
-| Error | A file that cannot be imported (not found, unreadable, too large, no accounts) shows its typed `ReadError` as text with an orange triangle; buttons Cancel and "Choose Another File…". |
+| Error | A file that cannot be imported (not found, unreadable, too large: an INI over 1 MB, no accounts) shows its typed `ReadError` as text with an orange triangle; buttons Cancel and "Choose Another File…". |
 
 Import saves the accounts disabled, without a password (nothing goes to the Keychain), with the INI's display name stored as the caller name (the same place the account editor keeps it), appended to the account order; the first imported account becomes the default only when there were no accounts. Contacts go through the contact store and the contact list refreshes. The sheet then turns into a report ("Import finished": "Imported: 2 accounts, 14 contacts." with the accounts and "Needs password", plus a banner) with Done and "Enter Password…" (opens the editor of the first imported account). The other imported accounts show "Needs password" in the Status column until a password is saved. In the editor, "Enabled" starts on for such an account and the password help says why the field is empty, so typing the password and Save switches it on. Switching such an account on elsewhere (the account pop-up) opens its editor with a banner instead of enabling it.
 
@@ -1107,19 +1107,21 @@ Tab "Calls" (ru «Звонки»; formerly "Auto-answer"; SF Symbol `phone.badge
 | Row | Type | Behaviour |
 |---|---|---|
 | Use hotkeys in any app (secondary: "Work while MacroSIP is in the background. No permission is needed.") | toggle, default off | The first time it goes on, the three fields below are filled with ⌃⌥A, ⌃⌥H, ⌃⌥M; later the user's values stay, also empty ones. Off unregisters everything. Rows below show only while on. |
-| Answer (secondary: "Answers the call that has been ringing longest.") | key recorder (124 pt) with a clear (×) button | Click the field, press the combination; Esc cancels, Delete clears. Shows "Not set" when empty, "Press the keys…" while listening (nothing is registered meanwhile, so the current combination can be typed again). |
+| Answer (secondary: "Answers the call that has been ringing longest.") | key recorder (124 pt) with a clear (×) button | Click the field, press the combination; Esc cancels, Delete clears. Shows "Not set" when empty, "Press the keys…" while listening (nothing is registered meanwhile, so the current combination can be typed again). One row listens at a time; listening ends on Esc, on a click on another row and when the app or the window loses the keyboard. Repeats of the pressed key are swallowed until it goes up. |
 | Hang up (secondary: "Ends the current call; with none, declines the ringing call.") | key recorder | As above. |
 | Mute (secondary: "Turns the microphone of the current call off or on.") | key recorder | As above. |
 
-Registration is Carbon `RegisterEventHotKey`: it works while another app is frontmost and needs no permission (no Accessibility, no Input Monitoring). Rules: a combination needs at least one of ⌘ ⌃ ⌥ (⇧ alone is refused); one combination cannot belong to two actions; combinations the app's menus use (⌘D, ⇧⌘M, ⌘↑, ⌘↓, ⌥⌘D, ⌘0, ⌘1 to ⌘9) and the standard ones (⌘Q, ⌘W, ⌘H, ⌘M, ⌘, and the editing keys) are refused. A refused combination keeps the old one and shows a short red line under the field ("Include ⌘, ⌃ or ⌥", "Already assigned to “Answer”", "Used by a MacroSIP menu", "This key cannot be used"). When another app holds a stored combination, the system refuses it; that field shows "Already used by another app" (or "Could not be registered (error N)") and the other two keep working. Group footer while on: "Hotkeys do nothing when there is no call to act on."
+Registration is Carbon `RegisterEventHotKey`: it works while another app is frontmost and needs no permission (no Accessibility, no Input Monitoring). Rules: a combination needs at least one of ⌘ ⌃ ⌥ (⇧ alone is refused); one combination cannot belong to two actions; combinations the app's menus and buttons use (⌘D, ⇧⌘M, ⌘↑, ⌘↓, ⌥⌘D, ⌘0, ⌘1 to ⌘9, ⌘., ⌘↩, ⌘E, ⌘⌫) and the standard ones (⌘Q, ⌘W, ⌘H, ⌘M, ⌘, and the editing keys) are refused. A refused combination keeps the old one and shows a short red line under the field ("Include ⌘, ⌃ or ⌥", "Already assigned to “Answer”", "Used by a MacroSIP menu", "This key cannot be used"). When the system refuses a stored combination, that field shows "This combination could not be registered" (or "Could not be registered (error N)") and the other two keep working. macOS does not report another app's use of the same keys, so that case has no error; the group footer while on says it: "Hotkeys do nothing when there is no call to act on. Another app using the same keys can receive the press too."
 
 What a press does (the same `AppModel` actions as the buttons; no banner or sound when it does nothing):
 
 | Hotkey | Effect |
 |---|---|
 | Answer | Answers the oldest ringing call, as the Answer button of the incoming window (the active call is held first). Nothing when no call rings. |
-| Hang up | A running conference ends as a whole (End Conference); else the current call ends (End Call; during an attended transfer that is the consultation call); with no connected call the oldest ringing call is declined (Decline). Nothing when there is no call. |
+| Hang up | When the current call is a leg of a conference, the conference ends as a whole (End Conference); else the current call ends (End Call; during an attended transfer that is the consultation call, and a conference on hold behind a new call stays); with no connected call the oldest ringing call is declined (Decline). Nothing when there is no call. |
 | Mute | Toggles mute on the current call (Call › Mute); in a conference all legs. Nothing when no call is connected. |
+
+A repeat of the same hotkey within 0.5 s counts once, and a press that reaches the app more than 1 s late (a menu was open) is dropped.
 
 Demo and mock launches register nothing unless a self-check asks for it.
 
@@ -1676,13 +1678,13 @@ Strings marked "(proposed)" are not in the mockups; they are needed by the spec 
 | | Press the keys… | `settings.hotkeys.recording` | Recorder is listening. |
 | | Click, then press the shortcut. Esc cancels, Delete clears. | `settings.hotkeys.record.help` | Tooltip. |
 | | Clear | `settings.hotkeys.clear.help` | Tooltip of the × button. |
-| | Already used by another app | `settings.hotkeys.error.inUse` | Registration refused (red, under the field). |
+| | This combination could not be registered | `settings.hotkeys.error.inUse` | Registration refused (red, under the field). |
 | | Could not be registered (error %lld) | `settings.hotkeys.error.system` | Any other Carbon error. |
 | | Include ⌘, ⌃ or ⌥ | `settings.hotkeys.issue.needsModifier` | |
 | | This key cannot be used | `settings.hotkeys.issue.unsupportedKey` | |
 | | Used by a MacroSIP menu | `settings.hotkeys.issue.usedByMenu` | |
 | | Already assigned to “%@” | `settings.hotkeys.issue.duplicate` | Action name. |
-| | Hotkeys do nothing when there is no call to act on. | `settings.hotkeys.footer` | |
+| | Hotkeys do nothing when there is no call to act on. Another app using the same keys can receive the press too. | `settings.hotkeys.footer` | |
 
 ### 8.2 Import from MicroSIP (26.1)
 
@@ -1705,6 +1707,10 @@ Strings marked "(proposed)" are not in the mockups; they are needed by the spec 
 | | `[Account2]`: no user name / no server or domain / unknown transport / unknown SRTP / dial rules | `import.microsip.warn.noUsername`, `.noDomain`, `.transport`, `.srtp`, `.dialRules` | `Warning` cases with a section. |
 | | The contacts file was not found / could not be read / is too large / is not valid | `import.microsip.warn.contactsNotFound`, `.contactsUnreadable`, `.contactsTooLarge`, `.contactsMalformed` | |
 | | N contacts without a number were skipped · N entries from a server directory were skipped | `import.microsip.warn.noNumber`, `.warn.directory` | Plural (stringsdict). |
+| | Too many accounts / contacts in the file: only the first %lld are read. | `import.microsip.warn.tooManyAccounts`, `.warn.tooManyContacts` | 1000 accounts, 20000 contacts. |
+| | Reading the file… | `import.microsip.loading` | While the files are read. |
+| | and %lld more | `import.microsip.andMore` | Last row of a list longer than 50 rows. |
+| | Not everything was saved: %@ | `import.microsip.error.save` | The write failed; the sheet shows it, the report counts what was saved. |
 | | Type the password for “%@” first, then switch it on. | `banner.account.needsPassword` | Banner when an account without a password is switched on. |
 | | Imported from MicroSIP, which keeps passwords in a form no other app can read. Type it once to switch the account on. | `account.field.password.importedHelp` | Editor, password row. |
 

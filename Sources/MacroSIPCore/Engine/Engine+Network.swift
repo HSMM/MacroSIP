@@ -692,8 +692,11 @@ extension Engine {
     func probeFinished(_ id: CallID, code: Int) {
         guard isStarted, PJ.registerThread(), let slot = try? liveSlot(id),
               let snap = CallSnapshot.read(slot) else { return }   // PJSIP ended it on 408/481
-        bridge.updateCall(snap, mode: .updateOnly, mutate: { $0.probing = false })
-        if code == 408 || code == 481 {
+        // One step under the bridge's lock: on 408/481 PJSIP has already sent the BYE, so its
+        // DISCONNECTED can arrive on a worker thread at any moment. Clearing `probing` first and
+        // setting `connectionLost` later let it read neither and report the bare 481.
+        bridge.updateCall(snap, mode: .updateOnly, mutate: { $0.finishProbe(code: code) })
+        if CallRecord.probeMeansLost(code: code) {
             endConnectionLost(id, why: "no media and the OPTIONS probe answered \(code)")
         } else {
             emit(.log(level: 3, "engine: call \(id): OPTIONS probe answered \(code); keeping the call"))

@@ -53,6 +53,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 MainActor.assumeIsolated { if !isPanel { model.refreshIncomingPresentation() } }
             }
         }
+        // A recorder that lost the keyboard stops listening, so the hotkeys do not stay off behind another app.
+        for name in [NSApplication.didResignActiveNotification, NSWindow.didResignKeyNotification] {
+            nc.addObserver(forName: name, object: nil, queue: .main) { [model] _ in
+                MainActor.assumeIsolated { model.stopHotkeyListening() }
+            }
+        }
         // Sleep un-registers the accounts; wake registers them again and re-checks the network.
         let ws = NSWorkspace.shared.notificationCenter
         ws.addObserver(forName: NSWorkspace.willSleepNotification, object: nil, queue: .main) { [model] _ in

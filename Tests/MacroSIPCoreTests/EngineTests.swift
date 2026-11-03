@@ -497,8 +497,11 @@ struct EngineTests {
             try await engine.sendDTMF(out, "12x")
         }
         try await engine.sendDTMF(out, "1#")
-        let stats = try await engine.mediaStats(out)
-        #expect(stats.rxPackets > 0 && stats.txPackets > 0)
+        // The unhold above made a new stream with its counters at zero: its first packet is one audio frame away.
+        #expect(await waitUntil {
+            guard let stats = try? await engine.mediaStats(out) else { return false }
+            return stats.rxPackets > 0 && stats.txPackets > 0
+        })
 
         try await engine.hangup(out)
         // Racing engine-side updates right after the hang-up must not resurrect the call.

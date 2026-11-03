@@ -101,10 +101,26 @@ import Testing
         }
         #expect(try interval("0") == 300)
         #expect(try interval("-5") == 300)
-        #expect(try interval("1") == 10)
-        #expect(try interval("10") == 10)
-        #expect(try interval("11") == 11)
         #expect(try interval("abc") == 300)
+        // Clamped to the range the account editor accepts.
+        #expect(try interval("1") == 60)
+        #expect(try interval("10") == 60)
+        #expect(try interval("11") == 60)
+        #expect(try interval("59") == 60)
+        #expect(try interval("60") == 60)
+        #expect(try interval("3600") == 3600)
+        #expect(try interval("3601") == 3600)
+    }
+
+    @Test func userinfoIsStrippedFromAddresses() throws {
+        #expect(MicroSIPImport.normalizeAddress("sip:user:secret@host.example:5070;transport=tcp") == "host.example:5070")
+        #expect(MicroSIPImport.normalizeAddress("user@host.example") == "host.example")
+        #expect(MicroSIPImport.normalizeAddress("<sips:u:p@[::1]:5061>") == "[::1]:5061")
+        #expect(MicroSIPImport.normalizeAddress("host.example:5070") == "host.example:5070")
+        let c = try plan("[Account1]\nusername=1\nserver=sip:user:secret@srv.example:5070\nproxy=a:hidden@edge.example\ndomain=b:hush@dom.example\n").accounts[0].config
+        #expect(c.registrar == "srv.example:5070" && c.outboundProxy == "edge.example" && c.domain == "dom.example")
+        let dump = String(decoding: try JSONEncoder().encode(c), as: UTF8.self)
+        #expect(!dump.contains("secret") && !dump.contains("hidden") && !dump.contains("hush"))
     }
 
     @Test func accountsWithoutUsernameOrDomainAreSkipped() throws {
@@ -167,6 +183,63 @@ import Testing
         }
     }
 
+    @Test func iniOverOneMegabyteIsRefused() throws {
+        try withTempDir { dir in
+            let big = dir.appendingPathComponent("big.ini")
+            try Data(count: MicroSIPImport.maxINIFileSize + 1).write(to: big)
+            #expect(throws: MicroSIPImport.ReadError.iniTooLarge(bytes: MicroSIPImport.maxINIFileSize + 1)) {
+                try MicroSIPImport.read(ini: big)
+            }
+        }
+    }
+
+    /// A crafted file at the size limit stays quick and is cut at the caps with a typed warning.
+    @Test func craftedFilesAreCappedAndFast() throws {
+        var ini = ""
+        for i in 1...25_000 { ini += "[Account\(i)]\nusername=u\(i)\ndomain=d\n" }
+        #expect(ini.utf8.count <= MicroSIPImport.maxINIFileSize)
+        let clock = ContinuousClock()
+        var xml = "<contacts>"
+        for i in 0..<25_000 { xml += "<contact name=\"N\(i)\" number=\"\(1_000_000 + i)\"/>" }
+        xml += "</contacts>"
+        let existing = (0..<20_000).map { Contact(name: "E\($0)", number: "\(5_000_000 + $0)") }
+        var p: MicroSIPImport.Plan?
+        var m: MicroSIPImport.Merge?
+        let elapsed = try clock.measure {
+            p = try plan(ini, contacts: xml)
+            if let p { m = MicroSIPImport.merge(p, existingAccounts: [], existingContacts: existing) }
+        }
+        let result = try #require(p)
+        #expect(result.accounts.count == MicroSIPImport.maxAccounts)
+        #expect(result.contacts.count == MicroSIPImport.maxContacts)
+        #expect(result.warnings.contains(.tooManyAccounts(limit: MicroSIPImport.maxAccounts)))
+        #expect(result.warnings.contains(.tooManyContacts(limit: MicroSIPImport.maxContacts)))
+        #expect(m?.contacts.count == MicroSIPImport.maxContacts)
+        #expect(elapsed < .seconds(30), "took \(elapsed)")
+    }
+
+    /// The fast merge gives the answers `Contact.hasNumber` gives.
+    @Test func mergeAgreesWithHasNumber() throws {
+        let existing = [
+            Contact(firstName: "A", lastName: "", numbers: [PhoneNumber(label: .other, value: "+7 (495) 111", isDefault: true),
+                                                            PhoneNumber(label: .sip, value: "sip:200@a.example")]),
+            Contact(name: "B", number: "sip:300"),
+        ]
+        let numbers = ["+7495111", "sip:200@a.example", "sip:200@b.example", "200", "200@a.example", "sip:300@c.example", "300", "400", "sip:500@x", "sip:500@y", "500"]
+        let xml = "<contacts>" + numbers.enumerated().map { "<contact name=\"N\($0.offset)\" number=\"\($0.element)\"/>" }.joined() + "</contacts>"
+        let p = try plan(Self.ini, contacts: xml)
+        let m = MicroSIPImport.merge(p, existingAccounts: [], existingContacts: existing)
+        var known: [Contact] = []
+        var expected: [MicroSIPImport.ContactSkipReason?] = []
+        for c in p.contacts {
+            if existing.contains(where: { $0.hasNumber(c.number) }) { expected.append(.duplicateOfExisting) }
+            else if known.contains(where: { $0.hasNumber(c.number) }) { expected.append(.duplicateInFile) }
+            else { expected.append(nil); known.append(c) }
+        }
+        #expect(m.contacts.map(\.number) == known.map(\.number))
+        #expect(m.skippedContacts.map(\.reason) == expected.compactMap { $0 })
+    }
+
     @Test func contactsFileProblemsKeepAccounts() throws {
         try withTempDir { dir in
             let ini = dir.appendingPathComponent("MicroSIP.ini")
@@ -194,6 +267,32 @@ import Testing
         """
         let p = try plan(Self.ini, contacts: xml)
         #expect(p.contacts.isEmpty && p.warnings.contains(.contactsFileMalformed))
+    }
+
+    /// The guard sees the whole file, however it is encoded and wherever the declaration is.
+    @Test func doctypeIsFoundAnywhereInAnyEncoding() throws {
+        let doctype = "<!DOCTYPE contacts [<!ENTITY x \"y\">]>"
+        let body = "<contacts><contact name=\"A\" number=\"1\"/></contacts>"
+        let longComment = "<!--" + String(repeating: "x", count: 100_000) + "-->"
+        let late = "<?xml version=\"1.0\"?>" + longComment + doctype + body
+        let utf16 = "<?xml version=\"1.0\" encoding=\"UTF-16\"?>" + doctype + body
+        for (name, data) in [("after a long comment", Data(late.utf8)),
+                             ("UTF-16 with BOM", Data([0xFF, 0xFE]) + utf16.data(using: .utf16LittleEndian)!),
+                             ("UTF-16 big endian", Data([0xFE, 0xFF]) + utf16.data(using: .utf16BigEndian)!),
+                             ("UTF-16 without BOM", utf16.data(using: .utf16LittleEndian)!)] {
+            let p = try MicroSIPImport.plan(iniData: Data(Self.ini.utf8), contactsData: data)
+            #expect(p.contacts.isEmpty && p.warnings.contains(.contactsFileMalformed), "\(name)")
+        }
+    }
+
+    @Test func contactsParseInEveryEncodingWhateverTheDeclarationSays() throws {
+        let xml = "<?xml version=\"1.0\" encoding=\"%@\"?>\n<contacts><contact name=\"Пётр\" number=\"1\"/></contacts>"
+        for (name, data) in [("UTF-8", Data(String(format: xml, "UTF-8").utf8)),
+                             ("UTF-16 BOM", Data([0xFF, 0xFE]) + String(format: xml, "UTF-16").data(using: .utf16LittleEndian)!),
+                             ("windows-1251", String(format: xml, "windows-1251").data(using: .windowsCP1251)!)] {
+            let p = try MicroSIPImport.plan(iniData: Data(Self.ini.utf8), contactsData: data)
+            #expect(p.contacts.first?.firstName == "Пётр", "\(name)")
+        }
     }
 
     // MARK: contacts
@@ -289,5 +388,150 @@ import Testing
             try MicroSIPImport.apply(second, accounts: accounts, contacts: contacts)
             #expect(accounts.all().count == 2 && contacts.all().count == 3)
         }
+    }
+
+    @Test func saveReportsWhatWasWrittenWhenContactsFail() throws {
+        try withTempDir { dir in
+            let accountsDir = dir.appendingPathComponent("a"), contactsDir = dir.appendingPathComponent("c")
+            try FileManager.default.createDirectory(at: contactsDir, withIntermediateDirectories: true)
+            let accounts = AccountStore(directory: accountsDir), contacts = ContactStore(directory: contactsDir)
+            try FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: contactsDir.path)
+            defer { try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: contactsDir.path) }
+            let m = MicroSIPImport.merge(try plan(Self.ini, contacts: Self.xml), existingAccounts: [], existingContacts: [])
+            let saved = MicroSIPImport.save(m, accounts: accounts, contacts: contacts)
+            #expect(saved.error != nil)
+            #expect(saved.accounts.count == 2 && saved.contacts == 0)
+            #expect(accounts.all().count == 2)
+            #expect(accounts.defaultOutgoing()?.username == "2002")
+        }
+    }
+
+    // MARK: preferences
+
+    private func suite() -> (UserDefaults, String) {
+        let name = "com.hsmm.macrosip.test.\(UUID().uuidString)"
+        return (UserDefaults(suiteName: name)!, name)
+    }
+
+    @Test func recordSavedMarksOnlyAccountsThatRegister() throws {
+        let (d, name) = suite()
+        defer { d.removePersistentDomain(forName: name) }
+        let p = try plan("[Account1]\nusername=1\nserver=a.example\ndisplayName=One\n[Account2]\nusername=2\ndomain=b.example\n")
+        MicroSIPImport.recordSaved(p.accounts, in: d, order: ["old"])
+        let ids = p.accounts.map { $0.config.id.raw.uuidString }
+        #expect(d.stringArray(forKey: "accountsNeedingPassword") == [ids[0]])
+        #expect(d.stringArray(forKey: "accountOrder") == ["old"] + ids)
+        #expect(d.dictionary(forKey: "callerNames") as? [String: String] == [ids[0]: "One"])
+        MicroSIPImport.recordSaved(p.accounts, in: d)                 // no duplicates, stored order kept
+        #expect(d.stringArray(forKey: "accountsNeedingPassword") == [ids[0]])
+        #expect(d.stringArray(forKey: "accountOrder") == ["old"] + ids)
+    }
+
+    // MARK: command
+
+    private func env(_ home: URL, running: Bool = false, defaults: UserDefaults? = nil) -> (MicroSIPImportCommand.Environment, Lines) {
+        let lines = Lines()
+        return (.init(program: "test", isAppRunning: { running }, appDataDirectory: home, defaults: { defaults },
+                      output: { lines.out.append($0) }, errorOutput: { lines.err.append($0) }), lines)
+    }
+
+    private final class Lines { var out: [String] = []; var err: [String] = [] }
+
+    private func tree(_ dir: URL) -> [String: Data] {
+        var out: [String: Data] = [:]
+        let e = FileManager.default.enumerator(at: dir, includingPropertiesForKeys: nil)
+        while let u = e?.nextObject() as? URL { out[u.path] = (try? Data(contentsOf: u)) ?? Data() }
+        return out
+    }
+
+    @Test func dryRunWritesNothing() throws {
+        try withTempDir { dir in
+            let ini = dir.appendingPathComponent("MicroSIP.ini")
+            try Self.ini.write(to: ini, atomically: true, encoding: .utf8)
+            let missing = dir.appendingPathComponent("new/deep")
+            let (e, lines) = env(missing)
+            #expect(MicroSIPImportCommand.run(["x", "--import-microsip", ini.path, "--dry-run"], e) == 0)
+            #expect(!FileManager.default.fileExists(atPath: missing.path))
+            #expect(lines.out.first == "Dry run, nothing was written.")
+
+            // An undecodable store is an error and is not renamed; a list with a damaged entry is not rewritten.
+            let store = dir.appendingPathComponent("store")
+            try FileManager.default.createDirectory(at: store, withIntermediateDirectories: true)
+            try Data("not json".utf8).write(to: store.appendingPathComponent("accounts.json"))
+            let before = tree(store)
+            let (e2, lines2) = env(store)
+            #expect(MicroSIPImportCommand.run(["x", "--import-microsip", ini.path, "--dry-run"], e2) == 1)
+            #expect(tree(store) == before)
+            #expect(lines2.err.first?.contains("left as it is") == true)
+
+            try FileManager.default.removeItem(at: store.appendingPathComponent("accounts.json"))
+            try Data(#"[{"name":"A","number":"1"},{"bad":1}]"#.utf8).write(to: store.appendingPathComponent("contacts.json"))
+            let before2 = tree(store)
+            let (e3, _) = env(store)
+            #expect(MicroSIPImportCommand.run(["x", "--import-microsip", ini.path, "--dry-run"], e3) == 0)
+            #expect(tree(store) == before2)
+        }
+    }
+
+    @Test func aRealRunRefusesADamagedStoreToo() throws {
+        try withTempDir { dir in
+            let ini = dir.appendingPathComponent("MicroSIP.ini")
+            try Self.ini.write(to: ini, atomically: true, encoding: .utf8)
+            let store = dir.appendingPathComponent("store")
+            try FileManager.default.createDirectory(at: store, withIntermediateDirectories: true)
+            try Data("not json".utf8).write(to: store.appendingPathComponent("accounts.json"))
+            let before = tree(store)
+            let (e, _) = env(store)
+            #expect(MicroSIPImportCommand.run(["x", "--import-microsip", ini.path], e) == 1)
+            #expect(tree(store) == before)
+        }
+    }
+
+    @Test func commandMarksAccountsInTheAppsOwnDirectory() throws {
+        try withTempDir { dir in
+            let ini = dir.appendingPathComponent("MicroSIP.ini")
+            try Self.ini.write(to: ini, atomically: true, encoding: .utf8)
+            let home = dir.appendingPathComponent("home")
+            let (d, name) = suite()
+            defer { d.removePersistentDomain(forName: name) }
+
+            let (refused, lines) = env(home, running: true, defaults: d)
+            #expect(MicroSIPImportCommand.run(["x", "--import-microsip", ini.path], refused) == 1)
+            #expect(lines.err.first?.contains("is running") == true)
+            #expect(!FileManager.default.fileExists(atPath: home.path))
+
+            let (e, _) = env(home, defaults: d)
+            #expect(MicroSIPImportCommand.run(["x", "--import-microsip", ini.path], e) == 0)
+            let saved = AccountStore(directory: home).all()
+            #expect(saved.count == 2)
+            #expect(Set(d.stringArray(forKey: "accountsNeedingPassword") ?? []) == Set(saved.map { $0.id.raw.uuidString }))
+
+            // Another directory: the preferences stay out of it, and it is allowed while the app runs.
+            let other = dir.appendingPathComponent("other")
+            let (d2, name2) = suite()
+            defer { d2.removePersistentDomain(forName: name2) }
+            let (e2, lines2) = env(home, running: true, defaults: d2)
+            #expect(MicroSIPImportCommand.run(["x", "--import-microsip", ini.path, "--data-dir", other.path], e2) == 0)
+            #expect(AccountStore(directory: other).all().count == 2)
+            #expect(d2.stringArray(forKey: "accountsNeedingPassword") == nil)
+            #expect(lines2.out.contains { $0.hasPrefix("Note:") })
+        }
+    }
+
+    @Test func commandFailuresAndExitCodes() throws {
+        withTempDir { dir in
+            let (e, lines) = env(dir)
+            #expect(MicroSIPImportCommand.run(["x", "--import-microsip"], e) == 2)
+            #expect(lines.err.first?.hasPrefix("usage: test --import-microsip") == true)
+            #expect(MicroSIPImportCommand.run(["x", "--import-microsip", "a.ini", "--bogus"], e) == 2)
+            #expect(MicroSIPImportCommand.run(["x", "--import-microsip", dir.appendingPathComponent("none.ini").path], e) == 1)
+        }
+    }
+
+    @Test func appDefaultsOutsideTheAppAreASuite() {
+        #expect(MicroSIPImportCommand.appDefaults() !== UserDefaults.standard)
+        #expect(MicroSIPImportCommand.isOtherProcess(among: [1, 2], current: 1))
+        #expect(!MicroSIPImportCommand.isOtherProcess(among: [1], current: 1))
+        #expect(!MicroSIPImportCommand.isOtherProcess(among: [], current: 1))
     }
 }

@@ -5,6 +5,8 @@ import MacroSIPCore
 /// Nothing is written until Import is pressed; Cancel changes nothing.
 struct MicroSIPImportSheet: View {
     @Environment(AppModel.self) private var model
+    /// Rows shown per list: a file may hold thousands, the sheet builds no more than this.
+    private static let rowLimit = 50
 
     var body: some View {
         VStack(spacing: 0) {
@@ -16,10 +18,12 @@ struct MicroSIPImportSheet: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
                         fileRow(session)
+                        if let saveError = session.saveError { warningLine(saveError) }
                         if let report = session.report {
                             reportBody(report)
                         } else {
                             switch session.outcome {
+                            case .loading: loadingBody
                             case let .failed(error): errorBody(error)
                             case let .preview(merge): previewBody(merge, session: session)
                             }
@@ -53,12 +57,33 @@ struct MicroSIPImportSheet: View {
         }
     }
 
-    private func errorBody(_ error: MicroSIPImport.ReadError) -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Theme.orange)
-            Text(Self.text(for: error)).font(.system(size: 12.5)).fixedSize(horizontal: false, vertical: true)
+    private var loadingBody: some View {
+        HStack(spacing: 8) {
+            ProgressView().controlSize(.small)
+            Text(L.importLoading).font(.system(size: 12.5)).foregroundStyle(Theme.label2)
         }
         .padding(.horizontal, 4)
+    }
+
+    private func errorBody(_ error: MicroSIPImport.ReadError) -> some View {
+        warningLine(Self.text(for: error))
+    }
+
+    private func warningLine(_ text: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Theme.orange)
+            Text(text).font(.system(size: 12.5)).fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 4)
+    }
+
+    /// The last row of a list cut at `rowLimit`.
+    @ViewBuilder
+    private func moreRow(total: Int) -> some View {
+        if total > Self.rowLimit {
+            FormDivider()
+            FormRow(label: L.importAndMore(total - Self.rowLimit)) { EmptyView() }
+        }
     }
 
     @ViewBuilder
@@ -67,18 +92,21 @@ struct MicroSIPImportSheet: View {
             if merge.accounts.isEmpty {
                 FormRow(label: L.importNoNewAccounts) { EmptyView() }
             }
-            ForEach(Array(merge.accounts.enumerated()), id: \.offset) { index, account in
+            ForEach(Array(merge.accounts.prefix(Self.rowLimit).enumerated()), id: \.offset) { index, account in
                 if index > 0 { FormDivider() }
                 FormRow(label: account.config.displayName,
                         help: "\(account.config.username)@\(account.config.domain) · \(account.config.transport.rawValue.uppercased())") {
-                    Text(L.accountsNeedsPassword).font(.system(size: 11.5)).foregroundStyle(Theme.orange)
+                    if MicroSIPImport.needsPassword(account.config) {
+                        Text(L.accountsNeedsPassword).font(.system(size: 11.5)).foregroundStyle(Theme.orange)
+                    }
                 }
             }
+            moreRow(total: merge.accounts.count)
         }
         FormGroup {
             FormRow(label: L.importCountContacts(merge.contacts.count)) { EmptyView() }
         }
-        let warnings = merge.warnings.map(Self.text(for:))
+        let warnings = merge.warnings.prefix(Self.rowLimit).map(Self.text(for:))
         if !warnings.isEmpty {
             FormGroup(header: L.importWarningsHeader) {
                 ForEach(Array(warnings.enumerated()), id: \.offset) { index, text in
@@ -90,20 +118,22 @@ struct MicroSIPImportSheet: View {
                     }
                     .padding(.horizontal, 12).padding(.vertical, 7)
                 }
+                moreRow(total: merge.warnings.count)
             }
         }
-        let skipped = skippedLines(merge)
-        if !skipped.isEmpty {
-            FormGroup(header: "\(L.importSkippedHeader) · \(skipped.count)") {
-                ForEach(Array(skipped.enumerated()), id: \.offset) { index, line in
+        let skippedTotal = merge.skippedAccounts.count + merge.skippedContacts.count
+        if skippedTotal > 0 {
+            FormGroup(header: "\(L.importSkippedHeader) · \(skippedTotal)") {
+                ForEach(Array(skippedLines(merge).enumerated()), id: \.offset) { index, line in
                     if index > 0 { FormDivider() }
                     FormRow(label: line.0, help: line.1) { EmptyView() }
                 }
+                moreRow(total: skippedTotal)
             }
         }
         if merge.isEmpty {
             Text(L.importNothing).font(.system(size: 12)).foregroundStyle(Theme.label2).padding(.horizontal, 4)
-        } else if !merge.accounts.isEmpty {
+        } else if merge.accounts.contains(where: { MicroSIPImport.needsPassword($0.config) }) {
             Text(L.importFooter).font(.system(size: 11.5)).foregroundStyle(Theme.label2)
                 .fixedSize(horizontal: false, vertical: true).padding(.horizontal, 4)
         }
@@ -116,8 +146,10 @@ struct MicroSIPImportSheet: View {
         func whyContact(_ reason: MicroSIPImport.ContactSkipReason) -> String {
             reason == .duplicateOfExisting ? L.importAlready : L.importTwice
         }
-        return merge.skippedAccounts.map { ("\($0.account.config.username)@\($0.account.config.domain)", why($0.reason)) }
-            + merge.skippedContacts.map { ($0.contact.displayName, whyContact($0.reason)) }
+        let accounts = merge.skippedAccounts.prefix(Self.rowLimit)
+        let contacts = merge.skippedContacts.prefix(Self.rowLimit - accounts.count)
+        return accounts.map { ("\($0.account.config.username)@\($0.account.config.domain)", why($0.reason)) }
+            + contacts.map { ($0.contact.displayName, whyContact($0.reason)) }
     }
 
     private func reportBody(_ report: MicroSIPImportSession.Report) -> some View {
@@ -129,15 +161,20 @@ struct MicroSIPImportSheet: View {
             }
             if !report.accounts.isEmpty {
                 FormGroup(header: L.importCountAccounts(report.accounts.count)) {
-                    ForEach(Array(report.accounts.enumerated()), id: \.offset) { index, name in
+                    ForEach(Array(report.accounts.prefix(Self.rowLimit).enumerated()), id: \.offset) { index, account in
                         if index > 0 { FormDivider() }
-                        FormRow(label: name) {
-                            Text(L.accountsNeedsPassword).font(.system(size: 11.5)).foregroundStyle(Theme.orange)
+                        FormRow(label: account.name) {
+                            if account.needsPassword {
+                                Text(L.accountsNeedsPassword).font(.system(size: 11.5)).foregroundStyle(Theme.orange)
+                            }
                         }
                     }
+                    moreRow(total: report.accounts.count)
                 }
-                Text(L.importNextSteps).font(.system(size: 11.5)).foregroundStyle(Theme.label2)
-                    .fixedSize(horizontal: false, vertical: true)
+                if report.firstAccount != nil {
+                    Text(L.importNextSteps).font(.system(size: 11.5)).foregroundStyle(Theme.label2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
         .padding(.horizontal, 4)
@@ -158,6 +195,8 @@ struct MicroSIPImportSheet: View {
             } else {
                 Button(L.commonCancel) { model.cancelMicroSIPImport() }.keyboardShortcut(.cancelAction).fixedSize()
                 switch session.outcome {
+                case .loading:
+                    Button(L.importButton) {}.disabled(true).fixedSize()
                 case .failed:
                     Button(L.importChooseAnother) {
                         model.cancelMicroSIPImport()
@@ -200,6 +239,8 @@ struct MicroSIPImportSheet: View {
         case .contactsFileMalformed: return L.importWarnContactsMalformed
         case let .contactsSkippedWithoutNumber(count): return L.importWarnNoNumber(count)
         case let .contactsSkippedFromDirectory(count): return L.importWarnDirectory(count)
+        case let .tooManyAccounts(limit): return L.importWarnTooManyAccounts(limit)
+        case let .tooManyContacts(limit): return L.importWarnTooManyContacts(limit)
         }
     }
 }

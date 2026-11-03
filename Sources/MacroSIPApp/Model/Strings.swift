@@ -852,13 +852,13 @@ enum L {
     static var hotkeysRecording: String { loc("settings.hotkeys.recording", "Press the keys…") }
     static var hotkeysRecordHelp: String { loc("settings.hotkeys.record.help", "Click, then press the shortcut. Esc cancels, Delete clears.") }
     static var hotkeysClearHelp: String { loc("settings.hotkeys.clear.help", "Clear") }
-    static var hotkeysErrorInUse: String { loc("settings.hotkeys.error.inUse", "Already used by another app") }
+    static var hotkeysErrorInUse: String { loc("settings.hotkeys.error.inUse", "This combination could not be registered") }
     static func hotkeysErrorSystem(_ code: Int) -> String { loc("settings.hotkeys.error.system", "Could not be registered (error \(code))") }
     static var hotkeysIssueNeedsModifier: String { loc("settings.hotkeys.issue.needsModifier", "Include ⌘, ⌃ or ⌥") }
     static var hotkeysIssueUnsupportedKey: String { loc("settings.hotkeys.issue.unsupportedKey", "This key cannot be used") }
     static var hotkeysIssueUsedByMenu: String { loc("settings.hotkeys.issue.usedByMenu", "Used by a MacroSIP menu") }
     static func hotkeysIssueDuplicate(_ action: String) -> String { loc("settings.hotkeys.issue.duplicate", "Already assigned to “\(action)”") }
-    static var hotkeysFooter: String { loc("settings.hotkeys.footer", "Hotkeys do nothing when there is no call to act on.") }
+    static var hotkeysFooter: String { loc("settings.hotkeys.footer", "Hotkeys do nothing when there is no call to act on. Another app using the same keys can receive the press too.") }
     static var accountsImportMicroSIP: String { loc("accounts.import.microsip", "Import from MicroSIP…") }
     static var accountsNeedsPassword: String { loc("accounts.status.needsPassword", "Needs password") }
     static var accountPasswordImportedHelp: String { loc("account.field.password.importedHelp", "Imported from MicroSIP, which keeps passwords in a form no other app can read. Type it once to switch the account on.") }
@@ -888,6 +888,11 @@ enum L {
     static var importErrorNotFound: String { loc("import.microsip.error.notFound", "The file was not found.") }
     static var importErrorUnreadable: String { loc("import.microsip.error.unreadable", "The file could not be read.") }
     static func importErrorTooLarge(_ size: String) -> String { loc("import.microsip.error.tooLarge", "The file is too large (\(size)). MicroSIP.ini is normally a few kilobytes, so this is probably the wrong file.") }
+    static func importErrorSave(_ reason: String) -> String { loc("import.microsip.error.save", "Not everything was saved: \(reason)") }
+    static var importLoading: String { loc("import.microsip.loading", "Reading the file…") }
+    static func importAndMore(_ n: Int) -> String { loc("import.microsip.andMore", "and \(n) more") }
+    static func importWarnTooManyAccounts(_ limit: Int) -> String { loc("import.microsip.warn.tooManyAccounts", "Too many accounts in the file: only the first \(limit) are read.") }
+    static func importWarnTooManyContacts(_ limit: Int) -> String { loc("import.microsip.warn.tooManyContacts", "Too many contacts in the file: only the first \(limit) are read.") }
     static var importErrorNoAccounts: String { loc("import.microsip.error.noAccounts", "This file has no accounts. Is it MicroSIP.ini?") }
     static func importWarnNoUsername(_ section: String) -> String { loc("import.microsip.warn.noUsername", "[\(section)]: no user name, account skipped") }
     static func importWarnNoDomain(_ section: String) -> String { loc("import.microsip.warn.noDomain", "[\(section)]: no server or domain, account skipped") }

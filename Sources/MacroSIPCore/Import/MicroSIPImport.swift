@@ -5,14 +5,21 @@ import Foundation
 /// Three steps, the first two pure (nothing is written):
 /// 1. `read(ini:contacts:)` parses the files into a `Plan`.
 /// 2. `merge(_:existingAccounts:existingContacts:)` sorts the plan into what is new and what is a duplicate.
-/// 3. `apply(_:accounts:contacts:)` saves the new items through the app's stores.
+/// 3. `save(_:accounts:contacts:)` writes the new items through the app's stores and says what was really saved;
+///    `recordSaved(_:in:order:)` then stores what the app keeps in its preferences for those accounts.
 ///
 /// Passwords are never read: MicroSIP encrypts them with a key built into the program, and the parser drops
 /// the `password` keys before anything is stored. Imported accounts are disabled until the user types a password.
 /// Caller names have no field in `AccountConfig`; the app keeps them next to the account (`Account.callerName`).
 public enum MicroSIPImport {
-    /// Files larger than this are refused.
+    /// A contacts file larger than this is not read.
     public static let maxFileSize = 10 * 1024 * 1024
+    /// An INI larger than this is refused: a real MicroSIP.ini is a few kilobytes.
+    public static let maxINIFileSize = 1024 * 1024
+    /// Account sections read from one file; the rest get a `tooManyAccounts` warning.
+    public static let maxAccounts = 1000
+    /// Contacts read from one file; the rest get a `tooManyContacts` warning.
+    public static let maxContacts = 20000
 
     // MARK: Plan
 
@@ -46,6 +53,10 @@ public enum MicroSIPImport {
         case contactsSkippedWithoutNumber(count: Int)
         /// Entries that came from a server directory (`directory="1"`).
         case contactsSkippedFromDirectory(count: Int)
+        /// The file has more account sections than `limit`; only the first ones are read.
+        case tooManyAccounts(limit: Int)
+        /// The file has more contacts than `limit`; only the first ones are read.
+        case tooManyContacts(limit: Int)
     }
 
     public struct Plan: Equatable, Sendable {
@@ -104,7 +115,7 @@ public enum MicroSIPImport {
         let fm = FileManager.default
         guard fm.fileExists(atPath: ini.path) else { throw ReadError.iniNotFound }
         let iniData: Data
-        switch loadFile(ini) {
+        switch loadFile(ini, limit: maxINIFileSize) {
         case let .data(d): iniData = d
         case .tooLarge(let n): throw ReadError.iniTooLarge(bytes: n)
         case .unreadable: throw ReadError.iniUnreadable
@@ -115,7 +126,7 @@ public enum MicroSIPImport {
             if !fm.fileExists(atPath: contacts.path) {
                 extra.append(.contactsFileNotFound)
             } else {
-                switch loadFile(contacts) {
+                switch loadFile(contacts, limit: maxFileSize) {
                 case let .data(d): contactsData = d
                 case .tooLarge: extra.append(.contactsFileTooLarge)
                 case .unreadable: extra.append(.contactsFileUnreadable)
@@ -135,15 +146,11 @@ public enum MicroSIPImport {
         var plan = Plan(accounts: accounts, contacts: [], warnings: warnings)
         if let contactsData {
             switch ContactsXML.parse(contactsData) {
-            case let .success(entries):
-                var noNumber = 0, directory = 0
-                for e in entries {
-                    if e.isDirectory { directory += 1; continue }
-                    guard let c = contact(from: e) else { noNumber += 1; continue }
-                    plan.contacts.append(c)
-                }
-                if noNumber > 0 { plan.warnings.append(.contactsSkippedWithoutNumber(count: noNumber)) }
-                if directory > 0 { plan.warnings.append(.contactsSkippedFromDirectory(count: directory)) }
+            case let .success(parsed):
+                plan.contacts = parsed.entries.compactMap(contact(from:))
+                if parsed.withoutNumber > 0 { plan.warnings.append(.contactsSkippedWithoutNumber(count: parsed.withoutNumber)) }
+                if parsed.fromDirectory > 0 { plan.warnings.append(.contactsSkippedFromDirectory(count: parsed.fromDirectory)) }
+                if parsed.overLimit { plan.warnings.append(.tooManyContacts(limit: maxContacts)) }
             case .failure:
                 plan.warnings.append(.contactsFileMalformed)
             }
@@ -153,11 +160,11 @@ public enum MicroSIPImport {
 
     private enum Loaded { case data(Data), tooLarge(Int), unreadable }
 
-    private static func loadFile(_ url: URL) -> Loaded {
+    private static func loadFile(_ url: URL, limit: Int) -> Loaded {
         guard let size = (try? FileManager.default.attributesOfItem(atPath: url.path))?[.size] as? NSNumber else { return .unreadable }
-        if size.intValue > maxFileSize { return .tooLarge(size.intValue) }
+        if size.intValue > limit { return .tooLarge(size.intValue) }
         guard let data = try? Data(contentsOf: url) else { return .unreadable }
-        return data.count > maxFileSize ? .tooLarge(data.count) : .data(data)
+        return data.count > limit ? .tooLarge(data.count) : .data(data)
     }
 
     // MARK: Merging
@@ -189,29 +196,87 @@ public enum MicroSIPImport {
             fresh[fresh.firstIndex { $0.isActiveInSource } ?? 0].config.isDefaultOutgoing = true
         }
 
-        var known = existingContacts
+        var existing = NumberIndex()
+        for c in existingContacts { existing.add(c) }
+        var inFileNumbers = NumberIndex()
         var accepted: [Contact] = []
         var skippedContacts: [SkippedContact] = []
         for c in plan.contacts {
-            let number = c.number
-            if existingContacts.contains(where: { $0.hasNumber(number) }) {
+            let key = NumberKey(c.number)
+            if existing.contains(key) {
                 skippedContacts.append(SkippedContact(contact: c, reason: .duplicateOfExisting))
-            } else if known.contains(where: { $0.hasNumber(number) }) {
+            } else if inFileNumbers.contains(key) {
                 skippedContacts.append(SkippedContact(contact: c, reason: .duplicateInFile))
             } else {
                 accepted.append(c)
-                known.append(c)
+                inFileNumbers.add(c)
             }
         }
         return Merge(accounts: fresh, skippedAccounts: skippedAccounts, contacts: accepted,
                      skippedContacts: skippedContacts, warnings: plan.warnings)
     }
 
-    /// Saves the new accounts and contacts. Passwords and caller names are not handled here: the accounts have
-    /// no password (they are disabled), and the caller names are the caller's to store (`Account.callerName`).
+    /// What `save` really wrote.
+    public struct Saved: Sendable {
+        public var accounts: [Account] = []
+        public var contacts = 0
+        /// What stopped the rest; nil = everything was written.
+        public var error: (any Error)?
+
+        public init() {}
+    }
+
+    /// Writes the new accounts (one write of accounts.json) and then the contacts (one of contacts.json). A failure
+    /// leaves the earlier write in place and is returned with it, so the caller can follow what is on disk.
+    /// Passwords are not handled here: the accounts have none and are disabled.
+    public static func save(_ merge: Merge, accounts: AccountStore, contacts: ContactStore) -> Saved {
+        var saved = Saved()
+        do {
+            try accounts.upsert(contentsOf: merge.accounts.map(\.config))
+            saved.accounts = merge.accounts
+            try contacts.upsert(contentsOf: merge.contacts)
+            saved.contacts = merge.contacts.count
+        } catch {
+            saved.error = error
+        }
+        return saved
+    }
+
+    /// `save`, with any failure thrown.
     public static func apply(_ merge: Merge, accounts: AccountStore, contacts: ContactStore) throws {
-        for a in merge.accounts { try accounts.upsert(a.config) }
-        try contacts.upsert(contentsOf: merge.contacts)
+        if let error = save(merge, accounts: accounts, contacts: contacts).error { throw error }
+    }
+
+    // MARK: Preferences
+
+    /// An account that registers needs a password before it can work; one that does not (MicroSIP's account
+    /// without a server) may have none, as the account editor allows.
+    public static func needsPassword(_ config: AccountConfig) -> Bool { config.registerWithServer }
+
+    /// Keys of what the app keeps next to the accounts, in its preferences.
+    public enum PreferenceKey {
+        public static let callerNames = "callerNames"
+        public static let accountOrder = "accountOrder"
+        public static let accountsNeedingPassword = "accountsNeedingPassword"
+    }
+
+    /// Stores what the app keeps in its preferences for accounts that were really saved: caller names, the order
+    /// (`order`, or the stored one, then the accounts in file order) and which accounts still need a password.
+    /// The app and the command-line import both come through here.
+    public static func recordSaved(_ accounts: [Account], in defaults: UserDefaults, order: [String]? = nil) {
+        guard !accounts.isEmpty else { return }
+        var names = (defaults.dictionary(forKey: PreferenceKey.callerNames) as? [String: String]) ?? [:]
+        var list = order ?? defaults.stringArray(forKey: PreferenceKey.accountOrder) ?? []
+        var pending = defaults.stringArray(forKey: PreferenceKey.accountsNeedingPassword) ?? []
+        for a in accounts {
+            let id = a.config.id.raw.uuidString
+            if !a.callerName.isEmpty { names[id] = a.callerName }
+            if !list.contains(id) { list.append(id) }
+            if needsPassword(a.config), !pending.contains(id) { pending.append(id) }
+        }
+        defaults.set(names, forKey: PreferenceKey.callerNames)
+        defaults.set(list, forKey: PreferenceKey.accountOrder)
+        defaults.set(pending, forKey: PreferenceKey.accountsNeedingPassword)
     }
 
     // MARK: Account mapping
@@ -226,7 +291,11 @@ public enum MicroSIPImport {
         let active = ini.value("settings", "accountid").flatMap { Int($0.trimmingCharacters(in: .whitespaces)) } ?? 0
         var warnings: [Warning] = []
         var out: [Account] = []
-        let numbered = ini.sections.compactMap { s in accountNumber(s.name).map { ($0, s) } }.sorted { $0.0 < $1.0 }
+        var numbered = ini.sections.compactMap { s in accountNumber(s.name).map { ($0, s) } }.sorted { $0.0 < $1.0 }
+        if numbered.count > maxAccounts {
+            numbered.removeLast(numbered.count - maxAccounts)
+            warnings.append(.tooManyAccounts(limit: maxAccounts))
+        }
         for (number, section) in numbered {
             let name = section.name
             func v(_ key: String) -> String { section.values[key]?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "" }
@@ -261,7 +330,8 @@ public enum MicroSIPImport {
             let authID = v("authid")
             let voicemail = v("voicemailnumber")
             var interval = 300
-            if let n = Int(v("registerrefresh")) { interval = n <= 0 ? 300 : (n <= 10 ? 10 : n) }
+            // The range the account editor accepts; anything else would block its Save button.
+            if let n = Int(v("registerrefresh")), n > 0 { interval = min(max(n, 60), 3600) }
             let label = v("label")
 
             let config = AccountConfig(
@@ -283,8 +353,9 @@ public enum MicroSIPImport {
         return (out, warnings)
     }
 
-    /// "sip:host:5060;transport=tcp" becomes "host:5060": no scheme, no brackets, no parameters, port kept.
-    /// The engine adds the scheme, the transport and `lr` itself.
+    /// "sip:user:secret@host:5060;transport=tcp" becomes "host:5060": no scheme, no brackets, no user or password
+    /// (a credential must not end up in the account's plain fields), no parameters, port kept. The engine adds the
+    /// scheme, the transport and `lr` itself.
     static func normalizeAddress(_ raw: String) -> String {
         var s = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         if s.hasPrefix("<"), s.hasSuffix(">") { s = String(s.dropFirst().dropLast()) }
@@ -293,6 +364,7 @@ public enum MicroSIPImport {
             break
         }
         if let semi = s.firstIndex(of: ";") { s = String(s[..<semi]) }
+        if let at = s.lastIndex(of: "@") { s = String(s[s.index(after: at)...]) }
         return s.trimmingCharacters(in: .whitespaces)
     }
 
@@ -305,6 +377,30 @@ public enum MicroSIPImport {
     }
 
     // MARK: Contact mapping
+
+    /// The numbers of many contacts, for lookups that give the same answer as `Contact.hasNumber` on each of them.
+    private struct NumberIndex {
+        private struct Entry {
+            var withoutDomain = false
+            var domains: Set<String> = []
+        }
+        private var users: [String: Entry] = [:]
+
+        mutating func add(_ contact: Contact) {
+            for n in contact.numbers {
+                let key = NumberKey(n.value)
+                guard !key.user.isEmpty else { continue }
+                if let domain = key.domain { users[key.user, default: Entry()].domains.insert(domain) }
+                else { users[key.user, default: Entry()].withoutDomain = true }
+            }
+        }
+
+        func contains(_ key: NumberKey) -> Bool {
+            guard !key.user.isEmpty, let entry = users[key.user] else { return false }
+            guard let domain = key.domain else { return true }
+            return entry.withoutDomain || entry.domains.contains(domain)
+        }
+    }
 
     private static func contact(from e: ContactsXML.Entry) -> Contact? {
         let number = e.number
@@ -354,6 +450,8 @@ struct INIFile {
     struct Section { var name: String; var values: [String: String] }
     private(set) var sections: [Section] = []
     private var current: Int?
+    /// Index in `sections` by lower-cased name.
+    private var index: [String: Int] = [:]
 
     /// Keys that never leave the parser.
     private static let secret: Set<String> = ["password", "passwordsize"]
@@ -365,12 +463,14 @@ struct INIFile {
             if line.hasPrefix("[") {
                 guard let close = line.firstIndex(of: "]") else { continue }
                 let name = line[line.index(after: line.startIndex)..<close].trimmingCharacters(in: .whitespaces)
-                if let i = sections.firstIndex(where: { $0.name.lowercased() == name.lowercased() }) {
+                let key = name.lowercased()
+                if let i = index[key] {
                     // A repeated section continues the first one, like GetPrivateProfileString.
                     current = i
                 } else {
                     sections.append(Section(name: name, values: [:]))
                     current = sections.count - 1
+                    index[key] = current
                 }
                 continue
             }
@@ -388,7 +488,7 @@ struct INIFile {
     }
 
     func value(_ section: String, _ key: String) -> String? {
-        sections.first { $0.name.lowercased() == section }?.values[key]
+        index[section].flatMap { sections[$0].values[key] }
     }
 }
 
@@ -397,37 +497,62 @@ enum ContactsXML {
     struct Entry {
         var name = "", number = "", firstName = "", lastName = "", phone = "", mobile = "", email = ""
         var address = "", city = "", state = "", zip = "", comment = "", info = ""
-        var presence = false, isDirectory = false
+        var presence = false
     }
 
     struct Malformed: Error {}
 
-    static func parse(_ data: Data) -> Result<[Entry], Malformed> {
+    struct Parsed {
+        /// Contacts with a number that are not directory entries, at most the limit.
+        var entries: [Entry] = []
+        var withoutNumber = 0
+        var fromDirectory = 0
+        /// More contacts followed than the limit allows.
+        var overLimit = false
+    }
+
+    /// The whole file is decoded once (`MicroSIPImport.decodeText`); the guard scans that text and the parser reads
+    /// the same text as UTF-8, so a comment, a BOM or an encoding declaration cannot show the two different bytes.
+    static func parse(_ data: Data, limit: Int = MicroSIPImport.maxContacts) -> Result<Parsed, Malformed> {
+        let text = MicroSIPImport.decodeText(data)
         // A document type declaration can define entities; MicroSIP files have none.
-        let head = String(decoding: data.prefix(64 * 1024), as: UTF8.self).lowercased()
-        if head.contains("<!doctype") || head.contains("<!entity") { return .failure(Malformed()) }
-        let parser = XMLParser(data: data)
+        let lower = text.lowercased()
+        if lower.contains("<!doctype") || lower.contains("<!entity") { return .failure(Malformed()) }
+        let parser = XMLParser(data: Data(withoutDeclaration(text).utf8))
         parser.shouldResolveExternalEntities = false
-        let delegate = Delegate()
+        let delegate = Delegate(limit: limit)
         parser.delegate = delegate
         guard parser.parse(), delegate.sawRoot else { return .failure(Malformed()) }
-        return .success(delegate.entries)
+        return .success(delegate.parsed)
+    }
+
+    /// The text without its `<?xml ...?>`: the bytes the parser gets are UTF-8 whatever the declaration said.
+    private static func withoutDeclaration(_ text: String) -> Substring {
+        let body = text.drop { $0.isWhitespace }
+        guard body.hasPrefix("<?xml"), let end = body.range(of: "?>") else { return body }
+        return body[end.upperBound...]
     }
 
     private final class Delegate: NSObject, XMLParserDelegate {
-        var entries: [Entry] = []
+        let limit: Int
+        var parsed = Parsed()
         var sawRoot = false
+
+        init(limit: Int) { self.limit = limit }
 
         func parser(_ parser: XMLParser, didStartElement name: String, namespaceURI: String?, qualifiedName: String?,
                     attributes a: [String: String]) {
             if name == "contacts" { sawRoot = true }
             guard name == "contact" else { return }
             func v(_ k: String) -> String { a[k]?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "" }
-            entries.append(Entry(
+            if v("directory") == "1" { parsed.fromDirectory += 1; return }
+            guard !v("number").isEmpty else { parsed.withoutNumber += 1; return }
+            guard parsed.entries.count < limit else { parsed.overLimit = true; return }
+            parsed.entries.append(Entry(
                 name: v("name"), number: v("number"), firstName: v("firstname"), lastName: v("lastname"),
                 phone: v("phone"), mobile: v("mobile"), email: v("email"), address: v("address"), city: v("city"),
                 state: v("state"), zip: v("zip"), comment: v("comment"), info: v("info"),
-                presence: v("presence") == "1", isDirectory: v("directory") == "1"))
+                presence: v("presence") == "1"))
         }
     }
 }

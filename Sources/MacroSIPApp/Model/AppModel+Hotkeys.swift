@@ -23,9 +23,9 @@ extension AppModel {
     func applyHotkeys() {
         guard let globalHotkeys else { return }
         let allowed = !(launch.isDemo || isMockEngine) || hotkeysInDemo
-        let wanted = allowed && !hotkeyRecording ? settings.hotkeys.active : [:]
+        let wanted = allowed && hotkeyListening == nil ? settings.hotkeys.active : [:]
         let failures = globalHotkeys.apply(wanted)
-        if !hotkeyRecording { hotkeyFailures = failures }
+        if hotkeyListening == nil { hotkeyFailures = failures }
     }
 
     /// The switch in Settings. The first time on, the three fields are filled with the defaults.
@@ -44,19 +44,29 @@ extension AppModel {
         applyHotkeys()      // retries the combination even when the settings did not change
     }
 
-    func setHotkeyRecording(_ on: Bool) {
-        guard hotkeyRecording != on else { return }
-        hotkeyRecording = on
+    /// A recorder starts or stops listening. One row listens at a time: a click on another row hands over, and the
+    /// first row's late "stopped" then changes nothing, so the hotkeys stay off until no row listens.
+    func setHotkeyListening(_ on: Bool, for action: HotkeyAction) {
+        let new = on ? action : (hotkeyListening == action ? nil : hotkeyListening)
+        guard new != hotkeyListening else { return }
+        hotkeyListening = new
         applyHotkeys()
+    }
+
+    /// The app or the window lost the keyboard: whatever row listens stops, and the hotkeys work again.
+    func stopHotkeyListening() {
+        if let action = hotkeyListening { setHotkeyListening(false, for: action) }
     }
 
     /// What the call list looks like to a hotkey.
     var hotkeyCallState: HotkeyCallState {
-        HotkeyCallState(ringing: ringingCalls.map(\.id), current: currentCall?.id, conferenceLegs: conferenceCalls.count)
+        HotkeyCallState(ringing: ringingCalls.map(\.id), current: currentCall?.id, conferenceLegs: conferenceCalls.map(\.id))
     }
 
     func handleHotkey(_ action: HotkeyAction) {
-        switch HotkeyEffect.resolve(action, hotkeyCallState) {
+        let effect = HotkeyEffect.resolve(action, hotkeyCallState)
+        guard effect != .none, hotkeyPresses.accept(action, at: ProcessInfo.processInfo.systemUptime) else { return }
+        switch effect {
         case .none: break
         case let .answer(id): answer(id)
         case let .decline(id): decline(id)

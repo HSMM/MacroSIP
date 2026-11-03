@@ -55,6 +55,8 @@ final class AppModel {
     @ObservationIgnored var headsetButtons: HeadsetButtons?           // HID telephony buttons and LEDs (AppModel+Headset)
     @ObservationIgnored var headsetButtonsEnabled = true               // Settings bind it through setHeadsetButtonsEnabled(_:)
     @ObservationIgnored var globalHotkeys: GlobalHotkeys?             // Carbon hotkeys (AppModel+Hotkeys)
+    @ObservationIgnored var hotkeyPresses = HotkeyPressFilter()         // repeats of a hotkey within half a second count once
+    @ObservationIgnored var microSIPLoad: Task<Void, Never>?            // reads the files of the Import from MicroSIP sheet
     @ObservationIgnored var hotkeysInDemo = false                      // a demo check may register real hotkeys; no other demo does
     @ObservationIgnored var lastErrorSoundAt: Date?                    // the `.error` sound plays at most once per 10 s
 
@@ -114,9 +116,9 @@ final class AppModel {
     var headsetButtonsDevice: String?       // name of the connected headset with call-control buttons; nil = none (read-only for views)
     var microSIPImport: MicroSIPImportSession?                        // the Import from MicroSIP sheet (Settings › Accounts)
     var accountsNeedingPassword: Set<AccountID> = []                  // imported accounts that still have no password
-    var hotkeyFailures: [HotkeyAction: GlobalHotkeys.Failure] = [:]   // combinations the system refused (another app holds them)
+    var hotkeyFailures: [HotkeyAction: GlobalHotkeys.Failure] = [:]   // combinations the system refused
     var hotkeyIssues: [HotkeyAction: HotkeyIssue] = [:]               // the last combination the user typed that was refused
-    var hotkeyRecording = false                                       // a recorder is listening: nothing is registered meanwhile
+    var hotkeyListening: HotkeyAction?                                // the row whose recorder listens: nothing is registered meanwhile
     var archiveInProgress = false           // Settings › General › Create Archive… is running
     @ObservationIgnored var fileLogOverride: FileLog?                  // a demo check writes to its own log folder
     var holdMusicError: String?             // why the engine refused the hold music file (Settings › Audio)
@@ -261,8 +263,8 @@ final class AppModel {
             return ia < ib
         }
         accounts = list
-        accountsNeedingPassword = Set(((prefs.stringArray(forKey: "accountsNeedingPassword") ?? []).compactMap(UUID.init(uuidString:)))
-            .map { AccountID(raw: $0) }.filter { id in list.contains { $0.id == id } })
+        accountsNeedingPassword = Set(((prefs.stringArray(forKey: MicroSIPImport.PreferenceKey.accountsNeedingPassword) ?? []).compactMap(UUID.init(uuidString:)))
+            .map { AccountID(raw: $0) }.filter { id in list.contains { $0.id == id && MicroSIPImport.needsPassword($0) } })
         setContacts(contactStore.all())
         callLog = callLogStore.all()
         if let sel = selectedAccountID, account(sel)?.enabled != true { selectedAccountID = nil }

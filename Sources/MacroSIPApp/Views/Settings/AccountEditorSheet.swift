@@ -50,8 +50,12 @@ struct AccountEditorSheet: View {
     private var expiryValid: Bool { (60...3600).contains(expiry) }
     private var canTest: Bool { serverValid && !username.trimmingCharacters(in: .whitespaces).isEmpty && !password.isEmpty }
     private var canSave: Bool {
-        canTest && !name.trimmingCharacters(in: .whitespaces).isEmpty && expiryValid && !saving
+        serverValid && !username.trimmingCharacters(in: .whitespaces).isEmpty && Self.passwordSufficient(password, registers: register)
+            && !name.trimmingCharacters(in: .whitespaces).isEmpty && expiryValid && !saving
     }
+
+    /// An account that registers needs a password; one that does not may have none.
+    static func passwordSufficient(_ password: String, registers: Bool) -> Bool { !password.isEmpty || !registers }
 
     var body: some View {
         VStack(spacing: 0) {

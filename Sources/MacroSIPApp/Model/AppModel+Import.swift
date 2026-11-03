@@ -3,16 +3,22 @@ import MacroSIPCore
 
 /// The Import from MicroSIP sheet: which file, what it contains, and what was done.
 struct MicroSIPImportSession: Identifiable {
-    enum Outcome {
+    enum Outcome: Sendable {
+        /// The files are being read, off the main actor.
+        case loading
         case preview(MicroSIPImport.Merge)
         case failed(MicroSIPImport.ReadError)
     }
 
     /// What an import did.
     struct Report: Equatable {
-        var accounts: [String]          // display names, in file order
+        struct Account: Equatable {
+            var name: String
+            var needsPassword: Bool
+        }
+        var accounts: [Account]         // in file order
         var contacts: Int
-        var firstAccount: AccountID?    // the one whose editor opens next
+        var firstAccount: AccountID?    // the first that needs a password: its editor opens next
     }
 
     let id = UUID()
@@ -21,6 +27,8 @@ struct MicroSIPImportSession: Identifiable {
     var contactsURL: URL?
     var outcome: Outcome
     var report: Report?
+    /// Why (some of) the import could not be saved; shown in the sheet.
+    var saveError: String?
 }
 
 /// Import of accounts and contacts from MicroSIP (`MicroSIP.ini`, `Contacts.xml`). The reading and sorting is
@@ -76,59 +84,73 @@ extension AppModel {
         return names.first { $0.lowercased() == "contacts.xml" }.map { folder.appendingPathComponent($0) }
     }
 
+    /// Opens the sheet at once and reads the files off the main actor: a crafted file must not freeze the app.
     private func loadMicroSIPPreview(ini: URL, contacts: URL?) {
-        let outcome: MicroSIPImportSession.Outcome
-        do {
-            let plan = try MicroSIPImport.read(ini: ini, contacts: contacts)
-            outcome = .preview(MicroSIPImport.merge(plan, existingAccounts: accounts, existingContacts: self.contacts))
-        } catch let error as MicroSIPImport.ReadError {
-            outcome = .failed(error)
-        } catch {
-            outcome = .failed(.iniUnreadable)
-        }
+        microSIPLoad?.cancel()
         if microSIPImport == nil {
-            microSIPImport = MicroSIPImportSession(iniURL: ini, contactsURL: contacts, outcome: outcome)
+            microSIPImport = MicroSIPImportSession(iniURL: ini, contactsURL: contacts, outcome: .loading)
         } else {
             microSIPImport?.iniURL = ini
             microSIPImport?.contactsURL = contacts
-            microSIPImport?.outcome = outcome
+            microSIPImport?.outcome = .loading
+        }
+        let existingAccounts = accounts, existingContacts = self.contacts
+        microSIPLoad = Task { @MainActor [weak self] in
+            let outcome = await Task.detached(priority: .userInitiated) {
+                Self.microSIPPreview(ini: ini, contacts: contacts, accounts: existingAccounts, existingContacts: existingContacts)
+            }.value
+            guard !Task.isCancelled else { return }
+            self?.microSIPImport?.outcome = outcome
         }
     }
 
-    func cancelMicroSIPImport() { microSIPImport = nil }
+    private nonisolated static func microSIPPreview(ini: URL, contacts: URL?, accounts: [AccountConfig],
+                                                    existingContacts: [Contact]) -> MicroSIPImportSession.Outcome {
+        do {
+            let plan = try MicroSIPImport.read(ini: ini, contacts: contacts)
+            return .preview(MicroSIPImport.merge(plan, existingAccounts: accounts, existingContacts: existingContacts))
+        } catch let error as MicroSIPImport.ReadError {
+            return .failed(error)
+        } catch {
+            return .failed(.iniUnreadable)
+        }
+    }
+
+    /// Awaits the read started by `beginMicroSIPImport` or `setMicroSIPContacts`.
+    func waitForMicroSIPPreview() async { await microSIPLoad?.value }
+
+    func cancelMicroSIPImport() {
+        microSIPLoad?.cancel()
+        microSIPImport = nil
+    }
 
     // MARK: - Writing
 
     /// Saves what the preview shows. Accounts go in switched off and without a password (nothing is written to
-    /// the Keychain), with their caller names stored like the editor stores them; contacts go through the
-    /// contact store and `contacts` is refreshed from it. The session turns into the report.
-    func applyMicroSIPImport() {
+    /// the Keychain); contacts go through the contact store. Flags and caller names follow what was really saved, the
+    /// lists are reloaded from the stores, and a failure is shown: in the sheet, which stays on the preview when
+    /// nothing was saved and otherwise turns into the report. `contactsTo` is a seam for the self-check.
+    func applyMicroSIPImport(contactsTo store: ContactStore? = nil) {
         guard let session = microSIPImport, session.report == nil, case let .preview(merge) = session.outcome, !merge.isEmpty else { return }
-        do {
-            try MicroSIPImport.apply(merge, accounts: accountStore, contacts: contactStore)
-        } catch {
-            report(error)
-            return
-        }
+        let saved = MicroSIPImport.save(merge, accounts: accountStore, contacts: store ?? contactStore)
         // Keep the order the list has now, then the new accounts in file order.
-        var order = accounts.map { $0.id.raw.uuidString }
-        for a in merge.accounts {
-            let id = a.config.id
-            if !order.contains(id.raw.uuidString) { order.append(id.raw.uuidString) }
-            setCallerName(a.callerName, for: id)
-        }
-        prefs.set(order, forKey: "accountOrder")
-        var pending = (prefs.stringArray(forKey: "accountsNeedingPassword") ?? [])
-        pending += merge.accounts.map { $0.config.id.raw.uuidString }
-        prefs.set(pending, forKey: "accountsNeedingPassword")
+        MicroSIPImport.recordSaved(saved.accounts, in: prefs, order: accounts.map { $0.id.raw.uuidString })
         loadStores()
         syncPresenceSubscriptions()
+        if let error = saved.error {
+            report(error)
+            microSIPImport?.saveError = L.importErrorSave(describe(error))
+            if saved.accounts.isEmpty && saved.contacts == 0 { return }
+        }
         let report = MicroSIPImportSession.Report(
-            accounts: merge.accounts.map { $0.config.displayName }, contacts: merge.contacts.count,
-            firstAccount: merge.accounts.first?.config.id)
+            accounts: saved.accounts.map { .init(name: $0.config.displayName, needsPassword: MicroSIPImport.needsPassword($0.config)) },
+            contacts: saved.contacts,
+            firstAccount: saved.accounts.first { MicroSIPImport.needsPassword($0.config) }?.config.id)
         microSIPImport?.report = report
         AppLog.app.info("MicroSIP import: \(report.accounts.count) accounts, \(report.contacts) contacts")
-        showBanner(L.importDoneBanner(accounts: report.accounts.count, contacts: report.contacts), isError: false, seconds: 8)
+        if saved.error == nil {
+            showBanner(L.importDoneBanner(accounts: report.accounts.count, contacts: report.contacts), isError: false, seconds: 8)
+        }
     }
 
     /// The sheet's last step: closes it and, when accounts came in, opens the editor of the first one.
@@ -151,6 +173,6 @@ extension AppModel {
     func clearNeedsPassword(_ id: AccountID) {
         guard accountsNeedingPassword.contains(id) else { return }
         accountsNeedingPassword.remove(id)
-        prefs.set(accountsNeedingPassword.map { $0.raw.uuidString }, forKey: "accountsNeedingPassword")
+        prefs.set(accountsNeedingPassword.map { $0.raw.uuidString }, forKey: MicroSIPImport.PreferenceKey.accountsNeedingPassword)
     }
 }

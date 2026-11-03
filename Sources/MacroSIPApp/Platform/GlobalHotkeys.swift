@@ -3,19 +3,21 @@ import Carbon.HIToolbox
 import MacroSIPCore
 
 /// Global hotkeys through Carbon's `RegisterEventHotKey`: they work while another app is frontmost and
-/// need no permission (no event tap, no Accessibility prompt). The app asks the system for a combination;
-/// if another app already holds it, registration fails and only that action is without a key.
+/// need no permission (no event tap, no Accessibility prompt). The app asks the system for a combination; if the
+/// system refuses it, only that action is without a key. macOS does not report another app's use of the same keys:
+/// a second process's registration of a held combination succeeds, and both can receive the press.
 ///
 /// Lifetime: the Carbon handler gets an unretained pointer to `Box`, which this object owns. `stop()` removes
 /// the handler before the box can go away, and clears the box's callback, so a press that is already on its
 /// way finds nothing to call. Owners must call `stop()` (the app does at quit); the object does not clean up
 /// by itself because a main-actor class cannot touch Carbon state from `deinit`.
 /// The Carbon callback runs on the main thread, but is a C function and not main-actor isolated; it hands the
-/// hotkey id to a `Task` on the main actor.
+/// hotkey id to a `Task` on the main actor. While an `NSMenu` is tracking, Carbon holds the event back until the menu
+/// closes; a press that old is dropped (`HotkeyPressFilter.isStale`), the calls it was meant for may be gone.
 @MainActor
 final class GlobalHotkeys {
     enum Failure: Equatable {
-        /// Another app (or the system) holds the combination.
+        /// The system answered that the combination is taken (`eventHotKeyExistsErr`).
         case inUse
         /// Any other Carbon error.
         case system(Int)
@@ -33,8 +35,8 @@ final class GlobalHotkeys {
 
     init(handler: @escaping Handler) {
         self.handler = handler
-        box.deliver = { [weak self] id in
-            Task { @MainActor in self?.press(id: id) }
+        box.deliver = { [weak self] id, age in
+            Task { @MainActor in self?.press(id: id, age: age) }
         }
     }
 
@@ -79,10 +81,10 @@ final class GlobalHotkeys {
 
     #if DEBUG
     /// Runs the path a real key press takes after Carbon (id lookup, hop to the main actor, handler); only for
-    /// actions that are registered, like the real thing.
-    func simulatePress(_ action: HotkeyAction) {
+    /// actions that are registered, like the real thing. `age`: how long the event had been waiting.
+    func simulatePress(_ action: HotkeyAction, age: TimeInterval = 0) {
         guard registered[action] != nil else { return }
-        box.deliver?(Self.id(of: action))
+        box.deliver?(Self.id(of: action), age)
     }
     #endif
 
@@ -102,8 +104,12 @@ final class GlobalHotkeys {
         return true
     }
 
-    private func press(id: UInt32) {
+    private func press(id: UInt32, age: TimeInterval) {
         guard let action = HotkeyAction.allCases.first(where: { Self.id(of: $0) == id }), registered[action] != nil else { return }
+        if HotkeyPressFilter.isStale(age: age) {
+            AppLog.app.info("global hotkey \(action.rawValue): dropped a press \(String(format: "%.1f", age)) s old")
+            return
+        }
         handler(action)
     }
 
@@ -137,8 +143,9 @@ final class GlobalHotkeys {
     /// What the C callback may touch from any thread.
     final class Box: @unchecked Sendable {
         private let lock = NSLock()
-        private var callback: (@Sendable (UInt32) -> Void)?
-        var deliver: (@Sendable (UInt32) -> Void)? {
+        private var callback: (@Sendable (UInt32, TimeInterval) -> Void)?
+        /// Hotkey id, and how long ago the key was pressed.
+        var deliver: (@Sendable (UInt32, TimeInterval) -> Void)? {
             get { lock.withLock { callback } }
             set { lock.withLock { callback = newValue } }
         }
@@ -151,6 +158,7 @@ private let globalHotkeyCallback: EventHandlerUPP = { _, event, userData in
     let status = GetEventParameter(event, EventParamName(kEventParamDirectObject), EventParamType(typeEventHotKeyID),
                                    nil, MemoryLayout<EventHotKeyID>.size, nil, &id)
     guard status == noErr, id.signature == GlobalHotkeys.signature else { return OSStatus(eventNotHandledErr) }
-    Unmanaged<GlobalHotkeys.Box>.fromOpaque(userData).takeUnretainedValue().deliver?(id.id)
+    let age = GetCurrentEventTime() - GetEventTime(event)
+    Unmanaged<GlobalHotkeys.Box>.fromOpaque(userData).takeUnretainedValue().deliver?(id.id, age)
     return noErr
 }

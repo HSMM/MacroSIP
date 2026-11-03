@@ -7,6 +7,11 @@ public final class AccountStore: Sendable {
 
     public func all() -> [AccountConfig] { store.load() }
 
+    /// The stored accounts, read without any side effect; a damaged file is an error and stays as it is.
+    public static func read(directory: URL) throws -> [AccountConfig] {
+        try JSONStore<[AccountConfig]>(directory: directory, name: "accounts", default: []).read()
+    }
+
     /// Exactly one default outgoing account exists whenever any account exists.
     private static func normalize(_ list: inout [AccountConfig], preferring id: AccountID? = nil) {
         guard !list.isEmpty else { return }
@@ -19,6 +24,20 @@ public final class AccountStore: Sendable {
         try store.update { list in
             if let i = list.firstIndex(where: { $0.id == account.id }) { list[i] = account } else { list.append(account) }
             Self.normalize(&list, preferring: account.id)
+        }
+    }
+
+    /// Saves many accounts with one read and one write of accounts.json.
+    public func upsert(contentsOf accounts: [AccountConfig]) throws {
+        guard !accounts.isEmpty else { return }
+        try store.update { list in
+            var index: [AccountID: Int] = [:]
+            for (i, a) in list.enumerated() { index[a.id] = i }
+            for account in accounts {
+                if let i = index[account.id] { list[i] = account }
+                else { index[account.id] = list.count; list.append(account) }
+            }
+            Self.normalize(&list, preferring: accounts.last { $0.isDefaultOutgoing }?.id)
         }
     }
 
@@ -76,6 +95,12 @@ public final class ContactStore: @unchecked Sendable {
         self.directory = directory
         store = JSONStore(directory: directory, name: "contacts", default: ContactList([]))
         prepare()
+    }
+
+    /// The stored contacts (without photos), read without any side effect: `init` may rewrite the file, this does
+    /// not. A file that cannot be read at all is an error and stays as it is.
+    public static func read(directory: URL) throws -> [Contact] {
+        try JSONStore<ContactList>(directory: directory, name: "contacts", default: ContactList([])).read().items
     }
 
     public var photoDirectory: URL { directory.appendingPathComponent("photos", isDirectory: true) }

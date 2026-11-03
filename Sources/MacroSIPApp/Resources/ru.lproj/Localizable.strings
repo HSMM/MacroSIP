@@ -664,13 +664,13 @@
 "settings.hotkeys.recording" = "Нажмите клавиши…";
 "settings.hotkeys.record.help" = "Нажмите и введите сочетание. Esc отменяет, Delete очищает.";
 "settings.hotkeys.clear.help" = "Очистить";
-"settings.hotkeys.error.inUse" = "Уже занято другим приложением";
+"settings.hotkeys.error.inUse" = "Не удалось зарегистрировать это сочетание";
 "settings.hotkeys.error.system" = "Не удалось зарегистрировать (ошибка %lld)";
 "settings.hotkeys.issue.needsModifier" = "Добавьте ⌘, ⌃ или ⌥";
 "settings.hotkeys.issue.unsupportedKey" = "Эту клавишу нельзя использовать";
 "settings.hotkeys.issue.usedByMenu" = "Занято меню MacroSIP";
 "settings.hotkeys.issue.duplicate" = "Уже назначено на «%@»";
-"settings.hotkeys.footer" = "Если звонка, к которому они относятся, нет, клавиши ничего не делают.";
+"settings.hotkeys.footer" = "Если звонка, к которому они относятся, нет, клавиши ничего не делают. Другое приложение с теми же клавишами тоже может получить нажатие.";
 "accounts.import.microsip" = "Импорт из MicroSIP…";
 "accounts.status.needsPassword" = "Нужен пароль";
 "account.field.password.importedHelp" = "Импортировано из MicroSIP: он хранит пароли так, что другие программы их прочитать не могут. Введите пароль один раз, чтобы включить аккаунт.";
@@ -711,3 +711,8 @@
 "import.microsip.warn.contactsTooLarge" = "Файл контактов слишком большой (больше 10 МБ), контакты не импортируются.";
 "import.microsip.warn.contactsMalformed" = "Файл контактов повреждён или имеет другой формат, контакты не импортируются.";
 "import.microsip.doneBanner" = "Импортировано: %@.";
+"import.microsip.error.save" = "Сохранено не всё: %@";
+"import.microsip.loading" = "Чтение файла…";
+"import.microsip.andMore" = "и ещё %lld";
+"import.microsip.warn.tooManyAccounts" = "В файле слишком много аккаунтов: прочитаны только первые %lld.";
+"import.microsip.warn.tooManyContacts" = "В файле слишком много контактов: прочитаны только первые %lld.";

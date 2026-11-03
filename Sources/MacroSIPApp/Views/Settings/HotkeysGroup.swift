@@ -58,7 +58,8 @@ private struct HotkeyRow: View {
         FormRow(label: label, help: help) {
             VStack(alignment: .trailing, spacing: 3) {
                 HotkeyRecorder(combo: model.settings.hotkeys[action],
-                               isRecording: { model.setHotkeyRecording($0) },
+                               recording: model.hotkeyListening == action,
+                               setRecording: { model.setHotkeyListening($0, for: action) },
                                onChange: { model.setHotkey($0, for: action) })
                 if let message {
                     Text(message).font(.system(size: 11.5)).foregroundStyle(Theme.red)
@@ -85,12 +86,13 @@ private struct HotkeyRow: View {
 }
 
 /// The key recorder: shows the combination; a click makes it listen, the next key press with modifiers is the
-/// new combination. Esc cancels, Delete (without modifiers) clears, as does the × button.
+/// new combination. Esc cancels, Delete (without modifiers) clears, as does the × button. Whether it listens is
+/// AppModel's to say (one row at a time), so a row that lost out cannot end another row's listening.
 struct HotkeyRecorder: View {
     let combo: HotkeyCombo?
-    let isRecording: (Bool) -> Void
+    let recording: Bool
+    let setRecording: (Bool) -> Void
     let onChange: (HotkeyCombo?) -> Void
-    @Local private var recording = false
 
     var body: some View {
         HStack(spacing: 6) {
@@ -116,12 +118,6 @@ struct HotkeyRecorder: View {
         .onDisappear { setRecording(false) }
     }
 
-    private func setRecording(_ on: Bool) {
-        guard recording != on else { return }
-        recording = on
-        isRecording(on)
-    }
-
     private func handle(_ result: KeyCatcher.Result) {
         switch result {
         case .cancelled: break
@@ -132,7 +128,8 @@ struct HotkeyRecorder: View {
     }
 }
 
-/// Takes the keyboard while `active`: a key press (with ⌘ too, so no menu sees it) is reported once.
+/// Takes the keyboard while `active`. A local event monitor sees every key before any menu or view does: the first
+/// press is reported once, and its repeats are swallowed until the key goes up, so holding ⌘Q cannot quit the app.
 private struct KeyCatcher: NSViewRepresentable {
     enum Result { case cancelled, cleared, combo(HotkeyCombo) }
     var active: Bool
@@ -142,7 +139,7 @@ private struct KeyCatcher: NSViewRepresentable {
 
     func updateNSView(_ view: CatcherView, context: Context) {
         view.report = report
-        view.active = active
+        view.setActive(active)
         if active, view.window?.firstResponder !== view {
             DispatchQueue.main.async { view.window?.makeFirstResponder(view) }
         }
@@ -150,19 +147,56 @@ private struct KeyCatcher: NSViewRepresentable {
 
     final class CatcherView: NSView {
         var report: ((Result) -> Void)?
-        var active = false
+        private var active = false
+        private var keys = HotkeyRecorderKeys()
+        private var monitor: Any?
 
         override var acceptsFirstResponder: Bool { active }
 
-        override func performKeyEquivalent(with event: NSEvent) -> Bool {
-            guard active, event.type == .keyDown else { return false }
-            handle(event)
-            return true
+        func setActive(_ on: Bool) {
+            active = on
+            updateMonitor()
         }
 
-        override func keyDown(with event: NSEvent) {
-            guard active else { super.keyDown(with: event); return }
-            handle(event)
+        /// Installed while listening and while a recorded key is still down.
+        private func updateMonitor() {
+            if active || keys.isHolding {
+                guard monitor == nil else { return }
+                monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .keyUp]) { [weak self] event in
+                    guard let self else { return event }
+                    return self.filter(event) ? event : nil
+                }
+            } else if let monitor {
+                NSEvent.removeMonitor(monitor)
+                self.monitor = nil
+            }
+        }
+
+        override func viewWillMove(toWindow newWindow: NSWindow?) {
+            super.viewWillMove(toWindow: newWindow)
+            if newWindow == nil, let monitor {
+                NSEvent.removeMonitor(monitor)
+                self.monitor = nil
+            }
+        }
+
+        /// True when the event goes on to the app.
+        private func filter(_ event: NSEvent) -> Bool {
+            let code = Int(event.keyCode)
+            defer { updateMonitor() }
+            if event.type == .keyUp {
+                keys.keyUp(keyCode: code)
+                return true
+            }
+            switch keys.keyDown(keyCode: code, isRepeat: event.isARepeat, listening: active) {
+            case .record:
+                handle(event)
+                return false
+            case .swallow:
+                return false
+            case .pass:
+                return true
+            }
         }
 
         override func resignFirstResponder() -> Bool {

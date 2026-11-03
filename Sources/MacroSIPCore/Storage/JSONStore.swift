@@ -17,11 +17,16 @@ public final class JSONStore<T: Codable & Sendable>: @unchecked Sendable {
 
     /// `~/Library/Application Support/MacroSIP/`, created on demand.
     public static func appSupportDirectory() -> URL {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support")
-        let dir = base.appendingPathComponent("MacroSIP", isDirectory: true)
+        let dir = appSupportLocation()
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
+    }
+
+    /// Where `appSupportDirectory()` is; nothing is created.
+    public static func appSupportLocation() -> URL {
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support")
+        return base.appendingPathComponent("MacroSIP", isDirectory: true)
     }
 
     static func decoder() -> JSONDecoder {
@@ -40,6 +45,14 @@ public final class JSONStore<T: Codable & Sendable>: @unchecked Sendable {
     public func load() -> T {
         lock.lock(); defer { lock.unlock() }
         return loadLocked()
+    }
+
+    /// Reads the file with no side effects: a missing file is the default, a damaged one an error and stays as it is.
+    /// `load()`, by contrast, moves a damaged file aside.
+    public func read() throws -> T {
+        lock.lock(); defer { lock.unlock() }
+        guard FileManager.default.fileExists(atPath: fileURL.path) else { return defaultValue }
+        return try Self.decoder().decode(T.self, from: Data(contentsOf: fileURL))
     }
 
     func loadLocked() -> T {

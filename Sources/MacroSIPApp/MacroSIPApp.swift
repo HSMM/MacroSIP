@@ -1,7 +1,21 @@
 import SwiftUI
 import MacroSIPCore
 
+/// `--import-microsip` runs and exits here, before anything of the app exists (UI, Keychain, engine).
 @main
+enum AppEntry {
+    @MainActor
+    static func main() {
+        if MicroSIPImportCommand.isRequested(CommandLine.arguments) {
+            exit(MicroSIPImportCommand.run(CommandLine.arguments, .init(program: Product.name, isAppRunning: {
+                let running = NSRunningApplication.runningApplications(withBundleIdentifier: Product.bundleIdentifier)
+                return MicroSIPImportCommand.isOtherProcess(among: running.map(\.processIdentifier), current: getpid())
+            })))
+        }
+        MacroSIPApp.main()
+    }
+}
+
 struct MacroSIPApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     private let model = AppModel.shared
