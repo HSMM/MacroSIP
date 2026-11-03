@@ -52,6 +52,8 @@ Electron и Qt. Одно небольшое окно, значок в строк
 
 Больше скриншотов на двух языках и в обеих темах: [docs/screenshots](docs/screenshots).
 
+Руководство: https://hsmm.github.io/MacroSIP/wiki/ru/index.html
+
 Статус: выпущена версия `26.1.0` (3 ноября 2026). Что дальше: [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Установка

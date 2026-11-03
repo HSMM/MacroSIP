@@ -52,6 +52,8 @@ The app follows the macOS appearance. Light theme on the left, dark theme on the
 
 More screenshots, in English and Russian, light and dark: [docs/screenshots](docs/screenshots).
 
+Guide: https://hsmm.github.io/MacroSIP/wiki/
+
 Status: `26.1.0` released 2026-11-03. What comes next: [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Installing
