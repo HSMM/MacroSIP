@@ -69,6 +69,8 @@ struct AccountsPane: View {
                         }
                         .controlSize(.small)
                         .disabled(selected == nil)
+                        Button(L.accountsImportMicroSIP) { model.chooseMicroSIPFile() }
+                            .controlSize(.small)
                     }
                     .padding(.horizontal, 6).padding(.vertical, 4)
                 }
@@ -83,6 +85,7 @@ struct AccountsPane: View {
             }
         }
         .sheet(item: $model.settingsEditor) { AccountEditorSheet(accountID: $0.accountID) }
+        .sheet(item: $model.microSIPImport) { _ in MicroSIPImportSheet() }
         .alert(confirmDelete.flatMap { model.account($0) }.map { L.accountDeleteTitle($0.displayName) } ?? "",
                isPresented: Binding(get: { confirmDelete != nil }, set: { if !$0 { confirmDelete = nil } })) {
             Button(L.commonCancel, role: .cancel) {}
@@ -138,7 +141,9 @@ struct AccountTableRow: View {
 
     @ViewBuilder
     private var statusText: some View {
-        if !account.enabled {
+        if !account.enabled, model.accountNeedsPassword(account.id) {
+            Text(L.accountsNeedsPassword).foregroundStyle(Theme.orange)
+        } else if !account.enabled {
             Text(L.accountsDisabled).foregroundStyle(.secondary)
         } else if !account.registerWithServer {
             Text(L.accountsOutgoingOnly).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.8)

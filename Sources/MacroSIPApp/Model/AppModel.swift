@@ -54,6 +54,8 @@ final class AppModel {
     @ObservationIgnored let recordingPlayer = RecordingPlayer()
     @ObservationIgnored var headsetButtons: HeadsetButtons?           // HID telephony buttons and LEDs (AppModel+Headset)
     @ObservationIgnored var headsetButtonsEnabled = true               // Settings bind it through setHeadsetButtonsEnabled(_:)
+    @ObservationIgnored var globalHotkeys: GlobalHotkeys?             // Carbon hotkeys (AppModel+Hotkeys)
+    @ObservationIgnored var hotkeysInDemo = false                      // a demo check may register real hotkeys; no other demo does
     @ObservationIgnored var lastErrorSoundAt: Date?                    // the `.error` sound plays at most once per 10 s
 
     // Data
@@ -110,6 +112,11 @@ final class AppModel {
     var loginItemNeedsApproval = false      // SMAppService.mainApp.status == .requiresApproval
     var loginItemError: String?             // why macOS refused to (un)register the login item
     var headsetButtonsDevice: String?       // name of the connected headset with call-control buttons; nil = none (read-only for views)
+    var microSIPImport: MicroSIPImportSession?                        // the Import from MicroSIP sheet (Settings › Accounts)
+    var accountsNeedingPassword: Set<AccountID> = []                  // imported accounts that still have no password
+    var hotkeyFailures: [HotkeyAction: GlobalHotkeys.Failure] = [:]   // combinations the system refused (another app holds them)
+    var hotkeyIssues: [HotkeyAction: HotkeyIssue] = [:]               // the last combination the user typed that was refused
+    var hotkeyRecording = false                                       // a recorder is listening: nothing is registered meanwhile
     var holdMusicError: String?             // why the engine refused the hold music file (Settings › Audio)
 
     private init() {
@@ -249,6 +256,8 @@ final class AppModel {
             return ia < ib
         }
         accounts = list
+        accountsNeedingPassword = Set(((prefs.stringArray(forKey: "accountsNeedingPassword") ?? []).compactMap(UUID.init(uuidString:)))
+            .map { AccountID(raw: $0) }.filter { id in list.contains { $0.id == id } })
         setContacts(contactStore.all())
         callLog = callLogStore.all()
         if let sel = selectedAccountID, account(sel)?.enabled != true { selectedAccountID = nil }

@@ -1536,7 +1536,7 @@ kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:
                 <div class="tr" style="grid-template-columns:16px 1.1fr 1.8fr 60px 70px"><span class="dot ok"></span><span>Home</span><span class="muted">7741@sip.example.net</span><span class="muted">UDP</span><span>Registered</span></div>
                 <div class="tr" style="grid-template-columns:16px 1.1fr 1.8fr 60px 70px"><span class="dot err"></span><span>Backup</span><span class="muted">andrei@voip.example.org</span><span class="muted">UDP</span><span style="color:var(--m-red)">403</span></div>
                 <div class="tr" style="grid-template-columns:16px 1.1fr 1.8fr 60px 70px"><span class="dot off"></span><span class="muted">Lab</span><span class="muted">test@10.0.0.5</span><span class="muted">UDP</span><span class="muted">Disabled</span></div>
-                <div class="tbl-foot"><span class="bb"><svg class="i"><use href="#i-plus"/></svg></span><span class="bb"><svg class="i"><use href="#i-minus"/></svg></span><span class="btn sm" style="margin-left:auto" data-go="account">Edit…</span></div>
+                <div class="tbl-foot"><span class="bb"><svg class="i"><use href="#i-plus"/></svg></span><span class="bb"><svg class="i"><use href="#i-minus"/></svg></span><span class="btn sm" style="margin-left:auto" data-go="account">Edit…</span><span class="btn sm">Import from MicroSIP…</span></div>
               </div>
               <div class="gf">Double-click an account to edit it. Drag to reorder; the order is used in the account picker and the status bar.</div>
             </div>
@@ -1646,6 +1646,12 @@ kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:
               <div class="gr"><span class="gl">DTMF method<small>Automatic uses RFC 2833 and falls back to SIP INFO.</small></span><span class="popup" style="min-width:200px">Automatic<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
               <div class="gr"><span class="gl">Bring the main window to the front on an incoming call<small>The incoming-call window still appears as well.</small></span><span class="switch"></span></div>
             </div></div>
+            <div class="grp"><span class="gh">Global hotkeys</span><div class="gbox">
+              <div class="gr"><span class="gl">Use hotkeys in any app<small>Work while MacroSIP is in the background. No permission is needed.</small></span><span class="switch on"></span></div>
+              <div class="gr"><span class="gl">Answer<small>Answers the call that has been ringing longest.</small></span><div class="field tnum" style="min-width:124px;justify-content:center">⌃⌥A</div></div>
+              <div class="gr"><span class="gl">Hang up<small>Ends the current call; with none, declines the ringing call.</small></span><div class="field tnum" style="min-width:124px;justify-content:center">⌃⌥H</div></div>
+              <div class="gr"><span class="gl">Mute<small>Turns the microphone of the current call off or on.</small></span><span style="display:flex;flex-direction:column;align-items:flex-end;gap:3px"><div class="field tnum" style="min-width:124px;justify-content:center">⌃⌥M</div><span style="font-size:11.5px;color:var(--m-red)">Already used by another app</span></span></div>
+            </div><div class="gf">Hotkeys do nothing when there is no call to act on.</div></div>
             <div class="grp"><span class="gh">Auto-answer</span><div class="gbox">
               <div class="gr"><span class="gl">Answer incoming calls automatically</span><div class="seg"><span>Off</span><span>All calls</span><span class="on">Contacts only</span></div></div>
               <div class="gr"><span class="gl">Delay before answering</span><span class="gv"><div class="field tnum" style="min-width:44px;justify-content:flex-end">5</div><span class="stepper"><i>▲</i><i>▼</i></span>seconds</span></div>
@@ -1664,6 +1670,7 @@ kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:
       </ul></div>
       <div data-pane-body="accounts" hidden><h3>Accounts</h3><ul>
         <li>Not in the brief: the account editor needs a home. This pane lists accounts with live status; +, −, Edit… and double-click open the editor sheet (screen 9).</li>
+        <li><b>Import from MicroSIP…</b> (26.1) opens a file picker for <span class="mono">MicroSIP.ini</span> (next to MicroSIP.exe or in %APPDATA%\MicroSIP), uses <span class="mono">Contacts.xml</span> beside it and shows a preview sheet (accounts, contacts, skipped items, warnings) before anything is saved. Imported accounts are switched off and show "Needs password" until a password is saved in the editor, where Enabled starts on.</li>
         <li>Status shows Disabled for an account that is switched off (in the account pop-up on the main window or with "Enabled" in the editor). An enabled account with "Register with server" off shows Outgoing only.</li>
       </ul></div>
       <div data-pane-body="audio" hidden><h3>Audio</h3><ul>
@@ -1693,6 +1700,7 @@ kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:
       <div data-pane-body="calls" hidden><h3>Calls</h3><ul>
         <li>The tab holds everything about a call that comes in: the reject rule, the "During a call" group and auto-answer.</li>
         <li><b>Reject calls from</b> is applied by the engine before anything rings: 603 Decline, or 433 for anonymous callers. "Numbers not in Contacts" compares with every number of every contact. The call log gets a missed entry "Rejected: rule".</li>
+        <li><b>Global hotkeys</b> (26.1, off by default) work in any app and need no permission. The first time the switch goes on the fields hold ⌃⌥A, ⌃⌥H, ⌃⌥M; each can be recorded anew or cleared. A combination needs ⌘, ⌃ or ⌥; the same one cannot be used twice; if another app holds it, the field shows the red line and the other two keep working. Answer takes the oldest ringing call; Hang up ends the current call (a conference as a whole) or declines a ringing one; Mute toggles the current call. They do nothing without a call.</li>
         <li>The incoming window shows a countdown and Cancel whenever auto-answer will fire (screen 6).</li>
       </ul></div>
       <div><h3>Decided</h3><ol class="qs">

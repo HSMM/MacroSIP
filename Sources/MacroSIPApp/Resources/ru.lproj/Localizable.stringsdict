@@ -182,5 +182,85 @@
 			<string>%lld новых</string>
 		</dict>
 	</dict>
+	<key>import.microsip.warn.noNumber</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Пропущен %lld контакт без номера</string>
+			<key>few</key>
+			<string>Пропущено %lld контакта без номера</string>
+			<key>many</key>
+			<string>Пропущено %lld контактов без номера</string>
+			<key>other</key>
+			<string>Пропущено %lld контакта без номера</string>
+		</dict>
+	</dict>
+	<key>import.microsip.warn.directory</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Пропущена %lld запись из каталога сервера</string>
+			<key>few</key>
+			<string>Пропущено %lld записи из каталога сервера</string>
+			<key>many</key>
+			<string>Пропущено %lld записей из каталога сервера</string>
+			<key>other</key>
+			<string>Пропущено %lld записи из каталога сервера</string>
+		</dict>
+	</dict>
+	<key>import.microsip.count.accounts</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld аккаунт</string>
+			<key>few</key>
+			<string>%lld аккаунта</string>
+			<key>many</key>
+			<string>%lld аккаунтов</string>
+			<key>other</key>
+			<string>%lld аккаунта</string>
+		</dict>
+	</dict>
+	<key>import.microsip.count.contacts</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld контакт</string>
+			<key>few</key>
+			<string>%lld контакта</string>
+			<key>many</key>
+			<string>%lld контактов</string>
+			<key>other</key>
+			<string>%lld контакта</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

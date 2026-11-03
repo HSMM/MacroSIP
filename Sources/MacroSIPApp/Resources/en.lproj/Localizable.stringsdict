@@ -146,5 +146,69 @@
 			<string>%lld new</string>
 		</dict>
 	</dict>
+	<key>import.microsip.warn.noNumber</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld contact without a number was skipped</string>
+			<key>other</key>
+			<string>%lld contacts without a number were skipped</string>
+		</dict>
+	</dict>
+	<key>import.microsip.warn.directory</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld entry from a server directory was skipped</string>
+			<key>other</key>
+			<string>%lld entries from a server directory were skipped</string>
+		</dict>
+	</dict>
+	<key>import.microsip.count.accounts</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld account</string>
+			<key>other</key>
+			<string>%lld accounts</string>
+		</dict>
+	</dict>
+	<key>import.microsip.count.contacts</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld contact</string>
+			<key>other</key>
+			<string>%lld contacts</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

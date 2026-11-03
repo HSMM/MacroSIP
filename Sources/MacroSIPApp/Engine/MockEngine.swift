@@ -123,14 +123,20 @@ actor MockEngine: SIPEngine {
         guard started else { throw EngineError.notStarted }
         guard let cfg = accounts[id] else { throw EngineError.unknownAccount(id) }
         guard on else { set(id, .unregistered); return }
-        set(id, .registering)
+        // Like the real engine: a refresh of a working registration reports nothing until its result
+        // differs, and an unchanged result emits no event.
+        let refresh: Bool
+        if case .registered = registration[id] ?? .unregistered { refresh = true } else { refresh = false }
+        if !refresh { set(id, .registering) }
         let password = passwords[id] ?? ""
         let fails = password == "wrong" || cfg.domain.contains("fail")
         let expires = cfg.registrationInterval
         Task {
             try? await Task.sleep(for: .seconds(1))
-            guard self.accounts[id] != nil, self.registration[id] == .registering else { return }
-            self.set(id, fails ? .failed(code: 403, reason: "Forbidden") : .registered(expires: expires))
+            guard self.accounts[id] != nil, let current = self.registration[id] else { return }
+            if case .registered = current { guard refresh else { return } } else if current != .registering { return }
+            let result: RegistrationState = fails ? .failed(code: 403, reason: "Forbidden") : .registered(expires: expires)
+            if result != current { self.set(id, result) }
         }
     }
 

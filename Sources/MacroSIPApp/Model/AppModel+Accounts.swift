@@ -21,6 +21,7 @@ extension AppModel {
         let previous = accounts
         try accountStore.upsert(cfg)
         try vault.set(password, for: cfg.id)
+        if !password.isEmpty { clearNeedsPassword(cfg.id) }
         setCallerName(callerName, for: cfg.id)
         var order = (prefs.stringArray(forKey: "accountOrder") ?? [])
         if !order.contains(cfg.id.raw.uuidString) { order.append(cfg.id.raw.uuidString); prefs.set(order, forKey: "accountOrder") }
@@ -53,10 +54,18 @@ extension AppModel {
     /// The store and the UI change at once; the engine follows in order, one change at a time.
     func setAccountEnabled(_ id: AccountID, _ on: Bool) {
         guard var cfg = account(id), cfg.enabled != on else { return }
+        if on, accountNeedsPassword(id) {
+            // Imported without a password: switching it on would only end in a registration error. Ask for the password.
+            showBanner(L.bannerAccountNeedsPassword(cfg.displayName))
+            openSettings(tab: .accounts, account: id)
+            settingsEditor = AccountEditorRequest(accountID: id)
+            return
+        }
         cfg.enabled = on
         do { try accountStore.upsert(cfg) } catch { report(error); return }
         loadStores()
-        if !on { registration[id] = nil }
+        // The registration state stays until the account has left the engine (`removeFromEngine`). Off and on
+        // in one open menu never reach that point, and an unchanged state brings no new event to restore it.
         let previous = accountSync
         accountSync = Task { @MainActor in
             await previous?.value
@@ -100,6 +109,7 @@ extension AppModel {
             try accountStore.remove(id)
             try vault.delete(for: id)
         } catch { report(error) }
+        clearNeedsPassword(id)
         registration[id] = nil
         if settingsSelectedAccount == id { settingsSelectedAccount = nil }
         loadStores()
@@ -198,6 +208,7 @@ extension AppModel {
         if new.recording.noticeTone != old.recording.noticeTone
             || new.recording.noticeToneIntervalSeconds != old.recording.noticeToneIntervalSeconds, engineReady { applyRecordingNotice() }
         if new.audio.headsetButtons != old.audio.headsetButtons { setHeadsetButtonsEnabled(new.audio.headsetButtons) }
+        if new.hotkeys != old.hotkeys { applyHotkeys() }
         if new.directory != old.directory { directorySettingsChanged() }
         if new.callOptions != old.callOptions || new.general.doNotDisturb != old.general.doNotDisturb { applyCallOptions() }
         if new.general.doNotDisturb != old.general.doNotDisturb || new.general.doNotDisturbUntil != old.general.doNotDisturbUntil {

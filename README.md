@@ -25,6 +25,8 @@ phone does.
 - Contact card with a photo, organization, several numbers with labels, email and notes; favorites; presence for watched contacts and your own published status.
 - Directory of users: LDAP, a URL (CSV or JSON), Google Contacts or the macOS Contacts app; suggestions in the number field, incoming callers looked up by number, search only or import into Contacts.
 - Quick keys: up to 12 speed-dial keys with BLF beside or under the main window; Call, DTMF, transfer and conference types; pickup on a ringing key.
+- Global hotkeys (off by default): answer, hang up and mute from any app, with keys you choose; no system permission needed.
+- Import accounts and contacts from MicroSIP (`MicroSIP.ini`, `Contacts.xml`) with a preview first; imported accounts wait for their passwords.
 - Call history; `sip:`, `sips:` and `tel:` links open in the app.
 - Menu bar icon with registration state, quick dial, recent calls and Do Not Disturb; the app keeps working with the window closed.
 - Reconnects after a network drop, an IP change or sleep; calls survive the switch. Network pane: RTP port range, rport, DNS SRV with a custom nameserver.
@@ -143,7 +145,7 @@ Owner's checklist; the details are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#
 | `Sources/CPJSUA` | C shim over pjsua, the only place that includes PJSIP headers |
 | `Sources/MacroSIPCore` | Engine (accounts, calls, conference, recording, presence), models, storage |
 | `Sources/MacroSIPApp` | SwiftUI/AppKit application |
-| `Sources/macrosip-cli` | Command-line phone used by the self-test and for debugging against a PBX |
+| `Sources/macrosip-cli` | Command-line phone used by the self-test and for debugging against a PBX; `--import-microsip` imports a `MicroSIP.ini` for scripts and MDM |
 | `docs/` | Roadmap, design docs, ADRs, UI spec and mockups |
 | `scripts/` | PJSIP build, app bundling, DMG, icon, cask update, tests |
 | `packaging/` | Entitlements, app icon, Homebrew cask template |

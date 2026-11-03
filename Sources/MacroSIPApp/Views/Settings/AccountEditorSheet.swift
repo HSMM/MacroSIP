@@ -73,7 +73,7 @@ struct AccountEditorSheet: View {
                         FormDivider()
                         row(L.accountUsername) { TextField("", text: $username).textFieldStyle(.roundedBorder).frame(width: 210) }
                         FormDivider()
-                        row(L.accountPassword, help: L.accountPasswordHelp) {
+                        row(L.accountPassword, help: existing.map { model.accountNeedsPassword($0.id) } == true ? L.accountPasswordImportedHelp : L.accountPasswordHelp) {
                             SecureField("", text: $password).textFieldStyle(.roundedBorder).frame(width: 210)
                         }
                         FormDivider()
@@ -302,7 +302,7 @@ struct AccountEditorSheet: View {
             transport = a.transport
             srtp = a.srtp
             expiry = a.registrationInterval
-            enabled = a.enabled
+            enabled = a.enabled || model.accountNeedsPassword(a.id)      // imported: typing the password and saving switches it on
             register = a.registerWithServer
             isDefault = a.isDefaultOutgoing
             publishPresence = a.publishPresence

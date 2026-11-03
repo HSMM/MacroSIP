@@ -465,13 +465,13 @@ Covered in screen 5 (banner).
 | Command-Shift-M | Toggle mute while MacroSIP is frontmost. |
 | Digits (keypad state) | Send DTMF while the main window is key. |
 | Return / Escape in transfer popover | Return triggers the default button (Transfer Now). Escape closes the popover. |
-| (scope note) | The two shortcuts above apply only while MacroSIP is frontmost. Global hotkeys are not in v1 [decided Q4.3]. |
+| (scope note) | The two shortcuts above apply only while MacroSIP is frontmost. Hotkeys that work in any app are a separate, optional setting (Settings › Calls › Global hotkeys, 8.7; 26.1). |
 
 ### Decided
 
 - The window does not grow; the call panel replaces the dialpad area (Q4.1).
 - No volume or mic level controls in the call panel (Q4.2). Superseded: the speaker button and the call volume popover (4.1) were added with the owner's approval.
-- No global hotkeys in v1 (Q4.3).
+- No global hotkeys in v1 (Q4.3). Added in 26.1 as an off-by-default setting (8.7).
 - Main window stays 340 by 520 during a call; Keypad swaps in a DTMF keypad; other tabs show a compact summary bar (ADR 0009).
 
 ---
@@ -837,11 +837,26 @@ Layout: one table, a footer under it, then a "last error" group. Table width fil
 | Name | account short name; "Default" badge (blue) on the default outgoing account | 1.1 fr |
 | Address | user@domain | 1.8 fr |
 | Transport | UDP, TCP or TLS | 60 pt |
-| Status | "Registered", "403" (short reason, in red), "Disabled" (grey; the account is switched off), "Outgoing only" (grey; enabled, "Register with server" off) | 70 pt |
+| Status | "Registered", "403" (short reason, in red), "Disabled" (grey; the account is switched off), "Needs password" (orange; imported from MicroSIP, switched off, no password yet), "Outgoing only" (grey; enabled, "Register with server" off) | 70 pt |
 
 Rows: one per account, drag to reorder. Order is used in the account pop-up (up to 7 accounts; with 8 or more the pop-up sorts by state and name). With 8 or more accounts a filter field (`accounts.filter`, "Filter accounts") sits above the table and narrows the rows by name, user name, domain and registrar; dragging is off while a filter is typed. Selected row: blue, white text.
 
-Table footer: "+" (add account), "−" (remove account, confirms), "Edit…" (opens the account editor sheet, 9). Group footer: "Double-click an account to edit it. Drag to reorder; the order is used in the account pop-up and the status bar."
+Table footer: "+" (add account), "−" (remove account, confirms), "Edit…" (opens the account editor sheet, 9), "Import from MicroSIP…" (right, small button; see below). Group footer: "Double-click an account to edit it. Drag to reorder; the order is used in the account pop-up and the status bar."
+
+**Import from MicroSIP… (26.1).** Accounts and contacts only; nothing else of MicroSIP is read. The button opens a file picker (`.ini`; panel message: "Choose MicroSIP.ini. On Windows it is next to MicroSIP.exe or in %APPDATA%\MicroSIP."). `Contacts.xml` in the same folder is used automatically. Then the preview sheet (500 pt wide, 560 pt high, scrolls) opens; nothing is written until Import.
+
+| Part | Content |
+|---|---|
+| File group | Name and folder of the ini. Row "Contacts file": the file name or "None", buttons "Choose…" and "Don't import contacts". Changing it rebuilds the preview. |
+| Accounts to import · N | One row per new account: name, `user@domain · TRANSPORT`, "Needs password" in orange. "No new accounts in this file." when empty. |
+| Contacts | "N contacts" (plural strings). |
+| Warnings | One row per `MicroSIPImport.Warning` with an orange triangle: unknown transport (UDP is used), unknown SRTP (SRTP off), dial prefix / dial plan not imported, account skipped (no user name, no server or domain), contacts file missing / unreadable / too large / malformed, contacts without a number skipped, entries from a server directory skipped. Section names are shown as `[Account2]`. |
+| Skipped · N | Accounts and contacts that exist already or appear twice in the file, with the reason. |
+| Footer | "Accounts are imported switched off. MicroSIP stores passwords in a form MacroSIP cannot read, so type each one once to switch its account on." |
+| Buttons | Cancel (changes nothing), Import (default; off when there is nothing new). |
+| Error | A file that cannot be imported (not found, unreadable, too large, no accounts) shows its typed `ReadError` as text with an orange triangle; buttons Cancel and "Choose Another File…". |
+
+Import saves the accounts disabled, without a password (nothing goes to the Keychain), with the INI's display name stored as the caller name (the same place the account editor keeps it), appended to the account order; the first imported account becomes the default only when there were no accounts. Contacts go through the contact store and the contact list refreshes. The sheet then turns into a report ("Import finished": "Imported: 2 accounts, 14 contacts." with the accounts and "Needs password", plus a banner) with Done and "Enter Password…" (opens the editor of the first imported account). The other imported accounts show "Needs password" in the Status column until a password is saved. In the editor, "Enabled" starts on for such an account and the password help says why the field is empty, so typing the password and Save switches it on. Switching such an account on elsewhere (the account pop-up) opens its editor with a banner instead of enabling it.
 
 **Last error group** (header "Backup · last error", i.e. the account name and the word "last error"):
 
@@ -1062,7 +1077,7 @@ Notes: a Record button is always available in the call panel even when automatic
 
 ### 8.7 Calls
 
-Tab "Calls" (ru «Звонки»; formerly "Auto-answer"; SF Symbol `phone.badge.waveform`). Three groups in this order, then the auto-answer footer.
+Tab "Calls" (ru «Звонки»; formerly "Auto-answer"; SF Symbol `phone.badge.waveform`). Four groups in this order, then the auto-answer footer.
 
 **Group Incoming calls (header "Incoming calls"):**
 
@@ -1077,6 +1092,27 @@ Tab "Calls" (ru «Звонки»; formerly "Auto-answer"; SF Symbol `phone.badge
 | When a call comes in during a call | popup, default "Call waiting (tone and window)" | Call waiting (tone and window) / Window only / Busy (single-call mode). Applies at once, also during calls. Secondary label explains Busy (486 Busy Here, only the call log shows it). |
 | DTMF method (secondary: "Automatic uses RFC 2833 and falls back to SIP INFO.") | popup, default Automatic | Automatic / RFC 2833 / SIP INFO / In-band. The next digits use the new method. |
 | Bring the main window to the front on an incoming call (secondary: "The incoming-call window still appears as well.") | toggle, default off | When on, the main window is brought to the front (not activated) when a call rings, in addition to the floating window; call keys stay ignored in it until the user clicks into it (see 6.6). |
+
+**Group Global hotkeys (header "Global hotkeys", ru «Глобальные горячие клавиши»; 26.1):**
+
+| Row | Type | Behaviour |
+|---|---|---|
+| Use hotkeys in any app (secondary: "Work while MacroSIP is in the background. No permission is needed.") | toggle, default off | The first time it goes on, the three fields below are filled with ⌃⌥A, ⌃⌥H, ⌃⌥M; later the user's values stay, also empty ones. Off unregisters everything. Rows below show only while on. |
+| Answer (secondary: "Answers the call that has been ringing longest.") | key recorder (124 pt) with a clear (×) button | Click the field, press the combination; Esc cancels, Delete clears. Shows "Not set" when empty, "Press the keys…" while listening (nothing is registered meanwhile, so the current combination can be typed again). |
+| Hang up (secondary: "Ends the current call; with none, declines the ringing call.") | key recorder | As above. |
+| Mute (secondary: "Turns the microphone of the current call off or on.") | key recorder | As above. |
+
+Registration is Carbon `RegisterEventHotKey`: it works while another app is frontmost and needs no permission (no Accessibility, no Input Monitoring). Rules: a combination needs at least one of ⌘ ⌃ ⌥ (⇧ alone is refused); one combination cannot belong to two actions; combinations the app's menus use (⌘D, ⇧⌘M, ⌘↑, ⌘↓, ⌥⌘D, ⌘0, ⌘1 to ⌘9) and the standard ones (⌘Q, ⌘W, ⌘H, ⌘M, ⌘, and the editing keys) are refused. A refused combination keeps the old one and shows a short red line under the field ("Include ⌘, ⌃ or ⌥", "Already assigned to “Answer”", "Used by a MacroSIP menu", "This key cannot be used"). When another app holds a stored combination, the system refuses it; that field shows "Already used by another app" (or "Could not be registered (error N)") and the other two keep working. Group footer while on: "Hotkeys do nothing when there is no call to act on."
+
+What a press does (the same `AppModel` actions as the buttons; no banner or sound when it does nothing):
+
+| Hotkey | Effect |
+|---|---|
+| Answer | Answers the oldest ringing call, as the Answer button of the incoming window (the active call is held first). Nothing when no call rings. |
+| Hang up | A running conference ends as a whole (End Conference); else the current call ends (End Call; during an attended transfer that is the consultation call); with no connected call the oldest ringing call is declined (Decline). Nothing when there is no call. |
+| Mute | Toggles mute on the current call (Call › Mute); in a conference all legs. Nothing when no call is connected. |
+
+Demo and mock launches register nothing unless a self-check asks for it.
 
 **Group Auto-answer (header "Auto-answer", ru «Автоответ»):**
 
@@ -1241,7 +1277,7 @@ If denied, the call panel shows "Microphone access is off" with an "Open System 
 
 ### Decided
 
-- No MicroSIP .ini import in v1 (Q10.1). Not in v1: global hotkeys, macOS Contacts import, first-run launch-at-login prompt (ADR 0009).
+- No MicroSIP .ini import in v1 (Q10.1); it came in 26.1 as Settings › Accounts › Import from MicroSIP… (8.2). Not in v1: global hotkeys (26.1, 8.7), macOS Contacts import, first-run launch-at-login prompt (ADR 0009).
 - No launch-at-login prompt on first run; it stays in Settings › General (Q10.2).
 - "Add Account…" opens the account editor as a sheet; the menu bar icon appears in the offline state from the first launch.
 
@@ -1512,6 +1548,8 @@ Strings marked "(proposed)" are not in the mockups; they are needed by the spec 
 | | Default | `accounts.badge.default` | |
 | | Registered | `accounts.status.registered` | |
 | | Disabled | `accounts.status.disabled` | Account switched off. |
+| | Needs password | `accounts.status.needsPassword` | Imported from MicroSIP, no password yet (orange). |
+| | Import from MicroSIP… | `accounts.import.microsip` | Button under the accounts table (26.1). |
 | | Outgoing only | `accounts.status.outgoingOnly` | Enabled, "Register with server" off. |
 | | 403 Forbidden | `accounts.lastError.title` | Monospaced in mockup. %@ reason. |
 | | REGISTER rejected at %@. Check the username and password. | `accounts.lastError.body` | %@ time. |
@@ -1620,6 +1658,45 @@ Strings marked "(proposed)" are not in the mockups; they are needed by the spec 
 | | Honour the server's answer-after request | `settings.autoAnswer.honourServer` | |
 | | Answers when the PBX sends Call-Info: answer-after=N (intercom, paging), even if the mode is Off. | `settings.autoAnswer.honourServer.help` | |
 | | Do Not Disturb wins over auto-answer. Auto-answer never answers a second call while you are already on one. | `settings.autoAnswer.footer` | |
+| | Global hotkeys | `settings.hotkeys.header` | 26.1. |
+| | Use hotkeys in any app | `settings.hotkeys.enable` | |
+| | Work while MacroSIP is in the background. No permission is needed. | `settings.hotkeys.enable.help` | |
+| | Answer / Hang up / Mute | `settings.hotkeys.answer`, `.hangUp`, `.mute` | Row labels; the help texts are `.answer.help`, `.hangUp.help`, `.mute.help`. |
+| | Not set | `settings.hotkeys.notSet` | Empty recorder. |
+| | Press the keys… | `settings.hotkeys.recording` | Recorder is listening. |
+| | Click, then press the shortcut. Esc cancels, Delete clears. | `settings.hotkeys.record.help` | Tooltip. |
+| | Clear | `settings.hotkeys.clear.help` | Tooltip of the × button. |
+| | Already used by another app | `settings.hotkeys.error.inUse` | Registration refused (red, under the field). |
+| | Could not be registered (error %lld) | `settings.hotkeys.error.system` | Any other Carbon error. |
+| | Include ⌘, ⌃ or ⌥ | `settings.hotkeys.issue.needsModifier` | |
+| | This key cannot be used | `settings.hotkeys.issue.unsupportedKey` | |
+| | Used by a MacroSIP menu | `settings.hotkeys.issue.usedByMenu` | |
+| | Already assigned to “%@” | `settings.hotkeys.issue.duplicate` | Action name. |
+| | Hotkeys do nothing when there is no call to act on. | `settings.hotkeys.footer` | |
+
+### 8.2 Import from MicroSIP (26.1)
+
+| Ed. | English | Key | Notes |
+|---|---|---|---|
+| | Choose MicroSIP.ini. On Windows it is next to MicroSIP.exe or in %@. | `import.microsip.panel.message` | `%@` is `%APPDATA%\MicroSIP`. |
+| | Choose | `import.microsip.panel.prompt` | |
+| | Choose the MicroSIP contacts file (Contacts.xml). | `import.microsip.contacts.panel.message` | |
+| | Import from MicroSIP / Import finished | `import.microsip.title`, `import.microsip.doneTitle` | Sheet titles. |
+| | Accounts to import · Skipped · Warnings | `import.microsip.accounts.header`, `.skipped.header`, `.warnings.header` | |
+| | No new accounts in this file. / There is nothing new to import. | `import.microsip.accounts.none`, `import.microsip.nothing` | |
+| | Contacts file · None · Choose… · Don't import contacts | `import.microsip.contacts.file`, `.none`, `.choose`, `.noFile` | |
+| | Already in MacroSIP · Listed twice in the file | `import.microsip.skipped.already`, `.skipped.twice` | Skip reasons. |
+| | Accounts are imported switched off. … type each one once to switch its account on. | `import.microsip.footer` | |
+| | Import · Done · Enter Password… · Choose Another File… | `import.microsip.import`, `.done`, `.enterPassword`, `.chooseAnother` | Buttons. |
+| | The accounts are switched off until their passwords are typed. … | `import.microsip.nextSteps` | Report. |
+| | Imported: %@. | `import.microsip.doneBanner` | `%@` is "2 accounts, 14 contacts". |
+| | N accounts · N contacts | `import.microsip.count.accounts`, `.count.contacts` | Plural (stringsdict). |
+| | The file was not found. · could not be read. · is too large (%@)… · has no accounts. | `import.microsip.error.notFound`, `.unreadable`, `.tooLarge`, `.noAccounts` | `ReadError`. |
+| | `[Account2]`: no user name / no server or domain / unknown transport / unknown SRTP / dial rules | `import.microsip.warn.noUsername`, `.noDomain`, `.transport`, `.srtp`, `.dialRules` | `Warning` cases with a section. |
+| | The contacts file was not found / could not be read / is too large / is not valid | `import.microsip.warn.contactsNotFound`, `.contactsUnreadable`, `.contactsTooLarge`, `.contactsMalformed` | |
+| | N contacts without a number were skipped · N entries from a server directory were skipped | `import.microsip.warn.noNumber`, `.warn.directory` | Plural (stringsdict). |
+| | Type the password for “%@” first, then switch it on. | `banner.account.needsPassword` | Banner when an account without a password is switched on. |
+| | Imported from MicroSIP, which keeps passwords in a form no other app can read. Type it once to switch the account on. | `account.field.password.importedHelp` | Editor, password row. |
 
 ### 9 Account editor
 

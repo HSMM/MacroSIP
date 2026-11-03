@@ -261,6 +261,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var quickKeys: QuickKeysSettings
     /// Directory sources and search options (screen 13).
     public var directory: DirectorySettings
+    /// Answer, hang up and mute from any app (Settings › Calls). Off by default.
+    public var hotkeys: HotkeySettings
 
     public init(
         network: NetworkSettings = .default,
@@ -274,7 +276,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         codecOptions: CodecOptions = CodecOptions(),
         callOptions: CallOptions = CallOptions(),
         quickKeys: QuickKeysSettings = QuickKeysSettings(),
-        directory: DirectorySettings = DirectorySettings()
+        directory: DirectorySettings = DirectorySettings(),
+        hotkeys: HotkeySettings = HotkeySettings()
     ) {
         self.network = network
         self.audio = audio
@@ -288,9 +291,10 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.callOptions = callOptions
         self.quickKeys = quickKeys
         self.directory = directory
+        self.hotkeys = hotkeys
     }
 
-    /// Older settings.json files lack `recording` / `autoAnswer` / `codecOptions` / `callOptions` / `quickKeys` / `directory`; they decode as defaults.
+    /// Older settings.json files lack `recording` / `autoAnswer` / `codecOptions` / `callOptions` / `quickKeys` / `directory` / `hotkeys`; they decode as defaults.
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         network = try c.decodeIfPresent(NetworkSettings.self, forKey: .network) ?? .default
@@ -305,6 +309,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         callOptions = (try? c.decodeIfPresent(CallOptions.self, forKey: .callOptions)) ?? CallOptions()
         quickKeys = (try? c.decodeIfPresent(QuickKeysSettings.self, forKey: .quickKeys)) ?? QuickKeysSettings()
         directory = (try? c.decodeIfPresent(DirectorySettings.self, forKey: .directory)) ?? DirectorySettings()
+        hotkeys = (try? c.decodeIfPresent(HotkeySettings.self, forKey: .hotkeys)) ?? HotkeySettings()
     }
 
     public static let `default` = AppSettings()

@@ -822,4 +822,74 @@ enum L {
     static func voicemailNewCount(_ n: Int) -> String { loc("voicemail.newCount", "\(n) new") }
     static var directoryErrorGoogleClientID: String { loc("directory.error.googleClientID", "Google sign-in is not configured in this build") }
     static var directoryGoogleSigningIn: String { loc("directory.google.signingIn", "Waiting for Google…") }
+
+    // MARK: global hotkeys and MicroSIP import (26.1)
+    static var hotkeysHeader: String { loc("settings.hotkeys.header", "Global hotkeys") }
+    static var hotkeysEnable: String { loc("settings.hotkeys.enable", "Use hotkeys in any app") }
+    static var hotkeysEnableHelp: String { loc("settings.hotkeys.enable.help", "Work while MacroSIP is in the background. No permission is needed.") }
+    static var hotkeysAnswer: String { loc("settings.hotkeys.answer", "Answer") }
+    static var hotkeysAnswerHelp: String { loc("settings.hotkeys.answer.help", "Answers the call that has been ringing longest.") }
+    static var hotkeysHangUp: String { loc("settings.hotkeys.hangUp", "Hang up") }
+    static var hotkeysHangUpHelp: String { loc("settings.hotkeys.hangUp.help", "Ends the current call; with none, declines the ringing call.") }
+    static var hotkeysMute: String { loc("settings.hotkeys.mute", "Mute") }
+    static var hotkeysMuteHelp: String { loc("settings.hotkeys.mute.help", "Turns the microphone of the current call off or on.") }
+    static var hotkeysNotSet: String { loc("settings.hotkeys.notSet", "Not set") }
+    static var hotkeysRecording: String { loc("settings.hotkeys.recording", "Press the keys…") }
+    static var hotkeysRecordHelp: String { loc("settings.hotkeys.record.help", "Click, then press the shortcut. Esc cancels, Delete clears.") }
+    static var hotkeysClearHelp: String { loc("settings.hotkeys.clear.help", "Clear") }
+    static var hotkeysErrorInUse: String { loc("settings.hotkeys.error.inUse", "Already used by another app") }
+    static func hotkeysErrorSystem(_ code: Int) -> String { loc("settings.hotkeys.error.system", "Could not be registered (error \(code))") }
+    static var hotkeysIssueNeedsModifier: String { loc("settings.hotkeys.issue.needsModifier", "Include ⌘, ⌃ or ⌥") }
+    static var hotkeysIssueUnsupportedKey: String { loc("settings.hotkeys.issue.unsupportedKey", "This key cannot be used") }
+    static var hotkeysIssueUsedByMenu: String { loc("settings.hotkeys.issue.usedByMenu", "Used by a MacroSIP menu") }
+    static func hotkeysIssueDuplicate(_ action: String) -> String { loc("settings.hotkeys.issue.duplicate", "Already assigned to “\(action)”") }
+    static var hotkeysFooter: String { loc("settings.hotkeys.footer", "Hotkeys do nothing when there is no call to act on.") }
+    static var accountsImportMicroSIP: String { loc("accounts.import.microsip", "Import from MicroSIP…") }
+    static var accountsNeedsPassword: String { loc("accounts.status.needsPassword", "Needs password") }
+    static var accountPasswordImportedHelp: String { loc("account.field.password.importedHelp", "Imported from MicroSIP, which keeps passwords in a form no other app can read. Type it once to switch the account on.") }
+    static func bannerAccountNeedsPassword(_ name: String) -> String { loc("banner.account.needsPassword", "Type the password for “\(name)” first, then switch it on.") }
+    static func importPanelMessage(appData: String) -> String { loc("import.microsip.panel.message", "Choose MicroSIP.ini. On Windows it is next to MicroSIP.exe or in \(appData).") }
+    static var importPanelPrompt: String { loc("import.microsip.panel.prompt", "Choose") }
+    static var importContactsPanelMessage: String { loc("import.microsip.contacts.panel.message", "Choose the MicroSIP contacts file (Contacts.xml).") }
+    static var importTitle: String { loc("import.microsip.title", "Import from MicroSIP") }
+    static var importDoneTitle: String { loc("import.microsip.doneTitle", "Import finished") }
+    static var importAccountsHeader: String { loc("import.microsip.accounts.header", "Accounts to import") }
+    static var importNoNewAccounts: String { loc("import.microsip.accounts.none", "No new accounts in this file.") }
+    static var importContactsFile: String { loc("import.microsip.contacts.file", "Contacts file") }
+    static var importContactsNone: String { loc("import.microsip.contacts.none", "None") }
+    static var importContactsChoose: String { loc("import.microsip.contacts.choose", "Choose…") }
+    static var importContactsNoFile: String { loc("import.microsip.contacts.noFile", "Don't import contacts") }
+    static var importSkippedHeader: String { loc("import.microsip.skipped.header", "Skipped") }
+    static var importWarningsHeader: String { loc("import.microsip.warnings.header", "Warnings") }
+    static var importAlready: String { loc("import.microsip.skipped.already", "Already in MacroSIP") }
+    static var importTwice: String { loc("import.microsip.skipped.twice", "Listed twice in the file") }
+    static var importNothing: String { loc("import.microsip.nothing", "There is nothing new to import.") }
+    static var importFooter: String { loc("import.microsip.footer", "Accounts are imported switched off. MicroSIP stores passwords in a form MacroSIP cannot read, so type each one once to switch its account on.") }
+    static var importButton: String { loc("import.microsip.import", "Import") }
+    static var importDone: String { loc("import.microsip.done", "Done") }
+    static var importEnterPassword: String { loc("import.microsip.enterPassword", "Enter Password…") }
+    static var importNextSteps: String { loc("import.microsip.nextSteps", "The accounts are switched off until their passwords are typed. The first one opens next; the others show “Needs password” in the list.") }
+    static var importChooseAnother: String { loc("import.microsip.chooseAnother", "Choose Another File…") }
+    static var importErrorNotFound: String { loc("import.microsip.error.notFound", "The file was not found.") }
+    static var importErrorUnreadable: String { loc("import.microsip.error.unreadable", "The file could not be read.") }
+    static func importErrorTooLarge(_ size: String) -> String { loc("import.microsip.error.tooLarge", "The file is too large (\(size)). MicroSIP.ini is normally a few kilobytes, so this is probably the wrong file.") }
+    static var importErrorNoAccounts: String { loc("import.microsip.error.noAccounts", "This file has no accounts. Is it MicroSIP.ini?") }
+    static func importWarnNoUsername(_ section: String) -> String { loc("import.microsip.warn.noUsername", "[\(section)]: no user name, account skipped") }
+    static func importWarnNoDomain(_ section: String) -> String { loc("import.microsip.warn.noDomain", "[\(section)]: no server or domain, account skipped") }
+    static func importWarnTransport(_ section: String, _ value: String) -> String { loc("import.microsip.warn.transport", "[\(section)]: unknown transport “\(value)”, UDP is used") }
+    static func importWarnSRTP(_ section: String, _ value: String) -> String { loc("import.microsip.warn.srtp", "[\(section)]: unknown SRTP setting “\(value)”, SRTP is off") }
+    static func importWarnDialRules(_ section: String) -> String { loc("import.microsip.warn.dialRules", "[\(section)]: the dialing prefix and dial plan are not imported") }
+    static var importWarnContactsNotFound: String { loc("import.microsip.warn.contactsNotFound", "The contacts file was not found, so no contacts are imported.") }
+    static var importWarnContactsUnreadable: String { loc("import.microsip.warn.contactsUnreadable", "The contacts file could not be read, so no contacts are imported.") }
+    static var importWarnContactsTooLarge: String { loc("import.microsip.warn.contactsTooLarge", "The contacts file is too large (over 10 MB), so no contacts are imported.") }
+    static var importWarnContactsMalformed: String { loc("import.microsip.warn.contactsMalformed", "The contacts file is not valid, so no contacts are imported.") }
+    static func importWarnNoNumber(_ n: Int) -> String { loc("import.microsip.warn.noNumber", "\(n) contacts without a number were skipped") }
+    static func importWarnDirectory(_ n: Int) -> String { loc("import.microsip.warn.directory", "\(n) entries from a server directory were skipped") }
+    static func importCountAccounts(_ n: Int) -> String { loc("import.microsip.count.accounts", "\(n) accounts") }
+    static func importCountContacts(_ n: Int) -> String { loc("import.microsip.count.contacts", "\(n) contacts") }
+    /// "Imported: 2 accounts, 14 contacts." (the banner after an import)
+    static func importDoneBanner(accounts: Int, contacts: Int) -> String {
+        let parts = [accounts > 0 ? importCountAccounts(accounts) : nil, contacts > 0 ? importCountContacts(contacts) : nil].compactMap { $0 }
+        return loc("import.microsip.doneBanner", "Imported: \(parts.joined(separator: ", ")).")
+    }
 }

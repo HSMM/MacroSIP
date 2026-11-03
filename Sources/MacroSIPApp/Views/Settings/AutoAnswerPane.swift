@@ -1,8 +1,8 @@
 import SwiftUI
 import MacroSIPCore
 
-/// Settings › Calls (SCREENS.md 8.7): what happens to a call that comes in. Three groups: Incoming calls
-/// (reject rule), During a call, Auto-answer.
+/// Settings › Calls (SCREENS.md 8.7): what happens to a call that comes in. Four groups: Incoming calls
+/// (reject rule), During a call, Global hotkeys, Auto-answer.
 struct AutoAnswerPane: View {
     @Environment(AppModel.self) private var model
 
@@ -10,6 +10,7 @@ struct AutoAnswerPane: View {
         PaneContainer {
             DenyIncomingGroup()
             CallsGroup()
+            HotkeysGroup()
             FormGroup(header: L.autoAnswerHeader, content: {
                 FormRow(label: L.autoAnswerMode) {
                     SegmentedTabs(items: [

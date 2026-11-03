@@ -21,6 +21,7 @@ extension AppModel {
         startQualityPolling()
         headsetButtonsEnabled = settings.audio.headsetButtons
         startHeadsetButtons()
+        startHotkeys()
         await startEngineAndAccounts()
         #if DEBUG
         if launch.isDemo { await DemoState.run(self) }
@@ -99,6 +100,7 @@ extension AppModel {
         eventTask?.cancel()
         qualityTask?.cancel()
         stopHeadsetButtons()
+        stopHotkeys()
         await engine.hangupAll()
         await engine.stop()
         AppLog.app.info("quit")

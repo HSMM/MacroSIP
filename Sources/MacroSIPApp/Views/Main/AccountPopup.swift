@@ -185,6 +185,7 @@ final class AccountPopupMenu: NSObject {
     private func toggle(_ id: AccountID, _ on: Bool) {
         model.setAccountEnabled(id, on)
         refresh()           // the menu stays open
+        if on, model.accountNeedsPassword(id) { menu.cancelTracking() }     // the editor opened instead
     }
 
     @objc private func openSettings() {
