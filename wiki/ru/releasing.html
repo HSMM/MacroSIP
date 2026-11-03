@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Релизы · Документация MacroSIP</title>
+<meta name="description" content="Документация MacroSIP">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/releasing.html">
+<link rel="alternate" hreflang="ru" href="../ru/releasing.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/releasing.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/releasing.html" hreflang="en">English</a><a href="../ru/releasing.html" hreflang="ru" aria-current=true>Русский</a><a href="../zh/releasing.html" hreflang="zh-Hans">中文</a></div></header>
+<div class="layout">
+<nav aria-label="Содержание"><details><summary>Содержание</summary><div class="links"><ul><li><a href="index.html">Главная</a></li></ul><h2>Руководство пользователя</h2><ul><li><a href="installation.html">Установка</a></li><li><a href="accounts.html">Аккаунты</a></li><li><a href="calls.html">Звонки</a></li><li><a href="incoming-calls.html">Входящие звонки</a></li><li><a href="contacts-and-call-log.html">Контакты и журнал</a></li><li><a href="directory.html">Справочник</a></li><li><a href="quick-keys.html">Быстрые клавиши</a></li><li><a href="audio.html">Звук</a></li><li><a href="settings.html">Настройки</a></li><li><a href="menu-bar.html">Строка меню</a></li><li><a href="troubleshooting.html">Решение проблем</a></li></ul><h2>Для разработчиков</h2><ul><li><a href="architecture.html">Устройство</a></li><li><a href="building.html">Сборка</a></li><li><a href="testing.html">Тесты</a></li><li><a href="releasing.html" aria-current=page>Релизы</a></li><li><a href="contributing.html">Участие</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">Релизы</h1>
+<p dir="auto">Выпуск делается тегом на <code class="notranslate">main</code>. Тег запускает <code class="notranslate">.github/workflows/release.yml</code>, который собирает универсальный DMG, публикует GitHub Release, подписывает и обновляет ленту Sparkle и обновляет cask Homebrew. Первоисточник — раздел «Releasing» в <code class="notranslate">docs/DEVELOPMENT.md</code>, контрольный список в <code class="notranslate">README.md</code>, ADR 0010 и ADR 0013.</p>
+<h2 dir="auto">Номера версий (ADR 0010)</h2>
+<p dir="auto">Версии имеют вид <code class="notranslate">YY.MINOR.PATCH</code>: <code class="notranslate">YY</code> — две цифры года линейки выпусков (26 для 2026), <code class="notranslate">MINOR</code> растёт с выпусками новых возможностей в течение года, <code class="notranslate">PATCH</code> — с исправлениями. Первый выпуск — <code class="notranslate">26.0.0</code>; выпуск 2027 года начинается с <code class="notranslate">27.0.0</code>, даже если иначе это было бы повышение MINOR. Теги содержат голый номер.</p>
+<p dir="auto">Предварительная версия помечается тегом <code class="notranslate">N.N.N-rc.N</code>, например <code class="notranslate">26.0.0-rc.1</code>. <code class="notranslate">release.yml</code> и <code class="notranslate">scripts/make-appcast.sh</code> отвергают любой другой суффикс. Любой тег с <code class="notranslate">-</code> становится pre-release на GitHub и элементом appcast на канале <code class="notranslate">beta</code>.</p>
+<p dir="auto">Три числа должны совпадать:</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Где</th>
+<th>Значение</th>
+<th>Источник</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="notranslate">CFBundleShortVersionString</code></td>
+<td>версия, показанная в «О программе» и сверяемая с тегом заданием выпуска</td>
+<td><code class="notranslate">make-app.sh</code>: <code class="notranslate">git describe --tags --abbrev=0</code>, до первого тега — <code class="notranslate">Product.version</code></td>
+</tr>
+<tr>
+<td><code class="notranslate">CFBundleVersion</code></td>
+<td>номер сборки, по которому Sparkle упорядочивает обновления</td>
+<td><code class="notranslate">make-app.sh</code>: <code class="notranslate">git rev-list --count HEAD</code></td>
+</tr>
+<tr>
+<td><code class="notranslate">Product.version</code> (<code class="notranslate">Sources/MacroSIPCore/Product.swift</code>)</td>
+<td>заголовок SIP <code class="notranslate">User-Agent</code> и панель «О программе»</td>
+<td>правится вручную перед тегом</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto"><strong>Помечайте каждый выпуск тегом на более позднем коммите, чем предыдущий, — финальный выпуск после своего кандидата тоже.</strong> <code class="notranslate">CFBundleVersion</code> — это число коммитов, Sparkle различает элементы по нему, и <code class="notranslate">generate_appcast</code> молча заменил бы элемент кандидата, если бы финальный выпуск был помечен на том же коммите. <code class="notranslate">make-appcast.sh --check</code> отвергает номер сборки, который уже есть в ленте под другой версией, и workflow выполняет эту проверку до публикации чего-либо.</p>
+<h2 dir="auto">Контрольный список владельца (из README)</h2>
+<ol dir="auto">
+<li>
+<p dir="auto">Всё зелёное локально: <code class="notranslate">swift build</code>, <code class="notranslate">scripts/test.sh</code>, <code class="notranslate">scripts/selftest-call.sh</code>, <code class="notranslate">scripts/make-dmg.sh</code>; смонтируйте DMG и запустите приложение.</p>
+</li>
+<li>
+<p dir="auto">Поднимите <code class="notranslate">Product.version</code> до выпускаемой версии, обновите <code class="notranslate">docs/ROADMAP.md</code>, закоммитьте.</p>
+</li>
+<li>
+<p dir="auto">Поставьте тег и отправьте его:</p>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">git tag 26.0.0-rc.1 <span class="pl-k">&amp;&amp;</span> git push origin 26.0.0-rc.1    <span class="pl-c"><span class="pl-c">#</span> candidate</span>
+git tag 26.0.0 <span class="pl-k">&amp;&amp;</span> git push origin 26.0.0              <span class="pl-c"><span class="pl-c">#</span> final, on a later commit</span></pre></div>
+</li>
+<li>
+<p dir="auto">Следите за <code class="notranslate">release.yml</code>. Он собирает DMG, создаёт GitHub Release и добавляет его в ленту обновлений; тот же запуск обновляет cask Homebrew, если есть <code class="notranslate">TAP_TOKEN</code>.</p>
+</li>
+<li>
+<p dir="auto">Проверьте: <code class="notranslate">brew tap hsmm/tap &amp;&amp; brew install --cask hsmm/tap/macrosip</code>, запустите (правая кнопка, «Открыть» в первый раз); <code class="notranslate">curl -s https://raw.githubusercontent.com/HSMM/MacroSIP/gh-pages/appcast.xml</code> показывает новый элемент; установленная старая версия находит его через MacroSIP › «Проверить наличие обновлений…» (кандидат — только при включённом «Включать предварительные версии»).</p>
+</li>
+</ol>
+<h2 dir="auto">Что делает <code class="notranslate">release.yml</code></h2>
+<p dir="auto">Workflow выполняется только в <code class="notranslate">HSMM/MacroSIP</code>, на тегах вида <code class="notranslate">[0-9]*.[0-9]*.[0-9]*</code>, с правами <code class="notranslate">contents: write</code>. Группы concurrency нет намеренно: GitHub держит один ожидающий запуск на группу и отменяет остальные, что потеряло бы тег; одновременные выпуски вместо этого выстраиваются в очередь на <code class="notranslate">gh-pages</code>.</p>
+<p dir="auto">Задание <code class="notranslate">dmg</code> на <code class="notranslate">macos-15</code> (arm64):</p>
+<ol dir="auto">
+<li><strong>Проверка тега</strong>: <code class="notranslate">N.N.N</code> или <code class="notranslate">N.N.N-rc.N</code>, и секрет <code class="notranslate">SPARKLE_PRIVATE_KEY</code> должен существовать (без него установленные приложения никогда не увидели бы выпуск).</li>
+<li><strong>Сборка и тесты</strong> как в CI: кэшированный <code class="notranslate">build-pjsip.sh</code>, <code class="notranslate">swift build</code>, <code class="notranslate">scripts/test.sh</code>, <code class="notranslate">scripts/selftest-call.sh</code> нативно и под Rosetta 2.</li>
+<li><strong>Сборка DMG</strong>: <code class="notranslate">scripts/make-dmg.sh release</code>; <code class="notranslate">lipo -info</code> на бинарнике; задание падает, если <code class="notranslate">CFBundleShortVersionString</code> отличается от тега. DMG выгружается как артефакт для задания cask.</li>
+<li><strong>Проверка appcast</strong>: <code class="notranslate">scripts/publish-appcast.sh --check &lt;tag&gt; dist/MacroSIP.app</code> забирает <code class="notranslate">gh-pages</code> и отвергает номер сборки, который есть в ленте под другой версией.</li>
+<li><strong>Создание GitHub Release</strong> через <code class="notranslate">gh release create</code>: заголовок = тег, сгенерированные заметки с фиксированной первой строкой о том, что после обновления macOS снова запрашивает доступ к микрофону, <code class="notranslate">--prerelease</code> для тегов с <code class="notranslate">-</code>. Повторный запуск сохраняет релиз и заменяет DMG с <code class="notranslate">--clobber</code>.</li>
+<li><strong>Обновление appcast</strong>: тело релиза превращается в HTML через Markdown API GitHub, и <code class="notranslate">scripts/publish-appcast.sh &lt;tag&gt; &lt;dmg&gt;</code> запускает <code class="notranslate">scripts/make-appcast.sh</code>, который вызывает <code class="notranslate">generate_appcast</code> из Sparkle (из <code class="notranslate">.build/artifacts/sparkle/Sparkle/bin</code>) с ключом EdDSA из <code class="notranslate">SPARKLE_PRIVATE_KEY</code>, URL загрузки ассета релиза, <code class="notranslate">--embed-release-notes</code>, <code class="notranslate">--channel beta</code> для кандидатов и сохранением всех прежних элементов (<code class="notranslate">--maximum-versions 0</code>, без дельт). Результат коммитится в ветку <code class="notranslate">gh-pages</code> (создаётся как orphan при первом запуске; push повторяется до пяти раз после свежего fetch, если другой выпуск успел раньше) и прикрепляется к релизу как <code class="notranslate">appcast.xml</code>.</li>
+</ol>
+<p dir="auto">Задание <code class="notranslate">homebrew</code> на <code class="notranslate">ubuntu-latest</code>, после <code class="notranslate">dmg</code>: пропускается, если секрет <code class="notranslate">TAP_TOKEN</code> пуст; иначе клонирует <code class="notranslate">HSMM/homebrew-tap</code> с этим токеном, скачивает артефакт DMG и запускает <code class="notranslate">scripts/update-cask.sh &lt;tag&gt; &lt;dmg&gt;</code> с заданным <code class="notranslate">TAP_DIR</code>, который заполняет <code class="notranslate">packaging/homebrew/macrosip.rb</code> (версия, SHA-256) в <code class="notranslate">Casks/macrosip.rb</code>, коммитит <code class="notranslate">macrosip &lt;tag&gt;</code> и отправляет. Разовая настройка: создайте публичный репозиторий <code class="notranslate">HSMM/homebrew-tap</code>, создайте fine-grained personal access token с правами Contents read и write только на этот репозиторий, сохраните его как секрет Actions <code class="notranslate">TAP_TOKEN</code> в <code class="notranslate">HSMM/MacroSIP</code>. Cask объявляет <code class="notranslate">auto_updates true</code> и <code class="notranslate">depends_on macos: :sonoma</code>; Homebrew принимает <code class="notranslate">26.0.0-rc.1</code> как версию.</p>
+<p dir="auto">Вручную, без CI: <code class="notranslate">scripts/update-cask.sh &lt;version&gt; dist/MacroSIP-&lt;version&gt;.dmg</code> пишет <code class="notranslate">dist/macrosip.rb</code> и печатает команды git (с <code class="notranslate">TAP_DIR=&lt;clone&gt;</code> коммитит и отправляет); <code class="notranslate">SPARKLE_PRIVATE_KEY=... APPCAST_IN=&lt;current appcast.xml&gt; scripts/make-appcast.sh &lt;version&gt; &lt;dmg&gt; dist</code> создаёт <code class="notranslate">dist/appcast.xml</code> для загрузки в релиз и в <code class="notranslate">gh-pages</code>. Без переменной окружения <code class="notranslate">generate_appcast</code> читает ключ из записи связки ключей входа, которую создал <code class="notranslate">generate_keys --account macrosip</code>.</p>
+<h2 dir="auto">Лента обновлений (ADR 0013)</h2>
+<p dir="auto">Приложение раз в день читает <code class="notranslate">https://raw.githubusercontent.com/HSMM/MacroSIP/gh-pages/appcast.xml</code> (<code class="notranslate">SUFeedURL</code>, записывается <code class="notranslate">make-app.sh</code>; настройка GitHub Pages не нужна) и спрашивает перед установкой. Каждый элемент несёт подпись EdDSA (ed25519) DMG; открытый ключ — <code class="notranslate">SPARKLE_PUBLIC_KEY</code> в <code class="notranslate">make-app.sh</code> (<code class="notranslate">SUPublicEDKey</code> в Info.plist). Закрытый ключ существует ровно в двух местах: секрет Actions <code class="notranslate">SPARKLE_PRIVATE_KEY</code> и связка ключей входа владельца («MacroSIP Sparkle private key», плюс собственная запись Sparkle, account <code class="notranslate">macrosip</code>). Восстановить секрет: <code class="notranslate">security find-generic-password -s "MacroSIP Sparkle private key" -w | gh secret set SPARKLE_PRIVATE_KEY --repo HSMM/MacroSIP</code>. Потеря ключа означает, что установленные копии можно обновить только ручной загрузкой; утечка позволяет любому, кто к тому же может отдавать ленту, доставлять код пользователям.</p>
+<p dir="auto">Кандидаты находятся на канале <code class="notranslate">beta</code> и предлагаются, только если включено Настройки › Основные › Обновления › «Включать предварительные версии» (по умолчанию включено, когда запущенная сборка сама является кандидатом). У финальных выпусков канала нет, и они доходят до всех. Appcast хранит заметки такими, какими они были в момент выпуска; чтобы изменить их, отредактируйте релиз и перезапустите задание appcast. Выпуск, у которого шаг appcast упал, виден на GitHub, но не предлагается в приложении, пока задание не перезапустят.</p>
+<h2 dir="auto">Подпись</h2>
+<p dir="auto">Сборки подписываются ad hoc с hardened runtime (<code class="notranslate">codesign --options runtime</code>), изнутри наружу: службы XPC Sparkle, <code class="notranslate">Autoupdate</code>, <code class="notranslate">Updater.app</code>, фреймворк, затем приложение с <code class="notranslate">packaging/Entitlements.plist</code>. Entitlements — <code class="notranslate">com.apple.security.device.audio-input</code>, <code class="notranslate">com.apple.security.personal-information.addressbook</code> и <code class="notranslate">com.apple.security.cs.disable-library-validation</code>; последний нужен потому, что у подписи ad hoc нет Team ID, и проверка библиотек отвергла бы встроенный фреймворк Sparkle. Подпись без hardened runtime была отвергнута: она также разрешила бы <code class="notranslate">DYLD_INSERT_LIBRARIES</code> в процесс с доступом к микрофону.</p>
+<p dir="auto">Последствия для пользователей (ADR 0007): первый запуск показывает диалог о неизвестном разработчике (правая кнопка, «Открыть», или <code class="notranslate">xattr -dr com.apple.quarantine</code>), обновления, установленные Sparkle, доверены через подпись EdDSA и запускаются без него, а macOS привязывает доступ к микрофону к конкретной сборке, поэтому спрашивает снова после каждого обновления. Подпись Developer ID и нотаризация запланированы позже (<code class="notranslate">docs/ROADMAP.md</code>); когда Developer ID появится, уберите entitlement на отключение проверки библиотек.</p>
+<p dir="auto">См. также <a href="building.html">Сборка</a>, <a href="testing.html">Тесты</a>, <a href="installation.html">Установка</a>.</p>
+<p dir="auto">Другие страницы: <a href="index.html">Главная</a> · <a href="../en/index.html">Home</a> (English)</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

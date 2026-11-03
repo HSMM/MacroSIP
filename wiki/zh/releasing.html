@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>发布 · MacroSIP 文档</title>
+<meta name="description" content="MacroSIP 文档">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/releasing.html">
+<link rel="alternate" hreflang="ru" href="../ru/releasing.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/releasing.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/releasing.html" hreflang="en">English</a><a href="../ru/releasing.html" hreflang="ru">Русский</a><a href="../zh/releasing.html" hreflang="zh-Hans" aria-current=true>中文</a></div></header>
+<div class="layout">
+<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html">通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="directory.html">目录</a></li><li><a href="quick-keys.html">快捷键</a></li><li><a href="audio.html">音频</a></li><li><a href="settings.html">设置</a></li><li><a href="menu-bar.html">菜单栏</a></li><li><a href="troubleshooting.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="architecture.html">架构</a></li><li><a href="building.html">构建</a></li><li><a href="testing.html">测试</a></li><li><a href="releasing.html" aria-current=page>发布</a></li><li><a href="contributing.html">参与贡献</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">发布</h1>
+<p dir="auto">发布通过给 <code class="notranslate">main</code> 打标签来完成。标签会启动 <code class="notranslate">.github/workflows/release.yml</code>，它构建通用 DMG、发布 GitHub Release、签名并更新 Sparkle 更新源，并刷新 Homebrew cask。权威文本是 <code class="notranslate">docs/DEVELOPMENT.md</code> 的“Releasing”一节、<code class="notranslate">README.md</code> 中的检查清单、ADR 0010 和 ADR 0013。</p>
+<h2 dir="auto">版本号（ADR 0010）</h2>
+<p dir="auto">版本号为 <code class="notranslate">YY.MINOR.PATCH</code>：<code class="notranslate">YY</code> 是发布线的两位年份（2026 年为 26），<code class="notranslate">MINOR</code> 随年内的功能发布增长，<code class="notranslate">PATCH</code> 随修复增长。首个发布版是 <code class="notranslate">26.0.0</code>；2027 年的发布从 <code class="notranslate">27.0.0</code> 开始，即使它本应只是一次次版本号提升。标签只带纯数字。</p>
+<p dir="auto">候选发布版的标签为 <code class="notranslate">N.N.N-rc.N</code>，例如 <code class="notranslate">26.0.0-rc.1</code>。<code class="notranslate">release.yml</code> 和 <code class="notranslate">scripts/make-appcast.sh</code> 拒绝任何其他后缀。任何带 <code class="notranslate">-</code> 的标签都会成为 GitHub 预发布版和 <code class="notranslate">beta</code> 频道上的 appcast 条目。</p>
+<p dir="auto">三个数字必须一致：</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>位置</th>
+<th>值</th>
+<th>来源</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="notranslate">CFBundleShortVersionString</code></td>
+<td>“关于”中显示并由发布作业与标签比较的版本</td>
+<td><code class="notranslate">make-app.sh</code>：<code class="notranslate">git describe --tags --abbrev=0</code>，首个标签之前为 <code class="notranslate">Product.version</code></td>
+</tr>
+<tr>
+<td><code class="notranslate">CFBundleVersion</code></td>
+<td>Sparkle 用来为更新排序的构建号</td>
+<td><code class="notranslate">make-app.sh</code>：<code class="notranslate">git rev-list --count HEAD</code></td>
+</tr>
+<tr>
+<td><code class="notranslate">Product.version</code>（<code class="notranslate">Sources/MacroSIPCore/Product.swift</code>）</td>
+<td>SIP <code class="notranslate">User-Agent</code> 头和“关于”面板</td>
+<td>打标签前手动编辑</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto"><strong>每个发布版都要在比前一个更晚的提交上打标签，正式版相对其候选版也是如此。</strong><code class="notranslate">CFBundleVersion</code> 是提交计数，Sparkle 以它标识条目，如果正式版与候选版在同一提交上打标签，<code class="notranslate">generate_appcast</code> 会悄悄替换候选版的条目。<code class="notranslate">make-appcast.sh --check</code> 拒绝更新源中已在另一版本下存在的构建号，工作流在发布任何内容之前会运行该检查。</p>
+<h2 dir="auto">所有者的检查清单（来自 README）</h2>
+<ol dir="auto">
+<li>
+<p dir="auto">本地一切通过：<code class="notranslate">swift build</code>、<code class="notranslate">scripts/test.sh</code>、<code class="notranslate">scripts/selftest-call.sh</code>、<code class="notranslate">scripts/make-dmg.sh</code>；挂载 DMG 并启动应用。</p>
+</li>
+<li>
+<p dir="auto">将 <code class="notranslate">Product.version</code> 提升到要发布的版本，更新 <code class="notranslate">docs/ROADMAP.md</code>，提交。</p>
+</li>
+<li>
+<p dir="auto">打标签并推送：</p>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">git tag 26.0.0-rc.1 <span class="pl-k">&amp;&amp;</span> git push origin 26.0.0-rc.1    <span class="pl-c"><span class="pl-c">#</span> 候选版</span>
+git tag 26.0.0 <span class="pl-k">&amp;&amp;</span> git push origin 26.0.0              <span class="pl-c"><span class="pl-c">#</span> 正式版，在更晚的提交上</span></pre></div>
+</li>
+<li>
+<p dir="auto">关注 <code class="notranslate">release.yml</code>。它构建 DMG、创建 GitHub Release 并将其加入更新源；存在 <code class="notranslate">TAP_TOKEN</code> 时，同一次运行会更新 Homebrew cask。</p>
+</li>
+<li>
+<p dir="auto">检查：<code class="notranslate">brew tap hsmm/tap &amp;&amp; brew install --cask hsmm/tap/macrosip</code>，启动（第一次右键点按、打开）；<code class="notranslate">curl -s https://raw.githubusercontent.com/HSMM/MacroSIP/gh-pages/appcast.xml</code> 列出新条目；已安装的旧版本通过 MacroSIP › 检查更新能找到它（候选版仅在开启“包含候选发布版”时）。</p>
+</li>
+</ol>
+<h2 dir="auto"><code class="notranslate">release.yml</code> 做了什么</h2>
+<p dir="auto">该工作流仅在 <code class="notranslate">HSMM/MacroSIP</code> 中、在匹配 <code class="notranslate">[0-9]*.[0-9]*.[0-9]*</code> 的标签上运行，权限为 <code class="notranslate">contents: write</code>。故意不设置并发组：GitHub 为每个组只保留一个待处理的运行并取消其余的，这会丢掉一个标签；同时进行的发布改为在 <code class="notranslate">gh-pages</code> 上排队。</p>
+<p dir="auto"><code class="notranslate">macos-15</code>（arm64）上的作业 <code class="notranslate">dmg</code>：</p>
+<ol dir="auto">
+<li><strong>检查标签</strong>：<code class="notranslate">N.N.N</code> 或 <code class="notranslate">N.N.N-rc.N</code>，并且 <code class="notranslate">SPARKLE_PRIVATE_KEY</code> 密钥必须存在（没有它，已安装的应用永远看不到这个发布）。</li>
+<li><strong>构建与测试</strong>，与 CI 相同：带缓存的 <code class="notranslate">build-pjsip.sh</code>、<code class="notranslate">swift build</code>、<code class="notranslate">scripts/test.sh</code>、原生以及 Rosetta 2 下的 <code class="notranslate">scripts/selftest-call.sh</code>。</li>
+<li><strong>构建 DMG</strong>：<code class="notranslate">scripts/make-dmg.sh release</code>；对二进制文件执行 <code class="notranslate">lipo -info</code>；如果 <code class="notranslate">CFBundleShortVersionString</code> 与标签不同，作业失败。DMG 作为产物上传供 cask 作业使用。</li>
+<li><strong>检查 appcast</strong>：<code class="notranslate">scripts/publish-appcast.sh --check &lt;tag&gt; dist/MacroSIP.app</code> 获取 <code class="notranslate">gh-pages</code>，并拒绝更新源中已在另一版本下存在的构建号。</li>
+<li><strong>创建 GitHub Release</strong>，使用 <code class="notranslate">gh release create</code>：标题 = 标签，生成的说明前面加一行固定文字，说明更新后 macOS 会再次请求麦克风访问权限，带 <code class="notranslate">-</code> 的标签使用 <code class="notranslate">--prerelease</code>。重新运行会保留 release 并用 <code class="notranslate">--clobber</code> 替换 DMG。</li>
+<li><strong>更新 appcast</strong>：用 GitHub 的 Markdown API 将 release 正文渲染为 HTML，<code class="notranslate">scripts/publish-appcast.sh &lt;tag&gt; &lt;dmg&gt;</code> 运行 <code class="notranslate">scripts/make-appcast.sh</code>，后者调用 Sparkle 的 <code class="notranslate">generate_appcast</code>（来自 <code class="notranslate">.build/artifacts/sparkle/Sparkle/bin</code>），使用 <code class="notranslate">SPARKLE_PRIVATE_KEY</code> 中的 EdDSA 密钥、release 资源的下载 URL、<code class="notranslate">--embed-release-notes</code>、候选版的 <code class="notranslate">--channel beta</code>，并保留所有早期条目（<code class="notranslate">--maximum-versions 0</code>，无增量更新）。结果提交到 <code class="notranslate">gh-pages</code> 分支（首次运行时作为孤立分支创建；当另一次发布先推送时，在重新获取后最多重试推送五次），并作为 <code class="notranslate">appcast.xml</code> 附加到 release。</li>
+</ol>
+<p dir="auto"><code class="notranslate">ubuntu-latest</code> 上的作业 <code class="notranslate">homebrew</code>，在 <code class="notranslate">dmg</code> 之后：<code class="notranslate">TAP_TOKEN</code> 密钥为空时跳过；否则用该令牌检出 <code class="notranslate">HSMM/homebrew-tap</code>，下载 DMG 产物，并在设置了 <code class="notranslate">TAP_DIR</code> 的情况下运行 <code class="notranslate">scripts/update-cask.sh &lt;tag&gt; &lt;dmg&gt;</code>，它将 <code class="notranslate">packaging/homebrew/macrosip.rb</code>（版本、SHA-256）填入 <code class="notranslate">Casks/macrosip.rb</code>，提交 <code class="notranslate">macrosip &lt;tag&gt;</code> 并推送。一次性设置：创建公开仓库 <code class="notranslate">HSMM/homebrew-tap</code>，创建一个仅对该仓库具有 Contents 读写权限的细粒度个人访问令牌，将其存为 <code class="notranslate">HSMM/MacroSIP</code> 的 Actions 密钥 <code class="notranslate">TAP_TOKEN</code>。cask 声明 <code class="notranslate">auto_updates true</code> 和 <code class="notranslate">depends_on macos: :sonoma</code>；Homebrew 接受 <code class="notranslate">26.0.0-rc.1</code> 作为版本。</p>
+<p dir="auto">手动、不经 CI：<code class="notranslate">scripts/update-cask.sh &lt;version&gt; dist/MacroSIP-&lt;version&gt;.dmg</code> 写出 <code class="notranslate">dist/macrosip.rb</code> 并打印 git 命令（设置 <code class="notranslate">TAP_DIR=&lt;clone&gt;</code> 时会提交并推送）；<code class="notranslate">SPARKLE_PRIVATE_KEY=... APPCAST_IN=&lt;current appcast.xml&gt; scripts/make-appcast.sh &lt;version&gt; &lt;dmg&gt; dist</code> 生成 <code class="notranslate">dist/appcast.xml</code>，用于上传到 release 和 <code class="notranslate">gh-pages</code>。没有该环境变量时，<code class="notranslate">generate_appcast</code> 从 <code class="notranslate">generate_keys --account macrosip</code> 创建的登录钥匙串项中读取密钥。</p>
+<h2 dir="auto">更新源（ADR 0013）</h2>
+<p dir="auto">应用每天读取一次 <code class="notranslate">https://raw.githubusercontent.com/HSMM/MacroSIP/gh-pages/appcast.xml</code>（<code class="notranslate">SUFeedURL</code>，由 <code class="notranslate">make-app.sh</code> 写入；无需设置 GitHub Pages），并在安装前询问。每个条目都带有 DMG 的 EdDSA (ed25519) 签名；公钥是 <code class="notranslate">make-app.sh</code> 中的 <code class="notranslate">SPARKLE_PUBLIC_KEY</code>（Info.plist 中的 <code class="notranslate">SUPublicEDKey</code>）。私钥恰好存在于两处：Actions 密钥 <code class="notranslate">SPARKLE_PRIVATE_KEY</code> 和所有者的登录钥匙串（“MacroSIP Sparkle private key”，加上 Sparkle 自己的项，账户 <code class="notranslate">macrosip</code>）。恢复该密钥：<code class="notranslate">security find-generic-password -s "MacroSIP Sparkle private key" -w | gh secret set SPARKLE_PRIVATE_KEY --repo HSMM/MacroSIP</code>。丢失密钥意味着已安装的副本只能通过手动下载更新；泄露密钥则让任何同时能提供更新源的人都可以向用户推送代码。</p>
+<p dir="auto">候选版位于 <code class="notranslate">beta</code> 频道，仅在设置 › 通用 › 更新 › “包含候选发布版”开启时提供（当前运行的构建本身是候选版时默认开启）。正式版没有频道，面向所有人。appcast 保留发布时的说明；要更改它们，请编辑 release 并重新运行 appcast 作业。appcast 步骤失败的发布在 GitHub 上可见，但在重新运行该作业之前不会在应用中提供。</p>
+<h2 dir="auto">签名</h2>
+<p dir="auto">构建使用临时签名加强化运行时（<code class="notranslate">codesign --options runtime</code>），从内到外：Sparkle 的 XPC 服务、<code class="notranslate">Autoupdate</code>、<code class="notranslate">Updater.app</code>、框架，然后是带 <code class="notranslate">packaging/Entitlements.plist</code> 的应用。entitlements 为 <code class="notranslate">com.apple.security.device.audio-input</code>、<code class="notranslate">com.apple.security.personal-information.addressbook</code> 和 <code class="notranslate">com.apple.security.cs.disable-library-validation</code>；最后一项之所以存在，是因为临时签名没有 Team ID，库验证会拒绝内嵌的 Sparkle 框架。不使用强化运行时的签名被否决：那也会允许向拥有麦克风权限的进程注入 <code class="notranslate">DYLD_INSERT_LIBRARIES</code>。</p>
+<p dir="auto">对用户的影响（ADR 0007）：首次启动显示“身份不明的开发者”对话框（右键点按、打开，或 <code class="notranslate">xattr -dr com.apple.quarantine</code>），由 Sparkle 安装的更新通过 EdDSA 签名获得信任并且启动时不再出现该对话框，macOS 将麦克风权限绑定到确切的构建，因此每次更新后都会再次询问。Developer ID 签名和公证计划在以后实现（<code class="notranslate">docs/ROADMAP.md</code>）；有了 Developer ID 后，请移除库验证的 entitlement。</p>
+<p dir="auto">另见 <a href="building.html">构建</a>、<a href="testing.html">测试</a>、<a href="installation.html">安装</a>。</p>
+<p dir="auto">其他页面：<a href="index.html">首页</a> · <a href="../en/index.html">Home</a> (English)</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

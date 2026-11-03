@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MacroSIP 文档</title>
+<meta name="description" content="MacroSIP 文档">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/index.html">
+<link rel="alternate" hreflang="ru" href="../ru/index.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/index.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/index.html" hreflang="en">English</a><a href="../ru/index.html" hreflang="ru">Русский</a><a href="../zh/index.html" hreflang="zh-Hans" aria-current=true>中文</a></div></header>
+<div class="layout">
+<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html" aria-current=page>首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html">通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="directory.html">目录</a></li><li><a href="quick-keys.html">快捷键</a></li><li><a href="audio.html">音频</a></li><li><a href="settings.html">设置</a></li><li><a href="menu-bar.html">菜单栏</a></li><li><a href="troubleshooting.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="architecture.html">架构</a></li><li><a href="building.html">构建</a></li><li><a href="testing.html">测试</a></li><li><a href="releasing.html">发布</a></li><li><a href="contributing.html">参与贡献</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">MacroSIP</h1>
+<p dir="auto">MacroSIP 是一款面向 macOS 14 及更新版本的 SIP 软电话。它可以同时注册多个 SIP 账户，最多处理四路通话，支持保持、转接、本地会议和录音，并且只占用一个小窗口加一个菜单栏图标。界面使用原生 Swift 和 SwiftUI 编写，SIP 引擎是 <a href="https://github.com/pjsip/pjproject">PJSIP</a> 2.17；没有 Electron，也没有 Qt。</p>
+<p dir="auto"><strong>用户指南</strong></p>
+<ul dir="auto">
+<li><a href="installation.html">安装</a></li>
+<li><a href="accounts.html">账户</a></li>
+<li><a href="calls.html">通话</a></li>
+<li><a href="incoming-calls.html">来电</a></li>
+<li><a href="contacts-and-call-log.html">联系人与通话记录</a></li>
+<li><a href="directory.html">目录</a></li>
+<li><a href="quick-keys.html">快捷键</a></li>
+<li><a href="audio.html">音频</a></li>
+<li><a href="settings.html">设置</a></li>
+<li><a href="menu-bar.html">菜单栏</a></li>
+<li><a href="troubleshooting.html">故障排除</a></li>
+</ul>
+<p dir="auto"><strong>开发者</strong></p>
+<ul dir="auto">
+<li><a href="architecture.html">架构</a></li>
+<li><a href="building.html">构建</a></li>
+<li><a href="testing.html">测试</a></li>
+<li><a href="releasing.html">发布</a></li>
+<li><a href="contributing.html">参与贡献</a></li>
+</ul>
+<h2 dir="auto">版本</h2>
+<p dir="auto">版本号形如 <code class="notranslate">YY.MINOR.PATCH</code>，因此 2026 年的版本线是 <strong>26</strong>。首个公开发布版是 <strong>26.0.0</strong>（2026 年 10 月 14 日）；它包含本指南描述的全部内容。<strong>26.0.1</strong>（同日）将界面语言精简为英语和俄语。</p>
+<p dir="auto">后续版本将带来公证、视频、聊天、全局热键、MicroSIP 导入以及蓝牙耳机按键。完整计划见 <a href="https://github.com/HSMM/MacroSIP/blob/main/docs/ROADMAP.md">docs/ROADMAP.md</a>。</p>
+<h2 dir="auto">用户指南</h2>
+<ul dir="auto">
+<li><a href="installation.html">安装</a> — 系统要求、Homebrew 或 DMG、首次启动、更新、日志文件。</li>
+<li><a href="accounts.html">账户</a> — 添加 SIP 账户、“高级”组、多个账户、账户弹出菜单、状态栏状态。</li>
+<li><a href="calls.html">通话</a> — 拨号、通话面板、保持、静音、DTMF、转接、多路通话、会议、音量、通话质量、录音。</li>
+<li><a href="incoming-calls.html">来电</a> — 浮动窗口与通知、自动接听、勿扰模式、拒接规则、语音信箱指示。</li>
+<li><a href="contacts-and-call-log.html">联系人与通话记录</a> — 联系人名片、个人收藏、在线状态、通话记录条目与回放。</li>
+<li><a href="directory.html">目录</a> — LDAP、URL（CSV 或 JSON）、Google 通讯录和 macOS 通讯录来源，搜索与导入。</li>
+<li><a href="quick-keys.html">快捷键</a> — 快速拨号键与 BLF 键、代接、⌘1–⌘9。</li>
+<li><a href="audio.html">音频</a> — 设备、耳机按键、铃声、保持音乐、声音事件、音频测试、回声消除、编解码器、影响音频的网络设置。</li>
+<li><a href="settings.html">设置</a> — 按顺序介绍每个面板和每一行。</li>
+<li><a href="menu-bar.html">菜单栏</a> — 状态项、它的菜单、Dock 标记。</li>
+<li><a href="troubleshooting.html">故障排除</a> — 首次启动、麦克风、403 和 401、TLS、单向音频、日志、数据存放位置、如何报告问题。</li>
+</ul>
+<h2 dir="auto">开发者</h2>
+<ul dir="auto">
+<li><a href="architecture.html">架构</a></li>
+<li><a href="building.html">构建</a></li>
+<li><a href="testing.html">测试</a></li>
+<li><a href="releasing.html">发布</a></li>
+<li><a href="contributing.html">参与贡献</a></li>
+</ul>
+<h2 dir="auto">链接</h2>
+<ul dir="auto">
+<li>源代码与发布版：<a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a></li>
+<li>问题与功能请求：<a href="https://github.com/HSMM/MacroSIP/issues">github.com/HSMM/MacroSIP/issues</a></li>
+<li>许可证：GPLv2 或更新版本，因为 PJSIP 采用 GPLv2+。</li>
+</ul>
+<p dir="auto">英文版：<a href="../en/index.html">Home</a>；俄文版：<a href="../ru/index.html">Главная</a></p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

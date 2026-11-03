@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>架构 · MacroSIP 文档</title>
+<meta name="description" content="MacroSIP 文档">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/architecture.html">
+<link rel="alternate" hreflang="ru" href="../ru/architecture.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/architecture.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/architecture.html" hreflang="en">English</a><a href="../ru/architecture.html" hreflang="ru">Русский</a><a href="../zh/architecture.html" hreflang="zh-Hans" aria-current=true>中文</a></div></header>
+<div class="layout">
+<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html">通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="directory.html">目录</a></li><li><a href="quick-keys.html">快捷键</a></li><li><a href="audio.html">音频</a></li><li><a href="settings.html">设置</a></li><li><a href="menu-bar.html">菜单栏</a></li><li><a href="troubleshooting.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="architecture.html" aria-current=page>架构</a></li><li><a href="building.html">构建</a></li><li><a href="testing.html">测试</a></li><li><a href="releasing.html">发布</a></li><li><a href="contributing.html">参与贡献</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">架构</h1>
+<p dir="auto">MacroSIP 是一个 SwiftPM 包（<code class="notranslate">Package.swift</code>，Swift 6，macOS 14+），没有 Xcode 项目。Swift 代码从不包含 PJSIP 头文件：一切都通过 <code class="notranslate">CPJSUA</code> C 目标访问 PJSIP，而 UI 完全不导入 <code class="notranslate">CPJSUA</code>。本页的权威来源是 <code class="notranslate">docs/ENGINE.md</code>、<code class="notranslate">docs/DIRECTORY.md</code>、<code class="notranslate">docs/DEVELOPMENT.md</code> 以及 <code class="notranslate">docs/adr/</code> 中的 ADR。</p>
+<pre class="notranslate"><code class="notranslate">+----------------------------------------------------------------------+
+|  MacroSIPApp  (SwiftUI + AppKit)                                     |
+|  AppModel and its extensions · Views · Platform · Mock engine, demos |
++----------------------------------------------------------------------+
+|  MacroSIPCore  (Swift, no UI imports)                                |
+|  Engine actor · Models · Storage · Recording · Directory service     |
++-----------------------------------+----------------------------------+
+|  CPJSUA  (C shim, umbrella header) |  CLDAP  (C shim over libldap)   |
++-----------------------------------+----------------------------------+
+|  PJSIP 2.17 + OpenSSL 3.5 + Opus   |  libldap from the macOS SDK     |
+|  static, universal archives        |                                 |
++-----------------------------------+----------------------------------+
+   macrosip-cli -&gt; MacroSIPCore      pjsip-smoke -&gt; CPJSUA
+   Tests/MacroSIPCoreTests -&gt; MacroSIPCore
+</code></pre>
+<h2 dir="auto">目标</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>目标</th>
+<th>路径</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="notranslate">CPJSUA</code></td>
+<td><code class="notranslate">Sources/CPJSUA</code></td>
+<td>伞头文件 <code class="notranslate">CPJSUA.h</code>（定义 <code class="notranslate">PJ_AUTOCONF=1</code>，包含 <code class="notranslate">pjsua.h</code>）和 <code class="notranslate">shim.c</code>，后者包含 Swift 无法表达的辅助函数（线程注册、录音器销毁并等待、音调和增益端口、DTMF、IP 变化和域名服务器辅助函数）。链接 PJSIP、OpenSSL 和 Opus 归档。</td>
+</tr>
+<tr>
+<td><code class="notranslate">CLDAP</code></td>
+<td><code class="notranslate">Sources/CLDAP</code></td>
+<td>系统 OpenLDAP 客户端（<code class="notranslate">libldap</code>）之上的不透明句柄封装，使 Swift 从不导入 <code class="notranslate">&lt;ldap.h&gt;</code>。</td>
+</tr>
+<tr>
+<td><code class="notranslate">MacroSIPCore</code></td>
+<td><code class="notranslate">Sources/MacroSIPCore</code></td>
+<td>引擎（<code class="notranslate">Engine/</code>）、模型（<code class="notranslate">Model/</code>）、JSON 存储和钥匙串（<code class="notranslate">Storage/</code>）、录音转换（<code class="notranslate">Recording/</code>）、目录层（<code class="notranslate">Directory/</code>）、<code class="notranslate">Product.swift</code>。</td>
+</tr>
+<tr>
+<td><code class="notranslate">MacroSIPApp</code></td>
+<td><code class="notranslate">Sources/MacroSIPApp</code></td>
+<td>应用程序：<code class="notranslate">Model/</code>（AppModel）、<code class="notranslate">Views/</code>、<code class="notranslate">Platform/</code>、<code class="notranslate">Engine/</code>（工厂、模拟引擎、模拟目录）以及包含 <code class="notranslate">en.lproj</code> 和 <code class="notranslate">ru.lproj</code> 的 <code class="notranslate">Resources/</code>。依赖 Sparkle 2.7.3（ADR 0013）。</td>
+</tr>
+<tr>
+<td><code class="notranslate">macrosip-cli</code></td>
+<td><code class="notranslate">Sources/macrosip-cli</code></td>
+<td>基于 <code class="notranslate">MacroSIPCore</code> 的命令行电话：用于对 PBX 调试的交互模式，以及由 <code class="notranslate">scripts/selftest-call.sh</code> 驱动的 <code class="notranslate">--selftest</code>。包含 <code class="notranslate">SIPStub</code>，一个用于自测的小型 UDP 注册服务器。</td>
+</tr>
+<tr>
+<td><code class="notranslate">pjsip-smoke</code></td>
+<td><code class="notranslate">Sources/pjsip-smoke</code></td>
+<td>证明 Swift 能链接静态构建：创建 pjsua，打印版本、编解码器和音频设备，以 0 退出。</td>
+</tr>
+<tr>
+<td><code class="notranslate">MacroSIPCoreTests</code></td>
+<td><code class="notranslate">Tests/MacroSIPCoreTests</code></td>
+<td>Core 的 Swift Testing 测试套件（见 <a href="testing.html">测试</a>）。</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<h2 dir="auto">引擎 (MacroSIPCore)</h2>
+<p dir="auto"><strong>单个 actor。</strong><code class="notranslate">Engine</code> 是一个运行在串行 <code class="notranslate">DispatchQueue("macrosip.engine")</code> 上的 Swift <code class="notranslate">actor</code>；每个 <code class="notranslate">pjsua_*</code> 调用都在其中运行。PJSIP 要求调用线程已注册，而 GCD 可能在不同的线程池线程上运行该队列，因此每个入口点都调用 <code class="notranslate">cpjsua_thread_register()</code>（线程局部的 <code class="notranslate">pj_thread_desc</code>，注册后再调用为空操作）。<code class="notranslate">pjsua_config.thread_cnt = 1</code>；PJSIP 的工作线程轮询事件。</p>
+<p dir="auto">**回调与事件流。**pjsua 回调是没有上下文的 C 函数指针，因此它们是全局 Swift 函数，通过 <code class="notranslate">EngineBridge.shared</code>（一个受锁保护的类）访问引擎。回调将最少的数据复制到 <code class="notranslate">EngineEvent</code> 中，将其送入 <code class="notranslate">Engine.events</code>（一个单消费者的 <code class="notranslate">AsyncStream</code>）并立即返回；引擎必须完成的工作被调度为 actor 上的 <code class="notranslate">Task</code>，并且是幂等的。应用在主 actor 上迭代该流。</p>
+<p dir="auto"><strong>通话快照。</strong><code class="notranslate">CallInfo</code> 是不可变的值：id、账户、方向、状态、远端、开始时间、静音/保持/录音/会议标志、编解码器、<code class="notranslate">isSecure</code>、<code class="notranslate">isReconnecting</code>。<code class="notranslate">CallID</code> 是 <code class="notranslate">(slot, serial)</code>：pjsua 复用槽位，序列号永不重复，过期的 id 抛出 <code class="notranslate">.noSuchCall</code>。UI 在 <code class="notranslate">.incomingCall</code> 和 <code class="notranslate">.callChanged</code> 时更新或插入行，在 <code class="notranslate">.callEnded</code> 时移除。媒体连线是对所有活动通话和录音的一次期望状态调和（<code class="notranslate">reconcileMedia()</code>）。</p>
+<p dir="auto"><strong>账户。</strong><code class="notranslate">AccountMapping</code> 将 <code class="notranslate">AccountConfig</code> 转换为 <code class="notranslate">pjsua_acc_config</code>（传输、SRTP、注册服务器、代理、认证 id、注册间隔、发布、RTP 端口窗口）。密码不在 <code class="notranslate">AccountConfig</code> 中；它们来自钥匙串。已停用的账户根本不会添加到 pjsua；<code class="notranslate">registerWithServer</code> 关闭表示仅外拨。TLS 有两个监听器：默认监听器根据导出到 <code class="notranslate">ca-roots.pem</code> 的 macOS 系统根证书验证服务器（<code class="notranslate">TLSRoots.swift</code>）；另一个服务于关闭了验证的账户。</p>
+<p dir="auto"><strong>重新连接与退避</strong>（<code class="notranslate">Engine+Network.swift</code>）。<code class="notranslate">NWPathMonitor</code> 将每条路径归约为其主路由；路由变化、恢复在线或唤醒会运行一个“回合”：<code class="notranslate">pjsua_handle_ip_change</code> 重新注册账户，已确认的通话收到 re-INVITE，从而在 IP 变化后存续。临时的 REGISTER 失败变为 <code class="notranslate">.reconnecting(attempt:nextRetryIn:lastError:)</code>，延迟为 2、4、8、16、32，然后 60 秒；永久失败（401、403、TLS 证书错误）变为 <code class="notranslate">.failed</code>。媒体看门狗用对话内 OPTIONS 探测静默的通话，并在收到 408 或 481 时以“连接已断开”结束它。</p>
+<p dir="auto"><strong>质量模型</strong>（<code class="notranslate">Engine+Quality.swift</code>、<code class="notranslate">CallQualityModel.swift</code>）。<code class="notranslate">quality(of:)</code> 读取自上次采样以来窗口内的流 RTCP 统计（应用每 2 秒轮询一次），并根据编解码器、丢包、抖动和 RTT 计算简化的 ITU-T G.107 MOS：3.8 起为良好，3.0 起为一般，否则为差。</p>
+<p dir="auto"><strong>在线状态。</strong><code class="notranslate">subscribePresence(uri:)</code> 添加一个以令牌为键的 pjsua buddy；NOTIFY 正文映射到 <code class="notranslate">PresenceStatus</code>（<code class="notranslate">available</code>、<code class="notranslate">away</code>、<code class="notranslate">dnd</code>、<code class="notranslate">ringing</code>、<code class="notranslate">offline</code>），包括 Asterisk 的“on the phone”和“Ringing”备注。<code class="notranslate">PresenceRegistry</code> 是一个引用计数的关注者表：联系人和快捷键对同一目标共享一个引擎订阅；最后一个所有者取消订阅。</p>
+<p dir="auto"><strong>自动接听</strong>是一个纯函数 <code class="notranslate">AutoAnswerPolicy.decide(...)</code>：勿扰模式优先，存在另一路通话时绝不接听，<code class="notranslate">Call-Info: answer-after=N</code> 仅在来自账户自己的服务器时遵从，然后按模式 <code class="notranslate">all</code> / <code class="notranslate">contactsOnly</code> / <code class="notranslate">off</code> 和配置的延迟处理。</p>
+<p dir="auto"><strong>拨号字符串。</strong><code class="notranslate">DialString.parse(raw, account:)</code> 产生完整的 URI：<code class="notranslate">sip:</code>/<code class="notranslate">sips:</code> 原样保留，<code class="notranslate">tel:</code> 数字转为 <code class="notranslate">sip:&lt;digits&gt;@&lt;domain&gt;</code>，普通号码去除空格、括号和连字符，任何包含 <code class="notranslate">@</code> 的内容加上 <code class="notranslate">sip:</code> 前缀；TCP/TLS 账户会添加传输参数。</p>
+<p dir="auto">**通话选项与拒接规则。**一个引擎范围的 <code class="notranslate">CallOptions</code>（在 <code class="notranslate">start</code> 时设置，通过 <code class="notranslate">setCallOptions</code> 实时更改）：<code class="notranslate">incomingWhileOnCall</code>（呼叫等待提示音、仅窗口或 486 忙）、<code class="notranslate">dtmfMethod</code>（自动、RFC 2833、SIP INFO、带内）、<code class="notranslate">doNotDisturb</code>（立即 486）和 <code class="notranslate">denyIncoming</code>（<code class="notranslate">everyone</code> 发送 603，<code class="notranslate">notInContacts</code> 检查 <code class="notranslate">knownNumbers</code>，<code class="notranslate">anonymous</code> 回答 433）。这些规则在 PJSIP 线程上的 <code class="notranslate">on_incoming_call</code> 内、自动 180 之前求值，因此不会有任何响铃，决定也不依赖应用是否响应。应用只看到 <code class="notranslate">.callEnded</code> 并写入通话记录注释。</p>
+<h2 dir="auto">应用程序 (MacroSIPApp)</h2>
+<p dir="auto"><code class="notranslate">AppModel</code>（<code class="notranslate">@MainActor @Observable</code>，<code class="notranslate">Model/AppModel.swift</code>）是 UI 的唯一事实来源：它拥有引擎（<code class="notranslate">any SIPEngine</code>）、存储、钥匙串保管库和可观察状态。其扩展按领域拆分行为：<code class="notranslate">+Engine</code>（引导、事件处理、编解码器和网络应用）、<code class="notranslate">+Accounts</code>、<code class="notranslate">+Calls</code>、<code class="notranslate">+LiveCalls</code>、<code class="notranslate">+AutoAnswer</code>、<code class="notranslate">+DND</code>、<code class="notranslate">+Presence</code>、<code class="notranslate">+Quality</code>、<code class="notranslate">+QuickKeys</code>、<code class="notranslate">+Directory</code>、<code class="notranslate">+Presentation</code>。<code class="notranslate">RecordingCoordinator</code> 将完成的 WAV 转换为 M4A。引擎调用采用 <code class="notranslate">Task { try await engine.x }</code>，错误以临时横幅显示。</p>
+<p dir="auto"><code class="notranslate">SIPEngine</code>（<code class="notranslate">Engine/SIPEngine.swift</code>）是真实的 <code class="notranslate">Engine</code> 和 <code class="notranslate">MockEngine</code> 都满足的协议；<code class="notranslate">EngineFactory.make(useMock:)</code> 选择其一。<code class="notranslate">LaunchOptions.swift</code> 解析 <code class="notranslate">--mock-engine</code>、<code class="notranslate">--demo-state</code>、<code class="notranslate">--data-dir</code>、<code class="notranslate">--snapshot</code>、<code class="notranslate">--snapshot-after</code>、<code class="notranslate">--appearance</code> 和 <code class="notranslate">--log-level</code>；<code class="notranslate">DemoState.swift</code> 植入示例数据并将模拟引擎驱动到命名状态（见 <a href="testing.html">测试</a>）。</p>
+<p dir="auto"><code class="notranslate">Views/</code> 遵循 <code class="notranslate">docs/design/SCREENS.md</code>，每个界面一个文件夹（<code class="notranslate">Main/</code>、<code class="notranslate">Dialpad/</code>、<code class="notranslate">Call/</code>、<code class="notranslate">Contacts/</code>、<code class="notranslate">CallLog/</code>、<code class="notranslate">Incoming/</code>、<code class="notranslate">QuickKeys/</code>、<code class="notranslate">Directory/</code>、每个面板一个文件的 <code class="notranslate">Settings/</code>、<code class="notranslate">FirstLaunch/</code>），加上共享的 <code class="notranslate">Components/</code>（<code class="notranslate">Theme</code>、表单组件、<code class="notranslate">@Local</code> 包装器）。<code class="notranslate">Platform/</code> 存放 AppKit 和系统部分：<code class="notranslate">AppDelegate</code>、<code class="notranslate">StatusItemController</code>（菜单栏）、<code class="notranslate">IncomingCallPanelController</code>（浮动窗口）、<code class="notranslate">CallNotifications</code>、<code class="notranslate">AudioTransport</code>、<code class="notranslate">RecordingPlayer</code>、<code class="notranslate">QuickKeysMenu</code>、<code class="notranslate">Updater</code>（Sparkle）、<code class="notranslate">AppLog</code> 和 <code class="notranslate">AppInfo</code>。</p>
+<h2 dir="auto">存储</h2>
+<p dir="auto">除密码外的一切都是 <code class="notranslate">~/Library/Application Support/MacroSIP/</code> 中的 JSON（ADR 0004）：<code class="notranslate">accounts.json</code>、<code class="notranslate">contacts.json</code>、<code class="notranslate">calllog.json</code>、<code class="notranslate">settings.json</code>、<code class="notranslate">quickkeys.json</code>。<code class="notranslate">JSONStore&lt;T&gt;</code> 原子写入；损坏的文件被重命名为 <code class="notranslate">.broken-&lt;timestamp&gt;.json</code> 并使用默认值。联系人照片是 <code class="notranslate">photos/&lt;id&gt;.jpg</code> 中的 JPEG 文件。密码存放在钥匙串中，服务名 <code class="notranslate">com.hsmm.macrosip</code>，账户 = 账户 UUID（<code class="notranslate">Storage/Keychain.swift</code>）；目录机密通过 <code class="notranslate">DirectoryCredentials</code>（LDAP 绑定密码；Google 令牌在 <code class="notranslate">com.hsmm.macrosip.google</code> 下）。录音默认在 <code class="notranslate">~/Music/MacroSIP Recordings</code>，日志文件在 <code class="notranslate">~/Library/Logs/MacroSIP/MacroSIP.log</code>。</p>
+<h2 dir="auto">本地化</h2>
+<p dir="auto">ADR 0011：<code class="notranslate">Sources/MacroSIPApp/Resources/{en,ru}.lproj</code> 下的经典 <code class="notranslate">Localizable.strings</code> 和 <code class="notranslate">Localizable.stringsdict</code>，因为 <code class="notranslate">.xcstrings</code> 目录需要 Xcode 的 <code class="notranslate">xcstringstool</code>。所有查找都通过 <code class="notranslate">Model/Strings.swift</code> 中的 <code class="notranslate">L</code>；<code class="notranslate">make-app.sh</code> 将 <code class="notranslate">.lproj</code> 文件夹拷贝到 <code class="notranslate">Contents/Resources</code>，<code class="notranslate">scripts/check-strings.sh</code> 保持代码与两种语言同步。麦克风和通讯录的权限提示在 <code class="notranslate">packaging/InfoPlist/&lt;lang&gt;.lproj/InfoPlist.strings</code> 中。</p>
+<h2 dir="auto">目录层</h2>
+<p dir="auto"><code class="notranslate">DirectoryService</code>（<code class="notranslate">MacroSIPCore/Directory/</code> 中的一个 actor）为每个来源持有一个 <code class="notranslate">DirectoryProvider</code>：<code class="notranslate">MacContactsProvider</code>（Contacts 框架）、<code class="notranslate">LDAPDirectoryProvider</code>（通过 <code class="notranslate">CLDAP</code> 使用 libldap）、<code class="notranslate">URLDirectoryProvider</code>（CSV 或 JSON 源）和一个始终报告“需要登录”的 <code class="notranslate">GoogleDirectoryProvider</code> 存根。搜索同时询问所有已启用的来源，在全部应答后或 3 秒后返回；来电者查询向仅搜索的来源询问最多 1 秒；LDAP 请求有 3 秒的截止时间（导入为 30 秒）。状态通过 <code class="notranslate">AsyncStream&lt;DirectoryEvent&gt;</code> 流动。在应用中，<code class="notranslate">AppModel+Directory.swift</code> 运行搜索、查询、导入和计划，<code class="notranslate">Engine/LiveDirectory.swift</code> 包装该服务，<code class="notranslate">MockDirectory.swift</code> 服务于演示启动，<code class="notranslate">Model/DirectoryMerge.swift</code> 按号码将导入合并到联系人：由来源创建的名片跟随目录，用户的名片只接收自己缺少的部分。</p>
+<h2 dir="auto">决策记录</h2>
+<p dir="auto"><a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0001-platform-and-ui-stack.md">0001 平台与 UI 技术栈</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0002-pjsip-build.md">0002 PJSIP 构建</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0003-product-scope.md">0003 产品范围</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0004-storage.md">0004 存储</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0005-accounts-and-calls.md">0005 账户与通话</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0006-quality-and-testing.md">0006 质量与测试</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0007-license-and-distribution.md">0007 许可证与分发</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0008-development-workflow.md">0008 开发流程</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0009-ui-decisions.md">0009 UI 决策</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0010-versioning.md">0010 版本号</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0011-localization-files.md">0011 本地化文件</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0012-universal-build.md">0012 通用构建</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0013-in-app-updates-sparkle.md">0013 应用内更新</a></p>
+<p dir="auto">另见 <a href="building.html">构建</a>、<a href="testing.html">测试</a>、<a href="releasing.html">发布</a>、<a href="contributing.html">参与贡献</a>。</p>
+<p dir="auto">其他页面：<a href="index.html">首页</a> · <a href="../en/index.html">Home</a> (English)</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

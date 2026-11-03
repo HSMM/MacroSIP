@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Architecture · MacroSIP documentation</title>
+<meta name="description" content="MacroSIP documentation">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/architecture.html">
+<link rel="alternate" hreflang="ru" href="../ru/architecture.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/architecture.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/architecture.html" hreflang="en" aria-current=true>English</a><a href="../ru/architecture.html" hreflang="ru">Русский</a><a href="../zh/architecture.html" hreflang="zh-Hans">中文</a></div></header>
+<div class="layout">
+<nav aria-label="Contents"><details><summary>Contents</summary><div class="links"><ul><li><a href="index.html">Home</a></li></ul><h2>User guide</h2><ul><li><a href="installation.html">Installation</a></li><li><a href="accounts.html">Accounts</a></li><li><a href="calls.html">Calls</a></li><li><a href="incoming-calls.html">Incoming calls</a></li><li><a href="contacts-and-call-log.html">Contacts and call log</a></li><li><a href="directory.html">Directory</a></li><li><a href="quick-keys.html">Quick keys</a></li><li><a href="audio.html">Audio</a></li><li><a href="settings.html">Settings</a></li><li><a href="menu-bar.html">Menu bar</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul><h2>For developers</h2><ul><li><a href="architecture.html" aria-current=page>Architecture</a></li><li><a href="building.html">Building</a></li><li><a href="testing.html">Testing</a></li><li><a href="releasing.html">Releasing</a></li><li><a href="contributing.html">Contributing</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">Architecture</h1>
+<p dir="auto">MacroSIP is one SwiftPM package (<code class="notranslate">Package.swift</code>, Swift 6, macOS 14+) with no Xcode project. Swift code never includes a PJSIP header: everything reaches PJSIP through the <code class="notranslate">CPJSUA</code> C target, and the UI never imports <code class="notranslate">CPJSUA</code> at all. The sources of truth for this page are <code class="notranslate">docs/ENGINE.md</code>, <code class="notranslate">docs/DIRECTORY.md</code>, <code class="notranslate">docs/DEVELOPMENT.md</code> and the ADRs in <code class="notranslate">docs/adr/</code>.</p>
+<pre class="notranslate"><code class="notranslate">+----------------------------------------------------------------------+
+|  MacroSIPApp  (SwiftUI + AppKit)                                     |
+|  AppModel and its extensions · Views · Platform · Mock engine, demos |
++----------------------------------------------------------------------+
+|  MacroSIPCore  (Swift, no UI imports)                                |
+|  Engine actor · Models · Storage · Recording · Directory service     |
++-----------------------------------+----------------------------------+
+|  CPJSUA  (C shim, umbrella header) |  CLDAP  (C shim over libldap)   |
++-----------------------------------+----------------------------------+
+|  PJSIP 2.17 + OpenSSL 3.5 + Opus   |  libldap from the macOS SDK     |
+|  static, universal archives        |                                 |
++-----------------------------------+----------------------------------+
+   macrosip-cli -&gt; MacroSIPCore      pjsip-smoke -&gt; CPJSUA
+   Tests/MacroSIPCoreTests -&gt; MacroSIPCore
+</code></pre>
+<h2 dir="auto">Targets</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Target</th>
+<th>Path</th>
+<th>What it holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="notranslate">CPJSUA</code></td>
+<td><code class="notranslate">Sources/CPJSUA</code></td>
+<td>Umbrella header <code class="notranslate">CPJSUA.h</code> (defines <code class="notranslate">PJ_AUTOCONF=1</code>, includes <code class="notranslate">pjsua.h</code>) and <code class="notranslate">shim.c</code> with helpers Swift cannot express (thread registration, recorder destroy-and-wait, tone and gain ports, DTMF, IP-change and nameserver helpers). Links the PJSIP, OpenSSL and Opus archives.</td>
+</tr>
+<tr>
+<td><code class="notranslate">CLDAP</code></td>
+<td><code class="notranslate">Sources/CLDAP</code></td>
+<td>Opaque-handle wrapper over the system OpenLDAP client (<code class="notranslate">libldap</code>), so Swift never imports <code class="notranslate">&lt;ldap.h&gt;</code>.</td>
+</tr>
+<tr>
+<td><code class="notranslate">MacroSIPCore</code></td>
+<td><code class="notranslate">Sources/MacroSIPCore</code></td>
+<td>The engine (<code class="notranslate">Engine/</code>), models (<code class="notranslate">Model/</code>), JSON stores and Keychain (<code class="notranslate">Storage/</code>), recording conversion (<code class="notranslate">Recording/</code>), the directory layer (<code class="notranslate">Directory/</code>), <code class="notranslate">Product.swift</code>.</td>
+</tr>
+<tr>
+<td><code class="notranslate">MacroSIPApp</code></td>
+<td><code class="notranslate">Sources/MacroSIPApp</code></td>
+<td>The application: <code class="notranslate">Model/</code> (AppModel), <code class="notranslate">Views/</code>, <code class="notranslate">Platform/</code>, <code class="notranslate">Engine/</code> (factory, mock engine, mock directory) and <code class="notranslate">Resources/</code> with <code class="notranslate">en.lproj</code> and <code class="notranslate">ru.lproj</code>. Depends on Sparkle 2.7.3 (ADR 0013).</td>
+</tr>
+<tr>
+<td><code class="notranslate">macrosip-cli</code></td>
+<td><code class="notranslate">Sources/macrosip-cli</code></td>
+<td>Command-line phone over <code class="notranslate">MacroSIPCore</code>: an interactive mode for debugging against a PBX, and <code class="notranslate">--selftest</code>, which <code class="notranslate">scripts/selftest-call.sh</code> drives. Contains <code class="notranslate">SIPStub</code>, a small UDP registrar for the self-test.</td>
+</tr>
+<tr>
+<td><code class="notranslate">pjsip-smoke</code></td>
+<td><code class="notranslate">Sources/pjsip-smoke</code></td>
+<td>Proves Swift links the static build: creates pjsua, prints version, codecs and audio devices, exits 0.</td>
+</tr>
+<tr>
+<td><code class="notranslate">MacroSIPCoreTests</code></td>
+<td><code class="notranslate">Tests/MacroSIPCoreTests</code></td>
+<td>Swift Testing suites for Core (see <a href="testing.html">Testing</a>).</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<h2 dir="auto">Engine (MacroSIPCore)</h2>
+<p dir="auto"><strong>One actor.</strong> <code class="notranslate">Engine</code> is a Swift <code class="notranslate">actor</code> on a serial <code class="notranslate">DispatchQueue("macrosip.engine")</code>; every <code class="notranslate">pjsua_*</code> call runs inside it. PJSIP demands registered calling threads, and GCD may run the queue on different pool threads, so every entry point calls <code class="notranslate">cpjsua_thread_register()</code> (a thread-local <code class="notranslate">pj_thread_desc</code>, no-op once registered). <code class="notranslate">pjsua_config.thread_cnt = 1</code>; PJSIP's worker thread polls events.</p>
+<p dir="auto"><strong>Callbacks and the event stream.</strong> pjsua callbacks are C function pointers without context, so they are global Swift functions that reach the engine through <code class="notranslate">EngineBridge.shared</code> (a lock-protected class). A callback copies the minimal data into an <code class="notranslate">EngineEvent</code>, yields it to <code class="notranslate">Engine.events</code> (an <code class="notranslate">AsyncStream</code>, single consumer) and returns at once; work the engine must do is scheduled as a <code class="notranslate">Task</code> on the actor and is idempotent. The app iterates the stream on the main actor.</p>
+<p dir="auto"><strong>Call snapshots.</strong> <code class="notranslate">CallInfo</code> is an immutable value: id, account, direction, state, remote party, start time, mute/hold/recording/conference flags, codec, <code class="notranslate">isSecure</code>, <code class="notranslate">isReconnecting</code>. <code class="notranslate">CallID</code> is <code class="notranslate">(slot, serial)</code>: pjsua reuses slots, serials never repeat, a stale id throws <code class="notranslate">.noSuchCall</code>. The UI upserts rows on <code class="notranslate">.incomingCall</code> and <code class="notranslate">.callChanged</code> and removes them on <code class="notranslate">.callEnded</code>. Media wiring is one desired-state reconcile (<code class="notranslate">reconcileMedia()</code>) over all live calls and recordings.</p>
+<p dir="auto"><strong>Accounts.</strong> <code class="notranslate">AccountMapping</code> turns <code class="notranslate">AccountConfig</code> into <code class="notranslate">pjsua_acc_config</code> (transport, SRTP, registrar, proxy, auth id, registration interval, publishing, RTP port window). Passwords are not in <code class="notranslate">AccountConfig</code>; they come from the Keychain. A disabled account is not added to pjsua at all; <code class="notranslate">registerWithServer</code> off means outgoing only. TLS has two listeners: the default one verifies the server against the macOS system roots exported to <code class="notranslate">ca-roots.pem</code> (<code class="notranslate">TLSRoots.swift</code>); the other serves accounts with verification switched off.</p>
+<p dir="auto"><strong>Reconnect and backoff</strong> (<code class="notranslate">Engine+Network.swift</code>). An <code class="notranslate">NWPathMonitor</code> reduces each path to its primary route; a route change, a return online or a wake runs one "round": <code class="notranslate">pjsua_handle_ip_change</code> re-registers the accounts and confirmed calls get a re-INVITE, so they survive an IP change. Temporary REGISTER failures become <code class="notranslate">.reconnecting(attempt:nextRetryIn:lastError:)</code> with delays of 2, 4, 8, 16, 32, then 60 s; permanent ones (401, 403, TLS certificate errors) become <code class="notranslate">.failed</code>. A media watchdog probes a silent call with in-dialog OPTIONS and ends it as "connection lost" on 408 or 481.</p>
+<p dir="auto"><strong>Quality model</strong> (<code class="notranslate">Engine+Quality.swift</code>, <code class="notranslate">CallQualityModel.swift</code>). <code class="notranslate">quality(of:)</code> reads the stream's RTCP statistics over the window since the previous sample (the app polls every 2 s) and computes a simplified ITU-T G.107 MOS from codec, loss, jitter and RTT: good from 3.8, fair from 3.0, else poor.</p>
+<p dir="auto"><strong>Presence.</strong> <code class="notranslate">subscribePresence(uri:)</code> adds a pjsua buddy keyed by a token; NOTIFY bodies map to <code class="notranslate">PresenceStatus</code> (<code class="notranslate">available</code>, <code class="notranslate">away</code>, <code class="notranslate">dnd</code>, <code class="notranslate">ringing</code>, <code class="notranslate">offline</code>), including Asterisk's "on the phone" and "Ringing" notes. <code class="notranslate">PresenceRegistry</code> is a reference-counted table of watchers: contacts and quick keys share one engine subscription per target; the last owner unsubscribes it.</p>
+<p dir="auto"><strong>Auto-answer</strong> is a pure function, <code class="notranslate">AutoAnswerPolicy.decide(...)</code>: Do Not Disturb wins, never while another call exists, <code class="notranslate">Call-Info: answer-after=N</code> is honoured only from the account's own server, then mode <code class="notranslate">all</code> / <code class="notranslate">contactsOnly</code> / <code class="notranslate">off</code> with the configured delay.</p>
+<p dir="auto"><strong>Dial strings.</strong> <code class="notranslate">DialString.parse(raw, account:)</code> yields a full URI: <code class="notranslate">sip:</code>/<code class="notranslate">sips:</code> as is, <code class="notranslate">tel:</code> digits to <code class="notranslate">sip:&lt;digits&gt;@&lt;domain&gt;</code>, plain numbers stripped of spaces, parentheses and dashes, anything with <code class="notranslate">@</code> prefixed with <code class="notranslate">sip:</code>; a transport parameter is added for TCP/TLS accounts.</p>
+<p dir="auto"><strong>Call options and deny rules.</strong> One engine-wide <code class="notranslate">CallOptions</code> (set at <code class="notranslate">start</code>, changed live with <code class="notranslate">setCallOptions</code>): <code class="notranslate">incomingWhileOnCall</code> (call waiting tone, window only, or 486 busy), <code class="notranslate">dtmfMethod</code> (automatic, RFC 2833, SIP INFO, in-band), <code class="notranslate">doNotDisturb</code> (486 at once), and <code class="notranslate">denyIncoming</code> (<code class="notranslate">everyone</code> sends 603, <code class="notranslate">notInContacts</code> checks <code class="notranslate">knownNumbers</code>, <code class="notranslate">anonymous</code> answers 433). The rules are evaluated inside <code class="notranslate">on_incoming_call</code> on the PJSIP thread, before the automatic 180, so nothing rings and the decision does not depend on the app being responsive. The app only sees <code class="notranslate">.callEnded</code> and writes the call-log note.</p>
+<h2 dir="auto">Application (MacroSIPApp)</h2>
+<p dir="auto"><code class="notranslate">AppModel</code> (<code class="notranslate">@MainActor @Observable</code>, <code class="notranslate">Model/AppModel.swift</code>) is the single source of truth for the UI: it owns the engine (<code class="notranslate">any SIPEngine</code>), the stores, the Keychain vault and the observable state. Its extensions split the behaviour by area: <code class="notranslate">+Engine</code> (bootstrap, event handling, codec and network application), <code class="notranslate">+Accounts</code>, <code class="notranslate">+Calls</code>, <code class="notranslate">+LiveCalls</code>, <code class="notranslate">+AutoAnswer</code>, <code class="notranslate">+DND</code>, <code class="notranslate">+Presence</code>, <code class="notranslate">+Quality</code>, <code class="notranslate">+QuickKeys</code>, <code class="notranslate">+Directory</code>, <code class="notranslate">+Presentation</code>. <code class="notranslate">RecordingCoordinator</code> converts finished WAVs to M4A. Engine calls are <code class="notranslate">Task { try await engine.x }</code> with errors shown as a transient banner.</p>
+<p dir="auto"><code class="notranslate">SIPEngine</code> (<code class="notranslate">Engine/SIPEngine.swift</code>) is the protocol both the real <code class="notranslate">Engine</code> and <code class="notranslate">MockEngine</code> satisfy; <code class="notranslate">EngineFactory.make(useMock:)</code> picks one. <code class="notranslate">LaunchOptions.swift</code> parses <code class="notranslate">--mock-engine</code>, <code class="notranslate">--demo-state</code>, <code class="notranslate">--data-dir</code>, <code class="notranslate">--snapshot</code>, <code class="notranslate">--snapshot-after</code>, <code class="notranslate">--appearance</code> and <code class="notranslate">--log-level</code>; <code class="notranslate">DemoState.swift</code> seeds sample data and drives the mock into named states (see <a href="testing.html">Testing</a>).</p>
+<p dir="auto"><code class="notranslate">Views/</code> follows <code class="notranslate">docs/design/SCREENS.md</code>, one folder per screen (<code class="notranslate">Main/</code>, <code class="notranslate">Dialpad/</code>, <code class="notranslate">Call/</code>, <code class="notranslate">Contacts/</code>, <code class="notranslate">CallLog/</code>, <code class="notranslate">Incoming/</code>, <code class="notranslate">QuickKeys/</code>, <code class="notranslate">Directory/</code>, <code class="notranslate">Settings/</code> with one file per pane, <code class="notranslate">FirstLaunch/</code>) plus shared <code class="notranslate">Components/</code> (<code class="notranslate">Theme</code>, form components, the <code class="notranslate">@Local</code> wrapper). <code class="notranslate">Platform/</code> holds the AppKit and system pieces: <code class="notranslate">AppDelegate</code>, <code class="notranslate">StatusItemController</code> (menu bar), <code class="notranslate">IncomingCallPanelController</code> (floating window), <code class="notranslate">CallNotifications</code>, <code class="notranslate">AudioTransport</code>, <code class="notranslate">RecordingPlayer</code>, <code class="notranslate">QuickKeysMenu</code>, <code class="notranslate">Updater</code> (Sparkle), <code class="notranslate">AppLog</code> and <code class="notranslate">AppInfo</code>.</p>
+<h2 dir="auto">Storage</h2>
+<p dir="auto">Everything except passwords is JSON in <code class="notranslate">~/Library/Application Support/MacroSIP/</code> (ADR 0004): <code class="notranslate">accounts.json</code>, <code class="notranslate">contacts.json</code>, <code class="notranslate">calllog.json</code>, <code class="notranslate">settings.json</code>, <code class="notranslate">quickkeys.json</code>. <code class="notranslate">JSONStore&lt;T&gt;</code> writes atomically; a corrupt file is renamed <code class="notranslate">.broken-&lt;timestamp&gt;.json</code> and the default is used. Contact photos are JPEG files in <code class="notranslate">photos/&lt;id&gt;.jpg</code>. Passwords live in the Keychain under service <code class="notranslate">com.hsmm.macrosip</code>, account = the account UUID (<code class="notranslate">Storage/Keychain.swift</code>); directory secrets go through <code class="notranslate">DirectoryCredentials</code> (LDAP bind password; Google token under <code class="notranslate">com.hsmm.macrosip.google</code>). Recordings default to <code class="notranslate">~/Music/MacroSIP Recordings</code>, the log file to <code class="notranslate">~/Library/Logs/MacroSIP/MacroSIP.log</code>.</p>
+<h2 dir="auto">Localization</h2>
+<p dir="auto">ADR 0011: classic <code class="notranslate">Localizable.strings</code> and <code class="notranslate">Localizable.stringsdict</code> under <code class="notranslate">Sources/MacroSIPApp/Resources/{en,ru}.lproj</code>, because <code class="notranslate">.xcstrings</code> catalogs need Xcode's <code class="notranslate">xcstringstool</code>. All lookups go through <code class="notranslate">L</code> in <code class="notranslate">Model/Strings.swift</code>; <code class="notranslate">make-app.sh</code> copies the <code class="notranslate">.lproj</code> folders into <code class="notranslate">Contents/Resources</code>, and <code class="notranslate">scripts/check-strings.sh</code> keeps code and both languages in sync. The microphone and Contacts prompts are in <code class="notranslate">packaging/InfoPlist/&lt;lang&gt;.lproj/InfoPlist.strings</code>.</p>
+<h2 dir="auto">Directory layer</h2>
+<p dir="auto"><code class="notranslate">DirectoryService</code> (an actor in <code class="notranslate">MacroSIPCore/Directory/</code>) holds one <code class="notranslate">DirectoryProvider</code> per source: <code class="notranslate">MacContactsProvider</code> (Contacts framework), <code class="notranslate">LDAPDirectoryProvider</code> (libldap through <code class="notranslate">CLDAP</code>), <code class="notranslate">URLDirectoryProvider</code> (CSV or JSON feed) and a <code class="notranslate">GoogleDirectoryProvider</code> stub that always reports "Sign in required". Search asks every enabled source at once and returns after all answered or after 3 s; caller lookup asks search-only sources for at most 1 s; an LDAP request has a 3 s deadline (30 s for import). Statuses flow through an <code class="notranslate">AsyncStream&lt;DirectoryEvent&gt;</code>. In the app, <code class="notranslate">AppModel+Directory.swift</code> runs search, lookup, import and the schedule, <code class="notranslate">Engine/LiveDirectory.swift</code> wraps the service, <code class="notranslate">MockDirectory.swift</code> serves demo launches, and <code class="notranslate">Model/DirectoryMerge.swift</code> merges imports into Contacts by number: a card the source created follows the directory, a user's card only receives what it lacks.</p>
+<h2 dir="auto">Decision records</h2>
+<p dir="auto"><a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0001-platform-and-ui-stack.md">0001 platform and UI stack</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0002-pjsip-build.md">0002 PJSIP build</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0003-product-scope.md">0003 product scope</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0004-storage.md">0004 storage</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0005-accounts-and-calls.md">0005 accounts and calls</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0006-quality-and-testing.md">0006 quality and testing</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0007-license-and-distribution.md">0007 license and distribution</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0008-development-workflow.md">0008 development workflow</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0009-ui-decisions.md">0009 UI decisions</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0010-versioning.md">0010 versioning</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0011-localization-files.md">0011 localization files</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0012-universal-build.md">0012 universal build</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0013-in-app-updates-sparkle.md">0013 in-app updates</a></p>
+<p dir="auto">See also <a href="building.html">Building</a>, <a href="testing.html">Testing</a>, <a href="releasing.html">Releasing</a>, <a href="contributing.html">Contributing</a>.</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

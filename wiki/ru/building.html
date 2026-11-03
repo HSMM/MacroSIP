@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Сборка · Документация MacroSIP</title>
+<meta name="description" content="Документация MacroSIP">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/building.html">
+<link rel="alternate" hreflang="ru" href="../ru/building.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/building.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/building.html" hreflang="en">English</a><a href="../ru/building.html" hreflang="ru" aria-current=true>Русский</a><a href="../zh/building.html" hreflang="zh-Hans">中文</a></div></header>
+<div class="layout">
+<nav aria-label="Содержание"><details><summary>Содержание</summary><div class="links"><ul><li><a href="index.html">Главная</a></li></ul><h2>Руководство пользователя</h2><ul><li><a href="installation.html">Установка</a></li><li><a href="accounts.html">Аккаунты</a></li><li><a href="calls.html">Звонки</a></li><li><a href="incoming-calls.html">Входящие звонки</a></li><li><a href="contacts-and-call-log.html">Контакты и журнал</a></li><li><a href="directory.html">Справочник</a></li><li><a href="quick-keys.html">Быстрые клавиши</a></li><li><a href="audio.html">Звук</a></li><li><a href="settings.html">Настройки</a></li><li><a href="menu-bar.html">Строка меню</a></li><li><a href="troubleshooting.html">Решение проблем</a></li></ul><h2>Для разработчиков</h2><ul><li><a href="architecture.html">Устройство</a></li><li><a href="building.html" aria-current=page>Сборка</a></li><li><a href="testing.html">Тесты</a></li><li><a href="releasing.html">Релизы</a></li><li><a href="contributing.html">Участие</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">Сборка</h1>
+<p dir="auto">MacroSIP собирается одним SwiftPM и Xcode Command Line Tools. Проекта Xcode нет, Homebrew не участвует: OpenSSL и Opus компилируются из зафиксированных исходных архивов вместе с PJSIP. Подробности — в <code class="notranslate">scripts/README-build.md</code>, <code class="notranslate">scripts/build-pjsip.sh</code>, <code class="notranslate">scripts/make-app.sh</code> и ADR 0012.</p>
+<h2 dir="auto">Требования</h2>
+<ul dir="auto">
+<li>macOS 14 или новее на Mac с <strong>Apple Silicon</strong>. Хост сборки должен быть arm64: половина x86_64 универсальной сборки кросс-компилируется на той же машине, и <code class="notranslate">build-pjsip.sh</code> останавливается на хосте Intel.</li>
+<li>Xcode Command Line Tools (<code class="notranslate">xcode-select --install</code>). Полный Xcode не нужен; если он установлен, он открывает <code class="notranslate">Package.swift</code> напрямую.</li>
+<li>Доступ по сети к github.com и downloads.xiph.org при первом запуске (архивы затем кэшируются).</li>
+<li>Необязательно: Rosetta 2 (<code class="notranslate">softwareupdate --install-rosetta --agree-to-license</code>), чтобы запускать срез x86_64 на Apple Silicon.</li>
+</ul>
+<h2 dir="auto">Шаг 1: <code class="notranslate">scripts/build-pjsip.sh</code></h2>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">scripts/build-pjsip.sh            <span class="pl-c"><span class="pl-c">#</span> first run about 5 minutes on an 8-core M-series Mac, then seconds</span>
+scripts/build-pjsip.sh --clean    <span class="pl-c"><span class="pl-c">#</span> remove every output except the downloads and rebuild</span>
+JOBS=4 scripts/build-pjsip.sh     <span class="pl-c"><span class="pl-c">#</span> limit parallelism</span>
+KEEP_BUILD=1 scripts/build-pjsip.sh   <span class="pl-c"><span class="pl-c">#</span> keep the source trees under third_party/build</span></pre></div>
+<p dir="auto">Скрипт собирает для arm64 (нативно) и x86_64 (<code class="notranslate">--host=x86_64-apple-darwin</code>) с <code class="notranslate">-mmacosx-version-min=14.0</code>:</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Компонент</th>
+<th>Версия</th>
+<th>Параметры</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OpenSSL</td>
+<td>3.5.9 (LTS)</td>
+<td><code class="notranslate">no-shared no-module no-tests</code>, только <code class="notranslate">build_libs</code> и <code class="notranslate">install_dev</code>; <code class="notranslate">darwin64-arm64-cc</code> / <code class="notranslate">darwin64-x86_64-cc</code></td>
+</tr>
+<tr>
+<td>Opus</td>
+<td>1.6.1</td>
+<td><code class="notranslate">--disable-shared --enable-static --disable-doc --disable-extra-programs</code></td>
+</tr>
+<tr>
+<td>pjproject</td>
+<td>2.17</td>
+<td><code class="notranslate">third_party/pjsip/config_site.h</code> устанавливается до configure; <code class="notranslate">--disable-shared --disable-pjsua2 --disable-video --disable-darwin-ssl --disable-speex-aec</code>, без L16, AMR, SILK, bcg729 (G.729) и Lyra; <code class="notranslate">--with-ssl</code> и <code class="notranslate">--with-opus</code> указывают на <code class="notranslate">third_party/deps/&lt;arch&gt;</code></td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">Каждый архив сверяется с SHA-256, зафиксированным в начале скрипта. <code class="notranslate">--disable-darwin-ssl</code> важен: иначе configure предпочёл бы устаревший SecureTransport вместо OpenSSL. Скрипт проверяет журнал configure (OpenSSL и Opus найдены, кодеки G.722.1, GSM, iLBC и Speex не отключены), проверяет архитектуру и <code class="notranslate">minos</code> каждого архива и <code class="notranslate">pjsua</code> и завершается с ошибкой, если <code class="notranslate">pjsua</code> линкует что-либо из <code class="notranslate">/opt/homebrew</code>.</p>
+<p dir="auto"><code class="notranslate">config_site.h</code> включает IPv6, SRTP (SDES, без DTLS), эхоподавитель WebRTC, TLS, кэширование заголовка авторизации, <code class="notranslate">PJSUA_MAX_CALLS</code> 8 и кодеки Opus, G.711, G.722, G.722.1, GSM, iLBC и Speex (G.722.1, GSM, iLBC и Speex остаются выключенными в движке, пока пользователь их не включит; как добавить кодек, см. <a href="contributing.html">Участие</a>). Видео выключено.</p>
+<p dir="auto">Результаты по архитектурам объединяются через <code class="notranslate">lipo</code>. Заголовки, различающиеся между архитектурами (<code class="notranslate">pj/compat/m_auto.h</code>, <code class="notranslate">os_auto.h</code>, куда configure записывает имя машины), становятся одним файлом с ветками <code class="notranslate">#if defined(__aarch64__)</code> / <code class="notranslate">#elif defined(__x86_64__)</code>. Имена библиотек теряют суффикс host-triple (<code class="notranslate">libpj-aarch64-apple-darwin27.2.0.a</code> становится <code class="notranslate">libpj.a</code>), так что оба среза называются одинаково и флаги линковки переживают обновления macOS.</p>
+<p dir="auto">Структура вывода в <code class="notranslate">third_party/</code> (всё игнорируется git, кроме <code class="notranslate">pjsip/config_site.h</code>):</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Путь</th>
+<th>Содержимое</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="notranslate">downloads/</code></td>
+<td>проверенные архивы, сохраняются при <code class="notranslate">--clean</code></td>
+</tr>
+<tr>
+<td><code class="notranslate">deps/&lt;arch&gt;/{include,lib}</code></td>
+<td>OpenSSL и Opus для одной архитектуры</td>
+</tr>
+<tr>
+<td><code class="notranslate">deps/universal/lib</code></td>
+<td><code class="notranslate">libssl.a</code>, <code class="notranslate">libcrypto.a</code>, <code class="notranslate">libopus.a</code>, линкуются из <code class="notranslate">Package.swift</code></td>
+</tr>
+<tr>
+<td><code class="notranslate">pjsip/arch/&lt;arch&gt;/</code></td>
+<td>заголовки, библиотеки PJSIP и <code class="notranslate">pjsua</code> для одной архитектуры</td>
+</tr>
+<tr>
+<td><code class="notranslate">pjsip/include/</code>, <code class="notranslate">pjsip/lib/</code></td>
+<td>объединённые заголовки и универсальные архивы</td>
+</tr>
+<tr>
+<td><code class="notranslate">pjsip/bin/pjsua</code></td>
+<td>универсальный CLI <code class="notranslate">pjsua</code>, второй телефон в самопроверке</td>
+</tr>
+<tr>
+<td><code class="notranslate">pjsip/LINKFLAGS</code>, <code class="notranslate">pjsip/CFLAGS</code></td>
+<td>флаги, нужные потребителю; <code class="notranslate">pjsipLibraries</code> в <code class="notranslate">Package.swift</code> повторяет <code class="notranslate">LINKFLAGS</code></td>
+</tr>
+<tr>
+<td><code class="notranslate">build/</code>, <code class="notranslate">build-logs/&lt;arch&gt;/</code></td>
+<td>деревья исходников (удаляются, если не задан <code class="notranslate">KEEP_BUILD=1</code>) и полные журналы configure/make</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto"><strong>Кэширование.</strong> Каждый компонент записывает штамп со своим рецептом (версии, контрольные суммы, флаги, SHA-256 файла <code class="notranslate">config_site.h</code>, штампы, с которыми он собирался). Запуск пропускает каждый компонент с совпадающим штампом и пересобирает остальные из свежераспакованного дерева. После правки <code class="notranslate">config_site.h</code> перезапустите скрипт: PJSIP пересобирается для обеих архитектур (2–5 минут), а OpenSSL и Opus остаются. CI кэширует <code class="notranslate">third_party/pjsip</code> и <code class="notranslate">third_party/deps</code> с ключом по скрипту и <code class="notranslate">config_site.h</code>, так что при попадании в кэш шаг ничего не делает. Чтобы обновить компонент, измените его версию и контрольную сумму в скрипте и перезапустите.</p>
+<h2 dir="auto">Шаг 2: <code class="notranslate">swift build</code></h2>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">swift build                         <span class="pl-c"><span class="pl-c">#</span> debug, native architecture</span>
+swift build -c release              <span class="pl-c"><span class="pl-c">#</span> release, native architecture</span>
+swift build --arch arm64 --arch x86_64 -c release   <span class="pl-c"><span class="pl-c">#</span> universal (what make-app.sh release runs)</span>
+.build/release/pjsip-smoke          <span class="pl-c"><span class="pl-c">#</span> prints PJSIP version, codecs and audio devices; exits 0</span></pre></div>
+<p dir="auto"><code class="notranslate">Package.swift</code> линкует архивы абсолютными флагами <code class="notranslate">-L</code>/<code class="notranslate">-l</code> (<code class="notranslate">Context.packageDirectory</code>), добавляет <code class="notranslate">-lc++</code>, потому что libwebrtc содержит C++, и даёт каждому Swift-таргету, импортирующему <code class="notranslate">CPJSUA</code>, путь к заголовкам через <code class="notranslate">swiftSettings: pjsipSwiftSettings</code> (<code class="notranslate">-Xcc -I</code>). Таргет приложения получает rpath <code class="notranslate">@executable_path/../Frameworks</code> для Sparkle. Универсальные сборки кладут продукты в <code class="notranslate">.build/out/Products/&lt;Config&gt;</code>, а не в <code class="notranslate">.build/&lt;config&gt;</code>; путь можно узнать через <code class="notranslate">swift build ... --show-bin-path</code>. SwiftPM не отслеживает предсобранные архивы, поэтому после пересборки PJSIP выполните <code class="notranslate">rm -rf .build</code>, если изменение как будто не применяется.</p>
+<h2 dir="auto">Шаг 3: <code class="notranslate">scripts/make-app.sh</code></h2>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">scripts/make-app.sh                 <span class="pl-c"><span class="pl-c">#</span> release: universal dist/MacroSIP.app (default)</span>
+scripts/make-app.sh debug           <span class="pl-c"><span class="pl-c">#</span> debug: native only, faster; the only build that accepts demo options</span>
+ARCHS=arm64 scripts/make-app.sh     <span class="pl-c"><span class="pl-c">#</span> single-architecture release</span></pre></div>
+<p dir="auto">Скрипт выполняет <code class="notranslate">swift build --product MacroSIPApp</code> (универсально для release, нативно для debug), проверяет срезы через <code class="notranslate">lipo</code> и собирает <code class="notranslate">dist/MacroSIP.app</code>: бинарник, <code class="notranslate">Sparkle.framework</code> в <code class="notranslate">Contents/Frameworks</code>, строки <code class="notranslate">en.lproj</code> и <code class="notranslate">ru.lproj</code> и <code class="notranslate">InfoPlist.strings</code> в <code class="notranslate">Contents/Resources</code>, <code class="notranslate">packaging/AppIcon.icns</code> и сгенерированный <code class="notranslate">Info.plist</code> с bundle id <code class="notranslate">com.hsmm.macrosip</code>, URL-схемами <code class="notranslate">sip</code>/<code class="notranslate">sips</code>/<code class="notranslate">tel</code>, ключами Sparkle (<code class="notranslate">SUFeedURL</code>, <code class="notranslate">SUPublicEDKey</code>, ежедневная проверка) и версией. <code class="notranslate">CFBundleShortVersionString</code> — ближайший тег git (<code class="notranslate">git describe --tags --abbrev=0</code>; до первого тега — <code class="notranslate">Product.version</code>), <code class="notranslate">CFBundleVersion</code> — число коммитов. Скрипт убирает все rpath, кроме <code class="notranslate">/usr/lib/swift</code> и <code class="notranslate">@executable_path/../Frameworks</code>, и завершается с ошибкой, если бинарнику нужна другая библиотека через <code class="notranslate">@rpath</code>.</p>
+<p dir="auto">Подпись ad hoc (<code class="notranslate">-</code>) с hardened runtime, изнутри наружу, как описано в документации Sparkle: службы XPC, <code class="notranslate">Autoupdate</code>, <code class="notranslate">Updater.app</code>, фреймворк, затем приложение с <code class="notranslate">packaging/Entitlements.plist</code>; <code class="notranslate">codesign --verify --deep --strict</code> должен проходить. Entitlements дают доступ к микрофону и Контактам и отключают проверку библиотек, без чего подпись ad hoc не может загрузить встроенный фреймворк (ADR 0013).</p>
+<p dir="auto"><strong>Debug</strong>-приложение принимает <code class="notranslate">--mock-engine</code>, <code class="notranslate">--demo-state</code>, <code class="notranslate">--data-dir</code>, <code class="notranslate">--snapshot</code> и <code class="notranslate">--appearance</code> (см. <a href="testing.html">Тесты</a>); <strong>release</strong>-приложение их игнорирует и запускает настоящее приложение на настоящих данных, включая запрос к связке ключей. Все сборки принимают <code class="notranslate">--log-level 0-6</code> (или <code class="notranslate">MACROSIP_LOG_LEVEL</code>) для подробности PJSIP.</p>
+<h2 dir="auto">Другие скрипты</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Скрипт</th>
+<th>Что делает</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="notranslate">scripts/make-dmg.sh [debug|release]</code></td>
+<td>запускает <code class="notranslate">make-app.sh</code>, кладёт приложение рядом с символической ссылкой на Applications и пишет <code class="notranslate">dist/MacroSIP-&lt;version&gt;.dmg</code> (HFS+, UDZO, том «MacroSIP»), печатает его SHA-256</td>
+</tr>
+<tr>
+<td><code class="notranslate">swift scripts/make-icon.swift</code></td>
+<td>рисует иконку (первоисточник <code class="notranslate">packaging/AppIcon.svg</code>: клавиатура набора, нажатые клавиши которой образуют букву M на зелёном градиенте) средствами CoreGraphics в iconset и запускает <code class="notranslate">iconutil</code>, чтобы получить <code class="notranslate">packaging/AppIcon.icns</code>; перезапускайте после изменения рисунка</td>
+</tr>
+<tr>
+<td><code class="notranslate">scripts/make-appcast.sh</code>, <code class="notranslate">scripts/publish-appcast.sh</code>, <code class="notranslate">scripts/update-cask.sh</code></td>
+<td>инструменты выпуска, см. <a href="releasing.html">Релизы</a></td>
+</tr>
+<tr>
+<td><code class="notranslate">scripts/test.sh</code>, <code class="notranslate">scripts/selftest-call.sh</code>, <code class="notranslate">scripts/check-strings.sh</code></td>
+<td>см. <a href="testing.html">Тесты</a></td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<h2 dir="auto">Универсальная сборка (ADR 0012)</h2>
+<p dir="auto">Одно приложение и один DMG обслуживают Apple Silicon и Intel. Release-сборки приложения универсальные, debug-сборки нативные. Opus и OpenSSL линкуются как статические архивы из <code class="notranslate">third_party/deps/universal/lib</code>, никогда через <code class="notranslate">.linkedLibrary</code> или из Homebrew, так что у приложения нет зависимостей от dylib вне системы (архивы Homebrew были бы только arm64 и собраны под macOS хоста). Срез Intel проверяется на Apple Silicon командой <code class="notranslate">SELFTEST_ARCH=x86_64 scripts/selftest-call.sh</code> под Rosetta 2. Поддержка Intel закончится, когда её прекратят инструменты Apple или Intel-раннеры GitHub.</p>
+<h2 dir="auto">Типичные проблемы</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Симптом</th>
+<th>Причина и решение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="notranslate">Apple Silicon (arm64) host required</code></td>
+<td><code class="notranslate">build-pjsip.sh</code> кросс-компилирует x86_64 и работает только на arm64. На Mac с Intel возьмите универсальные библиотеки из артефакта CI (задание Intel в CI делает именно это).</td>
+</tr>
+<tr>
+<td><code class="notranslate">SHA-256 mismatch for ...</code></td>
+<td>повреждённая или переопубликованная загрузка; удалите файл в <code class="notranslate">third_party/downloads/</code>, чтобы скачать его снова, и проверьте зафиксированную контрольную сумму, если upstream изменил архив</td>
+</tr>
+<tr>
+<td><code class="notranslate">configure did not enable OpenSSL</code> / <code class="notranslate">Opus</code></td>
+<td>configure не увидел <code class="notranslate">third_party/deps/&lt;arch&gt;</code>; смотрите <code class="notranslate">third_party/build-logs/&lt;arch&gt;/pjsip-configure.log</code></td>
+</tr>
+<tr>
+<td><code class="notranslate">plugin for module SwiftUIMacros not found</code></td>
+<td><code class="notranslate">@State</code> нужен плагин макросов Xcode; используйте обёртку <code class="notranslate">@Local</code> из <code class="notranslate">Views/Components/Local.swift</code></td>
+</tr>
+<tr>
+<td><code class="notranslate">swift test</code> не находит макрос Testing</td>
+<td>запускайте <code class="notranslate">scripts/test.sh</code>, который передаёт путь к плагину</td>
+</tr>
+<tr>
+<td>после пересборки приложение всё ещё выполняет старый код PJSIP</td>
+<td>SwiftPM не видит, что архивы изменились: <code class="notranslate">rm -rf .build</code></td>
+</tr>
+<tr>
+<td><code class="notranslate">Sparkle.framework not found</code> в <code class="notranslate">make-app.sh</code></td>
+<td>сначала выполните <code class="notranslate">swift package resolve</code> или <code class="notranslate">swift build</code></td>
+</tr>
+<tr>
+<td>бинарнику нужны библиотеки <code class="notranslate">@rpath</code>, кроме Sparkle</td>
+<td>новая зависимость подключена динамически; ADR 0012 требует статических архивов</td>
+</tr>
+<tr>
+<td><code class="notranslate">PJSUA_INVALID_ID</code> не компилируется в Swift</td>
+<td>это константа C-перечисления: используйте <code class="notranslate">PJSUA_INVALID_ID.rawValue</code></td>
+</tr>
+<tr>
+<td><code class="notranslate">pjsua</code> x86_64 под Rosetta не отвечает сразу</td>
+<td>запуск Rosetta занимает несколько секунд; <code class="notranslate">selftest-call.sh</code> опрашивает до ~15 с</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">См. также <a href="architecture.html">Устройство</a>, <a href="installation.html">Установка</a> об установке собранного DMG и <a href="troubleshooting.html">Решение-проблем</a> о проблемах во время работы.</p>
+<p dir="auto">Другие страницы: <a href="index.html">Главная</a> · <a href="../en/index.html">Home</a> (English)</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

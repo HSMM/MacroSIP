@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>快捷键 · MacroSIP 文档</title>
+<meta name="description" content="MacroSIP 文档">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/quick-keys.html">
+<link rel="alternate" hreflang="ru" href="../ru/quick-keys.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/quick-keys.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/quick-keys.html" hreflang="en">English</a><a href="../ru/quick-keys.html" hreflang="ru">Русский</a><a href="../zh/quick-keys.html" hreflang="zh-Hans" aria-current=true>中文</a></div></header>
+<div class="layout">
+<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html">通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="directory.html">目录</a></li><li><a href="quick-keys.html" aria-current=page>快捷键</a></li><li><a href="audio.html">音频</a></li><li><a href="settings.html">设置</a></li><li><a href="menu-bar.html">菜单栏</a></li><li><a href="troubleshooting.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="architecture.html">架构</a></li><li><a href="building.html">构建</a></li><li><a href="testing.html">测试</a></li><li><a href="releasing.html">发布</a></li><li><a href="contributing.html">参与贡献</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">快捷键</h1>
+<p dir="auto">快捷键 (Quick keys) 是主窗口旁边或下方最多十二个快速拨号按钮，每个按钮可选带有一个 <strong>BLF</strong>（忙灯字段）圆点，显示该线路是空闲、通话中还是正在响铃。面板默认关闭。</p>
+<h2 dir="auto">面板</h2>
+<p dir="auto">设置 › 快捷键 › <strong>显示面板</strong> (Show panel)：<strong>关闭</strong> (Off)、<strong>右侧</strong> (Right) 或<strong>底部</strong> (Bottom)。</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>位置</th>
+<th>外观</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>右侧</strong></td>
+<td>主窗口右侧一列 220 pt 宽的区域；窗口从 340 pt 加宽到 560 pt。标题“快捷键”带一个齿轮按钮，然后是十二行：BLF 圆点、名称、号码和类型图形。空位显示“添加键…”。</td>
+</tr>
+<tr>
+<td><strong>底部</strong></td>
+<td>状态栏下方的一条区域；窗口高度增加约 110 pt。三列，可见两行，其余可滚动。每个单元格显示圆点和名称；工具提示给出号码、状态、类型和快捷键。</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">齿轮和空位都会打开设置 › 快捷键。右键点按某个键可<strong>编辑…</strong> (Edit…) 和<strong>移除</strong> (Remove)（清空该位置，无需确认）。“显示”菜单提供<strong>显示快捷键</strong> (Show Quick Keys) / <strong>隐藏快捷键</strong> (Hide Quick Keys)，“通话”菜单在<strong>快捷键</strong>下列出各键及其快捷键。没有任何账户启用时，所有键都被禁用。</p>
+<h2 dir="auto">键类型</h2>
+<p dir="auto">一个键有名称、号码和类型。其作用取决于您是否正在通话：</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>类型</th>
+<th>空闲时</th>
+<th>通话中</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>呼叫</strong> (Call)</td>
+<td>从默认外拨账户拨打该号码。</td>
+<td>保持当前通话并发起新通话。</td>
+</tr>
+<tr>
+<td><strong>DTMF</strong></td>
+<td>将这些数字作为号码拨打（因此“代接 *8”键可用）。</td>
+<td>在活动通话上将这些数字作为 DTMF 发送。</td>
+</tr>
+<tr>
+<td><strong>盲转接</strong> (Blind transfer)</td>
+<td>灰显。</td>
+<td>立即将活动通话转接到该号码。</td>
+</tr>
+<tr>
+<td><strong>协商转接</strong> (Attended transfer)</td>
+<td>灰显。</td>
+<td>保持活动通话并呼叫该号码；通话面板中出现<strong>完成转接</strong> (Complete Transfer)。</td>
+</tr>
+<tr>
+<td><strong>加入会议</strong> (Add to conference)</td>
+<td>灰显。</td>
+<td>呼叫该号码，对方接听后将其加入活动通话。</td>
+</tr>
+<tr>
+<td><strong>呼叫 / 盲转接</strong> (Call / Blind transfer)</td>
+<td>作为“呼叫”。</td>
+<td>作为“盲转接”。</td>
+</tr>
+<tr>
+<td><strong>呼叫 / 协商转接</strong> (Call / Attended transfer)</td>
+<td>作为“呼叫”。</td>
+<td>作为“协商转接”。</td>
+</tr>
+<tr>
+<td><strong>呼叫 / 会议</strong> (Call / Conference)</td>
+<td>作为“呼叫”。</td>
+<td>作为“加入会议”。</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">三种<strong>智能</strong> (smart) 变体（“智能：空闲时呼叫，通话中对通话执行操作”）是同事分机的常用选择：同一个键在您空闲时呼叫 Natallia Karpovich，在您忙时把当前来电者转接给她。</p>
+<h2 dir="auto">BLF 圆点</h2>
+<p dir="auto">勾选某个键上的 <strong>BLF</strong> 以关注其号码的线路状态。该圆点使用与开启了<strong>关注在线状态</strong> (Watch presence) 的联系人相同的在线状态订阅；号码相同的键和联系人共享一个订阅。</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>圆点</th>
+<th>工具提示</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>绿色</td>
+<td>在线 (Available)</td>
+<td>线路已注册且空闲。</td>
+</tr>
+<tr>
+<td>红色</td>
+<td>通话中 (On the phone)</td>
+<td>线路忙。</td>
+</tr>
+<tr>
+<td>橙色，闪烁</td>
+<td>正在响铃 (Ringing)</td>
+<td>该线路有来电正在响铃；键呈橙色，并在号码后显示“正在响铃”。</td>
+</tr>
+<tr>
+<td>灰色</td>
+<td>无信息 (No information)</td>
+<td>没有订阅应答（PBX 上没有在线状态、网络断开，或账户正在重新连接）。键仍然可用。</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">只有当 PBX 在其在线状态或对话通知中报告通话状态时才会显示“正在响铃”；否则 BLF 键只显示绿色和红色。未开启 BLF 的键没有圆点。</p>
+<h2 dir="auto">在响铃的键上代接</h2>
+<p dir="auto">点按显示“正在响铃”的键会拨打设置 › 快捷键中的<strong>代接代码</strong> (Pickup code) 加该键的号码：默认 <code class="notranslate">*8</code> 加号码 <code class="notranslate">101</code> 拨出 <code class="notranslate">*8101</code>，在大多数 PBX 上这会在您的电话上接听该线路的来电。号码为空的键只拨打代码本身（组代接）。如果 <code class="notranslate">*8</code> 没有效果，请向 PBX 管理员询问正确的代码。</p>
+<h2 dir="auto">键盘快捷键</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>按键</th>
+<th>操作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>⌘1 – ⌘9</td>
+<td>按列表顺序按下第 1 到第 9 个键。MacroSIP 位于最前面时有效，面板隐藏时也有效。对空位或灰显的键无作用。</td>
+</tr>
+<tr>
+<td>Tab、空格</td>
+<td>在键之间移动并按下聚焦的键（仅面板内）。</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">第 10 到第 12 个键没有快捷键，只能点按。快捷键遵循列表顺序，因此重新排序行会重新分配它们。</p>
+<h2 dir="auto">在设置 › 快捷键中配置</h2>
+<p dir="auto">该面板有一个十二行固定的表格，列为<strong>名称</strong> (Name)、<strong>号码</strong> (Number)、<strong>类型</strong> (Type)、<strong>BLF</strong> 和<strong>按键</strong> (Key)，一个计数“12 个键中的 5 个”，以及下方的两个组。</p>
+<ul dir="auto">
+<li>“拖移行可重新排序。名称和号码在原位编辑；连按一行或直接开始输入。BLF 复选框关注该号码的线路状态。”</li>
+<li><strong>类型</strong>是包含上述八种类型的弹出式菜单；在空行上被禁用。<strong>BLF</strong> 在号码为空时被禁用。<strong>按键</strong>为第 1–9 行显示 ⌘1–⌘9，其余显示“—”。</li>
+<li><strong>面板</strong> (Panel) 组：<strong>显示面板</strong>（关闭 / 右侧 / 底部），附带“右侧将窗口加宽到 560 pt；底部添加一条 3 列区域。”</li>
+<li><strong>代接代码</strong>：默认 <code class="notranslate">*8</code>，“点按正在响铃的键时使用。”</li>
+</ul>
+<p dir="auto">小型办公室的布局示例：</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>名称</th>
+<th>号码</th>
+<th>类型</th>
+<th>BLF</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Maryna Sakalouskaya</td>
+<td>101</td>
+<td>呼叫 / 协商转接</td>
+<td>开</td>
+</tr>
+<tr>
+<td>Yauheni Marozau</td>
+<td>102</td>
+<td>呼叫 / 盲转接</td>
+<td>开</td>
+</tr>
+<tr>
+<td>销售队列</td>
+<td>600</td>
+<td>盲转接</td>
+<td>关</td>
+</tr>
+<tr>
+<td>会议室</td>
+<td>700</td>
+<td>加入会议</td>
+<td>关</td>
+</tr>
+<tr>
+<td>代接</td>
+<td>*8</td>
+<td>DTMF</td>
+<td>关</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">快捷键与其他设置一起存储在 <code class="notranslate">~/Library/Application Support/MacroSIP/</code> 中。在其他应用位于最前面时也能使用的全局热键计划在后续版本中实现。</p>
+<p dir="auto">其他页面：<a href="index.html">首页</a> · <a href="../en/index.html">Home</a> (English)</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

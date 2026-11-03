@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>参与贡献 · MacroSIP 文档</title>
+<meta name="description" content="MacroSIP 文档">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/contributing.html">
+<link rel="alternate" hreflang="ru" href="../ru/contributing.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/contributing.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/contributing.html" hreflang="en">English</a><a href="../ru/contributing.html" hreflang="ru">Русский</a><a href="../zh/contributing.html" hreflang="zh-Hans" aria-current=true>中文</a></div></header>
+<div class="layout">
+<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html">通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="directory.html">目录</a></li><li><a href="quick-keys.html">快捷键</a></li><li><a href="audio.html">音频</a></li><li><a href="settings.html">设置</a></li><li><a href="menu-bar.html">菜单栏</a></li><li><a href="troubleshooting.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="architecture.html">架构</a></li><li><a href="building.html">构建</a></li><li><a href="testing.html">测试</a></li><li><a href="releasing.html">发布</a></li><li><a href="contributing.html" aria-current=page>参与贡献</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">参与贡献</h1>
+<p dir="auto">MacroSIP 采用 GPLv2 或更新版本（PJSIP 为 GPLv2+，ADR 0007）；任何贡献都在该许可证下接受，任何捆绑的第三方代码必须与 GPL 兼容。错误和功能请求请提交到 <a href="https://github.com/HSMM/MacroSIP/issues%E3%80%82%E5%8A%A8%E6%89%8B%E6%94%B9%E4%BB%A3%E7%A0%81%E4%B9%8B%E5%89%8D%EF%BC%8C%E8%AF%B7%E9%98%85%E8%AF%BB">https://github.com/HSMM/MacroSIP/issues。动手改代码之前，请阅读</a> <code class="notranslate">docs/DEVELOPMENT.md</code>（工程说明）、<code class="notranslate">docs/ROADMAP.md</code>（已交付和即将到来的内容）、<code class="notranslate">docs/GLOSSARY.md</code>（在代码和文档中使用其术语）、<code class="notranslate">docs/adr/</code> 中的 ADR，以及 UI 规范 <code class="notranslate">docs/design/SCREENS.md</code> 和 <code class="notranslate">docs/design/mockups.html</code>。</p>
+<h2 dir="auto">工作流程（ADR 0008）</h2>
+<p dir="auto">工作按 <code class="notranslate">docs/ROADMAP.md</code> 中的里程碑组织。每个任务从一份书面简报开始：目标、边界、文件、完成标准和已知事实；简报是自成一体的。每个里程碑都由未编写该代码的人独立评审（错误、竞争条件、泄漏、钥匙串和 TLS 处理），然后验证：构建、测试、环回自测以及在真实 SIP 账户上的一次通话。UI 代码只在样稿获批后才开始编写。已确定的决策不会被悄悄推翻：要更改一项决策，请添加新的 ADR（<code class="notranslate">docs/adr/README.md</code>：Context、Decision、Consequences；接受后除“Superseded by”一行外永不编辑）。没有 ADR 不要添加依赖。</p>
+<p dir="auto">针对 <code class="notranslate">main</code> 创建拉取请求；CI 必须在 arm64 和 Intel 两个作业上都通过（见 <a href="testing.html">测试</a>）。在同一个拉取请求中保持 <code class="notranslate">docs/design/SCREENS.md</code>、<code class="notranslate">mockups.html</code> 和 <code class="notranslate">docs/DEVELOPMENT.md</code> 与您更改的代码同步。</p>
+<h2 dir="auto">编码规则</h2>
+<ul dir="auto">
+<li><strong>Swift 6，严格并发。</strong><code class="notranslate">MacroSIPCore</code> 不导入任何 UI。PJSIP 回调到达于 PJSIP 工作线程：在触碰应用状态之前跳到主 actor，绝不在主 actor 上阻塞 PJSIP 线程。每个可能失败的 <code class="notranslate">pjsua_*</code> 调用都返回 <code class="notranslate">pj_status_t</code>；检查它并通过 <code class="notranslate">pj_strerror</code> 呈现文本（<code class="notranslate">EngineError.pjsip</code>）。错误绝不导致引擎崩溃。</li>
+<li><strong>一个产品，一个构建</strong>（ADR 0003）：bundle id <code class="notranslate">com.hsmm.macrosip</code>，没有功能构建标志。</li>
+<li>**用 <code class="notranslate">@Local</code>，不用 <code class="notranslate">@State</code>。**在当前 SDK 中 <code class="notranslate">@State</code> 同时也是附加宏，其插件只随 Xcode 提供，因此在命令行工具下无法编译。请使用 <code class="notranslate">Sources/MacroSIPApp/Views/Components/Local.swift</code> 中的 <code class="notranslate">@Local</code> 包装器；它是直接替代品。</li>
+<li>**日志。**应用代码通过 <code class="notranslate">AppLog.app</code>、<code class="notranslate">.recording</code>、<code class="notranslate">.presence</code> 记录日志（<code class="notranslate">Platform/AppLog.swift</code>：os_log 加轮转文件 <code class="notranslate">~/Library/Logs/MacroSIP/MacroSIP.log</code>），绝不直接用 <code class="notranslate">Logger</code>。引擎的 <code class="notranslate">.log</code> 事件落在 <code class="notranslate">engine</code> 和 <code class="notranslate">pjsip</code> 类别中。<code class="notranslate">--log-level</code> 只设置 PJSIP 的详细程度。</li>
+<li><strong>密码只放在钥匙串中</strong>；其他一切都是 Application Support 中的 JSON（ADR 0004）。持久化结构体中的新字段将缺失的键解码为默认值，因此旧文件仍能加载。</li>
+<li>**字符串。**视图绝不包含用户可见的字面量。每个字符串都通过 <code class="notranslate">Model/Strings.swift</code> 中的 <code class="notranslate">L</code>，并同时存在于 <code class="notranslate">en.lproj</code> 和 <code class="notranslate">ru.lproj</code> 中；两种语言都有了才算完成。见下文“添加字符串”。</li>
+<li>**每次更改都要有测试。**新的引擎行为需要一个 Swift Testing 用例（基于环回或存根，不用真实网络），当它在通话中对用户可见时还需要一个自测步骤；新模型需要值测试；新的 UI 状态需要一个演示状态以便截图。在创建拉取请求之前运行 <code class="notranslate">scripts/test.sh</code>、<code class="notranslate">scripts/selftest-call.sh</code> 和 <code class="notranslate">scripts/check-strings.sh</code>。</li>
+</ul>
+<h2 dir="auto">添加字符串</h2>
+<ol dir="auto">
+<li>向 <code class="notranslate">L</code> 添加一个带点分键和英文默认值的 <code class="notranslate">static var</code> 或 <code class="notranslate">func</code>，如现有的 <code class="notranslate">static var tabsContacts: String { loc("tabs.contacts", "Contacts") }</code>。插值对文本使用 <code class="notranslate">%@</code>，对整数使用 <code class="notranslate">%lld</code>；有两个或更多参数时，在两个文件中都使用 <code class="notranslate">%1$@</code>、<code class="notranslate">%2$@</code>。</li>
+<li>将键添加到 <code class="notranslate">Resources/en.lproj/Localizable.strings</code> 和 <code class="notranslate">Resources/ru.lproj/Localizable.strings</code>。</li>
+<li>计数（联系人、通话、条目）改放到 <code class="notranslate">Localizable.stringsdict</code>，英语用 <code class="notranslate">one</code>/<code class="notranslate">other</code>，俄语用 <code class="notranslate">one</code>/<code class="notranslate">few</code>/<code class="notranslate">many</code>/<code class="notranslate">other</code>；同一个键绝不出现在两个文件中。</li>
+<li>运行 <code class="notranslate">scripts/check-strings.sh</code>。</li>
+</ol>
+<p dir="auto">产品、编解码器和协议名称（SIP、SRTP、TLS、STUN、ICE、DTMF、REGISTER）、诊断报告和日志行不翻译。检查俄语下的布局：<code class="notranslate">dist/MacroSIP.app/Contents/MacOS/MacroSIP --demo-state contacts -AppleLanguages "(ru)"</code>。</p>
+<h2 dir="auto">添加设置项</h2>
+<ol dir="auto">
+<li>在 <code class="notranslate">Sources/MacroSIPCore/Model/AppSettings.swift</code> 中正确的结构体（<code class="notranslate">GeneralSettings</code>、<code class="notranslate">AudioSettings</code>、<code class="notranslate">RecordingSettings</code>、<code class="notranslate">AutoAnswerSettings</code>、<code class="notranslate">NetworkSettings</code>、<code class="notranslate">CallOptions</code>、<code class="notranslate">CodecOptions</code>、<code class="notranslate">QuickKeysSettings</code>、<code class="notranslate">DirectorySettings</code>）里添加字段，带默认值和宽容的 <code class="notranslate">init(from:)</code>，并在 <code class="notranslate">SettingsCompatTests</code> 中添加一个值测试，确认旧的 <code class="notranslate">settings.json</code> 仍能解码。</li>
+<li>应用它：引擎侧的选项通过 <code class="notranslate">AppModel+Engine.swift</code>（<code class="notranslate">applyCallOptions</code>、<code class="notranslate">applyCodecOptions</code>、<code class="notranslate">scheduleNetworkApply</code>；需要重新启动的网络字段列在 <code class="notranslate">NetworkSettings.needsRestart(from:)</code> 中）。</li>
+<li>使用 <code class="notranslate">model.updateSettings { $0... = ... }</code> 将控件添加到 <code class="notranslate">Views/Settings/</code> 中的面板（每个面板是一个 680 pt 宽的 <code class="notranslate">PaneContainer</code>）。</li>
+<li>在 <code class="notranslate">L</code> 和两种语言中添加字符串；在 <code class="notranslate">docs/design/SCREENS.md</code> 中描述该控件及其状态，如果面板布局变化则更新 <code class="notranslate">mockups.html</code>。</li>
+<li>如果该控件有值得截图的状态，在 <code class="notranslate">Model/DemoState.swift</code> 中添加一个演示状态。</li>
+</ol>
+<h2 dir="auto">添加编解码器</h2>
+<ol dir="auto">
+<li><code class="notranslate">third_party/pjsip/config_site.h</code>：设置 <code class="notranslate">PJMEDIA_HAS_&lt;NAME&gt;_CODEC 1</code>（并且，如果 pjproject 的 configure 有 <code class="notranslate">--disable-&lt;name&gt;-codec</code> 标志，确保 <code class="notranslate">scripts/build-pjsip.sh</code> 没有传入它；当 configure 禁用了某个预期的编解码器或缺少编解码器归档时，脚本已经会失败）。重新运行 <code class="notranslate">scripts/build-pjsip.sh</code>：PJSIP 为两个架构重新构建，OpenSSL 和 Opus 保持缓存。</li>
+<li><code class="notranslate">Package.swift</code>：将归档添加到 <code class="notranslate">pjsipLibraries</code>，保持与 <code class="notranslate">third_party/pjsip/LINKFLAGS</code> 同步；然后 <code class="notranslate">rm -rf .build</code> 和 <code class="notranslate">swift build</code>。</li>
+<li><code class="notranslate">MacroSIPCore</code> 中的 <code class="notranslate">Engine.optionalCodecs</code>（显示在 G.711 之后的 id，启用前优先级保持为 0）和 <code class="notranslate">Views/Settings/CodecsPane.swift</code> 中的 <code class="notranslate">CodecCatalog</code>（<code class="notranslate">all</code>、<code class="notranslate">onByDefault</code>；它会追加已存储顺序中缺少的 id）。</li>
+<li>测试：一个 id 列表测试和一个协商该编解码器的环回通话（<code class="notranslate">Engine262Tests</code> 展示了模式），加上自测的“codecs”步骤。</li>
+</ol>
+<p dir="auto">没有 G.729（bcg729 保持禁用）；构建见 ADR 0002 和 ADR 0012。</p>
+<h2 dir="auto">添加目录来源类型</h2>
+<p dir="auto">来自 <code class="notranslate">docs/DIRECTORY.md</code>：</p>
+<ol dir="auto">
+<li>向 <code class="notranslate">DirectorySourceKind</code> 添加 case，如果它有设置，则添加一个带宽容 <code class="notranslate">init(from:)</code>（每个键都可选）的 <code class="notranslate">Codable</code> 配置结构体，以及 <code class="notranslate">DirectorySource</code> 上一个用 <code class="notranslate">try?</code> 解码的字段，这样损坏的配置不会丢掉整个设置文件。</li>
+<li>实现 <code class="notranslate">DirectoryProvider</code>（保有缓存时为 <code class="notranslate">actor</code>，否则为 <code class="notranslate">struct</code>）：<code class="notranslate">search</code> 返回最多 <code class="notranslate">limit</code> 个条目，<code class="notranslate">lookup</code> 使用 <code class="notranslate">DirectoryNumber.matches</code>，<code class="notranslate">test</code> 返回 <code class="notranslate">.connected(entries:)</code>，<code class="notranslate">allEntries</code> 返回用于导入的全部内容。抛出 <code class="notranslate">DirectoryError</code>；<code class="notranslate">.signInRequired</code> 将来源置于“需要登录”。对于本地列表，构建一个 <code class="notranslate">DirectoryIndex</code>。</li>
+<li>从 <code class="notranslate">DirectoryService.defaultProvider</code> 返回它。机密通过 <code class="notranslate">DirectoryCredentials</code>，绝不进入 <code class="notranslate">settings.json</code>。</li>
+<li>测试放在 <code class="notranslate">Directory*Tests.swift</code> 文件中；<code class="notranslate">DirectoryServiceTests.swift</code> 中的 <code class="notranslate">StubDirectoryProvider</code> 覆盖服务侧。</li>
+<li>UI：<code class="notranslate">Views/Directory/DirectorySourceSheet.swift</code> 中的类型弹出式菜单和字段、字符串、SCREENS.md 第 13 节，以及一个 <code class="notranslate">directory-sheet-&lt;kind&gt;</code> 演示状态。</li>
+</ol>
+<h2 dir="auto">提交信息</h2>
+<p dir="auto">简明英文，现在时，说明做了什么和为什么。第一行点明领域和更改（<code class="notranslate">Engine: retry REGISTER with backoff after a transport error</code>、<code class="notranslate">Settings: Network pane with the RTP port range</code>）；原因不明显时在正文中解释。不加 trailer。每完成一部分就提交，包括随之而来的文档。</p>
+<p dir="auto">另见 <a href="architecture.html">架构</a>、<a href="building.html">构建</a>、<a href="testing.html">测试</a>、<a href="releasing.html">发布</a>。</p>
+<p dir="auto">其他页面：<a href="index.html">首页</a> · <a href="../en/index.html">Home</a> (English)</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

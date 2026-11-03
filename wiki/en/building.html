@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Building · MacroSIP documentation</title>
+<meta name="description" content="MacroSIP documentation">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/building.html">
+<link rel="alternate" hreflang="ru" href="../ru/building.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/building.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/building.html" hreflang="en" aria-current=true>English</a><a href="../ru/building.html" hreflang="ru">Русский</a><a href="../zh/building.html" hreflang="zh-Hans">中文</a></div></header>
+<div class="layout">
+<nav aria-label="Contents"><details><summary>Contents</summary><div class="links"><ul><li><a href="index.html">Home</a></li></ul><h2>User guide</h2><ul><li><a href="installation.html">Installation</a></li><li><a href="accounts.html">Accounts</a></li><li><a href="calls.html">Calls</a></li><li><a href="incoming-calls.html">Incoming calls</a></li><li><a href="contacts-and-call-log.html">Contacts and call log</a></li><li><a href="directory.html">Directory</a></li><li><a href="quick-keys.html">Quick keys</a></li><li><a href="audio.html">Audio</a></li><li><a href="settings.html">Settings</a></li><li><a href="menu-bar.html">Menu bar</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul><h2>For developers</h2><ul><li><a href="architecture.html">Architecture</a></li><li><a href="building.html" aria-current=page>Building</a></li><li><a href="testing.html">Testing</a></li><li><a href="releasing.html">Releasing</a></li><li><a href="contributing.html">Contributing</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">Building</h1>
+<p dir="auto">MacroSIP builds with SwiftPM and the Xcode Command Line Tools alone. There is no Xcode project, and Homebrew is not involved: OpenSSL and Opus are compiled from pinned source tarballs together with PJSIP. The details live in <code class="notranslate">scripts/README-build.md</code>, <code class="notranslate">scripts/build-pjsip.sh</code>, <code class="notranslate">scripts/make-app.sh</code> and ADR 0012.</p>
+<h2 dir="auto">Requirements</h2>
+<ul dir="auto">
+<li>macOS 14 or newer on an <strong>Apple Silicon</strong> Mac. The build host must be arm64: the x86_64 half of the universal build is cross-compiled on the same machine, and <code class="notranslate">build-pjsip.sh</code> stops on an Intel host.</li>
+<li>Xcode Command Line Tools (<code class="notranslate">xcode-select --install</code>). Full Xcode is not needed; if it is installed, it opens <code class="notranslate">Package.swift</code> directly.</li>
+<li>Network access to github.com and downloads.xiph.org on the first run (tarballs are cached afterwards).</li>
+<li>Optional: Rosetta 2 (<code class="notranslate">softwareupdate --install-rosetta --agree-to-license</code>) to run the x86_64 slice on Apple Silicon.</li>
+</ul>
+<h2 dir="auto">Step 1: <code class="notranslate">scripts/build-pjsip.sh</code></h2>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">scripts/build-pjsip.sh            <span class="pl-c"><span class="pl-c">#</span> first run about 5 minutes on an 8-core M-series Mac, then seconds</span>
+scripts/build-pjsip.sh --clean    <span class="pl-c"><span class="pl-c">#</span> remove every output except the downloads and rebuild</span>
+JOBS=4 scripts/build-pjsip.sh     <span class="pl-c"><span class="pl-c">#</span> limit parallelism</span>
+KEEP_BUILD=1 scripts/build-pjsip.sh   <span class="pl-c"><span class="pl-c">#</span> keep the source trees under third_party/build</span></pre></div>
+<p dir="auto">The script builds, for arm64 (native) and x86_64 (<code class="notranslate">--host=x86_64-apple-darwin</code>), with <code class="notranslate">-mmacosx-version-min=14.0</code>:</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Component</th>
+<th>Version</th>
+<th>Options</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OpenSSL</td>
+<td>3.5.9 (LTS)</td>
+<td><code class="notranslate">no-shared no-module no-tests</code>, only <code class="notranslate">build_libs</code> and <code class="notranslate">install_dev</code>; <code class="notranslate">darwin64-arm64-cc</code> / <code class="notranslate">darwin64-x86_64-cc</code></td>
+</tr>
+<tr>
+<td>Opus</td>
+<td>1.6.1</td>
+<td><code class="notranslate">--disable-shared --enable-static --disable-doc --disable-extra-programs</code></td>
+</tr>
+<tr>
+<td>pjproject</td>
+<td>2.17</td>
+<td><code class="notranslate">third_party/pjsip/config_site.h</code> installed before configure; <code class="notranslate">--disable-shared --disable-pjsua2 --disable-video --disable-darwin-ssl --disable-speex-aec</code>, no L16, AMR, SILK, bcg729 (G.729) or Lyra; <code class="notranslate">--with-ssl</code> and <code class="notranslate">--with-opus</code> pointing at <code class="notranslate">third_party/deps/&lt;arch&gt;</code></td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">Every tarball is verified against a SHA-256 pinned at the top of the script. <code class="notranslate">--disable-darwin-ssl</code> matters: configure would otherwise prefer the deprecated SecureTransport over OpenSSL. The script checks the configure log (OpenSSL and Opus found, the G.722.1, GSM, iLBC and Speex codecs not disabled), checks the architecture and <code class="notranslate">minos</code> of every archive and of <code class="notranslate">pjsua</code>, and fails if <code class="notranslate">pjsua</code> links anything from <code class="notranslate">/opt/homebrew</code>.</p>
+<p dir="auto"><code class="notranslate">config_site.h</code> turns on IPv6, SRTP (SDES, no DTLS), the WebRTC echo canceller, TLS, authorization-header caching, <code class="notranslate">PJSUA_MAX_CALLS</code> 8, and the codecs Opus, G.711, G.722, G.722.1, GSM, iLBC and Speex (G.722.1, GSM, iLBC and Speex stay disabled in the engine until a user enables them; see <a href="contributing.html">Contributing</a> for adding a codec). Video is off.</p>
+<p dir="auto">Per-architecture results are merged with <code class="notranslate">lipo</code>. Headers that differ between architectures (<code class="notranslate">pj/compat/m_auto.h</code>, <code class="notranslate">os_auto.h</code>, where configure writes the machine name) become one file with an <code class="notranslate">#if defined(__aarch64__)</code> / <code class="notranslate">#elif defined(__x86_64__)</code> branch. Library names lose the host-triple suffix (<code class="notranslate">libpj-aarch64-apple-darwin27.2.0.a</code> becomes <code class="notranslate">libpj.a</code>), so both slices have the same names and the link flags survive macOS updates.</p>
+<p dir="auto">Output layout under <code class="notranslate">third_party/</code> (all git-ignored except <code class="notranslate">pjsip/config_site.h</code>):</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Path</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="notranslate">downloads/</code></td>
+<td>verified tarballs, kept by <code class="notranslate">--clean</code></td>
+</tr>
+<tr>
+<td><code class="notranslate">deps/&lt;arch&gt;/{include,lib}</code></td>
+<td>OpenSSL and Opus for one architecture</td>
+</tr>
+<tr>
+<td><code class="notranslate">deps/universal/lib</code></td>
+<td><code class="notranslate">libssl.a</code>, <code class="notranslate">libcrypto.a</code>, <code class="notranslate">libopus.a</code>, linked by <code class="notranslate">Package.swift</code></td>
+</tr>
+<tr>
+<td><code class="notranslate">pjsip/arch/&lt;arch&gt;/</code></td>
+<td>PJSIP headers, libraries and <code class="notranslate">pjsua</code> for one architecture</td>
+</tr>
+<tr>
+<td><code class="notranslate">pjsip/include/</code>, <code class="notranslate">pjsip/lib/</code></td>
+<td>merged headers and universal archives</td>
+</tr>
+<tr>
+<td><code class="notranslate">pjsip/bin/pjsua</code></td>
+<td>universal <code class="notranslate">pjsua</code> CLI, the second phone in the self-test</td>
+</tr>
+<tr>
+<td><code class="notranslate">pjsip/LINKFLAGS</code>, <code class="notranslate">pjsip/CFLAGS</code></td>
+<td>flags a consumer needs; <code class="notranslate">pjsipLibraries</code> in <code class="notranslate">Package.swift</code> mirrors <code class="notranslate">LINKFLAGS</code></td>
+</tr>
+<tr>
+<td><code class="notranslate">build/</code>, <code class="notranslate">build-logs/&lt;arch&gt;/</code></td>
+<td>source trees (removed unless <code class="notranslate">KEEP_BUILD=1</code>) and full configure/make logs</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto"><strong>Caching.</strong> Each component writes a stamp with its recipe (versions, checksums, flags, the SHA-256 of <code class="notranslate">config_site.h</code>, the stamps it was built against). A run skips every component whose stamp matches and rebuilds the rest from a freshly extracted tree. After editing <code class="notranslate">config_site.h</code>, rerun the script: PJSIP is rebuilt for both architectures (2 to 5 minutes) while OpenSSL and Opus stay. CI caches <code class="notranslate">third_party/pjsip</code> and <code class="notranslate">third_party/deps</code> with a key over the script and <code class="notranslate">config_site.h</code>, so a hit makes the step a no-op. To upgrade a component, change its version and checksum in the script and rerun.</p>
+<h2 dir="auto">Step 2: <code class="notranslate">swift build</code></h2>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">swift build                         <span class="pl-c"><span class="pl-c">#</span> debug, native architecture</span>
+swift build -c release              <span class="pl-c"><span class="pl-c">#</span> release, native architecture</span>
+swift build --arch arm64 --arch x86_64 -c release   <span class="pl-c"><span class="pl-c">#</span> universal (what make-app.sh release runs)</span>
+.build/release/pjsip-smoke          <span class="pl-c"><span class="pl-c">#</span> prints PJSIP version, codecs and audio devices; exits 0</span></pre></div>
+<p dir="auto"><code class="notranslate">Package.swift</code> links the archives with absolute <code class="notranslate">-L</code>/<code class="notranslate">-l</code> flags (<code class="notranslate">Context.packageDirectory</code>), adds <code class="notranslate">-lc++</code> because libwebrtc contains C++, and gives every Swift target that imports <code class="notranslate">CPJSUA</code> the header path through <code class="notranslate">swiftSettings: pjsipSwiftSettings</code> (<code class="notranslate">-Xcc -I</code>). The app target gets the rpath <code class="notranslate">@executable_path/../Frameworks</code> for Sparkle. Universal builds put their products in <code class="notranslate">.build/out/Products/&lt;Config&gt;</code>, not <code class="notranslate">.build/&lt;config&gt;</code>; ask with <code class="notranslate">swift build ... --show-bin-path</code>. SwiftPM does not track the prebuilt archives, so after a PJSIP rebuild run <code class="notranslate">rm -rf .build</code> if a change seems not to take effect.</p>
+<h2 dir="auto">Step 3: <code class="notranslate">scripts/make-app.sh</code></h2>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">scripts/make-app.sh                 <span class="pl-c"><span class="pl-c">#</span> release: universal dist/MacroSIP.app (default)</span>
+scripts/make-app.sh debug           <span class="pl-c"><span class="pl-c">#</span> debug: native only, faster; the only build that accepts demo options</span>
+ARCHS=arm64 scripts/make-app.sh     <span class="pl-c"><span class="pl-c">#</span> single-architecture release</span></pre></div>
+<p dir="auto">The script runs <code class="notranslate">swift build --product MacroSIPApp</code> (universal for release, native for debug), checks the slices with <code class="notranslate">lipo</code>, and assembles <code class="notranslate">dist/MacroSIP.app</code>: the binary, <code class="notranslate">Sparkle.framework</code> into <code class="notranslate">Contents/Frameworks</code>, the <code class="notranslate">en.lproj</code> and <code class="notranslate">ru.lproj</code> strings and the <code class="notranslate">InfoPlist.strings</code> into <code class="notranslate">Contents/Resources</code>, <code class="notranslate">packaging/AppIcon.icns</code>, and a generated <code class="notranslate">Info.plist</code> with bundle id <code class="notranslate">com.hsmm.macrosip</code>, the <code class="notranslate">sip</code>/<code class="notranslate">sips</code>/<code class="notranslate">tel</code> URL schemes, the Sparkle keys (<code class="notranslate">SUFeedURL</code>, <code class="notranslate">SUPublicEDKey</code>, daily checks) and the version. <code class="notranslate">CFBundleShortVersionString</code> is the nearest git tag (<code class="notranslate">git describe --tags --abbrev=0</code>; before any tag, <code class="notranslate">Product.version</code>), <code class="notranslate">CFBundleVersion</code> the commit count. It strips every rpath except <code class="notranslate">/usr/lib/swift</code> and <code class="notranslate">@executable_path/../Frameworks</code> and fails if the binary needs another <code class="notranslate">@rpath</code> library.</p>
+<p dir="auto">Signing is ad hoc (<code class="notranslate">-</code>) with the hardened runtime, inside out as Sparkle documents: XPC services, <code class="notranslate">Autoupdate</code>, <code class="notranslate">Updater.app</code>, the framework, then the app with <code class="notranslate">packaging/Entitlements.plist</code>; <code class="notranslate">codesign --verify --deep --strict</code> must pass. The entitlements grant microphone and Contacts access and disable library validation, which an ad hoc signature needs to load the embedded framework (ADR 0013).</p>
+<p dir="auto">A <strong>debug</strong> app accepts <code class="notranslate">--mock-engine</code>, <code class="notranslate">--demo-state</code>, <code class="notranslate">--data-dir</code>, <code class="notranslate">--snapshot</code> and <code class="notranslate">--appearance</code> (see <a href="testing.html">Testing</a>); a <strong>release</strong> app ignores them and starts the real app on the real data, Keychain prompt included. All builds accept <code class="notranslate">--log-level 0-6</code> (or <code class="notranslate">MACROSIP_LOG_LEVEL</code>) for PJSIP verbosity.</p>
+<h2 dir="auto">Other scripts</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Script</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="notranslate">scripts/make-dmg.sh [debug|release]</code></td>
+<td>runs <code class="notranslate">make-app.sh</code>, stages the app with an Applications symlink and writes <code class="notranslate">dist/MacroSIP-&lt;version&gt;.dmg</code> (HFS+, UDZO, volume "MacroSIP"), prints its SHA-256</td>
+</tr>
+<tr>
+<td><code class="notranslate">swift scripts/make-icon.swift</code></td>
+<td>draws the icon (source of truth <code class="notranslate">packaging/AppIcon.svg</code>: a dial pad whose pressed keys trace an M on a green gradient) with CoreGraphics into an iconset and runs <code class="notranslate">iconutil</code> to produce <code class="notranslate">packaging/AppIcon.icns</code>; rerun after changing the artwork</td>
+</tr>
+<tr>
+<td><code class="notranslate">scripts/make-appcast.sh</code>, <code class="notranslate">scripts/publish-appcast.sh</code>, <code class="notranslate">scripts/update-cask.sh</code></td>
+<td>release tooling, see <a href="releasing.html">Releasing</a></td>
+</tr>
+<tr>
+<td><code class="notranslate">scripts/test.sh</code>, <code class="notranslate">scripts/selftest-call.sh</code>, <code class="notranslate">scripts/check-strings.sh</code></td>
+<td>see <a href="testing.html">Testing</a></td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<h2 dir="auto">The universal build (ADR 0012)</h2>
+<p dir="auto">One app and one DMG serve Apple Silicon and Intel. Release builds of the app are universal, debug builds native. Opus and OpenSSL are linked as static archives from <code class="notranslate">third_party/deps/universal/lib</code>, never as <code class="notranslate">.linkedLibrary</code> or from Homebrew, so the app has no dylib dependency outside the system (Homebrew archives would be arm64-only and built for the host macOS). Test the Intel slice on Apple Silicon with <code class="notranslate">SELFTEST_ARCH=x86_64 scripts/selftest-call.sh</code> under Rosetta 2. Intel support ends when Apple's toolchain or GitHub's Intel runners do.</p>
+<h2 dir="auto">Common problems</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Cause and fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="notranslate">Apple Silicon (arm64) host required</code></td>
+<td><code class="notranslate">build-pjsip.sh</code> cross-compiles x86_64 and runs only on arm64. On an Intel Mac take the universal libraries from a CI artifact (the Intel CI job does exactly that).</td>
+</tr>
+<tr>
+<td><code class="notranslate">SHA-256 mismatch for ...</code></td>
+<td>a corrupt or re-published download; delete the file under <code class="notranslate">third_party/downloads/</code> to fetch it again, and review the pinned checksum if upstream changed the tarball</td>
+</tr>
+<tr>
+<td><code class="notranslate">configure did not enable OpenSSL</code> / <code class="notranslate">Opus</code></td>
+<td>configure did not see <code class="notranslate">third_party/deps/&lt;arch&gt;</code>; read <code class="notranslate">third_party/build-logs/&lt;arch&gt;/pjsip-configure.log</code></td>
+</tr>
+<tr>
+<td><code class="notranslate">plugin for module SwiftUIMacros not found</code></td>
+<td><code class="notranslate">@State</code> needs Xcode's macro plugin; use the <code class="notranslate">@Local</code> wrapper from <code class="notranslate">Views/Components/Local.swift</code></td>
+</tr>
+<tr>
+<td><code class="notranslate">swift test</code> cannot find the Testing macro</td>
+<td>run <code class="notranslate">scripts/test.sh</code>, which passes the plugin path</td>
+</tr>
+<tr>
+<td>the app still runs old PJSIP code after a rebuild</td>
+<td>SwiftPM does not see the archives change: <code class="notranslate">rm -rf .build</code></td>
+</tr>
+<tr>
+<td><code class="notranslate">Sparkle.framework not found</code> in <code class="notranslate">make-app.sh</code></td>
+<td>run <code class="notranslate">swift package resolve</code> or <code class="notranslate">swift build</code> first</td>
+</tr>
+<tr>
+<td>the binary needs <code class="notranslate">@rpath</code> libraries other than Sparkle</td>
+<td>a new dependency was linked dynamically; ADR 0012 requires static archives</td>
+</tr>
+<tr>
+<td><code class="notranslate">PJSUA_INVALID_ID</code> does not compile in Swift</td>
+<td>it is a C enum constant: use <code class="notranslate">PJSUA_INVALID_ID.rawValue</code></td>
+</tr>
+<tr>
+<td>an x86_64 <code class="notranslate">pjsua</code> under Rosetta does not answer at once</td>
+<td>Rosetta start-up takes a few seconds; <code class="notranslate">selftest-call.sh</code> polls for up to about 15 s</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">See also <a href="architecture.html">Architecture</a>, <a href="installation.html">Installation</a> for installing a built DMG, and <a href="troubleshooting.html">Troubleshooting</a> for runtime problems.</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>联系人与通话记录 · MacroSIP 文档</title>
+<meta name="description" content="MacroSIP 文档">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/contacts-and-call-log.html">
+<link rel="alternate" hreflang="ru" href="../ru/contacts-and-call-log.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/contacts-and-call-log.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/contacts-and-call-log.html" hreflang="en">English</a><a href="../ru/contacts-and-call-log.html" hreflang="ru">Русский</a><a href="../zh/contacts-and-call-log.html" hreflang="zh-Hans" aria-current=true>中文</a></div></header>
+<div class="layout">
+<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html">通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html" aria-current=page>联系人与通话记录</a></li><li><a href="directory.html">目录</a></li><li><a href="quick-keys.html">快捷键</a></li><li><a href="audio.html">音频</a></li><li><a href="settings.html">设置</a></li><li><a href="menu-bar.html">菜单栏</a></li><li><a href="troubleshooting.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="architecture.html">架构</a></li><li><a href="building.html">构建</a></li><li><a href="testing.html">测试</a></li><li><a href="releasing.html">发布</a></li><li><a href="contributing.html">参与贡献</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">联系人与通话记录</h1>
+<p dir="auto">“联系人” (Contacts) 和“通话记录” (Call Log) 标签页无需账户即可使用，并且在通话期间仍完全可用。</p>
+<p dir="auto"><a target="_blank" rel="noopener noreferrer nofollow" href="https://raw.githubusercontent.com/HSMM/MacroSIP/main/docs/screenshots/light/contacts-presence.png?v=1"><img src="https://raw.githubusercontent.com/HSMM/MacroSIP/main/docs/screenshots/light/contacts-presence.png?v=1" alt="带在线状态的联系人" style="max-width: 100%;"></a></p>
+<h2 dir="auto">联系人名片</h2>
+<p dir="auto">可通过底栏的 <strong>+</strong>（新建联系人）、铅笔按钮或右键菜单中的<strong>编辑…</strong> (Edit…)（⌘E），或通过通话记录条目或目录结果中的<strong>添加到联系人</strong> (Add to Contacts) 打开。名片是一个 500 pt 的面板，覆盖在主窗口之上，主窗口在其后面仍可使用。</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>元素</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>个人收藏</strong> (Favorite) 星标</td>
+<td>将联系人添加到“个人收藏”部分。</td>
+</tr>
+<tr>
+<td>照片，<strong>选取…</strong> (Choose…)</td>
+<td>选取一个图像文件，裁剪为圆形；照片框的右键菜单中有<strong>移除照片</strong> (Remove Photo)。没有照片时显示姓名首字母。</td>
+</tr>
+<tr>
+<td><strong>名字</strong> (First name)、<strong>姓氏</strong> (Last name)、<strong>组织</strong> (Organization)</td>
+<td>姓名始终显示为“名字 姓氏”；两者都为空时显示组织，否则显示默认号码。</td>
+</tr>
+<tr>
+<td><strong>电话号码</strong> (Phone numbers)</td>
+<td>每个号码一行，带标签（<strong>工作</strong> (Work)、<strong>手机</strong> (Mobile)、<strong>住宅</strong> (Home)、<strong>其他</strong> (Other)、<strong>SIP</strong>）、一个<strong>默认</strong> (Default) 单选按钮和一个移除按钮。<strong>添加号码</strong> (Add number) 追加一行；没有数量限制。“默认号码用于连按、Return 和在线状态。”</td>
+</tr>
+<tr>
+<td><strong>电子邮件</strong> (Email)</td>
+<td>自由文本。</td>
+</tr>
+<tr>
+<td><strong>账户</strong> (Account)</td>
+<td>“呼叫 Katsiaryna Zhuk 时的首选账户。”<strong>任意（使用默认）</strong> (Any (use default)) 使用外拨账户。</td>
+</tr>
+<tr>
+<td><strong>关注在线状态</strong> (Watch presence)</td>
+<td>“订阅默认号码。”新联系人默认关闭。</td>
+</tr>
+<tr>
+<td><strong>备注</strong> (Notes)</td>
+<td>自由文本；Return 在此处换行。</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">填写了姓名、组织或号码之一后，<strong>存储</strong> (Save) 即可用。</p>
+<h2 dir="auto">个人收藏与排序</h2>
+<p dir="auto">个人收藏构成第一个部分<strong>个人收藏</strong> (Favorites)，同时仍留在各自的字母部分中。右键菜单提供<strong>添加到个人收藏</strong> (Add to Favorites) / <strong>从个人收藏中移除</strong> (Remove from Favorites)。底部计数显示“24 位联系人 · 3 个个人收藏”。</p>
+<p dir="auto">设置 › 目录 › 联系人 › <strong>排序方式</strong> (Sort by)：<strong>名字</strong> (First name)（默认）或<strong>姓氏</strong> (Last name)。按姓氏排序时，各部分也按姓氏首字母分组。</p>
+<h2 dir="auto">搜索与呼叫</h2>
+<p dir="auto">搜索栏（⌘F，占位文本“搜索”）匹配姓名、组织和所有号码；数字比较时忽略空格、连字符和括号。按 Return 或连按呼叫默认号码。右键菜单列出<strong>呼叫 工作 102</strong> (Call Work 102)，每个号码一项，然后是<strong>从…呼叫 ▸</strong> (Call from ▸)（选择账户）、<strong>拷贝号码</strong> (Copy Number)、<strong>编辑…</strong>、个人收藏、<strong>关注在线状态</strong> (Watch Presence) 和<strong>删除</strong> (Delete)（⌘⌫；在原位以“删除 Siarhei Lukashevich？”确认）。</p>
+<h2 dir="auto">在线状态圆点</h2>
+<p dir="auto">开启了<strong>关注在线状态</strong>的联系人会在头像上显示圆点，并在右侧显示文本：</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>圆点</th>
+<th>文本</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>绿色</td>
+<td>在线 (Available)</td>
+<td>联系人的电话已注册且空闲。</td>
+</tr>
+<tr>
+<td>黄色</td>
+<td>离开 (Away)</td>
+<td>联系人发布了“离开”。</td>
+</tr>
+<tr>
+<td>红色</td>
+<td>勿扰模式 (Do Not Disturb)</td>
+<td>忙、正在通话（Asterisk 将其报告为忙）或勿扰。</td>
+</tr>
+<tr>
+<td>灰色</td>
+<td>离线 (Offline)</td>
+<td>没有订阅应答或离线。</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">您自己的状态按账户发布（账户编辑器中的<strong>发布我的在线状态</strong> (Publish my presence)），并在菜单栏菜单的<strong>我的状态</strong> (My Status) 下选择；见 <a href="menu-bar.html">菜单栏</a>。带 BLF 的快捷键共享这些订阅（<a href="quick-keys.html">快捷键</a>）。</p>
+<h2 dir="auto">通话记录条目</h2>
+<p dir="auto">每行显示方向图标（来电、去电或红色的未接箭头）、粗体姓名（无人匹配时显示号码）、号码或 URI 加灰色账户标签（“102 · Office”），右侧是时间，其下是时长 <code class="notranslate">m:ss</code> 或“未接”字样。日期标题显示“今天”、“昨天”，然后是“10月6日 周一”。记录保留最近 1,000 条条目。来电者通过其任一号码与联系人匹配，从目录中找到的姓名会与条目一同存储。</p>
+<h3 dir="auto">筛选与清除</h3>
+<p dir="auto"><strong>全部</strong> (All) / <strong>未接</strong> (Missed) 切换列表；“未接”隐藏没有未接来电的日期分组。标签页（以及 Dock 和菜单栏）上的红色标记统计未查看的未接来电，在您打开该标签页时清除。<strong>清除…</strong> (Clear…) 询问“清除通话记录？”——“全部 312 条条目将被移除。录音保留在其文件夹中。”</p>
+<h3 dir="auto">回拨与右键菜单</h3>
+<p dir="auto">连按或按 Return 通过该通话所用的账户回拨。右键菜单提供<strong>呼叫</strong> (Call)、<strong>从…呼叫 ▸</strong>、<strong>添加到联系人</strong>（预填名片）、<strong>拷贝号码</strong>和<strong>删除条目</strong> (Delete Entry)（无需确认）。带录音的条目增加<strong>播放录音</strong> (Play recording) 和<strong>在访达中显示</strong> (Show in Finder)。</p>
+<h3 dir="auto">回放</h3>
+<p dir="auto">录音文件仍存在的行会显示蓝色播放按钮。它在该行下方打开一个内嵌播放器：播放/暂停、已播放时间、进度条、总时长和一个关闭按钮。一次只有一个播放器；离开标签页、清除记录或删除条目会关闭它，来电响铃会暂停它。如果文件无法打开，该条显示“无法播放此录音。”未关联到条目的录音按文件名（日期、对方和方向）匹配。</p>
+<h3 dir="auto">橙色注释</h3>
+<p dir="auto">第三行解释您从未听到响铃的来电：</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>注释</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>“已拒接：规则”</td>
+<td>设置 › 通话中的拒接规则。见 <a href="incoming-calls.html">来电</a>。</td>
+</tr>
+<tr>
+<td>“已拒接：正在通话中”</td>
+<td>单通话模式以 486 拦截了来电者。</td>
+</tr>
+<tr>
+<td>“已拒接：通话数量上限”</td>
+<td>第五路同时进行的通话。</td>
+</tr>
+<tr>
+<td>“连接已断开”</td>
+<td>网络变化后媒体未恢复。</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<h2 dir="auto">数据存放位置</h2>
+<p dir="auto">联系人是 <code class="notranslate">~/Library/Application Support/MacroSIP/</code> 中的 <code class="notranslate">contacts.json</code>，照片是 <code class="notranslate">photos/&lt;id&gt;.jpg</code>；通话记录是旁边的 <code class="notranslate">calllog.json</code>。无法读取的条目会被跳过，原文件保留为 <code class="notranslate">contacts.damaged-&lt;date&gt;.json</code>。从 MicroSIP 的 <code class="notranslate">Contacts.xml</code> 导入计划在后续版本中实现。</p>
+<p dir="auto">其他页面：<a href="index.html">首页</a> · <a href="../en/index.html">Home</a> (English)</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

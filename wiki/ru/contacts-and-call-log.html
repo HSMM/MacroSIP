@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Контакты и журнал · Документация MacroSIP</title>
+<meta name="description" content="Документация MacroSIP">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/contacts-and-call-log.html">
+<link rel="alternate" hreflang="ru" href="../ru/contacts-and-call-log.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/contacts-and-call-log.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/contacts-and-call-log.html" hreflang="en">English</a><a href="../ru/contacts-and-call-log.html" hreflang="ru" aria-current=true>Русский</a><a href="../zh/contacts-and-call-log.html" hreflang="zh-Hans">中文</a></div></header>
+<div class="layout">
+<nav aria-label="Содержание"><details><summary>Содержание</summary><div class="links"><ul><li><a href="index.html">Главная</a></li></ul><h2>Руководство пользователя</h2><ul><li><a href="installation.html">Установка</a></li><li><a href="accounts.html">Аккаунты</a></li><li><a href="calls.html">Звонки</a></li><li><a href="incoming-calls.html">Входящие звонки</a></li><li><a href="contacts-and-call-log.html" aria-current=page>Контакты и журнал</a></li><li><a href="directory.html">Справочник</a></li><li><a href="quick-keys.html">Быстрые клавиши</a></li><li><a href="audio.html">Звук</a></li><li><a href="settings.html">Настройки</a></li><li><a href="menu-bar.html">Строка меню</a></li><li><a href="troubleshooting.html">Решение проблем</a></li></ul><h2>Для разработчиков</h2><ul><li><a href="architecture.html">Устройство</a></li><li><a href="building.html">Сборка</a></li><li><a href="testing.html">Тесты</a></li><li><a href="releasing.html">Релизы</a></li><li><a href="contributing.html">Участие</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">Контакты и журнал</h1>
+<p dir="auto">Вкладки «Контакты» и «Журнал» работают без аккаунта и остаются полностью доступными во время звонка.</p>
+<p dir="auto"><a target="_blank" rel="noopener noreferrer nofollow" href="https://raw.githubusercontent.com/HSMM/MacroSIP/main/docs/screenshots/ru/light/contacts-presence.png?v=1"><img src="https://raw.githubusercontent.com/HSMM/MacroSIP/main/docs/screenshots/ru/light/contacts-presence.png?v=1" alt="Контакты со статусами" style="max-width: 100%;"></a></p>
+<h2 dir="auto">Карточка контакта</h2>
+<p dir="auto">Её открывают кнопка <strong>+</strong> в нижней панели («Новый контакт»), кнопка-карандаш или <strong>Изменить…</strong> в контекстном меню (⌘E), а также <strong>Добавить в контакты</strong> из записи журнала или результата справочника. Карточка — это панель шириной 500 pt, которая открывается поверх главного окна, и главное окно за ней остаётся рабочим.</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Элемент</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Звезда <strong>Избранное</strong></td>
+<td>Добавляет контакт в раздел «Избранное».</td>
+</tr>
+<tr>
+<td>Фото, <strong>Выбрать…</strong></td>
+<td>Выбирает файл изображения, обрезанный по кругу; <strong>Удалить фото</strong> — в контекстном меню поля с фото. Без фото показываются инициалы.</td>
+</tr>
+<tr>
+<td><strong>Имя</strong>, <strong>Фамилия</strong>, <strong>Организация</strong></td>
+<td>Имена всегда показываются как «Имя Фамилия»; если оба поля пусты, показывается организация, а если и её нет — основной номер.</td>
+</tr>
+<tr>
+<td><strong>Телефоны</strong></td>
+<td>По строке на номер с меткой (<strong>Рабочий</strong>, <strong>Мобильный</strong>, <strong>Домашний</strong>, <strong>Другой</strong>, <strong>SIP</strong>), переключателем <strong>Основной</strong> и кнопкой удаления. <strong>Добавить номер</strong> добавляет строку; ограничений нет. «Основной номер используется при двойном щелчке, по Return и для статуса.»</td>
+</tr>
+<tr>
+<td><strong>Эл. почта</strong></td>
+<td>Свободный текст.</td>
+</tr>
+<tr>
+<td><strong>Аккаунт</strong></td>
+<td>«Аккаунт для звонков: Екатерина Жук.» <strong>Любой (по умолчанию)</strong> использует исходящий аккаунт.</td>
+</tr>
+<tr>
+<td><strong>Следить за статусом</strong></td>
+<td>«Подписка на основной номер.» Для новых контактов выключено.</td>
+</tr>
+<tr>
+<td><strong>Заметки</strong></td>
+<td>Свободный текст; Return здесь вставляет перенос строки.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto"><strong>Сохранить</strong> становится доступной, когда заполнено имя, организация или номер.</p>
+<h2 dir="auto">Избранное и сортировка</h2>
+<p dir="auto">Избранные контакты образуют первый раздел, <strong>Избранное</strong>, и при этом остаются в своём буквенном разделе. Контекстное меню предлагает <strong>В избранное</strong> / <strong>Убрать из избранного</strong>. Счётчик внизу читается «24 контакта · 3 избранных».</p>
+<p dir="auto">Настройки › Справочник › Контакты › <strong>Сортировка</strong>: <strong>По имени</strong> (по умолчанию) или <strong>По фамилии</strong>. При сортировке по фамилии разделы списка тоже строятся по её первой букве.</p>
+<h2 dir="auto">Поиск и звонок</h2>
+<p dir="auto">Поле поиска (⌘F, подсказка «Поиск») ищет по именам, организации и всем номерам; цифры сравниваются без пробелов, дефисов и скобок. Return или двойной щелчок звонит на основной номер. Контекстное меню перечисляет <strong>Позвонить: Рабочий 102</strong> — по пункту на номер, затем <strong>Позвонить через ▸</strong> (выбор аккаунта), <strong>Скопировать номер</strong>, <strong>Изменить…</strong>, избранное, <strong>Следить за статусом</strong> и <strong>Удалить</strong> (⌘⌫; подтверждается прямо в списке вопросом «Удалить контакт „Сергей Лукашевич“?»).</p>
+<h2 dir="auto">Точки статуса</h2>
+<p dir="auto">У контактов с включённым <strong>Следить за статусом</strong> на аватаре показана точка, а справа — текст:</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Точка</th>
+<th>Текст</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>зелёная</td>
+<td>Доступен</td>
+<td>Телефон контакта зарегистрирован и свободен.</td>
+</tr>
+<tr>
+<td>жёлтая</td>
+<td>Отошёл</td>
+<td>Контакт опубликовал статус «Отошёл».</td>
+</tr>
+<tr>
+<td>красная</td>
+<td>Не беспокоить</td>
+<td>Занят, разговаривает (Asterisk сообщает это как «занято») или в режиме «Не беспокоить».</td>
+</tr>
+<tr>
+<td>серая</td>
+<td>Не в сети</td>
+<td>Нет ответа на подписку или контакт не в сети.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">Ваш собственный статус публикуется для каждого аккаунта (<strong>Публиковать мой статус</strong> в редакторе аккаунта) и выбирается в меню <strong>Мой статус</strong> значка в строке меню; см. <a href="menu-bar.html">Строка-меню</a>. Быстрые клавиши с BLF используют те же подписки (<a href="quick-keys.html">Быстрые-клавиши</a>).</p>
+<h2 dir="auto">Записи журнала звонков</h2>
+<p dir="auto">Каждая строка показывает значок направления (входящий, исходящий или красная стрелка пропущенного), имя жирным (номер, если никто не совпал), номер или URI с серой меткой аккаунта («102 · Офис») и справа время над длительностью в формате <code class="notranslate">m:ss</code> либо слово «пропущен». Заголовки дат читаются «Сегодня», «Вчера», затем «Пн, 6 окт.». Журнал хранит последние 1000 записей. Звонящий сопоставляется с контактом по любому из его номеров, а имя, найденное в справочнике, сохраняется вместе с записью.</p>
+<h3 dir="auto">Фильтры и очистка</h3>
+<p dir="auto"><strong>Все</strong> / <strong>Пропущенные</strong> переключают список; «Пропущенные» скрывает дни без пропущенных звонков. Красный бейдж на вкладке (а также в Dock и строке меню) считает непросмотренные пропущенные звонки и сбрасывается, когда вы открываете вкладку. <strong>Очистить…</strong> спрашивает «Очистить журнал звонков?» — «Будут удалены 312 записей. Записи разговоров останутся в своей папке.»</p>
+<h3 dir="auto">Обратный вызов и контекстное меню</h3>
+<p dir="auto">Двойной щелчок или Return перезванивает через аккаунт, которым пользовался звонок. Контекстное меню предлагает <strong>Позвонить</strong>, <strong>Позвонить через ▸</strong>, <strong>Добавить в контакты</strong> (карточка с заполненными полями), <strong>Скопировать номер</strong> и <strong>Удалить запись</strong> (без подтверждения). У записей с аудиозаписью добавляются <strong>Воспроизвести запись</strong> и <strong>Показать в Finder</strong>.</p>
+<h3 dir="auto">Воспроизведение</h3>
+<p dir="auto">Синяя кнопка воспроизведения появляется у строк, чья запись ещё существует. Она открывает под строкой встроенный плеер: воспроизведение/пауза, прошедшее время, ползунок, общая длительность и кнопка закрытия. Плеер один на весь список; уход с вкладки, очистка журнала или удаление записи закрывают его, а входящий звонок ставит его на паузу. Если файл не открывается, в полосе показано «Запись не воспроизводится.» Записи, не связанные с записью журнала, сопоставляются с ней по имени файла (дата, собеседник и направление).</p>
+<h3 dir="auto">Пометки оранжевым</h3>
+<p dir="auto">Третья строка объясняет звонки, которых вы не слышали:</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Пометка</th>
+<th>Причина</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>«Отклонён: правило»</td>
+<td>Правило отклонения в Настройках › Звонки. См. <a href="incoming-calls.html">Входящие-звонки</a>.</td>
+</tr>
+<tr>
+<td>«Отклонён: шёл разговор»</td>
+<td>Режим одного звонка отклонил звонящего кодом 486.</td>
+</tr>
+<tr>
+<td>«Отклонён: лимит звонков»</td>
+<td>Пятый одновременный звонок.</td>
+</tr>
+<tr>
+<td>«Связь потеряна»</td>
+<td>Медиа не восстановились после смены сети.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<h2 dir="auto">Где хранятся данные</h2>
+<p dir="auto">Контакты — это <code class="notranslate">contacts.json</code>, фото — <code class="notranslate">photos/&lt;id&gt;.jpg</code> в <code class="notranslate">~/Library/Application Support/MacroSIP/</code>; журнал звонков — <code class="notranslate">calllog.json</code> рядом с ними. Запись, которую не удалось прочитать, пропускается, а исходный файл сохраняется как <code class="notranslate">contacts.damaged-&lt;date&gt;.json</code>. Импорт из <code class="notranslate">Contacts.xml</code> MicroSIP запланирован на один из следующих выпусков.</p>
+<p dir="auto">Другие страницы: <a href="index.html">Главная</a> · <a href="../en/index.html">Home</a> (English)</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

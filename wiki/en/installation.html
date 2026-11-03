@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Installation · MacroSIP documentation</title>
+<meta name="description" content="MacroSIP documentation">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/installation.html">
+<link rel="alternate" hreflang="ru" href="../ru/installation.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/installation.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/installation.html" hreflang="en" aria-current=true>English</a><a href="../ru/installation.html" hreflang="ru">Русский</a><a href="../zh/installation.html" hreflang="zh-Hans">中文</a></div></header>
+<div class="layout">
+<nav aria-label="Contents"><details><summary>Contents</summary><div class="links"><ul><li><a href="index.html">Home</a></li></ul><h2>User guide</h2><ul><li><a href="installation.html" aria-current=page>Installation</a></li><li><a href="accounts.html">Accounts</a></li><li><a href="calls.html">Calls</a></li><li><a href="incoming-calls.html">Incoming calls</a></li><li><a href="contacts-and-call-log.html">Contacts and call log</a></li><li><a href="directory.html">Directory</a></li><li><a href="quick-keys.html">Quick keys</a></li><li><a href="audio.html">Audio</a></li><li><a href="settings.html">Settings</a></li><li><a href="menu-bar.html">Menu bar</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul><h2>For developers</h2><ul><li><a href="architecture.html">Architecture</a></li><li><a href="building.html">Building</a></li><li><a href="testing.html">Testing</a></li><li><a href="releasing.html">Releasing</a></li><li><a href="contributing.html">Contributing</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">Installation</h1>
+<h2 dir="auto">Requirements</h2>
+<ul dir="auto">
+<li>macOS 14 (Sonoma) or newer.</li>
+<li>A Mac with Apple Silicon or Intel. The app and the DMG are universal, so one download runs natively on both.</li>
+<li>A SIP account: the server address, username and password from your phone provider or PBX administrator. Contacts and the call log work without an account.</li>
+</ul>
+<p dir="auto">Both the Homebrew cask and the DMG are available from the 26.0.0 release; building from source is described in <a href="building.html">Building</a>.</p>
+<h2 dir="auto">With Homebrew</h2>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">brew tap hsmm/tap
+brew install --cask hsmm/tap/macrosip</pre></div>
+<p dir="auto">The cask installs the same signed DMG that GitHub Releases offers. The cask is marked <code class="notranslate">auto_updates</code>, so <code class="notranslate">brew upgrade</code> leaves an app alone that updates itself.</p>
+<h2 dir="auto">From the DMG</h2>
+<ol dir="auto">
+<li>Download <code class="notranslate">MacroSIP-&lt;version&gt;.dmg</code> from the <a href="https://github.com/HSMM/MacroSIP/releases/latest">latest release</a>.</li>
+<li>Open the DMG and drag MacroSIP onto the Applications folder.</li>
+<li>Open the app once as described below.</li>
+</ol>
+<h3 dir="auto">First launch: the Gatekeeper step</h3>
+<p dir="auto">MacroSIP is signed ad hoc, not notarized with an Apple Developer ID, so macOS refuses to open it the first time ("cannot be opened because the developer cannot be verified"). Either of these works once:</p>
+<ul dir="auto">
+<li>
+<p dir="auto">Right-click (or Control-click) MacroSIP in Applications, choose <strong>Open</strong>, then confirm in the dialog.</p>
+</li>
+<li>
+<p dir="auto">Or remove the quarantine flag in Terminal:</p>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">xattr -dr com.apple.quarantine /Applications/MacroSIP.app</pre></div>
+</li>
+</ul>
+<p dir="auto">After that the app opens normally. Developer ID signing and notarization are planned for a later release, when a signing identity is available.</p>
+<h3 dir="auto">First window</h3>
+<p dir="auto">With no accounts the main window shows "Add a SIP account to start calling" and an <strong>Add Account…</strong> button. The account editor is described in <a href="accounts.html">Accounts</a>. The menu bar icon appears from the first launch, in the offline state.</p>
+<h3 dir="auto">Microphone permission</h3>
+<p dir="auto">MacroSIP asks for the microphone on the first call, not at launch. Choose <strong>Allow</strong>. If you decline, the call panel shows "Microphone access is off" with an <strong>Open System Settings</strong> button; allow MacroSIP under Privacy &amp; Security › Microphone.</p>
+<h2 dir="auto">Updates</h2>
+<p dir="auto">The app updates itself.</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>What</th>
+<th>Where</th>
+<th>Behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Daily check</td>
+<td>automatic</td>
+<td>MacroSIP checks once a day and asks before installing.</td>
+</tr>
+<tr>
+<td>Check right away</td>
+<td>MacroSIP menu › <strong>Check for Updates…</strong>, or Settings › General › Updates › <strong>Check Now</strong></td>
+<td>The last check date is shown as "Last checked …" or "Not checked yet".</td>
+</tr>
+<tr>
+<td>Turn the daily check off</td>
+<td>Settings › General › Updates › <strong>Check for updates automatically</strong></td>
+<td>"Once a day. MacroSIP asks before installing an update."</td>
+</tr>
+<tr>
+<td>Release candidates</td>
+<td>Settings › General › Updates › <strong>Include release candidates</strong></td>
+<td>"Test builds of the next version, offered before it is final." On by default when the running build is itself a release candidate, otherwise off.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">Updates are signed (EdDSA) and verified before they are installed, and the updated app opens without the first-launch dialog. An update found during a call waits until the last call ends; "Install and Relaunch" during a call waits too. Quitting with a call in progress asks "End the call and quit?".</p>
+<p dir="auto">Because the app is signed ad hoc, macOS ties the microphone permission to the exact build. <strong>After each update macOS asks for microphone access again</strong>; allow it once more on the first call. This stops once the app is signed with a Developer ID.</p>
+<p dir="auto">"Updates work only in the installed app": a build run from a build folder or started with a mock engine does not check for updates.</p>
+<h2 dir="auto">Launch at login</h2>
+<p dir="auto">Settings › General › <strong>Launch at login</strong> registers MacroSIP as a login item. There is no prompt about this on first run. If macOS needs your approval, the row says "Allow MacroSIP in System Settings › General › Login Items." with an <strong>Open Login Items…</strong> button.</p>
+<h2 dir="auto">Where the log file is</h2>
+<p dir="auto">MacroSIP writes <code class="notranslate">~/Library/Logs/MacroSIP/MacroSIP.log</code>, 2 MB per file, 3 files kept. Settings › General has <strong>Open Log Folder</strong> (reveals the log in Finder) and <strong>Copy Diagnostics</strong> (versions, accounts and settings without passwords, ready to paste into a bug report). Both sit in the collapsed <strong>Advanced</strong> group at the bottom of the General pane, under the header "Troubleshooting". See <a href="troubleshooting.html">Troubleshooting</a> for how to use them.</p>
+<h2 dir="auto">Uninstalling</h2>
+<p dir="auto">Drag MacroSIP out of Applications (or <code class="notranslate">brew uninstall --cask macrosip</code>). Your data stays in <code class="notranslate">~/Library/Application Support/MacroSIP/</code> (accounts, contacts, call log, settings as JSON) and in the login Keychain (passwords, service <code class="notranslate">com.hsmm.macrosip</code>); recordings stay in <code class="notranslate">~/Music/MacroSIP Recordings</code> unless you chose another folder. Delete those by hand if you want a clean removal.</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

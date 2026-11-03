@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Releasing · MacroSIP documentation</title>
+<meta name="description" content="MacroSIP documentation">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/releasing.html">
+<link rel="alternate" hreflang="ru" href="../ru/releasing.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/releasing.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/releasing.html" hreflang="en" aria-current=true>English</a><a href="../ru/releasing.html" hreflang="ru">Русский</a><a href="../zh/releasing.html" hreflang="zh-Hans">中文</a></div></header>
+<div class="layout">
+<nav aria-label="Contents"><details><summary>Contents</summary><div class="links"><ul><li><a href="index.html">Home</a></li></ul><h2>User guide</h2><ul><li><a href="installation.html">Installation</a></li><li><a href="accounts.html">Accounts</a></li><li><a href="calls.html">Calls</a></li><li><a href="incoming-calls.html">Incoming calls</a></li><li><a href="contacts-and-call-log.html">Contacts and call log</a></li><li><a href="directory.html">Directory</a></li><li><a href="quick-keys.html">Quick keys</a></li><li><a href="audio.html">Audio</a></li><li><a href="settings.html">Settings</a></li><li><a href="menu-bar.html">Menu bar</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul><h2>For developers</h2><ul><li><a href="architecture.html">Architecture</a></li><li><a href="building.html">Building</a></li><li><a href="testing.html">Testing</a></li><li><a href="releasing.html" aria-current=page>Releasing</a></li><li><a href="contributing.html">Contributing</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">Releasing</h1>
+<p dir="auto">Releases are cut by tagging <code class="notranslate">main</code>. The tag starts <code class="notranslate">.github/workflows/release.yml</code>, which builds the universal DMG, publishes the GitHub Release, signs and updates the Sparkle feed and refreshes the Homebrew cask. The authoritative text is the "Releasing" section of <code class="notranslate">docs/DEVELOPMENT.md</code>, the checklist in <code class="notranslate">README.md</code>, ADR 0010 and ADR 0013.</p>
+<h2 dir="auto">Version numbers (ADR 0010)</h2>
+<p dir="auto">Versions are <code class="notranslate">YY.MINOR.PATCH</code>: <code class="notranslate">YY</code> is the two-digit year of the release line (26 for 2026), <code class="notranslate">MINOR</code> grows with feature releases within the year, <code class="notranslate">PATCH</code> with fixes. The first release is <code class="notranslate">26.0.0</code>; a release in 2027 starts <code class="notranslate">27.0.0</code> even if it would otherwise be a minor bump. Tags carry the bare number.</p>
+<p dir="auto">A release candidate is tagged <code class="notranslate">N.N.N-rc.N</code>, for example <code class="notranslate">26.0.0-rc.1</code>. <code class="notranslate">release.yml</code> and <code class="notranslate">scripts/make-appcast.sh</code> refuse any other suffix. Any tag with a <code class="notranslate">-</code> becomes a GitHub pre-release and an appcast item on the <code class="notranslate">beta</code> channel.</p>
+<p dir="auto">Three numbers must agree:</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Where</th>
+<th>Value</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="notranslate">CFBundleShortVersionString</code></td>
+<td>the version shown in About and compared with the tag by the release job</td>
+<td><code class="notranslate">make-app.sh</code>: <code class="notranslate">git describe --tags --abbrev=0</code>, before the first tag <code class="notranslate">Product.version</code></td>
+</tr>
+<tr>
+<td><code class="notranslate">CFBundleVersion</code></td>
+<td>the build number Sparkle orders updates by</td>
+<td><code class="notranslate">make-app.sh</code>: <code class="notranslate">git rev-list --count HEAD</code></td>
+</tr>
+<tr>
+<td><code class="notranslate">Product.version</code> (<code class="notranslate">Sources/MacroSIPCore/Product.swift</code>)</td>
+<td>the SIP <code class="notranslate">User-Agent</code> header and the About panel</td>
+<td>edited by hand before tagging</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto"><strong>Tag every release on a later commit than the previous one, a final release after its candidate too.</strong> <code class="notranslate">CFBundleVersion</code> is the commit count, Sparkle identifies items by it, and <code class="notranslate">generate_appcast</code> would silently replace the candidate's item if the final were tagged on the same commit. <code class="notranslate">make-appcast.sh --check</code> refuses a build number the feed already has under another version, and the workflow runs that check before anything is published.</p>
+<h2 dir="auto">Owner's checklist (from README)</h2>
+<ol dir="auto">
+<li>
+<p dir="auto">Everything green locally: <code class="notranslate">swift build</code>, <code class="notranslate">scripts/test.sh</code>, <code class="notranslate">scripts/selftest-call.sh</code>, <code class="notranslate">scripts/make-dmg.sh</code>; mount the DMG and start the app.</p>
+</li>
+<li>
+<p dir="auto">Bump <code class="notranslate">Product.version</code> to the version being released, update <code class="notranslate">docs/ROADMAP.md</code>, commit.</p>
+</li>
+<li>
+<p dir="auto">Tag and push:</p>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">git tag 26.0.0-rc.1 <span class="pl-k">&amp;&amp;</span> git push origin 26.0.0-rc.1    <span class="pl-c"><span class="pl-c">#</span> candidate</span>
+git tag 26.0.0 <span class="pl-k">&amp;&amp;</span> git push origin 26.0.0              <span class="pl-c"><span class="pl-c">#</span> final, on a later commit</span></pre></div>
+</li>
+<li>
+<p dir="auto">Watch <code class="notranslate">release.yml</code>. It builds the DMG, creates the GitHub Release and adds it to the update feed; the same run updates the Homebrew cask when <code class="notranslate">TAP_TOKEN</code> exists.</p>
+</li>
+<li>
+<p dir="auto">Check: <code class="notranslate">brew tap hsmm/tap &amp;&amp; brew install --cask hsmm/tap/macrosip</code>, launch (right-click, Open the first time); <code class="notranslate">curl -s https://raw.githubusercontent.com/HSMM/MacroSIP/gh-pages/appcast.xml</code> lists the new item; an installed older version finds it through MacroSIP, Check for Updates (a candidate only with "Include release candidates" on).</p>
+</li>
+</ol>
+<h2 dir="auto">What <code class="notranslate">release.yml</code> does</h2>
+<p dir="auto">The workflow runs only in <code class="notranslate">HSMM/MacroSIP</code>, on tags matching <code class="notranslate">[0-9]*.[0-9]*.[0-9]*</code>, with <code class="notranslate">contents: write</code>. There is no concurrency group on purpose: GitHub keeps one pending run per group and cancels the rest, which would drop a tag; simultaneous releases queue on <code class="notranslate">gh-pages</code> instead.</p>
+<p dir="auto">Job <code class="notranslate">dmg</code> on <code class="notranslate">macos-15</code> (arm64):</p>
+<ol dir="auto">
+<li><strong>Check the tag</strong>: <code class="notranslate">N.N.N</code> or <code class="notranslate">N.N.N-rc.N</code>, and the <code class="notranslate">SPARKLE_PRIVATE_KEY</code> secret must exist (without it installed apps would never see the release).</li>
+<li><strong>Build and test</strong> as in CI: cached <code class="notranslate">build-pjsip.sh</code>, <code class="notranslate">swift build</code>, <code class="notranslate">scripts/test.sh</code>, <code class="notranslate">scripts/selftest-call.sh</code> natively and under Rosetta 2.</li>
+<li><strong>Build the DMG</strong>: <code class="notranslate">scripts/make-dmg.sh release</code>; <code class="notranslate">lipo -info</code> on the binary; the job fails if <code class="notranslate">CFBundleShortVersionString</code> differs from the tag. The DMG is uploaded as an artifact for the cask job.</li>
+<li><strong>Check the appcast</strong>: <code class="notranslate">scripts/publish-appcast.sh --check &lt;tag&gt; dist/MacroSIP.app</code> fetches <code class="notranslate">gh-pages</code> and refuses a build number the feed has under another version.</li>
+<li><strong>Create the GitHub Release</strong> with <code class="notranslate">gh release create</code>: title = tag, generated notes prefixed with a fixed line saying that macOS asks for microphone access again after an update, <code class="notranslate">--prerelease</code> for tags with a <code class="notranslate">-</code>. A re-run keeps the release and replaces the DMG with <code class="notranslate">--clobber</code>.</li>
+<li><strong>Update the appcast</strong>: the release body is rendered to HTML with GitHub's Markdown API and <code class="notranslate">scripts/publish-appcast.sh &lt;tag&gt; &lt;dmg&gt;</code> runs <code class="notranslate">scripts/make-appcast.sh</code>, which calls Sparkle's <code class="notranslate">generate_appcast</code> (from <code class="notranslate">.build/artifacts/sparkle/Sparkle/bin</code>) with the EdDSA key from <code class="notranslate">SPARKLE_PRIVATE_KEY</code>, the download URL of the release asset, <code class="notranslate">--embed-release-notes</code>, <code class="notranslate">--channel beta</code> for candidates, and every earlier item kept (<code class="notranslate">--maximum-versions 0</code>, no deltas). The result is committed to the <code class="notranslate">gh-pages</code> branch (created orphan on the first run; the push is retried up to five times after a fresh fetch when another release pushed first) and attached to the release as <code class="notranslate">appcast.xml</code>.</li>
+</ol>
+<p dir="auto">Job <code class="notranslate">homebrew</code> on <code class="notranslate">ubuntu-latest</code>, after <code class="notranslate">dmg</code>: skipped when the <code class="notranslate">TAP_TOKEN</code> secret is empty; otherwise checks out <code class="notranslate">HSMM/homebrew-tap</code> with that token, downloads the DMG artifact and runs <code class="notranslate">scripts/update-cask.sh &lt;tag&gt; &lt;dmg&gt;</code> with <code class="notranslate">TAP_DIR</code> set, which fills <code class="notranslate">packaging/homebrew/macrosip.rb</code> (version, SHA-256) into <code class="notranslate">Casks/macrosip.rb</code>, commits <code class="notranslate">macrosip &lt;tag&gt;</code> and pushes. One-time setup: create the public repository <code class="notranslate">HSMM/homebrew-tap</code>, create a fine-grained personal access token with Contents read and write on that repository only, store it as the Actions secret <code class="notranslate">TAP_TOKEN</code> of <code class="notranslate">HSMM/MacroSIP</code>. The cask declares <code class="notranslate">auto_updates true</code> and <code class="notranslate">depends_on macos: :sonoma</code>; Homebrew accepts <code class="notranslate">26.0.0-rc.1</code> as a version.</p>
+<p dir="auto">By hand, without CI: <code class="notranslate">scripts/update-cask.sh &lt;version&gt; dist/MacroSIP-&lt;version&gt;.dmg</code> writes <code class="notranslate">dist/macrosip.rb</code> and prints the git commands (with <code class="notranslate">TAP_DIR=&lt;clone&gt;</code> it commits and pushes); <code class="notranslate">SPARKLE_PRIVATE_KEY=... APPCAST_IN=&lt;current appcast.xml&gt; scripts/make-appcast.sh &lt;version&gt; &lt;dmg&gt; dist</code> produces <code class="notranslate">dist/appcast.xml</code> to upload to the release and to <code class="notranslate">gh-pages</code>. Without the environment variable, <code class="notranslate">generate_appcast</code> reads the key from the login keychain item that <code class="notranslate">generate_keys --account macrosip</code> created.</p>
+<h2 dir="auto">The update feed (ADR 0013)</h2>
+<p dir="auto">The app reads <code class="notranslate">https://raw.githubusercontent.com/HSMM/MacroSIP/gh-pages/appcast.xml</code> (<code class="notranslate">SUFeedURL</code>, written by <code class="notranslate">make-app.sh</code>; no GitHub Pages setup needed) once a day and asks before installing. Every item carries an EdDSA (ed25519) signature of the DMG; the public key is <code class="notranslate">SPARKLE_PUBLIC_KEY</code> in <code class="notranslate">make-app.sh</code> (<code class="notranslate">SUPublicEDKey</code> in Info.plist). The private key exists in exactly two places: the Actions secret <code class="notranslate">SPARKLE_PRIVATE_KEY</code> and the owner's login keychain ("MacroSIP Sparkle private key", plus Sparkle's own item, account <code class="notranslate">macrosip</code>). To restore the secret: <code class="notranslate">security find-generic-password -s "MacroSIP Sparkle private key" -w | gh secret set SPARKLE_PRIVATE_KEY --repo HSMM/MacroSIP</code>. Losing the key means installed copies can only be updated by a manual download; leaking it lets anyone who can also serve the feed push code to users.</p>
+<p dir="auto">Candidates sit on the <code class="notranslate">beta</code> channel, offered only when Settings, General, Updates, "Include release candidates" is on (default on when the running build is itself a candidate). Final releases have no channel and reach everyone. The appcast keeps the notes as they were at release time; to change them, edit the release and re-run the appcast job. A release whose appcast step failed is visible on GitHub but not offered in the app until the job is re-run.</p>
+<h2 dir="auto">Signing</h2>
+<p dir="auto">Builds are signed ad hoc with the hardened runtime (<code class="notranslate">codesign --options runtime</code>), inside out: Sparkle's XPC services, <code class="notranslate">Autoupdate</code>, <code class="notranslate">Updater.app</code>, the framework, then the app with <code class="notranslate">packaging/Entitlements.plist</code>. The entitlements are <code class="notranslate">com.apple.security.device.audio-input</code>, <code class="notranslate">com.apple.security.personal-information.addressbook</code> and <code class="notranslate">com.apple.security.cs.disable-library-validation</code>; the last one exists because an ad hoc signature has no Team ID, so library validation would refuse the embedded Sparkle framework. Signing without the hardened runtime was rejected: it would also allow <code class="notranslate">DYLD_INSERT_LIBRARIES</code> into a process with microphone permission.</p>
+<p dir="auto">Consequences for users (ADR 0007): the first launch shows the unidentified-developer dialog (right-click, Open, or <code class="notranslate">xattr -dr com.apple.quarantine</code>), updates installed by Sparkle are trusted through the EdDSA signature and launch without it, and macOS ties the microphone permission to the exact build, so it asks again after each update. Developer ID signing and notarization are planned for later (<code class="notranslate">docs/ROADMAP.md</code>); when a Developer ID exists, remove the library-validation entitlement.</p>
+<p dir="auto">See also <a href="building.html">Building</a>, <a href="testing.html">Testing</a>, <a href="installation.html">Installation</a>.</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

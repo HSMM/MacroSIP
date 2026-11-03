@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Testing · MacroSIP documentation</title>
+<meta name="description" content="MacroSIP documentation">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/testing.html">
+<link rel="alternate" hreflang="ru" href="../ru/testing.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/testing.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/testing.html" hreflang="en" aria-current=true>English</a><a href="../ru/testing.html" hreflang="ru">Русский</a><a href="../zh/testing.html" hreflang="zh-Hans">中文</a></div></header>
+<div class="layout">
+<nav aria-label="Contents"><details><summary>Contents</summary><div class="links"><ul><li><a href="index.html">Home</a></li></ul><h2>User guide</h2><ul><li><a href="installation.html">Installation</a></li><li><a href="accounts.html">Accounts</a></li><li><a href="calls.html">Calls</a></li><li><a href="incoming-calls.html">Incoming calls</a></li><li><a href="contacts-and-call-log.html">Contacts and call log</a></li><li><a href="directory.html">Directory</a></li><li><a href="quick-keys.html">Quick keys</a></li><li><a href="audio.html">Audio</a></li><li><a href="settings.html">Settings</a></li><li><a href="menu-bar.html">Menu bar</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul><h2>For developers</h2><ul><li><a href="architecture.html">Architecture</a></li><li><a href="building.html">Building</a></li><li><a href="testing.html" aria-current=page>Testing</a></li><li><a href="releasing.html">Releasing</a></li><li><a href="contributing.html">Contributing</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">Testing</h1>
+<p dir="auto">Three layers check MacroSIP: Swift Testing suites for <code class="notranslate">MacroSIPCore</code>, an end-to-end loopback call against <code class="notranslate">pjsua</code>, and demo launches of the app with a mock engine. All three run in CI on every push and pull request. A milestone is done only after <code class="notranslate">swift build</code> is clean, the tests are green, <code class="notranslate">scripts/selftest-call.sh</code> passes and a real call was verified (ADR 0006, <code class="notranslate">docs/DEVELOPMENT.md</code>).</p>
+<h2 dir="auto">Unit and engine tests: <code class="notranslate">scripts/test.sh</code></h2>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">scripts/test.sh                                  <span class="pl-c"><span class="pl-c">#</span> all suites</span>
+scripts/test.sh --filter DialStringTests         <span class="pl-c"><span class="pl-c">#</span> extra arguments go to swift test</span></pre></div>
+<p dir="auto">Never run bare <code class="notranslate">swift test</code>: the Command Line Tools ship the Testing framework, but SwiftPM does not find its macro plugin on its own. <code class="notranslate">test.sh</code> passes the plugin path explicitly (<code class="notranslate">-Xswiftc -plugin-path -Xswiftc .../usr/lib/swift/host/plugins/testing</code>). XCTest is not available without Xcode, so every suite uses <code class="notranslate">import Testing</code>.</p>
+<p dir="auto">The suites in <code class="notranslate">Tests/MacroSIPCoreTests</code> hold about 210 tests:</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>File</th>
+<th>Covers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="notranslate">DialStringTests</code></td>
+<td>the parsing table (<code class="notranslate">sip:</code>, <code class="notranslate">tel:</code>, plain numbers, <code class="notranslate">user@host</code>)</td>
+</tr>
+<tr>
+<td><code class="notranslate">JSONStoreTests</code>, <code class="notranslate">StoreTests</code>, <code class="notranslate">SettingsCompatTests</code></td>
+<td>atomic writes, corrupt-file recovery, store round trips, old <code class="notranslate">settings.json</code> and call-log files decoding with the defaults, calls/timed DND/recordings</td>
+</tr>
+<tr>
+<td><code class="notranslate">KeychainTests</code></td>
+<td>the wrapper with a test service name</td>
+</tr>
+<tr>
+<td><code class="notranslate">ContactTests</code></td>
+<td>number normalisation, matching, sorting, photos, legacy fields</td>
+</tr>
+<tr>
+<td><code class="notranslate">AutoAnswerPolicyTests</code></td>
+<td>the rule order (DND, another call, <code class="notranslate">answer-after</code>, mode)</td>
+</tr>
+<tr>
+<td><code class="notranslate">QuickKeyTests</code></td>
+<td>key model, pickup URI, the presence registry</td>
+</tr>
+<tr>
+<td><code class="notranslate">RecordingConverterTests</code></td>
+<td>WAV to M4A, stereo split pairs, header repair</td>
+</tr>
+<tr>
+<td><code class="notranslate">EngineTests</code></td>
+<td>start/stop, accounts, loopback calls (one engine calling itself), hold, mute, DTMF, transfer, TLS listeners</td>
+</tr>
+<tr>
+<td><code class="notranslate">EngineMilestone5Tests</code></td>
+<td>conference, mono and stereo recording, presence mapping against a PIDF stub, <code class="notranslate">answer-after</code> trust</td>
+</tr>
+<tr>
+<td><code class="notranslate">EngineAudioTests</code></td>
+<td>the MOS table, per-call and ringtone volume, Opus FEC/DTX, the voice-processing policy, device-event debounce</td>
+</tr>
+<tr>
+<td><code class="notranslate">EngineCallOptionsTests</code></td>
+<td>single-call mode, call-waiting tone, DTMF methods, Do Not Disturb</td>
+</tr>
+<tr>
+<td><code class="notranslate">EngineNetworkTests</code></td>
+<td>registration backoff, network rounds, re-INVITE outcomes, the media watchdog, sleep and wake, with <code class="notranslate">NetworkStub</code> (a UDP registrar/callee)</td>
+</tr>
+<tr>
+<td><code class="notranslate">Engine262Tests</code></td>
+<td>RTP port window, rport, DNS SRV with an in-process DNS stub, deny rules, the additional codecs</td>
+</tr>
+<tr>
+<td><code class="notranslate">DirectoryParsingTests</code>, <code class="notranslate">DirectoryServiceTests</code>, <code class="notranslate">DirectoryLDAPTests</code></td>
+<td>CSV/JSON feeds and number matching, the service with a stub provider, LDAP against an in-process <code class="notranslate">NWListener</code> server</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">Engine tests run with null audio, bound to loopback, and with <code class="notranslate">Engine(monitorNetwork: false)</code> so they do not depend on the host's network; <code class="notranslate">makeEngine()</code> stops an engine a failed test left behind, so one failure cannot cascade. <code class="notranslate">TestSupport.swift</code> provides temporary directories.</p>
+<h2 dir="auto">End-to-end call: <code class="notranslate">scripts/selftest-call.sh</code></h2>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">scripts/selftest-call.sh                          <span class="pl-c"><span class="pl-c">#</span> native</span>
+SELFTEST_ARCH=x86_64 scripts/selftest-call.sh     <span class="pl-c"><span class="pl-c">#</span> the x86_64 slice under Rosetta 2</span>
+SELFTEST_LOG=/tmp/selftest.log SELFTEST_LOG_LEVEL=5 scripts/selftest-call.sh</pre></div>
+<p dir="auto">The script starts two <code class="notranslate">pjsua</code> phones from <code class="notranslate">third_party/pjsip/bin/pjsua</code> on ports 5080 and 5081 (null audio, auto-answer, a looping 600 Hz tone, telnet CLIs on 5088 and 5089), builds <code class="notranslate">macrosip-cli</code> and runs <code class="notranslate">macrosip-cli --selftest</code>. The self-test (<code class="notranslate">Sources/macrosip-cli/SelfTest*.swift</code>) checks, against an independent PJSIP implementation: two-way RTP, hold and resume (also back to back), DTMF, mono recording (WAV with the tone audible, then M4A), a stereo split recording with a muted middle second, presence driven through the pjsua CLI (available, away, busy), a two-leg conference with merge and split and a recording that moves between legs, incoming calls (answer, reject with 486), blind and attended transfer between the two phones, DTMF over SIP INFO and a registered account against <code class="notranslate">SIPStub</code> (a digest-challenging UDP registrar inside <code class="notranslate">macrosip-cli</code>; every authorised INVITE must be above 1300 bytes without a transport-switch error), simulated network changes during a call and with the registered account, call quality (must be <code class="notranslate">good</code>), single-call mode, Do Not Disturb, the deny rules and a GSM-only call. With <code class="notranslate">SELFTEST_ARCH=x86_64</code> the CLI is built universal and the CLI and both phones run through <code class="notranslate">arch -x86_64</code>; <code class="notranslate">pjsua</code> needs a few seconds longer to come up under Rosetta, so the script polls its CLI for up to about 15 s. <code class="notranslate">SELFTEST_CLI=&lt;path&gt;</code> uses a prebuilt CLI.</p>
+<h2 dir="auto">Demo launches and the mock engine</h2>
+<p dir="auto">A <strong>debug</strong> app (<code class="notranslate">scripts/make-app.sh debug</code>) accepts launch options from <code class="notranslate">Sources/MacroSIPApp/Model/LaunchOptions.swift</code>; a release app ignores them.</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Option</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="notranslate">--mock-engine</code></td>
+<td><code class="notranslate">MockEngine</code> instead of PJSIP: registration succeeds after 1 s (a password <code class="notranslate">wrong</code> or a domain containing <code class="notranslate">fail</code> gives 403), an outgoing call connects after 2 s</td>
+</tr>
+<tr>
+<td><code class="notranslate">--demo-state &lt;name&gt;</code></td>
+<td>seeds sample accounts, contacts and log entries, implies <code class="notranslate">--mock-engine</code> and a throw-away data directory; the Keychain is never touched</td>
+</tr>
+<tr>
+<td><code class="notranslate">--data-dir &lt;path&gt;</code></td>
+<td>JSON stores in <code class="notranslate">&lt;path&gt;</code> instead of Application Support</td>
+</tr>
+<tr>
+<td><code class="notranslate">--snapshot &lt;prefix&gt;</code></td>
+<td>writes <code class="notranslate">&lt;prefix&gt;-&lt;window&gt;.png</code> of every window after <code class="notranslate">--snapshot-after</code> seconds (default 6), then quits; works without a display</td>
+</tr>
+<tr>
+<td><code class="notranslate">--appearance light|dark</code></td>
+<td>forces the theme</td>
+</tr>
+<tr>
+<td><code class="notranslate">-AppleLanguages "(ru)"</code></td>
+<td>the standard macOS argument; runs the app in Russian</td>
+</tr>
+<tr>
+<td><code class="notranslate">--log-level 0-6</code></td>
+<td>PJSIP verbosity (all builds)</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">Demo states by area (the full list is in the header of <code class="notranslate">Model/DemoState.swift</code>):</p>
+<ul dir="auto">
+<li>Main window and calls: <code class="notranslate">first-launch</code>, <code class="notranslate">dialpad</code>, <code class="notranslate">contacts</code>, <code class="notranslate">calllog</code>, <code class="notranslate">connected</code>, <code class="notranslate">calls</code>, <code class="notranslate">conference</code>, <code class="notranslate">recording</code>, <code class="notranslate">recording-long</code>, <code class="notranslate">incoming</code>, <code class="notranslate">incoming-hidden</code>, <code class="notranslate">autoAnswer</code>, <code class="notranslate">suggest</code>, <code class="notranslate">keypad</code>, <code class="notranslate">transfer-banner</code>, <code class="notranslate">account-popup</code>, <code class="notranslate">account-popup-live</code>, <code class="notranslate">many-accounts</code>.</li>
+<li>Audio and network: <code class="notranslate">quality-good</code>, <code class="notranslate">quality-fair</code>, <code class="notranslate">quality-poor</code>, <code class="notranslate">quality-poor-calls</code>, <code class="notranslate">call-volume</code> (also writes <code class="notranslate">&lt;prefix&gt;-popover.png</code>), <code class="notranslate">headset</code>, <code class="notranslate">headset-back</code>, <code class="notranslate">network-offline</code>, <code class="notranslate">reconnecting</code>.</li>
+<li>Calls and DND: <code class="notranslate">timed-dnd</code> (writes the menu bar items to <code class="notranslate">&lt;prefix&gt;-menu.txt</code>), <code class="notranslate">call-log-playback</code>, <code class="notranslate">busy-mode</code>.</li>
+<li>Settings: <code class="notranslate">settings-accounts</code>, <code class="notranslate">account-editor</code>, <code class="notranslate">account-editor-basic</code>, <code class="notranslate">account-editor-open</code>, <code class="notranslate">editor-first-launch</code>, <code class="notranslate">settings-general</code>, <code class="notranslate">settings-general-advanced</code>, <code class="notranslate">settings-audio</code>, <code class="notranslate">settings-codecs</code>, <code class="notranslate">settings-network</code>, <code class="notranslate">settings-recording</code>, <code class="notranslate">settings-autoanswer</code>, <code class="notranslate">settings-calls</code>, <code class="notranslate">settings-directory</code>, <code class="notranslate">many-accounts-settings</code>, <code class="notranslate">deny-incoming</code>.</li>
+<li>Quick keys: <code class="notranslate">quick-keys</code>, <code class="notranslate">quick-keys-bottom</code> (writes <code class="notranslate">-main.png</code> and <code class="notranslate">-settings.png</code>).</li>
+<li>Contact card: <code class="notranslate">contact-card</code>, <code class="notranslate">contact-card-new</code> (writes <code class="notranslate">-card.png</code>).</li>
+<li>Directory (<code class="notranslate">MockDirectory</code>): <code class="notranslate">directory</code>, <code class="notranslate">directory-done</code>, <code class="notranslate">directory-incoming</code>, <code class="notranslate">directory-sheet</code>, <code class="notranslate">directory-sheet-url</code>, <code class="notranslate">directory-sheet-google</code>, <code class="notranslate">directory-sheet-macos</code>, <code class="notranslate">directory-import</code>, <code class="notranslate">directory-selftest</code>.</li>
+<li>Housekeeping: <code class="notranslate">selftest</code>, <code class="notranslate">quit</code> (checks that shutdown does not hang).</li>
+</ul>
+<p dir="auto"><strong>Demo self-test.</strong> <code class="notranslate">--demo-state selftest</code> drives the model the way the views do, through the mock engine, and records a <code class="notranslate">PASS</code> or <code class="notranslate">FAIL</code> line per check: registration states (one account registered, one failed with 403), calling and connected states, the caller's name resolved from a contact, mute, hold and resume, two calls with hold switching, attended transfer, recording playback, account tests, the status summary, and more. The result goes to stdout, or to <code class="notranslate">&lt;prefix&gt;-selftest.txt</code> with <code class="notranslate">--snapshot</code>, and the app quits. <code class="notranslate">--demo-state directory-selftest</code> runs only the directory part: suggestions in the number field, caller lookup, import and merge.</p>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">timeout 60 dist/MacroSIP.app/Contents/MacOS/MacroSIP --demo-state selftest
+timeout 60 dist/MacroSIP.app/Contents/MacOS/MacroSIP --demo-state directory-selftest</pre></div>
+<h2 dir="auto">Strings: <code class="notranslate">scripts/check-strings.sh</code></h2>
+<p dir="auto">Checks that every key used in <code class="notranslate">Model/Strings.swift</code> exists in both <code class="notranslate">en.lproj</code> and <code class="notranslate">ru.lproj</code> (<code class="notranslate">Localizable.strings</code> or <code class="notranslate">Localizable.stringsdict</code>), that no file has keys the code does not use, that no key is in both files, that plural categories are complete (<code class="notranslate">one</code>/<code class="notranslate">other</code> for English, <code class="notranslate">one</code>/<code class="notranslate">few</code>/<code class="notranslate">many</code>/<code class="notranslate">other</code> for Russian) and that the Russian value uses no placeholders the English one lacks. Run it after every string change.</p>
+<h2 dir="auto">Screenshots</h2>
+<p dir="auto">The images in <code class="notranslate">docs/screenshots/{light,dark}</code> and <code class="notranslate">docs/screenshots/ru/{light,dark}</code> come from demo launches with <code class="notranslate">--snapshot</code>; there is no separate capture script. A typical capture of the Russian dark variant:</p>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">timeout 30 dist/MacroSIP.app/Contents/MacOS/MacroSIP --demo-state contacts \
+  --appearance dark -AppleLanguages <span class="pl-s"><span class="pl-pds">"</span>(ru)<span class="pl-pds">"</span></span> --snapshot /tmp/shots/contacts --snapshot-after 3</pre></div>
+<p dir="auto">States with a ringing call or an open sheet never quit by themselves, hence <code class="notranslate">timeout</code>. Russian text is about 25 % longer, so check the status bar, the call panel buttons and the account pop-up after adding strings. Google Contacts in the mock answers after 4 s; use <code class="notranslate">--snapshot-after 3</code> to catch the "Searching..." row.</p>
+<h2 dir="auto">CI</h2>
+<p dir="auto"><code class="notranslate">.github/workflows/ci.yml</code> runs on pushes and pull requests to <code class="notranslate">main</code>, with one in-progress run per ref.</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Job</th>
+<th>Runner</th>
+<th>Steps</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="notranslate">build</code></td>
+<td><code class="notranslate">macos-15</code> (arm64)</td>
+<td>restore the cache of <code class="notranslate">third_party/pjsip</code> and <code class="notranslate">third_party/deps</code> (key: hash of <code class="notranslate">build-pjsip.sh</code> and <code class="notranslate">config_site.h</code>), <code class="notranslate">build-pjsip.sh</code>, <code class="notranslate">swift build</code>, <code class="notranslate">test.sh</code>, <code class="notranslate">selftest-call.sh</code> natively and with <code class="notranslate">SELFTEST_ARCH=x86_64</code> under Rosetta 2 (installed on demand), <code class="notranslate">make-app.sh release</code>, <code class="notranslate">lipo -info</code> on the binary; uploads the app (14 days) and the universal PJSIP build (3 days) as artifacts, and the build logs on failure</td>
+</tr>
+<tr>
+<td><code class="notranslate">intel</code></td>
+<td><code class="notranslate">macos-15-intel</code> (x86_64), after <code class="notranslate">build</code></td>
+<td>downloads the universal libraries and the app (an Intel host cannot run <code class="notranslate">build-pjsip.sh</code>), verifies the signature, launches the app for 15 s with <code class="notranslate">--data-dir</code> and <code class="notranslate">MACROSIP_LOG_DIR</code>, then <code class="notranslate">swift build</code>, <code class="notranslate">test.sh</code> and <code class="notranslate">selftest-call.sh</code> natively</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto"><code class="notranslate">release.yml</code> repeats the arm64 steps before building the DMG (see <a href="releasing.html">Releasing</a>).</p>
+<p dir="auto">See also <a href="building.html">Building</a> and <a href="contributing.html">Contributing</a>.</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

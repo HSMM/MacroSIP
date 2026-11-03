@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>目录 · MacroSIP 文档</title>
+<meta name="description" content="MacroSIP 文档">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/directory.html">
+<link rel="alternate" hreflang="ru" href="../ru/directory.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/directory.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/directory.html" hreflang="en">English</a><a href="../ru/directory.html" hreflang="ru">Русский</a><a href="../zh/directory.html" hreflang="zh-Hans" aria-current=true>中文</a></div></header>
+<div class="layout">
+<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html">通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="directory.html" aria-current=page>目录</a></li><li><a href="quick-keys.html">快捷键</a></li><li><a href="audio.html">音频</a></li><li><a href="settings.html">设置</a></li><li><a href="menu-bar.html">菜单栏</a></li><li><a href="troubleshooting.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="architecture.html">架构</a></li><li><a href="building.html">构建</a></li><li><a href="testing.html">测试</a></li><li><a href="releasing.html">发布</a></li><li><a href="contributing.html">参与贡献</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">目录</h1>
+<p dir="auto">目录来源 (Directory source) 是 MacroSIP 按姓名或号码查找人员的地方：您公司的 LDAP 服务器、某个 URL 上的 CSV 或 JSON 文件、您的 Google 通讯录，或 macOS 通讯录应用。结果在您输入时出现在号码栏中，用于为来电者命名，并可导入到联系人中。对应面板是设置 › <strong>目录</strong> (Directory)。</p>
+<p dir="auto"><a target="_blank" rel="noopener noreferrer nofollow" href="https://raw.githubusercontent.com/HSMM/MacroSIP/main/docs/screenshots/light/directory-search.png?v=1"><img src="https://raw.githubusercontent.com/HSMM/MacroSIP/main/docs/screenshots/light/directory-search.png?v=1" alt="目录搜索" style="max-width: 100%;"></a></p>
+<h2 dir="auto">来源</h2>
+<p dir="auto">在设置 › 目录中用 <strong>+</strong> 添加。<strong>添加目录来源</strong> (Add Directory Source) 表单包含<strong>类型</strong> (Type) 弹出式菜单、<strong>名称</strong> (Name)、按类型不同的字段，以及<strong>结果</strong> (Results) 选项（见下文）。<strong>测试</strong> (Test) 检查连接并回答“已连接 · 184 个条目”。</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>类型</th>
+<th>字段与行为</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>LDAP</strong></td>
+<td><strong>服务器</strong> (Server)（<code class="notranslate">ldap://ldap.example.com</code> 或 <code class="notranslate">ldaps://…</code>；“尽可能使用 ldaps:// 或 StartTLS。”）、<strong>使用 StartTLS</strong> (Use StartTLS) 开关（ldaps 时忽略）、<strong>Base DN</strong>、<strong>Bind DN</strong>（“留空为匿名搜索。”）、<strong>密码</strong> (Password)（“存储在钥匙串中。”）、<strong>搜索过滤器</strong> (Search filter)（默认 <code class="notranslate">(|(cn=*%s*)(telephoneNumber=*%s*))</code>；“%s 是输入的文本。”）。</td>
+</tr>
+<tr>
+<td><strong>URL（CSV 或 JSON）</strong> (URL (CSV or JSON))</td>
+<td><strong>URL</strong>（http、https 或 file）、<strong>格式</strong> (Format) CSV / JSON（在您修改前根据扩展名猜测）、<strong>刷新间隔</strong> (Refresh every) 每小时 / 每 6 小时 / 每天 / 每周。CSV 需要标题行；分隔符可为逗号、分号或制表符；编码为 UTF-8 或 Windows-1251。JSON 是一个对象数组（或包含该数组的对象）。可识别的列：name、first name、last name、number / phone / telephone / extension、mobile / cell、email / mail、organization / company（忽略大小写、空格、<code class="notranslate">_</code> 和 <code class="notranslate">-</code>）。没有号码的行会被跳过。</td>
+</tr>
+<tr>
+<td><strong>macOS 通讯录</strong> (macOS Contacts)</td>
+<td>没有字段。来源命名为“macOS Contacts”并显示“This Mac”。<strong>允许访问</strong> (Allow access) 触发系统的通讯录权限提示（“当您从号码栏搜索时，MacroSIP 会在通讯录中查找姓名和号码。”）；启动时不会询问。如果拒绝，状态显示“访问被拒绝”并提供<strong>打开系统设置…</strong> (Open System Settings…)。</td>
+</tr>
+<tr>
+<td><strong>Google 通讯录</strong> (Google Contacts)</td>
+<td><strong>使用 Google 登录</strong> (Sign in with Google)：“在浏览器中打开 Google 一次，以允许对您的通讯录进行只读访问。MacroSIP 只保留访问令牌，存储在钥匙串中；您可以随时在 Google 账号中撤销访问权限。”浏览器显示 Google 的授权页面；同时按钮被替换为“正在等待 Google…”，关闭表单会放弃登录。Google 返回应用后，<strong>Google 账号</strong> (Google account) 行显示您的电子邮件和一个绿色勾号，<strong>添加</strong> (Add) 存储该来源（状态“已连接”）。此后它与其他来源一样被搜索、导入和用于查询来电者姓名；结果行带有 Google 标记。没有 Google 客户端 ID 的构建会回答“此构建未配置 Google 登录”。</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">来源列表显示来源（名称、地址、“仅搜索”或“导入到联系人”）、状态和一个<strong>开</strong> (On) 开关。“结果按此顺序列出；拖移可重新排序。已关闭的来源不会被搜索也不会同步。”<strong>−</strong> 询问“移除‘Head office LDAP’？”——“已从此来源导入的联系人仍保留在联系人中。”</p>
+<p dir="auto">退出 Google 通讯录登录就是用 <strong>−</strong> 移除该来源：访问令牌随之从钥匙串中删除，已导入的名片保留。也可以在 Google 账号中撤销访问权限；来源随后显示<strong>需要登录</strong> (Sign in required)，面板提供<strong>登录…</strong> (Sign In…)（“访问已过期或被撤销”——“在您重新登录之前，搜索会跳过此来源。”），它会再次打开浏览器。</p>
+<h2 dir="auto">仅搜索或导入到联系人</h2>
+<p dir="auto">每个来源是以下两者之一：</p>
+<ul dir="auto">
+<li><strong>仅搜索</strong> (Search only) — “结果不会被存储”。条目出现在号码栏和来电者查询中，不写入任何内容。</li>
+<li><strong>导入到联系人</strong> (Import into Contacts) — “复制并每天刷新”。每个条目都成为一张联系人名片。URL 来源按自己的间隔刷新；其他来源每天一次，macOS 通讯录仅在已授予访问权限时刷新。</li>
+</ul>
+<h2 dir="auto">号码栏中的建议</h2>
+<p dir="auto">开启<strong>从号码栏搜索目录</strong> (Search directories from the number field) 后，在号码栏中输入会显示<strong>联系人</strong> (Contacts) 部分（您自己的名片优先）和按来源顺序列出结果的<strong>目录</strong> (Directory) 部分。每行显示头像、匹配字母加粗的姓名、号码和来源标记（LDAP、URL、Contacts、Google）。带旋转指示器的“正在搜索 Head office LDAP…”表示尚未应答的来源；搜索在 3 秒后停止等待。所有来源都应答后，列表以“来自 2 个来源的 7 个结果”结束。已在联系人中的号码只显示一次，作为本地联系人。</p>
+<p dir="auto">设置：<strong>最少字符数</strong> (Minimum characters)（1–5，默认 2；“输入达到此字符数并停顿 300 ms 后开始搜索。”）和<strong>每个来源的结果数</strong> (Results per source)（1–10，默认 5）。纯数字文本同样会被搜索。</p>
+<p dir="auto">点按一行将其号码放入号码栏；在高亮的行上按 Return 呼叫它；Esc 关闭列表，再按一次 Esc 清空号码栏。右键菜单提供<strong>呼叫</strong> (Call)、<strong>拷贝号码</strong> (Copy Number) 和<strong>添加到联系人</strong> (Add to Contacts)（创建一张您自己的名片）。</p>
+<h2 dir="auto">来电者查询</h2>
+<p dir="auto"><strong>查询来电者姓名</strong> (Look up names of incoming callers)（默认开启）：“在来电响铃期间向仅搜索的来源查询最多 1 秒。”已导入的来源已在联系人中，在本地匹配。号码按数字比较，因此 <code class="notranslate">+1 202 555-0123</code> 和 <code class="notranslate">2025550123</code> 是同一行。SIP 显示名称为空或只是号码时使用目录中的姓名，并存入通话记录条目。</p>
+<h2 dir="auto">立即导入与计划</h2>
+<p dir="auto">对于设置为导入的来源，状态列显示<strong>立即导入</strong> (Import now)（运行时为“正在导入…”）。结果以列表下方的横幅显示十秒：“已导入 120 位联系人（14 位已更新）”、“没有可导入的内容”或“导入失败：无法连接到 ldap.example.com”。导入失败不会禁用按钮或计划；“5 分钟前同步”显示的是上次成功的时间。</p>
+<h3 dir="auto">合并规则</h3>
+<ul dir="auto">
+<li>条目按号码与现有联系人匹配，绝不重复。</li>
+<li>由<strong>同一来源创建</strong>的名片在每次导入时跟随目录：姓名、组织、电子邮件和照片被替换，缺少的号码被添加。</li>
+<li>您自己创建或编辑过的名片保留其姓名、照片和其余内容；它只接收自己缺少的部分（空的组织或电子邮件、缺失的照片、新号码）。</li>
+<li><strong>备注、个人收藏和首选账户绝不会被改动。</strong></li>
+<li>新名片会获得备注“从 Head office LDAP 导入”。</li>
+</ul>
+<h2 dir="auto">状态</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>状态</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>已连接</strong> (Connected)</td>
+<td>测试或上次搜索成功。</td>
+</tr>
+<tr>
+<td><strong>5 分钟前同步</strong> (Synced 5 min. ago)</td>
+<td>上次成功导入（URL 来源：上次获取）。</td>
+</tr>
+<tr>
+<td><strong>需要登录</strong> (Sign in required)</td>
+<td>没有令牌或访问权限已被 Google 撤销的 Google 通讯录；在您按**登录…**并在浏览器中完成登录之前，该来源会被跳过。</td>
+</tr>
+<tr>
+<td><strong>访问被拒绝</strong> (Access denied)</td>
+<td>macOS 拒绝了通讯录访问；请在系统设置 › 隐私与安全性 › 通讯录中允许 MacroSIP。</td>
+</tr>
+<tr>
+<td><strong>关</strong> (Off)</td>
+<td>“开”开关已关闭。</td>
+</tr>
+<tr>
+<td>错误文本</td>
+<td>“已超时”、“无法连接到 ldap.example.com”、“Bind DN 或密码无效”、“HTTP 404”、“标题行中没有号码列”、“文件不是有效的 JSON”、“JSON 中没有联系人数组”、“服务器必须为 ldap://host 或 ldaps://host”、“此构建未配置 Google 登录”。失败的来源会被跳过 60 秒，然后重试。</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">LDAP 错误见 <a href="troubleshooting.html">故障排除</a>，导入所填充的名片见 <a href="contacts-and-call-log.html">联系人与通话记录</a>。</p>
+<p dir="auto">其他页面：<a href="index.html">首页</a> · <a href="../en/index.html">Home</a> (English)</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>故障排除 · MacroSIP 文档</title>
+<meta name="description" content="MacroSIP 文档">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/troubleshooting.html">
+<link rel="alternate" hreflang="ru" href="../ru/troubleshooting.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/troubleshooting.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/troubleshooting.html" hreflang="en">English</a><a href="../ru/troubleshooting.html" hreflang="ru">Русский</a><a href="../zh/troubleshooting.html" hreflang="zh-Hans" aria-current=true>中文</a></div></header>
+<div class="layout">
+<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html">通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="directory.html">目录</a></li><li><a href="quick-keys.html">快捷键</a></li><li><a href="audio.html">音频</a></li><li><a href="settings.html">设置</a></li><li><a href="menu-bar.html">菜单栏</a></li><li><a href="troubleshooting.html" aria-current=page>故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="architecture.html">架构</a></li><li><a href="building.html">构建</a></li><li><a href="testing.html">测试</a></li><li><a href="releasing.html">发布</a></li><li><a href="contributing.html">参与贡献</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">故障排除</h1>
+<h2 dir="auto">首次启动被阻止</h2>
+<p dir="auto">“无法打开‘MacroSIP’，因为无法验证开发者”：应用使用临时 (ad hoc) 签名，未经公证。在“应用程序”中右键点按 MacroSIP 并选择<strong>打开</strong> (Open)，或执行一次 <code class="notranslate">xattr -dr com.apple.quarantine /Applications/MacroSIP.app</code>。详见 <a href="installation.html">安装</a>。由应用自身安装的更新打开时不会出现此对话框。</p>
+<h2 dir="auto">没人听到我：麦克风权限</h2>
+<p dir="auto">通话面板显示“麦克风访问已关闭”和<strong>打开系统设置</strong> (Open System Settings)。请在系统设置 › 隐私与安全性 › 麦克风中允许 MacroSIP。由于临时签名，macOS 在每次更新后都会再次询问；更新后第一次通话时再允许一次即可。然后在说话时检查设置 › 音频中的电平表。</p>
+<h2 dir="auto">账户显示“403”或“401”</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>状态</th>
+<th>含义</th>
+<th>处理方法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>401 Unauthorized、403 Forbidden</td>
+<td>服务器拒绝了凭据。设置 › 账户显示“REGISTER 于 14:52 被拒绝。请检查用户名和密码。”</td>
+<td>检查<strong>用户名</strong> (Username)、<strong>密码</strong> (Password)，以及如果您的 PBX 使用单独的认证名称，检查“高级”组中的<strong>认证用户名</strong> (Auth username)。在编辑器中按<strong>测试</strong> (Test)：“注册成功 (120 ms)”确认问题已修复。</td>
+</tr>
+<tr>
+<td>“无响应”（测试）或“Office · 8 秒后重试”</td>
+<td>服务器没有应答。</td>
+<td>检查服务器名称和端口、<strong>传输</strong> (Transport)（UDP、TCP 或 TLS；PBX 必须在您选择的那一种上监听）和防火墙。引擎按退避策略重试。</td>
+</tr>
+<tr>
+<td>永不结束的“正在注册…”</td>
+<td>数据包发出但没有应答返回。</td>
+<td>同上；尝试另一种传输，或设置 <strong>STUN 服务器</strong> (STUN server)。</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">所有状态见 <a href="accounts.html">账户</a>。</p>
+<h2 dir="auto">TLS 证书错误</h2>
+<p dir="auto">使用<strong>传输：TLS</strong>时，引擎根据系统根证书验证服务器证书。与主机不匹配、已过期或自签名的证书会导致注册永久失败（不重试），状态和日志中给出 TLS 原因。请修复服务器上的证书，或者对于您信任的自签名证书，关闭编辑器“高级”组中的<strong>验证服务器证书</strong> (Verify server certificate)（“仅对使用自签名证书的服务器关闭。”）。</p>
+<h2 dir="auto">没有声音或单向音频</h2>
+<p dir="auto">通常是您与 PBX 之间的 NAT 或防火墙所致。设置 <strong>STUN 服务器</strong>，保持<strong>使用 ICE</strong> (Use ICE) 和<strong>使用 rport</strong> (Use rport) 开启，允许本地 SIP 端口和 RTP 端口范围上的 UDP，并检查设置 › 音频中的设备。完整的检查清单在 <a href="audio.html">音频</a> 中。</p>
+<h2 dir="auto">网络变化时通话中断</h2>
+<p dir="auto">网络变化或唤醒时，引擎立即重新注册并发送 re-INVITE，使通话在 IP 变化后得以存续；期间通话面板显示“正在重新连接… 12 秒”，状态栏显示“Office · 8 秒后重试”。如果媒体在 60 秒内未恢复，通话结束并在通话记录中注明“连接已断开”。如果中断持续发生，请降低设置 › 网络中的<strong>保活间隔</strong> (Keep-alive interval)。</p>
+<h2 dir="auto">耳机按键无效</h2>
+<p dir="auto">MacroSIP 读取 USB 耳机的 HID 电话控制（摘挂机、闪断、保持、静音、重拨）。请检查设置 › 音频中的<strong>耳机按键</strong> (Headset buttons) 已开启，并且该行显示了您的设备名称（“已连接：Jabra Evolve2 65”）；“没有带通话控制键的耳机”表示没有已连接的设备提供电话控制。设备被识别时，日志文件中有“headset buttons:  connected, …”一行；macOS 拒绝打开设备时有“headset buttons: cannot open …”，这可能与“输入监控”权限有关（系统设置 › 隐私与安全性）。按键通过免提配置文件工作的蓝牙耳机由 macOS 处理，不受支持。同一面板中的耳机自动切换是独立的功能，不需要按键。</p>
+<h2 dir="auto">对方听不到保持音乐</h2>
+<p dir="auto">检查设置 › 音频 › 保持音乐中的<strong>来源</strong> (Source)：<strong>关闭</strong> (Off) 发送静音。许多 PBX 会用自己的音乐替换电话在保持时发送的内容，因此对方听到的是服务器的音乐而非 MacroSIP 的；这是服务器端的设置。引擎无法读取的文件会保留之前的来源，组页脚会说明原因（“无法使用此文件：…”）。您自己永远听不到保持音乐。</p>
+<h2 dir="auto">来电者姓名错误或缺失</h2>
+<p dir="auto">姓名依次来自 SIP 显示名称、与其任一号码匹配的联系人，然后是最多查询一秒的目录来源。请将号码添加到联系人，或添加目录来源（<a href="directory.html">目录</a>）。</p>
+<h2 dir="auto">目录与 LDAP 错误</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>文本</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>“无法连接到 ldap.example.com”</td>
+<td>主机不可达或端口错误。</td>
+</tr>
+<tr>
+<td>“已超时”</td>
+<td>3 秒内无应答（导入为 30 秒）。</td>
+</tr>
+<tr>
+<td>“Bind DN 或密码无效”</td>
+<td>简单绑定被拒绝。匿名搜索请将 <strong>Bind DN</strong> 留空。</td>
+</tr>
+<tr>
+<td>“服务器必须为 ldap://host 或 ldaps://host”</td>
+<td>“服务器”字段没有协议前缀。</td>
+</tr>
+<tr>
+<td>“请输入 http、https 或 file URL”、“HTTP 404”</td>
+<td>URL 来源不可达或错误。</td>
+</tr>
+<tr>
+<td>“标题行中没有号码列”、“文件不是文本”</td>
+<td>CSV 没有可识别的号码列，或不是文本文件。</td>
+</tr>
+<tr>
+<td>“文件不是有效的 JSON”、“JSON 中没有联系人数组”</td>
+<td>JSON 来源格式错误。</td>
+</tr>
+<tr>
+<td>“访问被拒绝”、“尚未请求通讯录访问权限”</td>
+<td>macOS 通讯录权限；请在系统设置 › 隐私与安全性 › 通讯录中允许 MacroSIP。</td>
+</tr>
+<tr>
+<td>“需要登录”</td>
+<td>没有有效令牌的 Google 通讯录（尚未登录，或访问被撤销）。在设置 › 目录中选中该来源并按<strong>登录…</strong> (Sign In…)；浏览器会打开 Google 的授权页面。</td>
+</tr>
+<tr>
+<td>“此构建未配置 Google 登录”</td>
+<td>该构建没有 Google 客户端 ID，因此无法登录 Google 通讯录；其他来源类型可以使用。请安装配置了 Google 登录的构建。</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">MacroSIP 无法翻译的库消息（LDAP 诊断信息）按原样显示。失败的来源会被跳过 60 秒，然后重试。</p>
+<h2 dir="auto">日志文件与拷贝诊断信息</h2>
+<p dir="auto">MacroSIP 将日志写入 <code class="notranslate">~/Library/Logs/MacroSIP/MacroSIP.log</code>（每个文件 2 MB，保留 3 个文件）。设置 › 通用 › 高级 › <strong>打开日志文件夹</strong> (Open Log Folder) 在访达中显示它；<strong>拷贝诊断信息</strong> (Copy Diagnostics) 将版本、macOS、不含密码的账户和设置拷贝到剪贴板（“诊断信息已拷贝到剪贴板。”）。如需更深入的 SIP 跟踪，请用 <code class="notranslate">open /Applications/MacroSIP.app --args --log-level 5</code>（0–6）启动应用。应用也会以子系统 <code class="notranslate">com.hsmm.macrosip</code> 写入统一日志。</p>
+<h2 dir="auto">设置与联系人的存储位置</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>内容</th>
+<th>位置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>账户（不含密码）、联系人、通话记录、设置、快捷键</td>
+<td><code class="notranslate">~/Library/Application Support/MacroSIP/</code> 中的 <code class="notranslate">accounts.json</code>、<code class="notranslate">contacts.json</code>、<code class="notranslate">calllog.json</code>、<code class="notranslate">settings.json</code>；照片在 <code class="notranslate">photos/</code> 中。原子写入；损坏的文件被搁置为 <code class="notranslate">&lt;name&gt;.broken-&lt;date&gt;.json</code> 或 <code class="notranslate">contacts.damaged-&lt;date&gt;.json</code>，应用以能读取的内容启动。</td>
+</tr>
+<tr>
+<td>密码（SIP 账户、LDAP 绑定）</td>
+<td>登录钥匙串，服务名 <code class="notranslate">com.hsmm.macrosip</code>，每个账户 ID 一项。删除账户会移除其钥匙串项。</td>
+</tr>
+<tr>
+<td>录音</td>
+<td><code class="notranslate">~/Music/MacroSIP Recordings</code> 或设置 › 录音中选择的文件夹。</td>
+</tr>
+<tr>
+<td>日志</td>
+<td><code class="notranslate">~/Library/Logs/MacroSIP/</code>。</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">要迁移到另一台 Mac，请拷贝 Application Support 文件夹并重新输入密码。</p>
+<h2 dir="auto">报告问题</h2>
+<p dir="auto">在 <a href="https://github.com/HSMM/MacroSIP/issues">github.com/HSMM/MacroSIP/issues</a> 创建 issue，并附上：</p>
+<ol dir="auto">
+<li>MacroSIP 版本（MacroSIP › 关于）和 macOS 版本。</li>
+<li><strong>拷贝诊断信息</strong>的输出（不含密码）。</li>
+<li>您做了什么、期望发生什么、实际发生了什么，以及时间，以便在 <code class="notranslate">MacroSIP.log</code> 中找到对应的行。对于通话或注册故障请附上日志，并删除任何隐私内容。</li>
+<li>PBX 或服务商类型（Asterisk、FreePBX、3CX 等），如果您知道的话。</li>
+</ol>
+<p dir="auto">功能请求也在同一位置提出；计划见<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/ROADMAP.md">路线图</a>。</p>
+<p dir="auto">其他页面：<a href="index.html">首页</a> · <a href="../en/index.html">Home</a> (English)</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

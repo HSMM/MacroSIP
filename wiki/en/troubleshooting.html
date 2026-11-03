@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Troubleshooting · MacroSIP documentation</title>
+<meta name="description" content="MacroSIP documentation">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/troubleshooting.html">
+<link rel="alternate" hreflang="ru" href="../ru/troubleshooting.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/troubleshooting.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/troubleshooting.html" hreflang="en" aria-current=true>English</a><a href="../ru/troubleshooting.html" hreflang="ru">Русский</a><a href="../zh/troubleshooting.html" hreflang="zh-Hans">中文</a></div></header>
+<div class="layout">
+<nav aria-label="Contents"><details><summary>Contents</summary><div class="links"><ul><li><a href="index.html">Home</a></li></ul><h2>User guide</h2><ul><li><a href="installation.html">Installation</a></li><li><a href="accounts.html">Accounts</a></li><li><a href="calls.html">Calls</a></li><li><a href="incoming-calls.html">Incoming calls</a></li><li><a href="contacts-and-call-log.html">Contacts and call log</a></li><li><a href="directory.html">Directory</a></li><li><a href="quick-keys.html">Quick keys</a></li><li><a href="audio.html">Audio</a></li><li><a href="settings.html">Settings</a></li><li><a href="menu-bar.html">Menu bar</a></li><li><a href="troubleshooting.html" aria-current=page>Troubleshooting</a></li></ul><h2>For developers</h2><ul><li><a href="architecture.html">Architecture</a></li><li><a href="building.html">Building</a></li><li><a href="testing.html">Testing</a></li><li><a href="releasing.html">Releasing</a></li><li><a href="contributing.html">Contributing</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">Troubleshooting</h1>
+<h2 dir="auto">The first launch is blocked</h2>
+<p dir="auto">"MacroSIP cannot be opened because the developer cannot be verified": the app is signed ad hoc, not notarized. Right-click MacroSIP in Applications and choose <strong>Open</strong>, or run <code class="notranslate">xattr -dr com.apple.quarantine /Applications/MacroSIP.app</code> once. Details in <a href="installation.html">Installation</a>. Updates installed by the app itself open without this dialog.</p>
+<h2 dir="auto">Nobody hears me: microphone permission</h2>
+<p dir="auto">The call panel shows "Microphone access is off" with <strong>Open System Settings</strong>. Allow MacroSIP under System Settings › Privacy &amp; Security › Microphone. Because of the ad hoc signature macOS asks again after every update; allow it once more on the first call after updating. Then check the level meter in Settings › Audio while speaking.</p>
+<h2 dir="auto">The account shows "403" or "401"</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Status</th>
+<th>Meaning</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>401 Unauthorized, 403 Forbidden</td>
+<td>The server rejected the credentials. Settings › Accounts shows "REGISTER rejected at 14:52. Check the username and password."</td>
+<td>Check <strong>Username</strong>, <strong>Password</strong> and, if your PBX uses a separate authentication name, <strong>Auth username</strong> in the Advanced group. Press <strong>Test</strong> in the editor: "Registered successfully (120 ms)" confirms the fix.</td>
+</tr>
+<tr>
+<td>"No response" (Test) or "Office · retry in 8 s"</td>
+<td>No answer from the server.</td>
+<td>Check the server name and port, the <strong>Transport</strong> (UDP, TCP or TLS; the PBX must listen on the one you chose) and firewalls. The engine retries with backoff.</td>
+</tr>
+<tr>
+<td>"Registering…" that never ends</td>
+<td>Packets leave but no answer comes back.</td>
+<td>Same as above; try another transport, or set a <strong>STUN server</strong>.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">See <a href="accounts.html">Accounts</a> for every status.</p>
+<h2 dir="auto">TLS certificate errors</h2>
+<p dir="auto">With <strong>Transport: TLS</strong> the engine verifies the server certificate against the system root certificates. A certificate that does not match the host, is expired or is self-signed fails the registration permanently (no retry) with a TLS reason in the status and the log. Fix the certificate on the server, or, for a self-signed one you trust, turn off <strong>Verify server certificate</strong> in the Advanced group of the editor ("Turn off only for a server with a self-signed certificate.").</p>
+<h2 dir="auto">No audio or one-way audio</h2>
+<p dir="auto">Usually NAT or a firewall between you and the PBX. Set a <strong>STUN server</strong>, keep <strong>Use ICE</strong> and <strong>Use rport</strong> on, allow UDP on the local SIP port and the RTP port range, and check the devices in Settings › Audio. The full checklist is in <a href="audio.html">Audio</a>.</p>
+<h2 dir="auto">Calls drop when the network changes</h2>
+<p dir="auto">The engine re-registers at once on a network change or wake and sends a re-INVITE so calls survive an IP change; the call panel shows "Reconnecting… 12 s" meanwhile and the status bar "Office · retry in 8 s". If the media does not return within 60 s the call ends with "Connection lost" in the call log. If drops persist, lower <strong>Keep-alive interval</strong> in Settings › Network.</p>
+<h2 dir="auto">Headset buttons do nothing</h2>
+<p dir="auto">MacroSIP reads the HID telephony controls of USB headsets (hook, flash, hold, mute, redial). Check that <strong>Headset buttons</strong> in Settings › Audio is on and that the row names your device ("Connected: Jabra Evolve2 65"); "No headset with call controls" means no connected device exposes telephony controls. The log file has the line "headset buttons:  connected, …" when a device is picked up, and "headset buttons: cannot open …" when macOS refused to open it; that can be a matter of the Input Monitoring permission (System Settings › Privacy &amp; Security). Bluetooth headsets whose buttons work through the hands-free profile are handled by macOS and are not supported. The headset auto-switch in the same pane is a separate feature and does not need the buttons.</p>
+<h2 dir="auto">The caller hears no hold music</h2>
+<p dir="auto">Check <strong>Source</strong> in Settings › Audio › Hold music: <strong>Off</strong> sends silence. Many PBXs replace what a phone sends on hold with their own music, so the caller hears the server's music instead of MacroSIP's; that is a server setting. A file the engine could not read keeps the previous source and the group footer names the reason ("The file could not be used: …"). You never hear the hold music yourself.</p>
+<h2 dir="auto">Caller names are wrong or missing</h2>
+<p dir="auto">The name comes from the SIP display name, then from a contact matching any of its numbers, then from a directory source asked for at most one second. Add the number to a contact, or add a directory source (<a href="directory.html">Directory</a>).</p>
+<h2 dir="auto">Directory and LDAP errors</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Text</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>"Cannot connect to ldap.example.com"</td>
+<td>Host unreachable or wrong port;</td>
+</tr>
+<tr>
+<td>"Timed out"</td>
+<td>No answer in 3 s (30 s for an import).</td>
+</tr>
+<tr>
+<td>"Invalid bind DN or password"</td>
+<td>The simple bind was refused. Leave <strong>Bind DN</strong> empty for anonymous search.</td>
+</tr>
+<tr>
+<td>"The server must be ldap://host or ldaps://host"</td>
+<td>The Server field has no scheme.</td>
+</tr>
+<tr>
+<td>"Enter an http, https or file URL", "HTTP 404"</td>
+<td>URL source unreachable or wrong.</td>
+</tr>
+<tr>
+<td>"No number column in the header", "The file is not text"</td>
+<td>CSV without a recognised number column, or not a text file.</td>
+</tr>
+<tr>
+<td>"The file is not valid JSON", "No array of contacts in the JSON"</td>
+<td>JSON source malformed.</td>
+</tr>
+<tr>
+<td>"Access denied", "Contacts access has not been requested"</td>
+<td>macOS Contacts permission; allow MacroSIP in System Settings › Privacy &amp; Security › Contacts.</td>
+</tr>
+<tr>
+<td>"Sign in required"</td>
+<td>Google Contacts without a valid token (not signed in yet, or access revoked). Select the source in Settings › Directory and press <strong>Sign In…</strong>; the browser opens Google's consent page.</td>
+</tr>
+<tr>
+<td>"Google sign-in is not configured in this build"</td>
+<td>The build has no Google client id, so Google Contacts cannot be signed in; the other source types work. Install a build that is configured for Google sign-in.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">A library message that MacroSIP cannot translate (an LDAP diagnostic) is shown as it is. A failed source is skipped for 60 s and then retried.</p>
+<h2 dir="auto">The log file and Copy Diagnostics</h2>
+<p dir="auto">MacroSIP writes <code class="notranslate">~/Library/Logs/MacroSIP/MacroSIP.log</code> (2 MB per file, 3 files kept). Settings › General › Advanced › <strong>Open Log Folder</strong> reveals it in Finder; <strong>Copy Diagnostics</strong> copies versions, macOS, accounts without passwords and settings to the clipboard ("Diagnostics copied to the clipboard."). For a deeper SIP trace start the app with <code class="notranslate">open /Applications/MacroSIP.app --args --log-level 5</code> (0–6). The app also logs to the unified log under the subsystem <code class="notranslate">com.hsmm.macrosip</code>.</p>
+<h2 dir="auto">Where settings and contacts are stored</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>What</th>
+<th>Where</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Accounts (without passwords), contacts, call log, settings, quick keys</td>
+<td><code class="notranslate">~/Library/Application Support/MacroSIP/</code> as <code class="notranslate">accounts.json</code>, <code class="notranslate">contacts.json</code>, <code class="notranslate">calllog.json</code>, <code class="notranslate">settings.json</code>; photos in <code class="notranslate">photos/</code>. Written atomically; a damaged file is set aside as <code class="notranslate">&lt;name&gt;.broken-&lt;date&gt;.json</code> or <code class="notranslate">contacts.damaged-&lt;date&gt;.json</code> and the app starts with what it could read.</td>
+</tr>
+<tr>
+<td>Passwords (SIP accounts, LDAP bind)</td>
+<td>Login Keychain, service <code class="notranslate">com.hsmm.macrosip</code>, one item per account id. Deleting an account removes its item.</td>
+</tr>
+<tr>
+<td>Recordings</td>
+<td><code class="notranslate">~/Music/MacroSIP Recordings</code> or the folder chosen in Settings › Recording.</td>
+</tr>
+<tr>
+<td>Log</td>
+<td><code class="notranslate">~/Library/Logs/MacroSIP/</code>.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">To move to another Mac copy the Application Support folder and re-enter the passwords.</p>
+<h2 dir="auto">Reporting an issue</h2>
+<p dir="auto">Open an issue at <a href="https://github.com/HSMM/MacroSIP/issues">github.com/HSMM/MacroSIP/issues</a> with:</p>
+<ol dir="auto">
+<li>The MacroSIP version (MacroSIP › About) and macOS version.</li>
+<li>The output of <strong>Copy Diagnostics</strong> (it contains no passwords).</li>
+<li>What you did, what you expected, what happened, and the time, so the matching lines in <code class="notranslate">MacroSIP.log</code> can be found. Attach the log for call or registration failures, with anything private removed.</li>
+<li>The PBX or provider type (Asterisk, FreePBX, 3CX, …) if you know it.</li>
+</ol>
+<p dir="auto">Feature requests go to the same place; the plan is in the <a href="https://github.com/HSMM/MacroSIP/blob/main/docs/ROADMAP.md">roadmap</a>.</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

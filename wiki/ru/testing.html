@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Тесты · Документация MacroSIP</title>
+<meta name="description" content="Документация MacroSIP">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/testing.html">
+<link rel="alternate" hreflang="ru" href="../ru/testing.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/testing.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/testing.html" hreflang="en">English</a><a href="../ru/testing.html" hreflang="ru" aria-current=true>Русский</a><a href="../zh/testing.html" hreflang="zh-Hans">中文</a></div></header>
+<div class="layout">
+<nav aria-label="Содержание"><details><summary>Содержание</summary><div class="links"><ul><li><a href="index.html">Главная</a></li></ul><h2>Руководство пользователя</h2><ul><li><a href="installation.html">Установка</a></li><li><a href="accounts.html">Аккаунты</a></li><li><a href="calls.html">Звонки</a></li><li><a href="incoming-calls.html">Входящие звонки</a></li><li><a href="contacts-and-call-log.html">Контакты и журнал</a></li><li><a href="directory.html">Справочник</a></li><li><a href="quick-keys.html">Быстрые клавиши</a></li><li><a href="audio.html">Звук</a></li><li><a href="settings.html">Настройки</a></li><li><a href="menu-bar.html">Строка меню</a></li><li><a href="troubleshooting.html">Решение проблем</a></li></ul><h2>Для разработчиков</h2><ul><li><a href="architecture.html">Устройство</a></li><li><a href="building.html">Сборка</a></li><li><a href="testing.html" aria-current=page>Тесты</a></li><li><a href="releasing.html">Релизы</a></li><li><a href="contributing.html">Участие</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">Тесты</h1>
+<p dir="auto">MacroSIP проверяют три уровня: наборы Swift Testing для <code class="notranslate">MacroSIPCore</code>, сквозной звонок по loopback с <code class="notranslate">pjsua</code> и демонстрационные запуски приложения с имитацией движка. Все три выполняются в CI при каждом push и pull request. Веха считается закрытой, только когда <code class="notranslate">swift build</code> проходит чисто, тесты зелёные, <code class="notranslate">scripts/selftest-call.sh</code> проходит и проверен настоящий звонок (ADR 0006, <code class="notranslate">docs/DEVELOPMENT.md</code>).</p>
+<h2 dir="auto">Модульные тесты и тесты движка: <code class="notranslate">scripts/test.sh</code></h2>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">scripts/test.sh                                  <span class="pl-c"><span class="pl-c">#</span> all suites</span>
+scripts/test.sh --filter DialStringTests         <span class="pl-c"><span class="pl-c">#</span> extra arguments go to swift test</span></pre></div>
+<p dir="auto">Никогда не запускайте голый <code class="notranslate">swift test</code>: Command Line Tools поставляют фреймворк Testing, но SwiftPM сам не находит его плагин макросов. <code class="notranslate">test.sh</code> передаёт путь к плагину явно (<code class="notranslate">-Xswiftc -plugin-path -Xswiftc .../usr/lib/swift/host/plugins/testing</code>). XCTest без Xcode недоступен, поэтому каждый набор использует <code class="notranslate">import Testing</code>.</p>
+<p dir="auto">Наборы в <code class="notranslate">Tests/MacroSIPCoreTests</code> содержат около 210 тестов:</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Файл</th>
+<th>Что проверяет</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="notranslate">DialStringTests</code></td>
+<td>таблицу разбора (<code class="notranslate">sip:</code>, <code class="notranslate">tel:</code>, простые номера, <code class="notranslate">user@host</code>)</td>
+</tr>
+<tr>
+<td><code class="notranslate">JSONStoreTests</code>, <code class="notranslate">StoreTests</code>, <code class="notranslate">SettingsCompatTests</code></td>
+<td>атомарную запись, восстановление после повреждённого файла, круговые обходы хранилищ, декодирование старых <code class="notranslate">settings.json</code> и журнала звонков со значениями по умолчанию, звонки/«Не беспокоить» на время/записи</td>
+</tr>
+<tr>
+<td><code class="notranslate">KeychainTests</code></td>
+<td>обёртку с тестовым именем службы</td>
+</tr>
+<tr>
+<td><code class="notranslate">ContactTests</code></td>
+<td>нормализацию номеров, сопоставление, сортировку, фото, устаревшие поля</td>
+</tr>
+<tr>
+<td><code class="notranslate">AutoAnswerPolicyTests</code></td>
+<td>порядок правил («Не беспокоить», другой звонок, <code class="notranslate">answer-after</code>, режим)</td>
+</tr>
+<tr>
+<td><code class="notranslate">QuickKeyTests</code></td>
+<td>модель клавиши, URI перехвата, реестр статусов</td>
+</tr>
+<tr>
+<td><code class="notranslate">RecordingConverterTests</code></td>
+<td>WAV в M4A, пары стереоразделения, починку заголовка</td>
+</tr>
+<tr>
+<td><code class="notranslate">EngineTests</code></td>
+<td>запуск/остановку, аккаунты, loopback-звонки (движок звонит сам себе), удержание, выключение звука, DTMF, перевод, слушателей TLS</td>
+</tr>
+<tr>
+<td><code class="notranslate">EngineMilestone5Tests</code></td>
+<td>конференцию, запись в моно и стерео, отображение статусов на заглушке PIDF, доверие к <code class="notranslate">answer-after</code></td>
+</tr>
+<tr>
+<td><code class="notranslate">EngineAudioTests</code></td>
+<td>таблицу MOS, громкость звонка и мелодии, Opus FEC/DTX, политику обработки голоса, подавление дребезга событий устройств</td>
+</tr>
+<tr>
+<td><code class="notranslate">EngineCallOptionsTests</code></td>
+<td>режим одного звонка, сигнал ожидания вызова, способы DTMF, «Не беспокоить»</td>
+</tr>
+<tr>
+<td><code class="notranslate">EngineNetworkTests</code></td>
+<td>повтор регистрации с нарастающей паузой, сетевые раунды, исходы re-INVITE, сторожа медиа, сон и пробуждение, с <code class="notranslate">NetworkStub</code> (UDP-регистратор/вызываемый)</td>
+</tr>
+<tr>
+<td><code class="notranslate">Engine262Tests</code></td>
+<td>окно портов RTP, rport, DNS SRV с DNS-заглушкой в процессе, правила отклонения, дополнительные кодеки</td>
+</tr>
+<tr>
+<td><code class="notranslate">DirectoryParsingTests</code>, <code class="notranslate">DirectoryServiceTests</code>, <code class="notranslate">DirectoryLDAPTests</code></td>
+<td>ленты CSV/JSON и сопоставление номеров, сервис с провайдером-заглушкой, LDAP с сервером <code class="notranslate">NWListener</code> в процессе</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">Тесты движка работают с null-аудио, привязаны к loopback и используют <code class="notranslate">Engine(monitorNetwork: false)</code>, чтобы не зависеть от сети хоста; <code class="notranslate">makeEngine()</code> останавливает движок, оставшийся от упавшего теста, так что один сбой не тянет за собой остальные. <code class="notranslate">TestSupport.swift</code> предоставляет временные каталоги.</p>
+<h2 dir="auto">Сквозной звонок: <code class="notranslate">scripts/selftest-call.sh</code></h2>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">scripts/selftest-call.sh                          <span class="pl-c"><span class="pl-c">#</span> native</span>
+SELFTEST_ARCH=x86_64 scripts/selftest-call.sh     <span class="pl-c"><span class="pl-c">#</span> the x86_64 slice under Rosetta 2</span>
+SELFTEST_LOG=/tmp/selftest.log SELFTEST_LOG_LEVEL=5 scripts/selftest-call.sh</pre></div>
+<p dir="auto">Скрипт запускает два телефона <code class="notranslate">pjsua</code> из <code class="notranslate">third_party/pjsip/bin/pjsua</code> на портах 5080 и 5081 (null-аудио, автоответ, зацикленный тон 600 Гц, telnet-консоли на 5088 и 5089), собирает <code class="notranslate">macrosip-cli</code> и выполняет <code class="notranslate">macrosip-cli --selftest</code>. Самопроверка (<code class="notranslate">Sources/macrosip-cli/SelfTest*.swift</code>) проверяет на независимой реализации PJSIP: двусторонний RTP, удержание и возобновление (в том числе подряд), DTMF, запись в моно (WAV со слышимым тоном, затем M4A), стереозапись с разделением и заглушённой средней секундой, статусы, управляемые через консоль pjsua (доступен, отошёл, занят), конференцию из двух веток с объединением и разделением и записью, переходящей между ветками, входящие звонки (ответ, отклонение с 486), перевод сразу и с консультацией между двумя телефонами, DTMF через SIP INFO и зарегистрированный аккаунт на <code class="notranslate">SIPStub</code> (UDP-регистратор с digest-вызовом внутри <code class="notranslate">macrosip-cli</code>; каждый авторизованный INVITE должен быть больше 1300 байт без ошибки смены транспорта), имитацию смены сети во время звонка и с зарегистрированным аккаунтом, качество звонка (должно быть <code class="notranslate">good</code>), режим одного звонка, «Не беспокоить», правила отклонения и звонок только с GSM. При <code class="notranslate">SELFTEST_ARCH=x86_64</code> CLI собирается универсальным, а CLI и оба телефона запускаются через <code class="notranslate">arch -x86_64</code>; <code class="notranslate">pjsua</code> под Rosetta поднимается на несколько секунд дольше, поэтому скрипт опрашивает его консоль до ~15 с. <code class="notranslate">SELFTEST_CLI=&lt;path&gt;</code> использует уже собранный CLI.</p>
+<h2 dir="auto">Демонстрационные запуски и имитация движка</h2>
+<p dir="auto"><strong>Debug</strong>-приложение (<code class="notranslate">scripts/make-app.sh debug</code>) принимает параметры запуска из <code class="notranslate">Sources/MacroSIPApp/Model/LaunchOptions.swift</code>; release-приложение их игнорирует.</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Параметр</th>
+<th>Эффект</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="notranslate">--mock-engine</code></td>
+<td><code class="notranslate">MockEngine</code> вместо PJSIP: регистрация проходит через 1 с (пароль <code class="notranslate">wrong</code> или домен, содержащий <code class="notranslate">fail</code>, дают 403), исходящий звонок соединяется через 2 с</td>
+</tr>
+<tr>
+<td><code class="notranslate">--demo-state &lt;name&gt;</code></td>
+<td>заполняет образцы аккаунтов, контактов и записей журнала, подразумевает <code class="notranslate">--mock-engine</code> и временный каталог данных; связка ключей не затрагивается</td>
+</tr>
+<tr>
+<td><code class="notranslate">--data-dir &lt;path&gt;</code></td>
+<td>JSON-хранилища в <code class="notranslate">&lt;path&gt;</code> вместо Application Support</td>
+</tr>
+<tr>
+<td><code class="notranslate">--snapshot &lt;prefix&gt;</code></td>
+<td>пишет <code class="notranslate">&lt;prefix&gt;-&lt;window&gt;.png</code> каждого окна через <code class="notranslate">--snapshot-after</code> секунд (по умолчанию 6), затем завершается; работает без дисплея</td>
+</tr>
+<tr>
+<td><code class="notranslate">--appearance light|dark</code></td>
+<td>принудительно задаёт тему</td>
+</tr>
+<tr>
+<td><code class="notranslate">-AppleLanguages "(ru)"</code></td>
+<td>стандартный аргумент macOS; запускает приложение на русском</td>
+</tr>
+<tr>
+<td><code class="notranslate">--log-level 0-6</code></td>
+<td>подробность PJSIP (все сборки)</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">Демонстрационные состояния по областям (полный список в заголовке <code class="notranslate">Model/DemoState.swift</code>):</p>
+<ul dir="auto">
+<li>Главное окно и звонки: <code class="notranslate">first-launch</code>, <code class="notranslate">dialpad</code>, <code class="notranslate">contacts</code>, <code class="notranslate">calllog</code>, <code class="notranslate">connected</code>, <code class="notranslate">calls</code>, <code class="notranslate">conference</code>, <code class="notranslate">recording</code>, <code class="notranslate">recording-long</code>, <code class="notranslate">incoming</code>, <code class="notranslate">incoming-hidden</code>, <code class="notranslate">autoAnswer</code>, <code class="notranslate">suggest</code>, <code class="notranslate">keypad</code>, <code class="notranslate">transfer-banner</code>, <code class="notranslate">account-popup</code>, <code class="notranslate">account-popup-live</code>, <code class="notranslate">many-accounts</code>.</li>
+<li>Звук и сеть: <code class="notranslate">quality-good</code>, <code class="notranslate">quality-fair</code>, <code class="notranslate">quality-poor</code>, <code class="notranslate">quality-poor-calls</code>, <code class="notranslate">call-volume</code> (также пишет <code class="notranslate">&lt;prefix&gt;-popover.png</code>), <code class="notranslate">headset</code>, <code class="notranslate">headset-back</code>, <code class="notranslate">network-offline</code>, <code class="notranslate">reconnecting</code>.</li>
+<li>Звонки и «Не беспокоить»: <code class="notranslate">timed-dnd</code> (пишет пункты строки меню в <code class="notranslate">&lt;prefix&gt;-menu.txt</code>), <code class="notranslate">call-log-playback</code>, <code class="notranslate">busy-mode</code>.</li>
+<li>Настройки: <code class="notranslate">settings-accounts</code>, <code class="notranslate">account-editor</code>, <code class="notranslate">account-editor-basic</code>, <code class="notranslate">account-editor-open</code>, <code class="notranslate">editor-first-launch</code>, <code class="notranslate">settings-general</code>, <code class="notranslate">settings-general-advanced</code>, <code class="notranslate">settings-audio</code>, <code class="notranslate">settings-codecs</code>, <code class="notranslate">settings-network</code>, <code class="notranslate">settings-recording</code>, <code class="notranslate">settings-autoanswer</code>, <code class="notranslate">settings-calls</code>, <code class="notranslate">settings-directory</code>, <code class="notranslate">many-accounts-settings</code>, <code class="notranslate">deny-incoming</code>.</li>
+<li>Быстрые клавиши: <code class="notranslate">quick-keys</code>, <code class="notranslate">quick-keys-bottom</code> (пишет <code class="notranslate">-main.png</code> и <code class="notranslate">-settings.png</code>).</li>
+<li>Карточка контакта: <code class="notranslate">contact-card</code>, <code class="notranslate">contact-card-new</code> (пишет <code class="notranslate">-card.png</code>).</li>
+<li>Справочник (<code class="notranslate">MockDirectory</code>): <code class="notranslate">directory</code>, <code class="notranslate">directory-done</code>, <code class="notranslate">directory-incoming</code>, <code class="notranslate">directory-sheet</code>, <code class="notranslate">directory-sheet-url</code>, <code class="notranslate">directory-sheet-google</code>, <code class="notranslate">directory-sheet-macos</code>, <code class="notranslate">directory-import</code>, <code class="notranslate">directory-selftest</code>.</li>
+<li>Служебные: <code class="notranslate">selftest</code>, <code class="notranslate">quit</code> (проверяет, что завершение не зависает).</li>
+</ul>
+<p dir="auto"><strong>Демонстрационная самопроверка.</strong> <code class="notranslate">--demo-state selftest</code> управляет моделью так же, как это делают представления, через имитацию движка, и записывает строку <code class="notranslate">PASS</code> или <code class="notranslate">FAIL</code> на каждую проверку: состояния регистрации (один аккаунт зарегистрирован, один с ошибкой 403), состояния вызова и разговора, имя звонящего, определённое по контакту, выключение звука, удержание и возобновление, два звонка с переключением удержания, перевод с консультацией, воспроизведение записи, проверки аккаунтов, сводка состояния и другое. Результат идёт в stdout или, с <code class="notranslate">--snapshot</code>, в <code class="notranslate">&lt;prefix&gt;-selftest.txt</code>, и приложение завершается. <code class="notranslate">--demo-state directory-selftest</code> выполняет только часть, относящуюся к справочнику: подсказки в поле номера, определение звонящего, импорт и слияние.</p>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">timeout 60 dist/MacroSIP.app/Contents/MacOS/MacroSIP --demo-state selftest
+timeout 60 dist/MacroSIP.app/Contents/MacOS/MacroSIP --demo-state directory-selftest</pre></div>
+<h2 dir="auto">Строки: <code class="notranslate">scripts/check-strings.sh</code></h2>
+<p dir="auto">Проверяет, что каждый ключ, используемый в <code class="notranslate">Model/Strings.swift</code>, есть и в <code class="notranslate">en.lproj</code>, и в <code class="notranslate">ru.lproj</code> (<code class="notranslate">Localizable.strings</code> или <code class="notranslate">Localizable.stringsdict</code>), что ни в одном файле нет ключей, которые код не использует, что ни один ключ не лежит в обоих файлах сразу, что категории множественного числа полны (<code class="notranslate">one</code>/<code class="notranslate">other</code> для английского, <code class="notranslate">one</code>/<code class="notranslate">few</code>/<code class="notranslate">many</code>/<code class="notranslate">other</code> для русского) и что в русском значении нет подстановок, которых нет в английском. Запускайте после каждого изменения строк.</p>
+<h2 dir="auto">Снимки экрана</h2>
+<p dir="auto">Изображения в <code class="notranslate">docs/screenshots/{light,dark}</code> и <code class="notranslate">docs/screenshots/ru/{light,dark}</code> получены из демонстрационных запусков с <code class="notranslate">--snapshot</code>; отдельного скрипта захвата нет. Типичный захват русского тёмного варианта:</p>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">timeout 30 dist/MacroSIP.app/Contents/MacOS/MacroSIP --demo-state contacts \
+  --appearance dark -AppleLanguages <span class="pl-s"><span class="pl-pds">"</span>(ru)<span class="pl-pds">"</span></span> --snapshot /tmp/shots/contacts --snapshot-after 3</pre></div>
+<p dir="auto">Состояния со звонящим вызовом или открытым листом никогда не завершаются сами, отсюда <code class="notranslate">timeout</code>. Русский текст примерно на 25 % длиннее, поэтому после добавления строк проверяйте строку состояния, кнопки панели звонка и меню выбора аккаунта. Контакты Google в имитации отвечают через 4 с; используйте <code class="notranslate">--snapshot-after 3</code>, чтобы поймать строку «Поиск: …».</p>
+<h2 dir="auto">CI</h2>
+<p dir="auto"><code class="notranslate">.github/workflows/ci.yml</code> выполняется при push и pull request в <code class="notranslate">main</code>, по одному активному запуску на ref.</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Задание</th>
+<th>Раннер</th>
+<th>Шаги</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="notranslate">build</code></td>
+<td><code class="notranslate">macos-15</code> (arm64)</td>
+<td>восстанавливает кэш <code class="notranslate">third_party/pjsip</code> и <code class="notranslate">third_party/deps</code> (ключ: хеш <code class="notranslate">build-pjsip.sh</code> и <code class="notranslate">config_site.h</code>), <code class="notranslate">build-pjsip.sh</code>, <code class="notranslate">swift build</code>, <code class="notranslate">test.sh</code>, <code class="notranslate">selftest-call.sh</code> нативно и с <code class="notranslate">SELFTEST_ARCH=x86_64</code> под Rosetta 2 (устанавливается при необходимости), <code class="notranslate">make-app.sh release</code>, <code class="notranslate">lipo -info</code> на бинарнике; выгружает приложение (14 дней) и универсальную сборку PJSIP (3 дня) как артефакты, а при сбое — журналы сборки</td>
+</tr>
+<tr>
+<td><code class="notranslate">intel</code></td>
+<td><code class="notranslate">macos-15-intel</code> (x86_64), после <code class="notranslate">build</code></td>
+<td>скачивает универсальные библиотеки и приложение (хост Intel не может выполнить <code class="notranslate">build-pjsip.sh</code>), проверяет подпись, запускает приложение на 15 с с <code class="notranslate">--data-dir</code> и <code class="notranslate">MACROSIP_LOG_DIR</code>, затем <code class="notranslate">swift build</code>, <code class="notranslate">test.sh</code> и <code class="notranslate">selftest-call.sh</code> нативно</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto"><code class="notranslate">release.yml</code> повторяет шаги arm64 перед сборкой DMG (см. <a href="releasing.html">Релизы</a>).</p>
+<p dir="auto">См. также <a href="building.html">Сборка</a> и <a href="contributing.html">Участие</a>.</p>
+<p dir="auto">Другие страницы: <a href="index.html">Главная</a> · <a href="../en/index.html">Home</a> (English)</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

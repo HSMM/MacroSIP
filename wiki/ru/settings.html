@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Настройки · Документация MacroSIP</title>
+<meta name="description" content="Документация MacroSIP">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/settings.html">
+<link rel="alternate" hreflang="ru" href="../ru/settings.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/settings.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/settings.html" hreflang="en">English</a><a href="../ru/settings.html" hreflang="ru" aria-current=true>Русский</a><a href="../zh/settings.html" hreflang="zh-Hans">中文</a></div></header>
+<div class="layout">
+<nav aria-label="Содержание"><details><summary>Содержание</summary><div class="links"><ul><li><a href="index.html">Главная</a></li></ul><h2>Руководство пользователя</h2><ul><li><a href="installation.html">Установка</a></li><li><a href="accounts.html">Аккаунты</a></li><li><a href="calls.html">Звонки</a></li><li><a href="incoming-calls.html">Входящие звонки</a></li><li><a href="contacts-and-call-log.html">Контакты и журнал</a></li><li><a href="directory.html">Справочник</a></li><li><a href="quick-keys.html">Быстрые клавиши</a></li><li><a href="audio.html">Звук</a></li><li><a href="settings.html" aria-current=page>Настройки</a></li><li><a href="menu-bar.html">Строка меню</a></li><li><a href="troubleshooting.html">Решение проблем</a></li></ul><h2>Для разработчиков</h2><ul><li><a href="architecture.html">Устройство</a></li><li><a href="building.html">Сборка</a></li><li><a href="testing.html">Тесты</a></li><li><a href="releasing.html">Релизы</a></li><li><a href="contributing.html">Участие</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">Настройки</h1>
+<p dir="auto">Настройки открываются сочетанием ⌘, из меню MacroSIP, меню выбора аккаунта или значка в строке меню. Это стандартное окно настроек macOS с вкладками на панели инструментов; изменения применяются сразу, кнопки «Сохранить» нет. Вкладки по порядку: <strong>Основные, Аккаунты, Звук, Сеть, Кодеки, Запись, Звонки, Быстрые клавиши, Справочник</strong>.</p>
+<p dir="auto"><a target="_blank" rel="noopener noreferrer nofollow" href="https://raw.githubusercontent.com/HSMM/MacroSIP/main/docs/screenshots/ru/light/settings-recording.png?v=1"><img src="https://raw.githubusercontent.com/HSMM/MacroSIP/main/docs/screenshots/ru/light/settings-recording.png?v=1" alt="Вкладка «Запись»" style="max-width: 100%;"></a></p>
+<h2 dir="auto">Основные</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Строка</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Запускать при входе в систему</strong></td>
+<td>Регистрирует MacroSIP как объект входа.</td>
+</tr>
+<tr>
+<td><strong>Оставаться в строке меню после закрытия окна</strong></td>
+<td>Если выключить, закрытие окна завершает приложение.</td>
+</tr>
+<tr>
+<td><strong>Показывать значок в Dock</strong></td>
+<td>Скрывает или показывает значок в Dock; значок в строке меню остаётся.</td>
+</tr>
+<tr>
+<td><strong>Не беспокоить</strong></td>
+<td>Выкл. / Вкл. / На 30 минут / На 1 час / До завтра 9:00. «Отклоняет входящие звонки с кодом 486 Busy Here и публикует статус „Не беспокоить“.» Пока идёт отсчёт, показывает «До 14:30 · осталось 27 мин».</td>
+</tr>
+<tr>
+<td><strong>Язык</strong></td>
+<td>Системный / English / Русский. «Изменение вступит в силу после перезапуска MacroSIP.»</td>
+</tr>
+<tr>
+<td><strong>Обновления</strong></td>
+<td><strong>Проверять обновления автоматически</strong> (раз в день, спрашивает перед установкой), <strong>Включать предварительные версии</strong>, <strong>Проверить</strong>, «Последняя проверка: …». См. <a href="installation.html">Установка</a>.</td>
+</tr>
+<tr>
+<td><strong>Дополнительно › Ссылки</strong></td>
+<td>«Открывать ссылки sip: и tel: в MacroSIP» с кнопкой <strong>Назначить</strong> (предупреждение называет другое приложение, которое обрабатывает ссылки tel:). <strong>При открытии ссылки</strong>: Спрашивать (подставляет номер в поле) / Звонить сразу / Только подставить.</td>
+</tr>
+<tr>
+<td><strong>Дополнительно › Устранение неполадок</strong></td>
+<td><strong>Файл журнала</strong> с кнопкой <strong>Открыть папку</strong> (<code class="notranslate">~/Library/Logs/MacroSIP/MacroSIP.log</code>, по 2 МБ на файл, 3 файла) и <strong>Диагностика</strong> с кнопкой <strong>Скопировать</strong> (версии, аккаунты и настройки, без паролей).</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">Группа «Дополнительно» по умолчанию свёрнута.</p>
+<h2 dir="auto">Аккаунты</h2>
+<p dir="auto">Таблица с точкой состояния, колонками <strong>Имя</strong> (синий бейдж <strong>Основной</strong> у основного аккаунта для исходящих), <strong>Адрес</strong>, <strong>Транспорт</strong> и <strong>Статус</strong> (Подключён, Регистрация…, короткая ошибка вроде 403, Выключен, Только исходящие, Переподключение…). Перетаскивание меняет порядок; он используется в меню выбора аккаунта и строке состояния. Кнопки <strong>+</strong>, <strong>−</strong> (с подтверждением) и <strong>Изменить…</strong>; двойной щелчок открывает редактор. При восьми и более аккаунтах появляется поле <strong>Фильтр аккаунтов</strong>. Группа «Офис · последняя ошибка» показывает последний сбой REGISTER с кнопкой <strong>Повторить</strong>. Поля редактора описаны на странице <a href="accounts.html">Аккаунты</a>; в его группе «Дополнительно» есть строки голосовой почты <strong>Номер голосовой почты</strong> («Набирается из строки меню и строки состояния.») и <strong>Индикатор голосовой почты (MWI)</strong> («Показывает число новых сообщений, о которых сообщает сервер.»).</p>
+<h2 dir="auto">Звук</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Группа</th>
+<th>Строки</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Устройства</strong></td>
+<td><strong>Микрофон</strong> (индикатор уровня, список с вариантом «Как в системе»), <strong>Динамик</strong> (список), <strong>Устройство для звонка</strong>, <strong>Переключаться на гарнитуру при подключении</strong>, <strong>Кнопки гарнитуры</strong> («Подключено: Jabra Evolve2 65» или «Гарнитура с кнопками управления не подключена»).</td>
+</tr>
+<tr>
+<td><strong>Мелодия звонка</strong></td>
+<td><strong>Мелодия</strong> (Классическая / Цифровая / Мягкая / Свой файл…, с кнопкой <strong>Прослушать</strong>), <strong>Громкость</strong> 0–100 %.</td>
+</tr>
+<tr>
+<td><strong>Музыка на удержании</strong></td>
+<td><strong>Источник</strong>: Встроенная / Свой файл… / Выкл. «Это слышит собеседник, пока звонок на удержании.»</td>
+</tr>
+<tr>
+<td><strong>Звуковые события</strong></td>
+<td><strong>Соединение и завершение звонка</strong>, <strong>Нажатия клавиш номеронабирателя</strong>, <strong>Новое голосовое сообщение</strong>, <strong>Ошибка регистрации и потеря сети</strong>; все выключены. «Короткие сигналы в динамике; собеседник их не слышит.»</td>
+</tr>
+<tr>
+<td><strong>Проверка звука</strong></td>
+<td><strong>Динамик и микрофон</strong>: кнопка <strong>Проверить</strong> и индикатор микрофона. «Проверка 2 секунды играет две ноты в динамике; индикатор показывает уровень микрофона.»</td>
+</tr>
+<tr>
+<td><strong>Обработка</strong></td>
+<td><strong>Эхоподавление</strong>: «Выключайте, только если у гарнитуры есть собственное эхоподавление.»</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">Подробности на странице <a href="audio.html">Звук</a>.</p>
+<h2 dir="auto">Сеть</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Группа</th>
+<th>Строки</th>
+<th>По умолчанию</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Подключение</strong></td>
+<td><strong>STUN-сервер</strong> («Оставьте пустым, если вы не за NAT.»), <strong>Локальный порт SIP</strong> («0 — выбрать свободный порт автоматически.»), <strong>Интервал keep-alive</strong> в секундах («Не даёт закрыться NAT-соединению между регистрациями.»), <strong>Использовать ICE</strong> («Находит рабочий путь для медиа через NAT. Использует STUN-сервер выше.»).</td>
+<td>пусто, 5060, 15, вкл.</td>
+</tr>
+<tr>
+<td><strong>RTP</strong></td>
+<td><strong>Диапазон портов</strong> с полями <strong>Начало</strong> и <strong>Портов</strong> («Звук использует этот диапазон. На один звонок нужно два порта; 1024–65535.»), <strong>Использовать rport</strong> («Просит сервер отвечать на адрес и порт, с которых пришёл запрос. Помогает за NAT.»).</td>
+<td>4000 / 1000, вкл.</td>
+</tr>
+<tr>
+<td><strong>DNS</strong></td>
+<td><strong>Использовать SRV-записи DNS</strong> («Находит сервер и порт учётной записи по SRV-записям, а если их нет, обращается к самому домену.»), <strong>DNS-сервер</strong> («Адрес DNS-сервера. Если пусто, берутся системные.»), доступен только при включённых SRV.</td>
+<td>выкл., пусто</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">«При смене порта все аккаунты регистрируются заново. Текущие звонки не прерываются. Транспорт и SRTP задаются для каждого аккаунта в его настройках.» Диапазон портов и DNS применяются после перезапуска движка; оранжевый баннер предлагает <strong>Перезапустить сейчас</strong> (недоступно во время звонка: «Сначала завершите звонки.»). Допустимые значения: локальный порт 0 или 1024–65535, keep-alive 0 (выкл.) или 5–600 с.</p>
+<h2 dir="auto">Кодеки</h2>
+<p dir="auto">«Аудиокодеки в порядке предпочтения»: таблица с флажком, колонками <strong>Кодек</strong>, <strong>Частота</strong>, <strong>Битрейт</strong> и ручкой перетаскивания; кнопки <strong>Выше</strong>, <strong>Ниже</strong>, <strong>Сбросить</strong>. Кодеки без флажка никогда не предлагаются; хотя бы один должен остаться включённым. Группа <strong>Opus</strong> добавляет <strong>Коррекция потерь пакетов (FEC)</strong> (вкл.) и <strong>Подавление тишины (DTX)</strong> (выкл.). Список кодеков — на странице <a href="audio.html">Звук</a>.</p>
+<h2 dir="auto">Запись</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Строка</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Сохранять записи в</strong></td>
+<td>Список папок, по умолчанию «MacroSIP Recordings» в ~/Music; <strong>Выбрать папку…</strong>. «Папка не найдена», если она пропала.</td>
+</tr>
+<tr>
+<td><strong>Записывать все звонки автоматически</strong></td>
+<td>По умолчанию выключено; кнопка «Запись» на панели звонка работает в любом случае.</td>
+</tr>
+<tr>
+<td><strong>Каналы</strong></td>
+<td><strong>Моно</strong> («Обе стороны смешаны в один канал.») или <strong>Стерео</strong> («Вы в левом канале, собеседник в правом.»).</td>
+</tr>
+<tr>
+<td><strong>Тон уведомления › Воспроизводить тон во время записи</strong></td>
+<td>По умолчанию выключено. Короткий сигнал, который слышат обе стороны и который попадает в запись: через секунду после начала записи и затем <strong>Каждые</strong> 5–60 <strong>секунд</strong> (15). «Короткий сигнал каждые 15 секунд сообщает обеим сторонам, что звонок записывается.»</td>
+</tr>
+<tr>
+<td><strong>Показать папку с записями</strong></td>
+<td><strong>Показать в Finder</strong>.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">Подпись: «Записи сохраняются в M4A (AAC). Временные WAV-файлы удаляются после преобразования.» и «Имя файла: 2026-10-10 14.52 Алеся Козловская (in).m4a».</p>
+<h2 dir="auto">Звонки</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Группа</th>
+<th>Строки</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Входящие звонки</strong></td>
+<td><strong>Отклонять звонки от</strong>: Никого / Всех / Номеров не из контактов / Анонимных абонентов. «Отклонённый звонок не звонит. Абонент получает 603 Decline, а в журнале звонков появляется „Отклонён: правило“.»</td>
+</tr>
+<tr>
+<td><strong>Во время звонка</strong></td>
+<td><strong>Когда звонят во время разговора</strong>: Ожидание вызова (сигнал, окно) / Только окно / Занято (один звонок). <strong>Способ передачи DTMF</strong>: Автоматически / RFC 2833 / SIP INFO / В звуке (in-band) («Автоматически: RFC 2833, при отказе SIP INFO.»). <strong>Выводить главное окно вперёд при входящем звонке</strong> («Окно входящего звонка тоже появляется.»).</td>
+</tr>
+<tr>
+<td><strong>Автоответ</strong></td>
+<td><strong>Отвечать на входящие автоматически</strong>: Выкл. / Все звонки / Контакты. <strong>Задержка перед ответом</strong> в секундах (5). <strong>Учитывать запрос сервера на ответ</strong> («Отвечает, когда АТС присылает Call-Info: answer-after=N (интерком, оповещение), даже если режим выключен.»).</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">Подпись: «„Не беспокоить“ важнее автоответа. Автоответ никогда не принимает второй звонок, пока вы уже разговариваете.» См. <a href="incoming-calls.html">Входящие-звонки</a>.</p>
+<h2 dir="auto">Быстрые клавиши</h2>
+<p dir="auto">Таблица из 12 строк (<strong>Имя</strong>, <strong>Номер</strong>, <strong>Тип</strong>, <strong>BLF</strong>, <strong>Клавиша</strong>), счётчик «5 из 12 клавиш», затем <strong>Панель › Показывать панель</strong> (Выкл. / Справа / Снизу) и <strong>Код перехвата</strong> (<code class="notranslate">*8</code>). См. <a href="quick-keys.html">Быстрые-клавиши</a>.</p>
+<h2 dir="auto">Справочник</h2>
+<p dir="auto"><strong>Контакты › Сортировка</strong> (По имени / По фамилии); список источников с колонками <strong>Источник</strong>, <strong>Состояние</strong>, <strong>Вкл.</strong>, кнопками <strong>+</strong>, <strong>−</strong>, <strong>Изменить…</strong> и <strong>Импортировать</strong>; группа <strong>Поиск</strong> с настройками <strong>Искать в справочниках из поля номера</strong>, <strong>Минимум символов</strong> (2), <strong>Результатов от источника</strong> (5) и <strong>Искать имена входящих абонентов</strong>. См. <a href="directory.html">Справочник</a>.</p>
+<h2 dir="auto">Где хранятся настройки</h2>
+<p dir="auto"><code class="notranslate">~/Library/Application Support/MacroSIP/settings.json</code> (а также <code class="notranslate">accounts.json</code>, <code class="notranslate">contacts.json</code>, <code class="notranslate">calllog.json</code>); пароли — в связке ключей входа. См. <a href="troubleshooting.html">Решение-проблем</a>.</p>
+<p dir="auto">Другие страницы: <a href="index.html">Главная</a> · <a href="../en/index.html">Home</a> (English)</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

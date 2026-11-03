@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>构建 · MacroSIP 文档</title>
+<meta name="description" content="MacroSIP 文档">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/building.html">
+<link rel="alternate" hreflang="ru" href="../ru/building.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/building.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/building.html" hreflang="en">English</a><a href="../ru/building.html" hreflang="ru">Русский</a><a href="../zh/building.html" hreflang="zh-Hans" aria-current=true>中文</a></div></header>
+<div class="layout">
+<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html">通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="directory.html">目录</a></li><li><a href="quick-keys.html">快捷键</a></li><li><a href="audio.html">音频</a></li><li><a href="settings.html">设置</a></li><li><a href="menu-bar.html">菜单栏</a></li><li><a href="troubleshooting.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="architecture.html">架构</a></li><li><a href="building.html" aria-current=page>构建</a></li><li><a href="testing.html">测试</a></li><li><a href="releasing.html">发布</a></li><li><a href="contributing.html">参与贡献</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">构建</h1>
+<p dir="auto">MacroSIP 仅用 SwiftPM 和 Xcode 命令行工具即可构建。没有 Xcode 项目，也不涉及 Homebrew：OpenSSL 和 Opus 与 PJSIP 一起从固定版本的源代码 tarball 编译。详情见 <code class="notranslate">scripts/README-build.md</code>、<code class="notranslate">scripts/build-pjsip.sh</code>、<code class="notranslate">scripts/make-app.sh</code> 和 ADR 0012。</p>
+<h2 dir="auto">要求</h2>
+<ul dir="auto">
+<li><strong>Apple 芯片</strong> Mac 上的 macOS 14 或更新版本。构建主机必须是 arm64：通用构建的 x86_64 部分在同一台机器上交叉编译，<code class="notranslate">build-pjsip.sh</code> 在 Intel 主机上会停止。</li>
+<li>Xcode 命令行工具（<code class="notranslate">xcode-select --install</code>）。不需要完整的 Xcode；如果已安装，它可以直接打开 <code class="notranslate">Package.swift</code>。</li>
+<li>首次运行时需要访问 github.com 和 downloads.xiph.org 的网络（之后 tarball 会被缓存）。</li>
+<li>可选：Rosetta 2（<code class="notranslate">softwareupdate --install-rosetta --agree-to-license</code>），用于在 Apple 芯片上运行 x86_64 切片。</li>
+</ul>
+<h2 dir="auto">第 1 步：<code class="notranslate">scripts/build-pjsip.sh</code></h2>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">scripts/build-pjsip.sh            <span class="pl-c"><span class="pl-c">#</span> 首次运行在 8 核 M 系列 Mac 上约 5 分钟，之后只需数秒</span>
+scripts/build-pjsip.sh --clean    <span class="pl-c"><span class="pl-c">#</span> 删除除下载外的所有输出并重新构建</span>
+JOBS=4 scripts/build-pjsip.sh     <span class="pl-c"><span class="pl-c">#</span> 限制并行度</span>
+KEEP_BUILD=1 scripts/build-pjsip.sh   <span class="pl-c"><span class="pl-c">#</span> 保留 third_party/build 下的源代码树</span></pre></div>
+<p dir="auto">该脚本以 <code class="notranslate">-mmacosx-version-min=14.0</code> 为 arm64（原生）和 x86_64（<code class="notranslate">--host=x86_64-apple-darwin</code>）构建：</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>组件</th>
+<th>版本</th>
+<th>选项</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OpenSSL</td>
+<td>3.5.9 (LTS)</td>
+<td><code class="notranslate">no-shared no-module no-tests</code>，仅 <code class="notranslate">build_libs</code> 和 <code class="notranslate">install_dev</code>；<code class="notranslate">darwin64-arm64-cc</code> / <code class="notranslate">darwin64-x86_64-cc</code></td>
+</tr>
+<tr>
+<td>Opus</td>
+<td>1.6.1</td>
+<td><code class="notranslate">--disable-shared --enable-static --disable-doc --disable-extra-programs</code></td>
+</tr>
+<tr>
+<td>pjproject</td>
+<td>2.17</td>
+<td>在 configure 之前安装 <code class="notranslate">third_party/pjsip/config_site.h</code>；<code class="notranslate">--disable-shared --disable-pjsua2 --disable-video --disable-darwin-ssl --disable-speex-aec</code>，不含 L16、AMR、SILK、bcg729 (G.729) 或 Lyra；<code class="notranslate">--with-ssl</code> 和 <code class="notranslate">--with-opus</code> 指向 <code class="notranslate">third_party/deps/&lt;arch&gt;</code></td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">每个 tarball 都根据脚本顶部固定的 SHA-256 进行验证。<code class="notranslate">--disable-darwin-ssl</code> 很重要：否则 configure 会优先选择已弃用的 SecureTransport 而非 OpenSSL。脚本检查 configure 日志（找到 OpenSSL 和 Opus，G.722.1、GSM、iLBC 和 Speex 编解码器未被禁用），检查每个归档和 <code class="notranslate">pjsua</code> 的架构与 <code class="notranslate">minos</code>，并在 <code class="notranslate">pjsua</code> 链接了 <code class="notranslate">/opt/homebrew</code> 中的任何内容时失败。</p>
+<p dir="auto"><code class="notranslate">config_site.h</code> 开启 IPv6、SRTP（SDES，无 DTLS）、WebRTC 回声消除器、TLS、授权头缓存、<code class="notranslate">PJSUA_MAX_CALLS</code> 8，以及编解码器 Opus、G.711、G.722、G.722.1、GSM、iLBC 和 Speex（G.722.1、GSM、iLBC 和 Speex 在引擎中保持禁用，直到用户启用；添加编解码器见 <a href="contributing.html">参与贡献</a>）。视频关闭。</p>
+<p dir="auto">各架构的结果用 <code class="notranslate">lipo</code> 合并。在架构间不同的头文件（<code class="notranslate">pj/compat/m_auto.h</code>、<code class="notranslate">os_auto.h</code>，configure 在其中写入机器名）合并为一个带 <code class="notranslate">#if defined(__aarch64__)</code> / <code class="notranslate">#elif defined(__x86_64__)</code> 分支的文件。库名去掉主机三元组后缀（<code class="notranslate">libpj-aarch64-apple-darwin27.2.0.a</code> 变为 <code class="notranslate">libpj.a</code>），因此两个切片的名称相同，链接标志在 macOS 更新后依然有效。</p>
+<p dir="auto"><code class="notranslate">third_party/</code> 下的输出布局（除 <code class="notranslate">pjsip/config_site.h</code> 外全部被 git 忽略）：</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>路径</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="notranslate">downloads/</code></td>
+<td>已验证的 tarball，<code class="notranslate">--clean</code> 时保留</td>
+</tr>
+<tr>
+<td><code class="notranslate">deps/&lt;arch&gt;/{include,lib}</code></td>
+<td>单一架构的 OpenSSL 和 Opus</td>
+</tr>
+<tr>
+<td><code class="notranslate">deps/universal/lib</code></td>
+<td><code class="notranslate">libssl.a</code>、<code class="notranslate">libcrypto.a</code>、<code class="notranslate">libopus.a</code>，由 <code class="notranslate">Package.swift</code> 链接</td>
+</tr>
+<tr>
+<td><code class="notranslate">pjsip/arch/&lt;arch&gt;/</code></td>
+<td>单一架构的 PJSIP 头文件、库和 <code class="notranslate">pjsua</code></td>
+</tr>
+<tr>
+<td><code class="notranslate">pjsip/include/</code>、<code class="notranslate">pjsip/lib/</code></td>
+<td>合并后的头文件和通用归档</td>
+</tr>
+<tr>
+<td><code class="notranslate">pjsip/bin/pjsua</code></td>
+<td>通用 <code class="notranslate">pjsua</code> CLI，自测中的第二部电话</td>
+</tr>
+<tr>
+<td><code class="notranslate">pjsip/LINKFLAGS</code>、<code class="notranslate">pjsip/CFLAGS</code></td>
+<td>使用者需要的标志；<code class="notranslate">Package.swift</code> 中的 <code class="notranslate">pjsipLibraries</code> 与 <code class="notranslate">LINKFLAGS</code> 保持一致</td>
+</tr>
+<tr>
+<td><code class="notranslate">build/</code>、<code class="notranslate">build-logs/&lt;arch&gt;/</code></td>
+<td>源代码树（除非 <code class="notranslate">KEEP_BUILD=1</code> 否则删除）和完整的 configure/make 日志</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">**缓存。**每个组件写入一个包含其配方的印记（版本、校验和、标志、<code class="notranslate">config_site.h</code> 的 SHA-256、构建所依据的印记）。一次运行跳过印记匹配的所有组件，并从新解压的源代码树重新构建其余组件。编辑 <code class="notranslate">config_site.h</code> 后重新运行脚本：PJSIP 为两个架构重新构建（2 到 5 分钟），而 OpenSSL 和 Opus 保持不变。CI 以脚本和 <code class="notranslate">config_site.h</code> 为键缓存 <code class="notranslate">third_party/pjsip</code> 和 <code class="notranslate">third_party/deps</code>，因此缓存命中时该步骤为空操作。要升级某个组件，请在脚本中更改其版本和校验和并重新运行。</p>
+<h2 dir="auto">第 2 步：<code class="notranslate">swift build</code></h2>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">swift build                         <span class="pl-c"><span class="pl-c">#</span> debug，原生架构</span>
+swift build -c release              <span class="pl-c"><span class="pl-c">#</span> release，原生架构</span>
+swift build --arch arm64 --arch x86_64 -c release   <span class="pl-c"><span class="pl-c">#</span> 通用（make-app.sh release 运行的命令）</span>
+.build/release/pjsip-smoke          <span class="pl-c"><span class="pl-c">#</span> 打印 PJSIP 版本、编解码器和音频设备；以 0 退出</span></pre></div>
+<p dir="auto"><code class="notranslate">Package.swift</code> 用绝对的 <code class="notranslate">-L</code>/<code class="notranslate">-l</code> 标志（<code class="notranslate">Context.packageDirectory</code>）链接归档，因 libwebrtc 包含 C++ 而添加 <code class="notranslate">-lc++</code>，并通过 <code class="notranslate">swiftSettings: pjsipSwiftSettings</code>（<code class="notranslate">-Xcc -I</code>）为每个导入 <code class="notranslate">CPJSUA</code> 的 Swift 目标提供头文件路径。应用目标为 Sparkle 获得 rpath <code class="notranslate">@executable_path/../Frameworks</code>。通用构建将产物放在 <code class="notranslate">.build/out/Products/&lt;Config&gt;</code> 而非 <code class="notranslate">.build/&lt;config&gt;</code>；用 <code class="notranslate">swift build ... --show-bin-path</code> 查询。SwiftPM 不跟踪预构建的归档，因此在 PJSIP 重新构建后，如果更改似乎未生效，请运行 <code class="notranslate">rm -rf .build</code>。</p>
+<h2 dir="auto">第 3 步：<code class="notranslate">scripts/make-app.sh</code></h2>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">scripts/make-app.sh                 <span class="pl-c"><span class="pl-c">#</span> release：通用 dist/MacroSIP.app（默认）</span>
+scripts/make-app.sh debug           <span class="pl-c"><span class="pl-c">#</span> debug：仅原生架构，更快；唯一接受演示选项的构建</span>
+ARCHS=arm64 scripts/make-app.sh     <span class="pl-c"><span class="pl-c">#</span> 单架构 release</span></pre></div>
+<p dir="auto">该脚本运行 <code class="notranslate">swift build --product MacroSIPApp</code>（release 为通用，debug 为原生），用 <code class="notranslate">lipo</code> 检查切片，并组装 <code class="notranslate">dist/MacroSIP.app</code>：二进制文件、放入 <code class="notranslate">Contents/Frameworks</code> 的 <code class="notranslate">Sparkle.framework</code>、放入 <code class="notranslate">Contents/Resources</code> 的 <code class="notranslate">en.lproj</code> 和 <code class="notranslate">ru.lproj</code> 字符串及 <code class="notranslate">InfoPlist.strings</code>、<code class="notranslate">packaging/AppIcon.icns</code>，以及生成的 <code class="notranslate">Info.plist</code>，其中包含 bundle id <code class="notranslate">com.hsmm.macrosip</code>、<code class="notranslate">sip</code>/<code class="notranslate">sips</code>/<code class="notranslate">tel</code> URL scheme、Sparkle 键（<code class="notranslate">SUFeedURL</code>、<code class="notranslate">SUPublicEDKey</code>、每日检查）和版本。<code class="notranslate">CFBundleShortVersionString</code> 是最近的 git 标签（<code class="notranslate">git describe --tags --abbrev=0</code>；在任何标签之前为 <code class="notranslate">Product.version</code>），<code class="notranslate">CFBundleVersion</code> 是提交计数。它去除除 <code class="notranslate">/usr/lib/swift</code> 和 <code class="notranslate">@executable_path/../Frameworks</code> 之外的所有 rpath，并在二进制文件需要其他 <code class="notranslate">@rpath</code> 库时失败。</p>
+<p dir="auto">签名为临时签名（<code class="notranslate">-</code>）加强化运行时，按 Sparkle 文档从内到外进行：XPC 服务、<code class="notranslate">Autoupdate</code>、<code class="notranslate">Updater.app</code>、框架，然后是带 <code class="notranslate">packaging/Entitlements.plist</code> 的应用；<code class="notranslate">codesign --verify --deep --strict</code> 必须通过。entitlements 授予麦克风和通讯录访问权限并禁用库验证，临时签名需要后者才能加载内嵌的框架（ADR 0013）。</p>
+<p dir="auto"><strong>debug</strong> 应用接受 <code class="notranslate">--mock-engine</code>、<code class="notranslate">--demo-state</code>、<code class="notranslate">--data-dir</code>、<code class="notranslate">--snapshot</code> 和 <code class="notranslate">--appearance</code>（见 <a href="testing.html">测试</a>）；<strong>release</strong> 应用忽略它们，并在真实数据上启动真实应用，包括钥匙串提示。所有构建都接受 <code class="notranslate">--log-level 0-6</code>（或 <code class="notranslate">MACROSIP_LOG_LEVEL</code>）来设置 PJSIP 的详细程度。</p>
+<h2 dir="auto">其他脚本</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>脚本</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="notranslate">scripts/make-dmg.sh [debug|release]</code></td>
+<td>运行 <code class="notranslate">make-app.sh</code>，将应用与一个“应用程序”符号链接一起暂存，写出 <code class="notranslate">dist/MacroSIP-&lt;version&gt;.dmg</code>（HFS+，UDZO，卷名“MacroSIP”），并打印其 SHA-256</td>
+</tr>
+<tr>
+<td><code class="notranslate">swift scripts/make-icon.swift</code></td>
+<td>用 CoreGraphics 绘制图标（权威来源 <code class="notranslate">packaging/AppIcon.svg</code>：一个拨号键盘，其按下的键在绿色渐变上勾勒出一个 M）到 iconset，并运行 <code class="notranslate">iconutil</code> 生成 <code class="notranslate">packaging/AppIcon.icns</code>；更改图稿后重新运行</td>
+</tr>
+<tr>
+<td><code class="notranslate">scripts/make-appcast.sh</code>、<code class="notranslate">scripts/publish-appcast.sh</code>、<code class="notranslate">scripts/update-cask.sh</code></td>
+<td>发布工具，见 <a href="releasing.html">发布</a></td>
+</tr>
+<tr>
+<td><code class="notranslate">scripts/test.sh</code>、<code class="notranslate">scripts/selftest-call.sh</code>、<code class="notranslate">scripts/check-strings.sh</code></td>
+<td>见 <a href="testing.html">测试</a></td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<h2 dir="auto">通用构建（ADR 0012）</h2>
+<p dir="auto">一个应用和一个 DMG 同时服务 Apple 芯片和 Intel。应用的 release 构建是通用的，debug 构建是原生的。Opus 和 OpenSSL 作为静态归档从 <code class="notranslate">third_party/deps/universal/lib</code> 链接，绝不以 <code class="notranslate">.linkedLibrary</code> 或从 Homebrew 链接，因此应用在系统之外没有 dylib 依赖（Homebrew 的归档只有 arm64 且针对主机 macOS 构建）。在 Apple 芯片上用 Rosetta 2 以 <code class="notranslate">SELFTEST_ARCH=x86_64 scripts/selftest-call.sh</code> 测试 Intel 切片。Intel 支持将在 Apple 的工具链或 GitHub 的 Intel 运行器终止时结束。</p>
+<h2 dir="auto">常见问题</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>症状</th>
+<th>原因与修复</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="notranslate">Apple Silicon (arm64) host required</code></td>
+<td><code class="notranslate">build-pjsip.sh</code> 交叉编译 x86_64，只能在 arm64 上运行。在 Intel Mac 上请从 CI 产物获取通用库（Intel CI 作业正是这样做的）。</td>
+</tr>
+<tr>
+<td><code class="notranslate">SHA-256 mismatch for ...</code></td>
+<td>下载损坏或被重新发布；删除 <code class="notranslate">third_party/downloads/</code> 下的文件以重新获取，如果上游更改了 tarball，请核查固定的校验和</td>
+</tr>
+<tr>
+<td><code class="notranslate">configure did not enable OpenSSL</code> / <code class="notranslate">Opus</code></td>
+<td>configure 没有看到 <code class="notranslate">third_party/deps/&lt;arch&gt;</code>；阅读 <code class="notranslate">third_party/build-logs/&lt;arch&gt;/pjsip-configure.log</code></td>
+</tr>
+<tr>
+<td><code class="notranslate">plugin for module SwiftUIMacros not found</code></td>
+<td><code class="notranslate">@State</code> 需要 Xcode 的宏插件；请使用 <code class="notranslate">Views/Components/Local.swift</code> 中的 <code class="notranslate">@Local</code> 包装器</td>
+</tr>
+<tr>
+<td><code class="notranslate">swift test</code> 找不到 Testing 宏</td>
+<td>运行 <code class="notranslate">scripts/test.sh</code>，它会传入插件路径</td>
+</tr>
+<tr>
+<td>重新构建后应用仍运行旧的 PJSIP 代码</td>
+<td>SwiftPM 没有看到归档变化：<code class="notranslate">rm -rf .build</code></td>
+</tr>
+<tr>
+<td><code class="notranslate">make-app.sh</code> 中 <code class="notranslate">Sparkle.framework not found</code></td>
+<td>先运行 <code class="notranslate">swift package resolve</code> 或 <code class="notranslate">swift build</code></td>
+</tr>
+<tr>
+<td>二进制文件需要 Sparkle 之外的 <code class="notranslate">@rpath</code> 库</td>
+<td>有新依赖被动态链接；ADR 0012 要求静态归档</td>
+</tr>
+<tr>
+<td><code class="notranslate">PJSUA_INVALID_ID</code> 在 Swift 中无法编译</td>
+<td>它是 C 枚举常量：使用 <code class="notranslate">PJSUA_INVALID_ID.rawValue</code></td>
+</tr>
+<tr>
+<td>Rosetta 下的 x86_64 <code class="notranslate">pjsua</code> 没有立即应答</td>
+<td>Rosetta 启动需要几秒钟；<code class="notranslate">selftest-call.sh</code> 会轮询最多约 15 秒</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">另见 <a href="architecture.html">架构</a>，安装已构建的 DMG 见 <a href="installation.html">安装</a>，运行时问题见 <a href="troubleshooting.html">故障排除</a>。</p>
+<p dir="auto">其他页面：<a href="index.html">首页</a> · <a href="../en/index.html">Home</a> (English)</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

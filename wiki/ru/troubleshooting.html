@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Решение проблем · Документация MacroSIP</title>
+<meta name="description" content="Документация MacroSIP">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/troubleshooting.html">
+<link rel="alternate" hreflang="ru" href="../ru/troubleshooting.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/troubleshooting.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/troubleshooting.html" hreflang="en">English</a><a href="../ru/troubleshooting.html" hreflang="ru" aria-current=true>Русский</a><a href="../zh/troubleshooting.html" hreflang="zh-Hans">中文</a></div></header>
+<div class="layout">
+<nav aria-label="Содержание"><details><summary>Содержание</summary><div class="links"><ul><li><a href="index.html">Главная</a></li></ul><h2>Руководство пользователя</h2><ul><li><a href="installation.html">Установка</a></li><li><a href="accounts.html">Аккаунты</a></li><li><a href="calls.html">Звонки</a></li><li><a href="incoming-calls.html">Входящие звонки</a></li><li><a href="contacts-and-call-log.html">Контакты и журнал</a></li><li><a href="directory.html">Справочник</a></li><li><a href="quick-keys.html">Быстрые клавиши</a></li><li><a href="audio.html">Звук</a></li><li><a href="settings.html">Настройки</a></li><li><a href="menu-bar.html">Строка меню</a></li><li><a href="troubleshooting.html" aria-current=page>Решение проблем</a></li></ul><h2>Для разработчиков</h2><ul><li><a href="architecture.html">Устройство</a></li><li><a href="building.html">Сборка</a></li><li><a href="testing.html">Тесты</a></li><li><a href="releasing.html">Релизы</a></li><li><a href="contributing.html">Участие</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">Решение проблем</h1>
+<h2 dir="auto">Первый запуск заблокирован</h2>
+<p dir="auto">«Не удаётся открыть MacroSIP, так как не удалось проверить разработчика»: приложение подписано ad hoc, без нотаризации. Щёлкните MacroSIP в папке «Программы» правой кнопкой и выберите <strong>Открыть</strong> либо один раз выполните <code class="notranslate">xattr -dr com.apple.quarantine /Applications/MacroSIP.app</code>. Подробности на странице <a href="installation.html">Установка</a>. Обновления, установленные самим приложением, открываются без этого диалога.</p>
+<h2 dir="auto">Меня никто не слышит: доступ к микрофону</h2>
+<p dir="auto">Панель звонка показывает «Доступ к микрофону выключен» с кнопкой <strong>Открыть Системные настройки</strong>. Разрешите MacroSIP в Системных настройках › Конфиденциальность и безопасность › Микрофон. Из-за подписи ad hoc macOS спрашивает снова после каждого обновления; разрешите ещё раз при первом звонке после обновления. Затем проверьте индикатор уровня в Настройках › Звук, пока говорите.</p>
+<h2 dir="auto">Аккаунт показывает «403» или «401»</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Статус</th>
+<th>Значение</th>
+<th>Что делать</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>401 Unauthorized, 403 Forbidden</td>
+<td>Сервер отклонил учётные данные. В Настройках › Аккаунты показано «Сервер отклонил REGISTER в 14:52. Проверьте имя пользователя и пароль.»</td>
+<td>Проверьте <strong>Имя пользователя</strong>, <strong>Пароль</strong> и, если ваша АТС использует отдельное имя для аутентификации, <strong>Имя для входа</strong> в группе «Дополнительно». Нажмите <strong>Проверить</strong> в редакторе: «Регистрация прошла успешно (120 мс)» подтверждает, что всё исправлено.</td>
+</tr>
+<tr>
+<td>«Нет ответа» (при проверке) или «Офис · повтор через 8 с»</td>
+<td>Сервер не отвечает.</td>
+<td>Проверьте имя сервера и порт, <strong>Транспорт</strong> (UDP, TCP или TLS; АТС должна слушать выбранный) и межсетевые экраны. Движок повторяет попытки с растущим интервалом.</td>
+</tr>
+<tr>
+<td>Бесконечная «Регистрация…»</td>
+<td>Пакеты уходят, но ответа нет.</td>
+<td>То же, что выше; попробуйте другой транспорт или укажите <strong>STUN-сервер</strong>.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">Все статусы описаны на странице <a href="accounts.html">Аккаунты</a>.</p>
+<h2 dir="auto">Ошибки сертификата TLS</h2>
+<p dir="auto">При <strong>Транспорт: TLS</strong> движок проверяет сертификат сервера по системным корневым сертификатам. Сертификат, который не соответствует хосту, просрочен или самоподписан, окончательно срывает регистрацию (без повторов) с причиной TLS в статусе и журнале. Исправьте сертификат на сервере или, для самоподписанного сертификата, которому вы доверяете, выключите <strong>Проверять сертификат сервера</strong> в группе «Дополнительно» редактора («Отключайте, только если у сервера самоподписанный сертификат.»).</p>
+<h2 dir="auto">Нет звука или звук в одну сторону</h2>
+<p dir="auto">Обычно виноват NAT или межсетевой экран между вами и АТС. Укажите <strong>STUN-сервер</strong>, оставьте включёнными <strong>Использовать ICE</strong> и <strong>Использовать rport</strong>, разрешите UDP на локальном порту SIP и в диапазоне портов RTP и проверьте устройства в Настройках › Звук. Полный список шагов — на странице <a href="audio.html">Звук</a>.</p>
+<h2 dir="auto">Звонки обрываются при смене сети</h2>
+<p dir="auto">Движок сразу регистрируется заново при смене сети или пробуждении и отправляет re-INVITE, чтобы звонки пережили смену IP-адреса; панель звонка тем временем показывает «Восстановление связи… 12 с», а строка состояния — «Офис · повтор через 8 с». Если медиа не восстанавливаются за 60 с, звонок завершается с пометкой «Связь потеряна» в журнале. Если обрывы продолжаются, уменьшите <strong>Интервал keep-alive</strong> в Настройках › Сеть.</p>
+<h2 dir="auto">Кнопки гарнитуры не работают</h2>
+<p dir="auto">MacroSIP читает телефонные органы управления HID у USB-гарнитур (трубка, flash, удержание, микрофон, повтор). Проверьте, что <strong>Кнопки гарнитуры</strong> в Настройках › Звук включены и что строка называет ваше устройство («Подключено: Jabra Evolve2 65»); «Гарнитура с кнопками управления не подключена» означает, что ни одно подключённое устройство не показывает телефонных органов управления. В файле журнала есть строка «headset buttons: &lt;имя&gt; connected, …», когда устройство подхвачено, и «headset buttons: cannot open …», когда macOS не дала его открыть; это может быть связано с разрешением «Мониторинг ввода» (Системные настройки › Конфиденциальность и безопасность). Bluetooth-гарнитуры, чьи кнопки работают через профиль hands-free, обрабатывает сама macOS; они не поддерживаются. Автопереключение на гарнитуру на той же вкладке — отдельная возможность, кнопки ей не нужны.</p>
+<h2 dir="auto">Собеседник не слышит музыку на удержании</h2>
+<p dir="auto">Проверьте <strong>Источник</strong> в Настройках › Звук › Музыка на удержании: <strong>Выкл.</strong> отправляет тишину. Многие АТС подменяют то, что телефон передаёт на удержании, собственной музыкой ожидания, и собеседник слышит музыку сервера, а не MacroSIP; это настройка сервера. Файл, который движок не смог прочитать, оставляет прежний источник, а подпись группы называет причину («Файл не удалось использовать: …»). Сами вы музыку на удержании не слышите никогда.</p>
+<h2 dir="auto">Имена звонящих неверные или отсутствуют</h2>
+<p dir="auto">Имя берётся из отображаемого имени SIP, затем из контакта, совпавшего по любому из его номеров, затем из источника справочника, который опрашивается не дольше одной секунды. Добавьте номер в контакт или добавьте источник справочника (<a href="directory.html">Справочник</a>).</p>
+<h2 dir="auto">Ошибки справочника и LDAP</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Текст</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>«Нет соединения с ldap.example.com»</td>
+<td>Хост недоступен или неверный порт.</td>
+</tr>
+<tr>
+<td>«Время ожидания истекло»</td>
+<td>Нет ответа за 3 с (30 с для импорта).</td>
+</tr>
+<tr>
+<td>«Неверный bind DN или пароль»</td>
+<td>Простая привязка отклонена. Оставьте <strong>Bind DN</strong> пустым для анонимного поиска.</td>
+</tr>
+<tr>
+<td>«Сервер должен быть вида ldap://host или ldaps://host»</td>
+<td>В поле «Сервер» нет схемы.</td>
+</tr>
+<tr>
+<td>«Введите адрес http, https или file», «HTTP 404»</td>
+<td>Источник URL недоступен или адрес неверен.</td>
+</tr>
+<tr>
+<td>«В заголовке нет столбца с номером», «Файл не текстовый»</td>
+<td>CSV без распознаваемого столбца с номером или не текстовый файл.</td>
+</tr>
+<tr>
+<td>«Файл не является корректным JSON», «В JSON нет массива контактов»</td>
+<td>Источник JSON повреждён.</td>
+</tr>
+<tr>
+<td>«Доступ запрещён», «Доступ к Контактам ещё не запрашивался»</td>
+<td>Разрешение на Контакты macOS; разрешите MacroSIP в Системных настройках › Конфиденциальность и безопасность › Контакты.</td>
+</tr>
+<tr>
+<td>«Нужен вход»</td>
+<td>Контакты Google без действующего токена (вход ещё не выполнен или доступ отозван). Выберите источник в Настройках › Справочник и нажмите <strong>Войти…</strong>; браузер откроет страницу согласия Google.</td>
+</tr>
+<tr>
+<td>«Вход в Google в этой сборке не настроен»</td>
+<td>В сборке нет client id Google, поэтому войти в Контакты Google нельзя; остальные типы источников работают. Установите сборку, настроенную для входа в Google.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">Сообщение библиотеки, которое MacroSIP не может перевести (диагностика LDAP), показывается как есть. Источник с ошибкой пропускается 60 с, затем опрашивается снова.</p>
+<h2 dir="auto">Файл журнала и диагностика</h2>
+<p dir="auto">MacroSIP пишет <code class="notranslate">~/Library/Logs/MacroSIP/MacroSIP.log</code> (по 2 МБ на файл, хранятся 3 файла). Настройки › Основные › Дополнительно › <strong>Файл журнала</strong> › <strong>Открыть папку</strong> показывает его в Finder; <strong>Диагностика</strong> › <strong>Скопировать</strong> копирует в буфер обмена версии, macOS, аккаунты без паролей и настройки («Диагностика скопирована в буфер обмена.»). Для более подробной трассировки SIP запустите приложение командой <code class="notranslate">open /Applications/MacroSIP.app --args --log-level 5</code> (0–6). Приложение также пишет в системный журнал под подсистемой <code class="notranslate">com.hsmm.macrosip</code>.</p>
+<h2 dir="auto">Где хранятся настройки и контакты</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Что</th>
+<th>Где</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Аккаунты (без паролей), контакты, журнал звонков, настройки, быстрые клавиши</td>
+<td><code class="notranslate">~/Library/Application Support/MacroSIP/</code> в файлах <code class="notranslate">accounts.json</code>, <code class="notranslate">contacts.json</code>, <code class="notranslate">calllog.json</code>, <code class="notranslate">settings.json</code>; фото в <code class="notranslate">photos/</code>. Запись атомарная; повреждённый файл откладывается как <code class="notranslate">&lt;name&gt;.broken-&lt;date&gt;.json</code> или <code class="notranslate">contacts.damaged-&lt;date&gt;.json</code>, и приложение запускается с тем, что удалось прочитать.</td>
+</tr>
+<tr>
+<td>Пароли (SIP-аккаунты, LDAP bind)</td>
+<td>Связка ключей входа, служба <code class="notranslate">com.hsmm.macrosip</code>, по записи на идентификатор аккаунта. Удаление аккаунта удаляет его запись.</td>
+</tr>
+<tr>
+<td>Записи разговоров</td>
+<td><code class="notranslate">~/Music/MacroSIP Recordings</code> или папка, выбранная в Настройках › Запись.</td>
+</tr>
+<tr>
+<td>Журнал</td>
+<td><code class="notranslate">~/Library/Logs/MacroSIP/</code>.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">Чтобы переехать на другой Mac, скопируйте папку Application Support и введите пароли заново.</p>
+<h2 dir="auto">Как сообщить о проблеме</h2>
+<p dir="auto">Создайте issue на <a href="https://github.com/HSMM/MacroSIP/issues">github.com/HSMM/MacroSIP/issues</a> и укажите:</p>
+<ol dir="auto">
+<li>Версию MacroSIP (MacroSIP › О программе) и версию macOS.</li>
+<li>Результат команды <strong>Скопировать</strong> из строки «Диагностика» (паролей в нём нет).</li>
+<li>Что вы делали, чего ожидали, что произошло и в какое время, чтобы можно было найти нужные строки в <code class="notranslate">MacroSIP.log</code>. При сбоях звонков или регистрации приложите журнал, удалив из него всё личное.</li>
+<li>Тип АТС или оператора (Asterisk, FreePBX, 3CX, …), если знаете.</li>
+</ol>
+<p dir="auto">Пожелания по новым возможностям отправляйте туда же; план — в <a href="https://github.com/HSMM/MacroSIP/blob/main/docs/ROADMAP.md">roadmap</a>.</p>
+<p dir="auto">Другие страницы: <a href="index.html">Главная</a> · <a href="../en/index.html">Home</a> (English)</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

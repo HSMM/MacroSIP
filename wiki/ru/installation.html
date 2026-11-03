@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Установка · Документация MacroSIP</title>
+<meta name="description" content="Документация MacroSIP">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/installation.html">
+<link rel="alternate" hreflang="ru" href="../ru/installation.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/installation.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/installation.html" hreflang="en">English</a><a href="../ru/installation.html" hreflang="ru" aria-current=true>Русский</a><a href="../zh/installation.html" hreflang="zh-Hans">中文</a></div></header>
+<div class="layout">
+<nav aria-label="Содержание"><details><summary>Содержание</summary><div class="links"><ul><li><a href="index.html">Главная</a></li></ul><h2>Руководство пользователя</h2><ul><li><a href="installation.html" aria-current=page>Установка</a></li><li><a href="accounts.html">Аккаунты</a></li><li><a href="calls.html">Звонки</a></li><li><a href="incoming-calls.html">Входящие звонки</a></li><li><a href="contacts-and-call-log.html">Контакты и журнал</a></li><li><a href="directory.html">Справочник</a></li><li><a href="quick-keys.html">Быстрые клавиши</a></li><li><a href="audio.html">Звук</a></li><li><a href="settings.html">Настройки</a></li><li><a href="menu-bar.html">Строка меню</a></li><li><a href="troubleshooting.html">Решение проблем</a></li></ul><h2>Для разработчиков</h2><ul><li><a href="architecture.html">Устройство</a></li><li><a href="building.html">Сборка</a></li><li><a href="testing.html">Тесты</a></li><li><a href="releasing.html">Релизы</a></li><li><a href="contributing.html">Участие</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">Установка</h1>
+<h2 dir="auto">Требования</h2>
+<ul dir="auto">
+<li>macOS 14 (Sonoma) или новее.</li>
+<li>Mac с Apple Silicon или Intel. Приложение и DMG универсальные, так что одна сборка нативно работает на обоих.</li>
+<li>SIP-аккаунт: адрес сервера, имя пользователя и пароль от оператора связи или администратора АТС. Контакты и журнал звонков работают без аккаунта.</li>
+</ul>
+<p dir="auto">И cask Homebrew, и DMG доступны начиная с выпуска 26.0.0; сборка из исходного кода описана на странице <a href="building.html">Сборка</a>.</p>
+<h2 dir="auto">С Homebrew</h2>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">brew tap hsmm/tap
+brew install --cask hsmm/tap/macrosip</pre></div>
+<p dir="auto">Cask устанавливает тот же подписанный DMG, что лежит в GitHub Releases. Cask помечен <code class="notranslate">auto_updates</code>, поэтому <code class="notranslate">brew upgrade</code> не трогает приложение, которое обновляется само.</p>
+<h2 dir="auto">Из DMG</h2>
+<ol dir="auto">
+<li>Скачайте <code class="notranslate">MacroSIP-&lt;version&gt;.dmg</code> из <a href="https://github.com/HSMM/MacroSIP/releases/latest">последнего выпуска</a>.</li>
+<li>Откройте DMG и перетащите MacroSIP в папку «Программы».</li>
+<li>Откройте приложение в первый раз так, как описано ниже.</li>
+</ol>
+<h3 dir="auto">Первый запуск: шаг с Gatekeeper</h3>
+<p dir="auto">MacroSIP подписан ad hoc, без нотаризации с Apple Developer ID, поэтому macOS отказывается открыть его в первый раз («не удаётся открыть, так как не удалось проверить разработчика»). Достаточно один раз сделать одно из двух:</p>
+<ul dir="auto">
+<li>
+<p dir="auto">Щёлкните MacroSIP в папке «Программы» правой кнопкой (или с Control), выберите <strong>Открыть</strong> и подтвердите в диалоге.</p>
+</li>
+<li>
+<p dir="auto">Или снимите флаг карантина в Терминале:</p>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">xattr -dr com.apple.quarantine /Applications/MacroSIP.app</pre></div>
+</li>
+</ul>
+<p dir="auto">После этого приложение открывается как обычно. Подпись Developer ID и нотаризация запланированы на один из следующих выпусков, когда появится подписывающий сертификат.</p>
+<h3 dir="auto">Первое окно</h3>
+<p dir="auto">Пока аккаунтов нет, главное окно показывает «Добавьте аккаунт SIP, чтобы звонить» и кнопку <strong>Добавить аккаунт…</strong>. Редактор аккаунта описан на странице <a href="accounts.html">Аккаунты</a>. Значок в строке меню появляется с первого запуска, в состоянии «Не в сети».</p>
+<h3 dir="auto">Доступ к микрофону</h3>
+<p dir="auto">MacroSIP запрашивает доступ к микрофону при первом звонке, а не при запуске. Выберите <strong>Разрешить</strong>. Если отказать, панель звонка покажет «Доступ к микрофону выключен» с кнопкой <strong>Открыть Системные настройки</strong>; разрешите MacroSIP в разделе «Конфиденциальность и безопасность» › «Микрофон».</p>
+<h2 dir="auto">Обновления</h2>
+<p dir="auto">Приложение обновляется само.</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Что</th>
+<th>Где</th>
+<th>Как работает</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ежедневная проверка</td>
+<td>автоматически</td>
+<td>MacroSIP проверяет обновления раз в день и спрашивает перед установкой.</td>
+</tr>
+<tr>
+<td>Проверить сейчас</td>
+<td>Меню MacroSIP › <strong>Проверить наличие обновлений…</strong> или Настройки › Основные › Обновления › <strong>Проверить</strong></td>
+<td>Дата последней проверки показана как «Последняя проверка: …» или «Ещё не проверялось».</td>
+</tr>
+<tr>
+<td>Отключить ежедневную проверку</td>
+<td>Настройки › Основные › Обновления › <strong>Проверять обновления автоматически</strong></td>
+<td>«Раз в день. MacroSIP спрашивает перед установкой обновления.»</td>
+</tr>
+<tr>
+<td>Предварительные версии</td>
+<td>Настройки › Основные › Обновления › <strong>Включать предварительные версии</strong></td>
+<td>«Тестовые сборки следующей версии до её выхода.» Включено по умолчанию, если запущенная сборка сама является предварительной, иначе выключено.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">Обновления подписаны (EdDSA) и проверяются перед установкой, а обновлённое приложение открывается без диалога первого запуска. Обновление, найденное во время звонка, ждёт, пока завершится последний звонок; «Установить и перезапустить» во время звонка тоже ждёт. При выходе во время звонка появляется вопрос «Завершить звонок и выйти?».</p>
+<p dir="auto">Поскольку приложение подписано ad hoc, macOS привязывает разрешение на микрофон к конкретной сборке. <strong>После каждого обновления macOS снова спрашивает доступ к микрофону</strong>; разрешите его ещё раз при первом звонке. Это прекратится, когда приложение будет подписано Developer ID.</p>
+<p dir="auto">«Обновления работают только в установленном приложении»: сборка, запущенная из папки сборки или с имитацией движка, обновления не проверяет.</p>
+<h2 dir="auto">Запуск при входе в систему</h2>
+<p dir="auto">Настройки › Основные › <strong>Запускать при входе в систему</strong> регистрирует MacroSIP как объект входа. При первом запуске об этом не спрашивают. Если macOS требует вашего подтверждения, строка показывает «Разрешите MacroSIP в Системных настройках › Основные › Объекты входа.» с кнопкой <strong>Открыть «Объекты входа»…</strong>.</p>
+<h2 dir="auto">Где файл журнала</h2>
+<p dir="auto">MacroSIP пишет <code class="notranslate">~/Library/Logs/MacroSIP/MacroSIP.log</code>, по 2 МБ на файл, хранятся 3 файла. В Настройках › Основные есть строка <strong>Файл журнала</strong> с кнопкой <strong>Открыть папку</strong> (показывает журнал в Finder) и строка <strong>Диагностика</strong> с кнопкой <strong>Скопировать</strong> (версии, аккаунты и настройки без паролей — готово для вставки в сообщение об ошибке). Обе строки находятся в свёрнутой группе <strong>Дополнительно</strong> внизу вкладки «Основные», под заголовком «Устранение неполадок». Как ими пользоваться, описано на странице <a href="troubleshooting.html">Решение-проблем</a>.</p>
+<h2 dir="auto">Удаление</h2>
+<p dir="auto">Перетащите MacroSIP из папки «Программы» в Корзину (или выполните <code class="notranslate">brew uninstall --cask macrosip</code>). Ваши данные остаются в <code class="notranslate">~/Library/Application Support/MacroSIP/</code> (аккаунты, контакты, журнал звонков и настройки в JSON) и в связке ключей входа (пароли, служба <code class="notranslate">com.hsmm.macrosip</code>); записи разговоров остаются в <code class="notranslate">~/Music/MacroSIP Recordings</code>, если вы не выбрали другую папку. Для полного удаления сотрите их вручную.</p>
+<p dir="auto">Другие страницы: <a href="index.html">Главная</a> · <a href="../en/index.html">Home</a> (English)</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

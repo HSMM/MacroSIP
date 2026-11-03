@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quick keys · MacroSIP documentation</title>
+<meta name="description" content="MacroSIP documentation">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/quick-keys.html">
+<link rel="alternate" hreflang="ru" href="../ru/quick-keys.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/quick-keys.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/quick-keys.html" hreflang="en" aria-current=true>English</a><a href="../ru/quick-keys.html" hreflang="ru">Русский</a><a href="../zh/quick-keys.html" hreflang="zh-Hans">中文</a></div></header>
+<div class="layout">
+<nav aria-label="Contents"><details><summary>Contents</summary><div class="links"><ul><li><a href="index.html">Home</a></li></ul><h2>User guide</h2><ul><li><a href="installation.html">Installation</a></li><li><a href="accounts.html">Accounts</a></li><li><a href="calls.html">Calls</a></li><li><a href="incoming-calls.html">Incoming calls</a></li><li><a href="contacts-and-call-log.html">Contacts and call log</a></li><li><a href="directory.html">Directory</a></li><li><a href="quick-keys.html" aria-current=page>Quick keys</a></li><li><a href="audio.html">Audio</a></li><li><a href="settings.html">Settings</a></li><li><a href="menu-bar.html">Menu bar</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul><h2>For developers</h2><ul><li><a href="architecture.html">Architecture</a></li><li><a href="building.html">Building</a></li><li><a href="testing.html">Testing</a></li><li><a href="releasing.html">Releasing</a></li><li><a href="contributing.html">Contributing</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">Quick keys</h1>
+<p dir="auto">Quick keys are up to twelve speed-dial buttons next to or under the main window, each with an optional <strong>BLF</strong> (busy lamp field) dot that shows whether that line is free, on the phone or ringing. The panel is off by default.</p>
+<h2 dir="auto">The panel</h2>
+<p dir="auto">Settings › Quick keys › <strong>Show panel</strong>: <strong>Off</strong>, <strong>Right</strong> or <strong>Bottom</strong>.</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Position</th>
+<th>Appearance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Right</strong></td>
+<td>A 220 pt column to the right of the main window; the window widens from 340 to 560 pt. Header "Quick keys" with a gear button, then twelve rows: BLF dot, name, number and a type glyph. Empty slots read "Add key…".</td>
+</tr>
+<tr>
+<td><strong>Bottom</strong></td>
+<td>A strip under the status bar; the window grows by about 110 pt. Three columns, two rows visible, the rest scrolls. Each cell shows the dot and the name; the tooltip gives number, state, type and shortcut.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">The gear and an empty slot open Settings › Quick keys. Right-click a key for <strong>Edit…</strong> and <strong>Remove</strong> (clears the slot, no confirmation). The View menu offers <strong>Show Quick Keys</strong> / <strong>Hide Quick Keys</strong>, and the Call menu lists the keys under <strong>Quick keys</strong> with their shortcuts. All keys are disabled while no account is enabled.</p>
+<h2 dir="auto">Key types</h2>
+<p dir="auto">A key has a name, a number and a type. What it does depends on whether you are in a call:</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Type</th>
+<th>Idle</th>
+<th>In a call</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Call</strong></td>
+<td>Dials the number from the default outgoing account.</td>
+<td>Holds the current call and starts a new one.</td>
+</tr>
+<tr>
+<td><strong>DTMF</strong></td>
+<td>Dials the digits as a number (so a key "Pickup *8" works).</td>
+<td>Sends the digits as DTMF on the active call.</td>
+</tr>
+<tr>
+<td><strong>Blind transfer</strong></td>
+<td>Dimmed.</td>
+<td>Transfers the active call to the number at once.</td>
+</tr>
+<tr>
+<td><strong>Attended transfer</strong></td>
+<td>Dimmed.</td>
+<td>Holds the active call and calls the number; <strong>Complete Transfer</strong> appears in the call panel.</td>
+</tr>
+<tr>
+<td><strong>Add to conference</strong></td>
+<td>Dimmed.</td>
+<td>Calls the number and joins it to the active call when answered.</td>
+</tr>
+<tr>
+<td><strong>Call / Blind transfer</strong></td>
+<td>Acts as Call.</td>
+<td>Acts as Blind transfer.</td>
+</tr>
+<tr>
+<td><strong>Call / Attended transfer</strong></td>
+<td>Acts as Call.</td>
+<td>Acts as Attended transfer.</td>
+</tr>
+<tr>
+<td><strong>Call / Conference</strong></td>
+<td>Acts as Call.</td>
+<td>Acts as Add to conference.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">The three <strong>smart</strong> variants ("Smart: call when idle, act on the call when in one") are the usual choice for a colleague's extension: one key calls Natallia Karpovich when you are free and transfers the current caller to her when you are not.</p>
+<h2 dir="auto">BLF dots</h2>
+<p dir="auto">Tick <strong>BLF</strong> on a key to watch the line state of its number. The dot uses the same presence subscription as a contact with <strong>Watch presence</strong>; a key and a contact with the same number share one subscription.</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Dot</th>
+<th>Tooltip</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>green</td>
+<td>Available</td>
+<td>The line is registered and idle.</td>
+</tr>
+<tr>
+<td>red</td>
+<td>On the phone</td>
+<td>The line is busy.</td>
+</tr>
+<tr>
+<td>orange, blinking</td>
+<td>Ringing</td>
+<td>A call is ringing on that line; the key is tinted orange and shows "ringing" after the number.</td>
+</tr>
+<tr>
+<td>grey</td>
+<td>No information</td>
+<td>No subscription answer (no presence on the PBX, the network is down, or the account is reconnecting). The key still works.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">Ringing is shown only when the PBX reports call state in its presence or dialog notifications; otherwise a BLF key shows green and red only. A key with BLF off has no dot.</p>
+<h2 dir="auto">Pickup on a ringing key</h2>
+<p dir="auto">Clicking a key that shows "ringing" dials the <strong>Pickup code</strong> from Settings › Quick keys followed by the key's number: with the default <code class="notranslate">*8</code> and the number <code class="notranslate">101</code> it dials <code class="notranslate">*8101</code>, which on most PBXes answers that line's call on your phone. A key with an empty number dials the code alone (group pickup). Ask your PBX administrator for the right code if <code class="notranslate">*8</code> does nothing.</p>
+<h2 dir="auto">Keyboard shortcuts</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>⌘1 – ⌘9</td>
+<td>Presses keys 1 to 9 in list order. Works while MacroSIP is the frontmost app, also when the panel is hidden. Does nothing for an empty or dimmed key.</td>
+</tr>
+<tr>
+<td>Tab, Space</td>
+<td>Move between keys and press the focused key (panel only).</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">Keys 10 to 12 have no shortcut and are clicked only. Shortcuts follow the order of the list, so reordering rows reassigns them.</p>
+<h2 dir="auto">Configuring in Settings › Quick keys</h2>
+<p dir="auto">The pane has a table of twelve fixed rows with the columns <strong>Name</strong>, <strong>Number</strong>, <strong>Type</strong>, <strong>BLF</strong> and <strong>Key</strong>, a count "5 of 12 keys", and two groups below.</p>
+<ul dir="auto">
+<li>"Drag rows to reorder. Name and Number are edited in place; double-click a row or start typing. The BLF box watches the number's line state."</li>
+<li><strong>Type</strong> is a popup with the eight types above; it is disabled on an empty row. <strong>BLF</strong> is disabled while the number is empty. <strong>Key</strong> shows ⌘1–⌘9 for rows 1–9 and "—" for the rest.</li>
+<li><strong>Panel</strong> group: <strong>Show panel</strong> (Off / Right / Bottom), with "Right widens the window to 560 pt; Bottom adds a 3-column strip."</li>
+<li><strong>Pickup code</strong>: default <code class="notranslate">*8</code>, "Used when you click a ringing key."</li>
+</ul>
+<p dir="auto">Example layout for a small office:</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Name</th>
+<th>Number</th>
+<th>Type</th>
+<th>BLF</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Maryna Sakalouskaya</td>
+<td>101</td>
+<td>Call / Attended transfer</td>
+<td>on</td>
+</tr>
+<tr>
+<td>Yauheni Marozau</td>
+<td>102</td>
+<td>Call / Blind transfer</td>
+<td>on</td>
+</tr>
+<tr>
+<td>Sales queue</td>
+<td>600</td>
+<td>Blind transfer</td>
+<td>off</td>
+</tr>
+<tr>
+<td>Conference room</td>
+<td>700</td>
+<td>Add to conference</td>
+<td>off</td>
+</tr>
+<tr>
+<td>Pickup</td>
+<td>*8</td>
+<td>DTMF</td>
+<td>off</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">The keys are stored with the other settings in <code class="notranslate">~/Library/Application Support/MacroSIP/</code>. Global hotkeys that work while another app is frontmost are planned for a later release.</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

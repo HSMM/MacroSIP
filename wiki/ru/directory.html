@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Справочник · Документация MacroSIP</title>
+<meta name="description" content="Документация MacroSIP">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/directory.html">
+<link rel="alternate" hreflang="ru" href="../ru/directory.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/directory.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/directory.html" hreflang="en">English</a><a href="../ru/directory.html" hreflang="ru" aria-current=true>Русский</a><a href="../zh/directory.html" hreflang="zh-Hans">中文</a></div></header>
+<div class="layout">
+<nav aria-label="Содержание"><details><summary>Содержание</summary><div class="links"><ul><li><a href="index.html">Главная</a></li></ul><h2>Руководство пользователя</h2><ul><li><a href="installation.html">Установка</a></li><li><a href="accounts.html">Аккаунты</a></li><li><a href="calls.html">Звонки</a></li><li><a href="incoming-calls.html">Входящие звонки</a></li><li><a href="contacts-and-call-log.html">Контакты и журнал</a></li><li><a href="directory.html" aria-current=page>Справочник</a></li><li><a href="quick-keys.html">Быстрые клавиши</a></li><li><a href="audio.html">Звук</a></li><li><a href="settings.html">Настройки</a></li><li><a href="menu-bar.html">Строка меню</a></li><li><a href="troubleshooting.html">Решение проблем</a></li></ul><h2>Для разработчиков</h2><ul><li><a href="architecture.html">Устройство</a></li><li><a href="building.html">Сборка</a></li><li><a href="testing.html">Тесты</a></li><li><a href="releasing.html">Релизы</a></li><li><a href="contributing.html">Участие</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">Справочник</h1>
+<p dir="auto">Источник справочника — это место, где MacroSIP ищет людей по имени или номеру: LDAP-сервер вашей компании, файл CSV или JSON по URL, ваши контакты Google или приложение «Контакты» macOS. Результаты появляются в поле номера по мере ввода, подставляют имена входящим абонентам и могут быть импортированы в Контакты. Вкладка — Настройки › <strong>Справочник</strong>.</p>
+<p dir="auto"><a target="_blank" rel="noopener noreferrer nofollow" href="https://raw.githubusercontent.com/HSMM/MacroSIP/main/docs/screenshots/ru/light/directory-search.png?v=1"><img src="https://raw.githubusercontent.com/HSMM/MacroSIP/main/docs/screenshots/ru/light/directory-search.png?v=1" alt="Поиск в справочнике" style="max-width: 100%;"></a></p>
+<h2 dir="auto">Источники</h2>
+<p dir="auto">Источник добавляется кнопкой <strong>+</strong> в Настройках › Справочник. Лист <strong>Добавить источник справочника</strong> содержит список <strong>Тип</strong>, поле <strong>Название</strong>, поля конкретного типа и выбор в группе <strong>Результаты</strong> (ниже). <strong>Проверить</strong> проверяет соединение и отвечает «Подключено · записей: 184».</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Тип</th>
+<th>Поля и поведение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>LDAP</strong></td>
+<td><strong>Сервер</strong> (<code class="notranslate">ldap://ldap.example.com</code> или <code class="notranslate">ldaps://…</code>; «ldaps:// или StartTLS, если возможно.»), переключатель <strong>Использовать StartTLS</strong> (для ldaps не учитывается), <strong>Base DN</strong>, <strong>Bind DN</strong> («Пусто для анонимного поиска.»), <strong>Пароль</strong> («Хранится в связке ключей.»), <strong>Фильтр поиска</strong> (по умолчанию <code class="notranslate">(|(cn=*%s*)(telephoneNumber=*%s*))</code>; «%s — введённый текст.»).</td>
+</tr>
+<tr>
+<td><strong>URL (CSV или JSON)</strong></td>
+<td><strong>URL</strong> (http, https или file), <strong>Формат</strong> CSV / JSON (угадывается по расширению, пока вы его не измените), <strong>Обновлять каждые</strong> час / 6 часов / сутки / неделю. CSV нужна строка заголовков; разделители — запятая, точка с запятой или табуляция; кодировка UTF-8 или Windows-1251. JSON — массив объектов (или объект, содержащий такой массив). Распознаваемые столбцы: name, first name, last name, number / phone / telephone / extension, mobile / cell, email / mail, organization / company (регистр, пробелы, <code class="notranslate">_</code> и <code class="notranslate">-</code> не учитываются). Строки без номера пропускаются.</td>
+</tr>
+<tr>
+<td><strong>Контакты macOS</strong></td>
+<td>Полей нет. Источник называется «Контакты macOS» и показывает «Этот Mac». <strong>Разрешить доступ</strong> вызывает системный запрос доступа к Контактам («MacroSIP ищет имена и номера в Контактах, когда вы выполняете поиск из поля номера.»); при запуске ничего не спрашивается. Если отказать, состояние читается «Доступ запрещён» с кнопкой <strong>Открыть Системные настройки…</strong>.</td>
+</tr>
+<tr>
+<td><strong>Контакты Google</strong></td>
+<td><strong>Войти через Google</strong>: «Один раз открывает Google в браузере, чтобы разрешить доступ к контактам только для чтения. MacroSIP хранит только токен доступа в связке ключей; доступ можно отозвать в аккаунте Google в любой момент.» В браузере открывается страница согласия Google; тем временем вместо кнопки показано «Ожидание Google…», а закрытие листа прерывает вход. Когда Google возвращает вас в приложение, строка <strong>Аккаунт Google</strong> показывает вашу эл. почту с зелёной галочкой, и <strong>Добавить</strong> сохраняет источник (состояние «Подключено»). Дальше он участвует в поиске, импорте и определении звонящих, как любой другой источник; строки результатов несут метку Google. Сборка без client id Google отвечает «Вход в Google в этой сборке не настроен».</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">Список источников показывает колонки «Источник» (название, адрес, «только поиск» или «импорт в Контакты»), «Состояние» и переключатель <strong>Вкл.</strong>. «Результаты показываются в этом порядке; порядок меняется перетаскиванием. Выключенный источник не опрашивается и не синхронизируется.» <strong>−</strong> спрашивает «Удалить „LDAP головного офиса“?» — «Контакты, уже импортированные из этого источника, остаются в Контактах.»</p>
+<p dir="auto">Выход из Контактов Google — это удаление источника кнопкой <strong>−</strong>: вместе с ним из связки ключей удаляется токен доступа, а импортированные карточки остаются. Доступ можно отозвать и в аккаунте Google; источник тогда показывает <strong>Нужен вход</strong>, а вкладка предлагает <strong>Войти…</strong> («Доступ истёк или был отозван» — «Поиск пропускает этот источник, пока вы не войдёте снова.»), что снова открывает браузер.</p>
+<h2 dir="auto">Только поиск или импорт в Контакты</h2>
+<p dir="auto">Каждый источник работает в одном из двух режимов:</p>
+<ul dir="auto">
+<li><strong>Только поиск</strong> — «результаты не сохраняются». Записи появляются в поле номера и при определении звонящего, ничего не записывается.</li>
+<li><strong>Импорт в Контакты</strong> — «копируются и обновляются раз в сутки». Каждая запись становится карточкой контакта. Источники URL обновляются со своим интервалом; остальные — раз в сутки, Контакты macOS — только если доступ уже был разрешён.</li>
+</ul>
+<h2 dir="auto">Подсказки в поле номера</h2>
+<p dir="auto">Если включено <strong>Искать в справочниках из поля номера</strong>, при вводе в поле номера показываются раздел <strong>Контакты</strong> (сначала ваши собственные карточки) и раздел <strong>Справочник</strong> с результатами в порядке источников. Строка показывает аватар, имя с совпавшими буквами жирным, номер и метку источника (LDAP, URL, Контакты, Google). «Поиск: LDAP головного офиса…» с индикатором отмечает источник, который ещё не ответил; ожидание прекращается через 3 с. Когда все ответили, список заканчивается строкой «7 результатов из 2 источников». Номер, который уже есть в Контактах, показывается один раз — как локальный контакт.</p>
+<p dir="auto">Настройки: <strong>Минимум символов</strong> (1–5, по умолчанию 2; «Поиск начинается после стольких символов и паузы 300 мс при вводе.») и <strong>Результатов от источника</strong> (1–10, по умолчанию 5). Текст из одних цифр тоже ищется.</p>
+<p dir="auto">Щелчок по строке подставляет её номер в поле; Return на выделенной строке звонит; Escape закрывает список, второй Escape очищает поле. Контекстное меню предлагает <strong>Позвонить</strong>, <strong>Скопировать номер</strong> и <strong>Добавить в контакты</strong> (создаёт собственную карточку).</p>
+<h2 dir="auto">Определение входящих абонентов</h2>
+<p dir="auto"><strong>Искать имена входящих абонентов</strong> (включено по умолчанию): «Опрашивает источники только для поиска не дольше 1 секунды, пока идёт вызов.» Импортируемые источники уже находятся в Контактах и сопоставляются локально. Номера сравниваются по цифрам, так что <code class="notranslate">+1 202 555-0123</code> и <code class="notranslate">2025550123</code> — одна строка. Имя из справочника используется, когда отображаемое имя SIP пустое или совпадает с номером, и сохраняется в записи журнала.</p>
+<h2 dir="auto">Импорт по кнопке и расписание</h2>
+<p dir="auto">Для источника в режиме импорта в колонке «Состояние» показана кнопка <strong>Импортировать</strong> («Импорт…», пока он выполняется). Результат на десять секунд появляется баннером под списком: «Импортировано 120 контактов (обновлено: 14)», «Импортировать нечего» или «Не удалось импортировать: Нет соединения с ldap.example.com». Неудачный импорт не выключает ни кнопку, ни расписание; «Обновлено 5 мин. назад» показывает время последнего успешного импорта.</p>
+<h3 dir="auto">Правила слияния</h3>
+<ul dir="auto">
+<li>Записи сопоставляются с существующими контактами по номеру и никогда не дублируются.</li>
+<li>Карточка, которую <strong>создал тот же источник</strong>, при каждом импорте следует за справочником: имя, организация, эл. почта и фото заменяются, недостающие номера добавляются.</li>
+<li>Карточка, которую вы создали или редактировали сами, сохраняет имя, фото и остальное; она получает только то, чего ей не хватает (пустая организация или эл. почта, отсутствующее фото, новые номера).</li>
+<li><strong>Заметки, избранное и аккаунт для звонков никогда не затрагиваются.</strong></li>
+<li>Новые карточки получают заметку «Импортировано из LDAP головного офиса».</li>
+</ul>
+<h2 dir="auto">Состояния</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Состояние</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Подключено</strong></td>
+<td>Проверка или последний поиск прошли успешно.</td>
+</tr>
+<tr>
+<td><strong>Обновлено 5 мин. назад</strong></td>
+<td>Последний успешный импорт (для источников URL — последняя загрузка).</td>
+</tr>
+<tr>
+<td><strong>Нужен вход</strong></td>
+<td>Контакты Google без токена или с доступом, который Google отозвал; источник пропускается, пока вы не нажмёте <strong>Войти…</strong> и не завершите вход в браузере.</td>
+</tr>
+<tr>
+<td><strong>Доступ запрещён</strong></td>
+<td>macOS отказала в доступе к Контактам; разрешите MacroSIP в Системных настройках › Конфиденциальность и безопасность › Контакты.</td>
+</tr>
+<tr>
+<td><strong>Выключено</strong></td>
+<td>Переключатель «Вкл.» выключен.</td>
+</tr>
+<tr>
+<td>Текст ошибки</td>
+<td>«Время ожидания истекло», «Нет соединения с ldap.example.com», «Неверный bind DN или пароль», «HTTP 404», «В заголовке нет столбца с номером», «Файл не является корректным JSON», «В JSON нет массива контактов», «Сервер должен быть вида ldap://host или ldaps://host», «Вход в Google в этой сборке не настроен». Источник с ошибкой пропускается 60 с, затем опрашивается снова.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">Ошибки LDAP описаны на странице <a href="troubleshooting.html">Решение-проблем</a>, а карточка, которую заполняет импорт, — на странице <a href="contacts-and-call-log.html">Контакты-и-журнал</a>.</p>
+<p dir="auto">Другие страницы: <a href="index.html">Главная</a> · <a href="../en/index.html">Home</a> (English)</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

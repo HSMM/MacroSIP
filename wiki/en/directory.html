@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Directory · MacroSIP documentation</title>
+<meta name="description" content="MacroSIP documentation">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/directory.html">
+<link rel="alternate" hreflang="ru" href="../ru/directory.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/directory.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/directory.html" hreflang="en" aria-current=true>English</a><a href="../ru/directory.html" hreflang="ru">Русский</a><a href="../zh/directory.html" hreflang="zh-Hans">中文</a></div></header>
+<div class="layout">
+<nav aria-label="Contents"><details><summary>Contents</summary><div class="links"><ul><li><a href="index.html">Home</a></li></ul><h2>User guide</h2><ul><li><a href="installation.html">Installation</a></li><li><a href="accounts.html">Accounts</a></li><li><a href="calls.html">Calls</a></li><li><a href="incoming-calls.html">Incoming calls</a></li><li><a href="contacts-and-call-log.html">Contacts and call log</a></li><li><a href="directory.html" aria-current=page>Directory</a></li><li><a href="quick-keys.html">Quick keys</a></li><li><a href="audio.html">Audio</a></li><li><a href="settings.html">Settings</a></li><li><a href="menu-bar.html">Menu bar</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul><h2>For developers</h2><ul><li><a href="architecture.html">Architecture</a></li><li><a href="building.html">Building</a></li><li><a href="testing.html">Testing</a></li><li><a href="releasing.html">Releasing</a></li><li><a href="contributing.html">Contributing</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">Directory</h1>
+<p dir="auto">A directory source is a place where MacroSIP looks people up by name or number: your company's LDAP server, a CSV or JSON file on a URL, your Google contacts, or the macOS Contacts app. Results appear in the number field while you type, name incoming callers, and can be imported into Contacts. The pane is Settings › <strong>Directory</strong>.</p>
+<p dir="auto"><a target="_blank" rel="noopener noreferrer nofollow" href="https://raw.githubusercontent.com/HSMM/MacroSIP/main/docs/screenshots/light/directory-search.png?v=1"><img src="https://raw.githubusercontent.com/HSMM/MacroSIP/main/docs/screenshots/light/directory-search.png?v=1" alt="Directory search" style="max-width: 100%;"></a></p>
+<h2 dir="auto">Sources</h2>
+<p dir="auto">Add one with <strong>+</strong> in Settings › Directory. The <strong>Add Directory Source</strong> sheet has a <strong>Type</strong> popup, a <strong>Name</strong>, type-specific fields, and the <strong>Results</strong> choice (below). <strong>Test</strong> checks the connection and answers "Connected · 184 entries".</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Type</th>
+<th>Fields and behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>LDAP</strong></td>
+<td><strong>Server</strong> (<code class="notranslate">ldap://ldap.example.com</code> or <code class="notranslate">ldaps://…</code>; "ldaps:// or StartTLS when possible."), <strong>Use StartTLS</strong> switch (ignored for ldaps), <strong>Base DN</strong>, <strong>Bind DN</strong> ("Empty for anonymous search."), <strong>Password</strong> ("Stored in the Keychain."), <strong>Search filter</strong> (default <code class="notranslate">(|(cn=*%s*)(telephoneNumber=*%s*))</code>; "%s is the typed text.").</td>
+</tr>
+<tr>
+<td><strong>URL (CSV or JSON)</strong></td>
+<td><strong>URL</strong> (http, https or file), <strong>Format</strong> CSV / JSON (guessed from the extension until you touch it), <strong>Refresh every</strong> Hour / 6 hours / Day / Week. CSV needs a header row; comma, semicolon or tab separators; UTF-8 or Windows-1251. JSON is an array of objects (or an object that contains one). Recognised columns: name, first name, last name, number / phone / telephone / extension, mobile / cell, email / mail, organization / company (case, spaces, <code class="notranslate">_</code> and <code class="notranslate">-</code> ignored). Rows without a number are skipped.</td>
+</tr>
+<tr>
+<td><strong>macOS Contacts</strong></td>
+<td>No fields. The source is named "macOS Contacts" and shows "This Mac". <strong>Allow access</strong> triggers the system Contacts permission prompt ("MacroSIP looks up names and numbers in Contacts when you search from the number field."); nothing is asked at launch. If you deny it the status reads "Access denied" with <strong>Open System Settings…</strong>.</td>
+</tr>
+<tr>
+<td><strong>Google Contacts</strong></td>
+<td><strong>Sign in with Google</strong>: "Opens Google in your browser once to allow read-only access to your contacts. MacroSIP keeps only the access token, in the Keychain; you can remove access in your Google Account at any time." The browser shows Google's consent page; meanwhile the button is replaced by "Waiting for Google…" and closing the sheet abandons the sign-in. When Google returns you to the app, the <strong>Google account</strong> row shows your e-mail with a green check, and <strong>Add</strong> saves the source (status "Connected"). From then on it is searched, imported and asked for caller names like any other source; result rows carry the Google badge. A build without a Google client id answers "Google sign-in is not configured in this build".</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">The source list shows Source (name, address, "search only" or "import into Contacts"), Status and an <strong>On</strong> switch. "Results are listed in this order; drag to reorder. A source that is switched off is not searched and not synced." <strong>−</strong> asks "Remove “Head office LDAP”?" — "Contacts already imported from this source stay in Contacts."</p>
+<p dir="auto">Signing out of Google Contacts is removing the source with <strong>−</strong>: the access token leaves the Keychain with it, and imported cards stay. Access can also be revoked in your Google Account; the source then shows <strong>Sign in required</strong> and the pane offers <strong>Sign In…</strong> ("Access has expired or was revoked" — "Search skips this source until you sign in again."), which opens the browser again.</p>
+<h2 dir="auto">Search only or import into Contacts</h2>
+<p dir="auto">Every source is one of:</p>
+<ul dir="auto">
+<li><strong>Search only</strong> — "results are not stored". Entries show up in the number field and in caller lookup, nothing is written.</li>
+<li><strong>Import into Contacts</strong> — "copied and refreshed daily". Every entry becomes a contact card. URL sources refresh on their own interval; the others once a day, macOS Contacts only when access was already granted.</li>
+</ul>
+<h2 dir="auto">Suggestions in the number field</h2>
+<p dir="auto">With <strong>Search directories from the number field</strong> on, typing in the number field shows a <strong>Contacts</strong> section (your own cards first) and a <strong>Directory</strong> section with results in source order. A row shows the avatar, the name with the matched letters in bold, the number and a source badge (LDAP, URL, Contacts, Google). "Searching Head office LDAP…" with a spinner marks a source that has not answered yet; the search stops waiting after 3 s. When all have answered the list ends with "7 results from 2 sources". A number already in Contacts is shown only once, as the local contact.</p>
+<p dir="auto">Settings: <strong>Minimum characters</strong> (1–5, default 2; "Search starts after this many characters and a 300 ms pause in typing.") and <strong>Results per source</strong> (1–10, default 5). Digit-only text is searched too.</p>
+<p dir="auto">Click a row to put its number into the field; Return on the highlighted row calls it; Escape closes the list, a second Escape clears the field. The context menu offers <strong>Call</strong>, <strong>Copy Number</strong> and <strong>Add to Contacts</strong> (makes a card of your own).</p>
+<h2 dir="auto">Incoming-caller lookup</h2>
+<p dir="auto"><strong>Look up names of incoming callers</strong> (on by default): "Asks search-only sources for at most 1 second while the call rings." Imported sources are already in Contacts and are matched locally. Numbers are compared by digits, so <code class="notranslate">+1 202 555-0123</code> and <code class="notranslate">2025550123</code> are one line. A directory name is used when the SIP display name is empty or just the number, and is stored in the call log entry.</p>
+<h2 dir="auto">Import now and the schedule</h2>
+<p dir="auto">For a source set to import, the Status column shows <strong>Import now</strong> ("Importing…" while it runs). The result is a banner under the list for ten seconds: "Imported 120 contacts (14 updated)", "Nothing to import" or "Import failed: Cannot connect to ldap.example.com". A failed import does not disable the button or the schedule; the last successful time is what "Synced 5 min. ago" shows.</p>
+<h3 dir="auto">Merge rules</h3>
+<ul dir="auto">
+<li>Entries are matched to existing contacts by number and never duplicated.</li>
+<li>A card that the <strong>same source created</strong> follows the directory on every import: name, organization, email and photo are replaced, missing numbers added.</li>
+<li>A card you made or edited yourself keeps its name, photo and the rest; it only receives what it lacks (an empty organization or email, a missing photo, new numbers).</li>
+<li><strong>Notes, favourite and the preferred account are never touched.</strong></li>
+<li>New cards get the note "Imported from Head office LDAP".</li>
+</ul>
+<h2 dir="auto">Statuses</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Status</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Connected</strong></td>
+<td>Test or the last search succeeded.</td>
+</tr>
+<tr>
+<td><strong>Synced 5 min. ago</strong></td>
+<td>Last successful import (URL sources: last fetch).</td>
+</tr>
+<tr>
+<td><strong>Sign in required</strong></td>
+<td>Google Contacts without a token, or whose access Google revoked; the source is skipped until you press <strong>Sign In…</strong> and complete the sign-in in the browser.</td>
+</tr>
+<tr>
+<td><strong>Access denied</strong></td>
+<td>macOS refused Contacts access; allow MacroSIP in System Settings › Privacy &amp; Security › Contacts.</td>
+</tr>
+<tr>
+<td><strong>Off</strong></td>
+<td>The On switch is off.</td>
+</tr>
+<tr>
+<td>Error text</td>
+<td>"Timed out", "Cannot connect to ldap.example.com", "Invalid bind DN or password", "HTTP 404", "No number column in the header", "The file is not valid JSON", "No array of contacts in the JSON", "The server must be ldap://host or ldaps://host", "Google sign-in is not configured in this build". A failed source is skipped for 60 s, then tried again.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">See <a href="troubleshooting.html">Troubleshooting</a> for the LDAP errors and <a href="contacts-and-call-log.html">Contacts and call log</a> for the card an import fills.</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

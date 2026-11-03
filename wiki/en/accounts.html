@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Accounts · MacroSIP documentation</title>
+<meta name="description" content="MacroSIP documentation">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/accounts.html">
+<link rel="alternate" hreflang="ru" href="../ru/accounts.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/accounts.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/accounts.html" hreflang="en" aria-current=true>English</a><a href="../ru/accounts.html" hreflang="ru">Русский</a><a href="../zh/accounts.html" hreflang="zh-Hans">中文</a></div></header>
+<div class="layout">
+<nav aria-label="Contents"><details><summary>Contents</summary><div class="links"><ul><li><a href="index.html">Home</a></li></ul><h2>User guide</h2><ul><li><a href="installation.html">Installation</a></li><li><a href="accounts.html" aria-current=page>Accounts</a></li><li><a href="calls.html">Calls</a></li><li><a href="incoming-calls.html">Incoming calls</a></li><li><a href="contacts-and-call-log.html">Contacts and call log</a></li><li><a href="directory.html">Directory</a></li><li><a href="quick-keys.html">Quick keys</a></li><li><a href="audio.html">Audio</a></li><li><a href="settings.html">Settings</a></li><li><a href="menu-bar.html">Menu bar</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul><h2>For developers</h2><ul><li><a href="architecture.html">Architecture</a></li><li><a href="building.html">Building</a></li><li><a href="testing.html">Testing</a></li><li><a href="releasing.html">Releasing</a></li><li><a href="contributing.html">Contributing</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">Accounts</h1>
+<p dir="auto">An account is one SIP identity: user, server, credentials and transport. Several accounts can be enabled and registered at once; one of them is the <strong>default outgoing account</strong>.</p>
+<p dir="auto"><a target="_blank" rel="noopener noreferrer nofollow" href="https://raw.githubusercontent.com/HSMM/MacroSIP/main/docs/screenshots/light/account-popup.png?v=1"><img src="https://raw.githubusercontent.com/HSMM/MacroSIP/main/docs/screenshots/light/account-popup.png?v=1" alt="Account pop-up" style="max-width: 100%;"></a></p>
+<h2 dir="auto">Adding an account</h2>
+<p dir="auto">Open the editor from the first-launch screen (<strong>Add Account…</strong>), from Settings › Accounts (<strong>+</strong>, <strong>Edit…</strong> or a double-click on a row), or from the account pop-up (<strong>Account Settings…</strong>, ⌘,).</p>
+<p dir="auto">The basics are the only fields you normally need:</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Account name</strong></td>
+<td>Short label used in the account pop-up, status bar, call panel and menu bar, for example "Office".</td>
+</tr>
+<tr>
+<td><strong>SIP server</strong></td>
+<td>Host name or IP address, for example <code class="notranslate">pbx.example.com</code>. An invalid value shows "Enter a host name like pbx.example.com, or an IP address."</td>
+</tr>
+<tr>
+<td><strong>Username</strong></td>
+<td>The SIP user, for example <code class="notranslate">andrei</code>.</td>
+</tr>
+<tr>
+<td><strong>Password</strong></td>
+<td>Stored only in the login Keychain, never in a file.</td>
+</tr>
+<tr>
+<td><strong>Enabled</strong></td>
+<td>Off stops registration and outgoing calls; the account stays in the pop-up, dimmed, and leaves the status bar. Settings and the Keychain item are kept.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto"><strong>Save</strong> stores the password in the Keychain and registers; the status beside the buttons updates live ("Not saved", "Registering…", "Registered").</p>
+<h2 dir="auto">The Advanced group</h2>
+<p dir="auto">Everything else is folded into a collapsed <strong>Advanced</strong> disclosure. It opens by itself when any of its values differs from the defaults, so you can see why an account behaves as it does.</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Row</th>
+<th>Meaning</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Display name</strong></td>
+<td>"Shown to people you call." Caller ID sent to the remote party.</td>
+<td>empty</td>
+</tr>
+<tr>
+<td><strong>Auth username</strong></td>
+<td>"Only if different from the username." Used for digest authentication.</td>
+<td>empty</td>
+</tr>
+<tr>
+<td><strong>Domain</strong></td>
+<td>"Empty uses the SIP server." Used to build SIP URIs from dial strings.</td>
+<td>empty</td>
+</tr>
+<tr>
+<td><strong>Outgoing proxy</strong></td>
+<td>Route set, for example <code class="notranslate">sip:proxy.example.com;lr</code>.</td>
+<td>empty</td>
+</tr>
+<tr>
+<td><strong>Transport</strong></td>
+<td>UDP, TCP or TLS.</td>
+<td>UDP</td>
+</tr>
+<tr>
+<td><strong>Media encryption (SRTP)</strong></td>
+<td>Disabled, Optional or Mandatory. SRTP is independent of the signalling transport.</td>
+<td>Disabled</td>
+</tr>
+<tr>
+<td><strong>Registration expiry</strong></td>
+<td>60 to 3600 seconds.</td>
+<td>300</td>
+</tr>
+<tr>
+<td><strong>Verify server certificate</strong></td>
+<td>TLS only. "Turn off only for a server with a self-signed certificate."</td>
+<td>on</td>
+</tr>
+<tr>
+<td><strong>Voicemail number</strong></td>
+<td>"Dialled from the menu bar and the status bar." Number or SIP URI that the voicemail items call, for example <code class="notranslate">*97</code>. In the Voicemail group.</td>
+<td>empty</td>
+</tr>
+<tr>
+<td><strong>Voicemail indicator (MWI)</strong></td>
+<td>"Shows the number of new messages the server reports." Subscribes to the server's message-summary; new messages appear as an envelope badge in the status bar and as the Voicemail item in the menu bar (see <a href="incoming-calls.html">Incoming calls</a>). A server that pushes the indicator without a subscription is shown too.</td>
+<td>on</td>
+</tr>
+<tr>
+<td><strong>Register with server</strong></td>
+<td>Off keeps the account for <strong>outgoing calls only</strong>: it never registers, takes no incoming calls, and shows "Outgoing only" in Settings › Accounts.</td>
+<td>on</td>
+</tr>
+<tr>
+<td><strong>Default for outgoing calls</strong></td>
+<td>Only one account is default; turning it on clears the previous one.</td>
+<td>on for the first account</td>
+</tr>
+<tr>
+<td><strong>Publish my presence</strong></td>
+<td>"Lets contacts who watch you see Available / Away / DND."</td>
+<td>off</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">STUN, ICE, the local SIP port and keep-alive are not per account; they live in Settings › Network (see <a href="settings.html">Settings</a>).</p>
+<h2 dir="auto">The Test button</h2>
+<p dir="auto"><strong>Test</strong> is enabled once SIP server, Username and Password are filled. It registers with a temporary account and shows the result inline:</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Result</th>
+<th>Text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Success</td>
+<td>"Registered successfully (120 ms)"</td>
+</tr>
+<tr>
+<td>Rejected</td>
+<td>"Test failed: 401 Unauthorized" (or 403, …) with "The server rejected the username or password. Nothing was saved." and a <strong>Test Again</strong> button.</td>
+</tr>
+<tr>
+<td>No answer</td>
+<td>"Test failed: No response" with "The server did not answer in time. Nothing was saved."</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<h2 dir="auto">Several accounts</h2>
+<p dir="auto">Settings › Accounts lists every account with a status dot, Name (a blue <strong>Default</strong> badge marks the default outgoing account), Address, Transport and Status. Drag rows to reorder; the order is used in the account pop-up and the status bar. With eight or more accounts a <strong>Filter accounts</strong> field narrows the list.</p>
+<p dir="auto"><strong>−</strong> removes the selected account after "Delete account “Office”?" — "Its password is removed from Keychain. Call history is kept."</p>
+<h2 dir="auto">The account pop-up</h2>
+<p dir="auto">The button above the number field in the main window shows the outgoing account with its registration dot. Click it to open the pop-up:</p>
+<ul dir="auto">
+<li>One row per account: a checkmark on the chosen outgoing account, the dot, the name with the SIP address beneath ("<a href="mailto:andrei@pbx.example.com">andrei@pbx.example.com</a>"; a failing account shows "403 Forbidden · <a href="mailto:andrei@pbx.example.com">andrei@pbx.example.com</a>" in red), and a <strong>switch</strong> at the right.</li>
+<li>Clicking a name picks it as the outgoing account <strong>for the next call only</strong> and closes the menu. The initial value is the default outgoing account.</li>
+<li>The switch turns the account on or off without closing the menu. This is the same state as <strong>Enabled</strong> in the editor and "Disabled" in Settings › Accounts. A failing account is silenced in two clicks.</li>
+<li>With eight or more accounts a <strong>Search accounts</strong> field appears first, and enabled accounts are listed before disabled ones.</li>
+<li><strong>Account Settings…</strong> (⌘,) opens Settings at Accounts.</li>
+</ul>
+<h2 dir="auto">Status bar and statuses</h2>
+<p dir="auto">The status bar at the bottom of the main window shows one item per enabled account, in account order. Click an item to open Settings › Accounts with that account selected. At the right end of the bar sit the envelope badge with the count of new voicemail messages (shown while any account reports waiting messages; a click dials the voicemail number, see <a href="incoming-calls.html">Incoming calls</a>), the Quick keys button and a gear button that opens Settings at the last used tab (tooltip "Settings…").</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Dot</th>
+<th>Status text</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>green</td>
+<td>account name, "Registered"</td>
+<td>REGISTER accepted.</td>
+</tr>
+<tr>
+<td>orange</td>
+<td>"Registering…"</td>
+<td>REGISTER sent, no final answer yet. Normal for a second or two.</td>
+</tr>
+<tr>
+<td>red</td>
+<td>"Office: 403"; Settings › Accounts shows "403 Forbidden — REGISTER rejected at 14:52. Check the username and password." with <strong>Retry</strong></td>
+<td>The server refused the registration. 403 and 401 almost always mean a wrong username, auth username or password.</td>
+</tr>
+<tr>
+<td>orange</td>
+<td>"Office · retry in 8 s", "Office · retrying…", "Reconnecting…"</td>
+<td>A temporary failure (timeout, 5xx, lost connection); the engine retries with backoff.</td>
+</tr>
+<tr>
+<td>grey, hollow</td>
+<td>account name in grey, "Outgoing only"</td>
+<td>Enabled, but <strong>Register with server</strong> is off.</td>
+</tr>
+<tr>
+<td>grey, hollow</td>
+<td>"Disabled" (Settings only; the account leaves the status bar)</td>
+<td>Switched off.</td>
+</tr>
+<tr>
+<td>grey glyph</td>
+<td>"No network"</td>
+<td>The Mac has no network path; accounts come back by themselves.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">With one to three enabled accounts there is one item per account. From four on, the bar shows one summary, "4 of 6 online · 2 failed", red when any account failed, orange while some are still connecting, green otherwise; clicking it opens the account pop-up. "No accounts" appears when none exist, "All accounts off" when none is enabled.</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calls · MacroSIP documentation</title>
+<meta name="description" content="MacroSIP documentation">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/calls.html">
+<link rel="alternate" hreflang="ru" href="../ru/calls.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/calls.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/calls.html" hreflang="en" aria-current=true>English</a><a href="../ru/calls.html" hreflang="ru">Русский</a><a href="../zh/calls.html" hreflang="zh-Hans">中文</a></div></header>
+<div class="layout">
+<nav aria-label="Contents"><details><summary>Contents</summary><div class="links"><ul><li><a href="index.html">Home</a></li></ul><h2>User guide</h2><ul><li><a href="installation.html">Installation</a></li><li><a href="accounts.html">Accounts</a></li><li><a href="calls.html" aria-current=page>Calls</a></li><li><a href="incoming-calls.html">Incoming calls</a></li><li><a href="contacts-and-call-log.html">Contacts and call log</a></li><li><a href="directory.html">Directory</a></li><li><a href="quick-keys.html">Quick keys</a></li><li><a href="audio.html">Audio</a></li><li><a href="settings.html">Settings</a></li><li><a href="menu-bar.html">Menu bar</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul><h2>For developers</h2><ul><li><a href="architecture.html">Architecture</a></li><li><a href="building.html">Building</a></li><li><a href="testing.html">Testing</a></li><li><a href="releasing.html">Releasing</a></li><li><a href="contributing.html">Contributing</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">Calls</h1>
+<p dir="auto">MacroSIP handles up to four calls at once. Exactly one call is <strong>active</strong> (you hear and speak); the others are on hold. The main window stays 340 × 520 pt: during a call the Dialpad tab turns into the call panel, and the other tabs show a one-line summary bar with the caller's name, the timer and an end button.</p>
+<p dir="auto"><a target="_blank" rel="noopener noreferrer nofollow" href="https://raw.githubusercontent.com/HSMM/MacroSIP/main/docs/screenshots/light/dialpad-calls.png?v=1"><img src="https://raw.githubusercontent.com/HSMM/MacroSIP/main/docs/screenshots/light/dialpad-calls.png?v=1" alt="Several calls" style="max-width: 100%;"></a></p>
+<h2 dir="auto">Dialing</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Way</th>
+<th>How</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Number field</td>
+<td>Type a number or a name, or paste a <code class="notranslate">sip:</code>/<code class="notranslate">tel:</code> URI; spaces and dashes are fine. Return or the green <strong>Call</strong> button places the call. Letters open a suggestions list of matching contacts (also directory results, see <a href="directory.html">Directory</a>).</td>
+</tr>
+<tr>
+<td>Dial pad</td>
+<td>Keys append to the field; long-press 0 inserts <code class="notranslate">+</code>. With an empty field, <strong>Call</strong> redials the last number.</td>
+</tr>
+<tr>
+<td>Contacts</td>
+<td>Double-click a row, press Return, or use the row's handset button or the context menu (<strong>Call</strong>, <strong>Call from ▸</strong>).</td>
+</tr>
+<tr>
+<td>Call Log</td>
+<td>Double-click or Return calls back through the account the call came in on.</td>
+</tr>
+<tr>
+<td>Links</td>
+<td><code class="notranslate">sip:</code>, <code class="notranslate">sips:</code> and <code class="notranslate">tel:</code> links open in MacroSIP once it is the default handler (Settings › General › Links › <strong>Make Default</strong>). By default the link only fills the field so you can check it first.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">The dial string is resolved with the outgoing account's domain; the account pop-up above the field picks the account for the next call (<a href="accounts.html">Accounts</a>).</p>
+<h2 dir="auto">The call panel</h2>
+<p dir="auto">The panel shows the remote party, the timer and a state line: "Calling…", "Ringing…", "Connected", "On hold", or "Reconnecting… 12 s" while the media path is being restored after a network change. The chip row shows "via Office" (only with two or more enabled accounts), the codec and quality chip ("Opus 48 kHz" with signal bars), an <strong>SRTP</strong> lock when media is encrypted, and the speaker icon of the volume popover.</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Button</th>
+<th>Does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Mute</strong></td>
+<td>Toggles your microphone. ⌘⇧M while MacroSIP is frontmost.</td>
+</tr>
+<tr>
+<td><strong>Hold</strong> / <strong>Resume</strong></td>
+<td>Puts the call on hold; the timer keeps running and the caller hears the hold music (below). With several calls, Resume on a held call holds the active one first.</td>
+</tr>
+<tr>
+<td><strong>Transfer</strong></td>
+<td>Opens the transfer popover.</td>
+</tr>
+<tr>
+<td><strong>Keypad</strong></td>
+<td>Swaps in the DTMF keypad; <strong>Back to call</strong> returns.</td>
+</tr>
+<tr>
+<td><strong>Record</strong></td>
+<td>Starts or stops recording; red while recording.</td>
+</tr>
+<tr>
+<td><strong>Merge</strong></td>
+<td>Joins all answered calls into a local conference. Dimmed with one call.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto"><strong>End Call</strong> (⌘D) ends the active call; with several calls it reads "End Call with Alesia Kazlouskaya".</p>
+<h2 dir="auto">Hold</h2>
+<p dir="auto">A held call keeps its SIP session and its timer; your microphone and speaker are disconnected from it. What the caller hears is set in Settings › Audio › Hold music › <strong>Source</strong>: <strong>Built-in</strong> (a short looping melody, the default), <strong>Custom file…</strong> ("Custom: office-hold.m4a") or <strong>Off</strong> (silence). "The caller hears this while on hold." The change applies to calls already on hold; the music is heard by the held party only and is not recorded. Some PBXs replace it with their own music on hold (<a href="troubleshooting.html">Troubleshooting</a>). Details in <a href="audio.html">Audio</a>.</p>
+<h2 dir="auto">Keypad and DTMF</h2>
+<p dir="auto">The keypad echoes the digits sent; digit keys on the keyboard also send DTMF while the main window is key. The method is set in Settings › Calls › <strong>DTMF method</strong>: <strong>Automatic</strong> uses RFC 2833 and falls back to SIP INFO; <strong>RFC 2833</strong>, <strong>SIP INFO</strong> and <strong>In-band</strong> force one method for the next digits.</p>
+<h2 dir="auto">Blind and attended transfer</h2>
+<p dir="auto">The popover "Transfer Volha Marozava to" takes a number, URI or contact name and suggests up to five contacts.</p>
+<ul dir="auto">
+<li><strong>Transfer Now</strong> — blind transfer: hands the call over immediately. Return triggers it.</li>
+<li><strong>Call First</strong> — attended transfer: holds the current call and calls the target. The panel then shows "Consulting · 00:21" and "On hold · waiting for transfer" with the banner "Transfer Volha Marozava to Dzmitry Navitski?" — "Volha and Dzmitry will be connected and you leave both calls." <strong>Complete Transfer</strong> joins them; <strong>Cancel</strong> hangs up the consultation and resumes the original call.</li>
+</ul>
+<h2 dir="auto">Several calls</h2>
+<p dir="auto">Typing a number and pressing Return during a call places a second call and holds the first. The panel lists one row per call ("2 CALLS · Click a row to switch"): <strong>Active · 01:12</strong>, <strong>On hold · 00:40</strong> with a <strong>Resume</strong> button, or <strong>Consulting</strong>. Clicking a held row makes it active and holds the current one; each row's small red button ends that call only. A fifth call is rejected with 486 and logged as "Rejected: call limit".</p>
+<h3 dir="auto">Merge, conference, split</h3>
+<p dir="auto"><strong>Merge</strong> mixes all answered calls on your Mac (PJSIP conference bridge, not a server conference). Held calls are resumed and joined too, so nobody stays on hold. The header reads "CONFERENCE · 2 PARTICIPANTS". <strong>Split</strong> on a participant takes that person out as a held call; the red button ends that leg; <strong>End Conference</strong> ends every leg.</p>
+<h3 dir="auto">A second incoming call</h3>
+<p dir="auto">Settings › Calls › <strong>When a call comes in during a call</strong>: <strong>Call waiting (tone and window)</strong> shows the incoming window and plays a short tone in the earpiece; <strong>Window only</strong> shows it with the normal ringtone; <strong>Busy (single-call mode)</strong> answers the second caller with 486 Busy Here at once, nothing rings, and the log notes "Rejected: on another call". The window's buttons are described in <a href="incoming-calls.html">Incoming calls</a>.</p>
+<h2 dir="auto">Volumes</h2>
+<p dir="auto">The speaker icon opens <strong>Call volume</strong>: <strong>Speaker</strong> (what you hear) and <strong>Microphone</strong> (what the other side hears), each 0–200 %, default 100 %, applied live and remembered for the next call; <strong>Reset</strong> returns both to 100 %. ⌘↑ / ⌘↓ change the speaker by 10 % and flash "Speaker volume: 110 %". The ringtone volume is in <a href="audio.html">Audio</a>.</p>
+<h2 dir="auto">Quality indicator and poor-connection notice</h2>
+<p dir="auto">The quality bars come from RTCP statistics every two seconds: four green bars for good, two or three orange for fair, one red for poor. Hover for "Loss 0.5 % · Jitter 12 ms · RTT 48 ms · MOS 4.3". After six seconds of poor quality a yellow banner names the worst metric, for example "Poor connection: 12 % packet loss" or "Poor connection: high jitter (90 ms)", and goes away with the first better sample. If the media does not return within 60 s after a network change the call ends with the log note "Connection lost".</p>
+<h2 dir="auto">Recording</h2>
+<p dir="auto"><a target="_blank" rel="noopener noreferrer nofollow" href="https://raw.githubusercontent.com/HSMM/MacroSIP/main/docs/screenshots/light/call-recording.png?v=1"><img src="https://raw.githubusercontent.com/HSMM/MacroSIP/main/docs/screenshots/light/call-recording.png?v=1" alt="Active call with recording" style="max-width: 100%;"></a></p>
+<ul dir="auto">
+<li><strong>Record</strong> in the call panel records the active call; the state line shows a red "REC 00:08" pill. The button is always available.</li>
+<li>Settings › Recording › <strong>Record all calls automatically</strong> records every call.</li>
+<li><strong>Channels</strong>: <strong>Mono</strong> mixes both sides into one channel; <strong>Stereo</strong> keeps you on the left channel and the caller (every conference participant) on the right.</li>
+<li>Settings › Recording › Notice tone › <strong>Play a notice tone while recording</strong> (off by default) adds a short beep that both sides hear and that is written into the recording: one second after a recording starts and then <strong>Every</strong> 15 seconds (5–60). "A short beep every 15 seconds tells both sides that the call is recorded." Switching it on applies to recordings in progress; while the recorded call is on hold nothing is recorded and no beep is played.</li>
+<li>Files are M4A (AAC), named like <code class="notranslate">2026-10-10 14.52 Alesia Kazlouskaya (in).m4a</code>, in <code class="notranslate">~/Music/MacroSIP Recordings</code> or the folder you choose. If the conversion fails the WAV is kept and a banner says so.</li>
+<li>A call log entry with a recording shows a play button and an inline player; the context menu adds <strong>Play recording</strong> and <strong>Show in Finder</strong> (<a href="contacts-and-call-log.html">Contacts and call log</a>).</li>
+</ul>
+<p dir="auto">Headset buttons (answer, hang up, hold, mute and redial from a USB headset) are described in <a href="audio.html">Audio</a>. Video calls and global hotkeys are planned for later releases.</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

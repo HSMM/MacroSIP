@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Incoming calls · MacroSIP documentation</title>
+<meta name="description" content="MacroSIP documentation">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/incoming-calls.html">
+<link rel="alternate" hreflang="ru" href="../ru/incoming-calls.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/incoming-calls.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/incoming-calls.html" hreflang="en" aria-current=true>English</a><a href="../ru/incoming-calls.html" hreflang="ru">Русский</a><a href="../zh/incoming-calls.html" hreflang="zh-Hans">中文</a></div></header>
+<div class="layout">
+<nav aria-label="Contents"><details><summary>Contents</summary><div class="links"><ul><li><a href="index.html">Home</a></li></ul><h2>User guide</h2><ul><li><a href="installation.html">Installation</a></li><li><a href="accounts.html">Accounts</a></li><li><a href="calls.html">Calls</a></li><li><a href="incoming-calls.html" aria-current=page>Incoming calls</a></li><li><a href="contacts-and-call-log.html">Contacts and call log</a></li><li><a href="directory.html">Directory</a></li><li><a href="quick-keys.html">Quick keys</a></li><li><a href="audio.html">Audio</a></li><li><a href="settings.html">Settings</a></li><li><a href="menu-bar.html">Menu bar</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul><h2>For developers</h2><ul><li><a href="architecture.html">Architecture</a></li><li><a href="building.html">Building</a></li><li><a href="testing.html">Testing</a></li><li><a href="releasing.html">Releasing</a></li><li><a href="contributing.html">Contributing</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">Incoming calls</h1>
+<p dir="auto"><a target="_blank" rel="noopener noreferrer nofollow" href="https://raw.githubusercontent.com/HSMM/MacroSIP/main/docs/screenshots/light/incoming-auto-answer.png?v=1"><img src="https://raw.githubusercontent.com/HSMM/MacroSIP/main/docs/screenshots/light/incoming-auto-answer.png?v=1" alt="Incoming call with auto-answer" style="max-width: 100%;"></a></p>
+<h2 dir="auto">Where a call appears</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Main window</th>
+<th>What you see</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hidden, minimised or behind another app</td>
+<td>A <strong>floating window</strong> and a <strong>system notification</strong>.</td>
+</tr>
+<tr>
+<td>Visible and frontmost</td>
+<td>The call shows inside the main window: the Dialpad tab switches to the incoming state with <strong>Answer</strong> and <strong>Decline</strong>.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<h3 dir="auto">The floating window</h3>
+<p dir="auto">A small always-on-top panel (on every Space) with the caller's avatar, "Incoming call on Office", name and number, and two buttons: <strong>Decline</strong> (red) and <strong>Answer</strong> (green). It never takes keyboard focus, so what you are typing elsewhere is not interrupted. It is draggable and remembers its position. The ringtone plays through the ringtone device chosen in <a href="audio.html">Audio</a>.</p>
+<h3 dir="auto">The notification</h3>
+<p dir="auto">An alert-style notification ("Incoming call · Office", name, number) with <strong>Answer</strong> and <strong>Decline</strong> actions. It stays until acted on, also works from Notification Center and on a locked screen, and disappears when the call ends.</p>
+<h3 dir="auto">Keys</h3>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>⌘↩</td>
+<td>Answer.</td>
+</tr>
+<tr>
+<td>⌘.</td>
+<td>Decline (the caller gets 486 Busy Here; the entry is logged as missed).</td>
+</tr>
+<tr>
+<td>Esc</td>
+<td>Silences the ringtone only; the call keeps ringing.</td>
+</tr>
+<tr>
+<td>↩ (inside the main window)</td>
+<td>Answer.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">An unanswered or declined call becomes a <strong>missed</strong> call with a red badge on the Dock icon, the menu bar icon and the Call Log tab.</p>
+<h3 dir="auto">A call while you are on a call</h3>
+<p dir="auto">The window adds "You are on a call with Andrei Kavaliou (03:12)." and offers <strong>Decline</strong>, <strong>Hold &amp; Answer</strong> (holds the current call, answers the new one) and <strong>End Current &amp; Answer</strong>. Whether this window appears at all, with a tone or with the ringtone, or whether the second caller simply gets Busy, is set in Settings › Calls; see "Second incoming call" in <a href="calls.html">Calls</a>.</p>
+<h2 dir="auto">Bring the main window to the front</h2>
+<p dir="auto">Settings › Calls › <strong>Bring the main window to the front on an incoming call</strong>, off by default. When on, the main window is ordered to the front whenever a call rings, without activating MacroSIP, so nothing you type in another app lands in it. "The incoming-call window still appears as well." Until you click into the main window it ignores the call keys (DTMF digits, Return to answer or call back).</p>
+<h2 dir="auto">Auto-answer</h2>
+<p dir="auto">Settings › Calls › Auto-answer:</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Row</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Answer incoming calls automatically</strong>: Off / All calls / Contacts only</td>
+<td>Default Off. "Contacts only" answers only callers whose number is in your Contacts.</td>
+</tr>
+<tr>
+<td><strong>Delay before answering</strong></td>
+<td>Seconds before the call is picked up. Default 5.</td>
+</tr>
+<tr>
+<td><strong>Honour the server's answer-after request</strong></td>
+<td>"Answers when the PBX sends Call-Info: answer-after=N (intercom, paging), even if the mode is Off." Only requests from your own server are honoured.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">When auto-answer is going to fire, the incoming window shows a countdown ring, "Auto-answer in 4 s", and a <strong>Cancel</strong> link that stops it for this call so you can answer by hand or let it ring.</p>
+<p dir="auto">Footer rules: "Do Not Disturb wins over auto-answer. Auto-answer never answers a second call while you are already on one."</p>
+<h2 dir="auto">Do Not Disturb</h2>
+<p dir="auto">DND rejects every incoming call with 486 Busy Here and, on accounts that publish presence, publishes the Do Not Disturb status. The caller hears busy; the call is logged as missed.</p>
+<p dir="auto">Turn it on from the menu bar icon (<strong>Do Not Disturb</strong> submenu), from Settings › General, with ⌥⌘D (Call menu), or by choosing <strong>Do Not Disturb</strong> under <strong>My Status</strong>. The menu bar icon shows a moon while DND is on.</p>
+<h3 dir="auto">Timed DND</h3>
+<p dir="auto">The submenu and the Settings popup offer <strong>Off</strong>, <strong>On</strong>, <strong>For 30 minutes</strong>, <strong>For 1 hour</strong> and <strong>Until tomorrow 9:00</strong> (the coming 9:00: today if chosen before 9:00). While a timer runs, the menu item reads "Do Not Disturb · 27 min" and Settings shows "Until 14:30 · 27 min left". When the time is up DND ends by itself and your previous status comes back. A timed DND survives a restart.</p>
+<h2 dir="auto">Deny rules</h2>
+<p dir="auto">Settings › Calls › Incoming calls › <strong>Reject calls from</strong>:</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Choice</th>
+<th>Who is rejected</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Nobody</strong></td>
+<td>Nobody; default.</td>
+</tr>
+<tr>
+<td><strong>Everyone</strong></td>
+<td>Every incoming call. Your own outgoing calls are unaffected.</td>
+</tr>
+<tr>
+<td><strong>Numbers not in Contacts</strong></td>
+<td>Callers whose number matches no number of any contact.</td>
+</tr>
+<tr>
+<td><strong>Anonymous callers</strong></td>
+<td>Calls without a caller number (anonymous or withheld).</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">"A rejected call never rings. The caller gets 603 Decline and the call log shows “Rejected: rule”." Anonymous callers get <strong>433 Anonymity Disallowed</strong> instead of 603. The engine answers before anything rings, so you only see a missed entry with the orange note "Rejected: rule".</p>
+<h2 dir="auto">Notes you may see in the call log</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Note</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>"Rejected: rule"</td>
+<td>Turned away by a deny rule.</td>
+</tr>
+<tr>
+<td>"Rejected: on another call"</td>
+<td>Turned away in single-call mode.</td>
+</tr>
+<tr>
+<td>"Rejected: call limit"</td>
+<td>A fifth call while four were in progress.</td>
+</tr>
+<tr>
+<td>"Connection lost"</td>
+<td>The media did not return after a network change.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<h2 dir="auto">Caller names</h2>
+<p dir="auto">The name shown comes from the SIP display name, or from a matching contact (any of its numbers), or from a directory source looked up for at most one second while the call rings (see <a href="directory.html">Directory</a>).</p>
+<h2 dir="auto">Voicemail</h2>
+<p dir="auto">Each account can follow the server's voicemail indicator (MWI): <strong>Voicemail indicator (MWI)</strong> in the Advanced group of the account editor, on by default (<a href="accounts.html">Accounts</a>). "Shows the number of new messages the server reports." A server that pushes the indicator without a subscription is shown too.</p>
+<ul dir="auto">
+<li><strong>Status bar.</strong> While any account reports waiting messages, the status bar at the bottom of the main window shows an envelope badge with the number of new messages over all accounts (tooltip "Voicemail: 2 new"). A click dials the voicemail number of the first account with waiting messages. The badge is hidden when nothing waits; the menu bar icon and the Dock badge are not used for voicemail.</li>
+<li><strong>Menu bar.</strong> The menu has a <strong>Voicemail: 2 new</strong> item per enabled account with a voicemail number ("Voicemail · Office: 2 new" when several accounts have one); it calls that account's voicemail number and is dimmed while nothing waits (<a href="menu-bar.html">Menu bar</a>).</li>
+<li><strong>Voicemail number.</strong> Both need the <strong>Voicemail number</strong> of the account (for example <code class="notranslate">*97</code>) in the account editor; without it the badge cannot dial and the account has no menu item.</li>
+<li><strong>Sound.</strong> <strong>New voicemail</strong> in Settings › Audio › Sound events adds three beeps when the count of new messages grows (<a href="audio.html">Audio</a>).</li>
+</ul>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

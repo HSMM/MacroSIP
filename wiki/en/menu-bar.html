@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Menu bar · MacroSIP documentation</title>
+<meta name="description" content="MacroSIP documentation">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/menu-bar.html">
+<link rel="alternate" hreflang="ru" href="../ru/menu-bar.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/menu-bar.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/menu-bar.html" hreflang="en" aria-current=true>English</a><a href="../ru/menu-bar.html" hreflang="ru">Русский</a><a href="../zh/menu-bar.html" hreflang="zh-Hans">中文</a></div></header>
+<div class="layout">
+<nav aria-label="Contents"><details><summary>Contents</summary><div class="links"><ul><li><a href="index.html">Home</a></li></ul><h2>User guide</h2><ul><li><a href="installation.html">Installation</a></li><li><a href="accounts.html">Accounts</a></li><li><a href="calls.html">Calls</a></li><li><a href="incoming-calls.html">Incoming calls</a></li><li><a href="contacts-and-call-log.html">Contacts and call log</a></li><li><a href="directory.html">Directory</a></li><li><a href="quick-keys.html">Quick keys</a></li><li><a href="audio.html">Audio</a></li><li><a href="settings.html">Settings</a></li><li><a href="menu-bar.html" aria-current=page>Menu bar</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul><h2>For developers</h2><ul><li><a href="architecture.html">Architecture</a></li><li><a href="building.html">Building</a></li><li><a href="testing.html">Testing</a></li><li><a href="releasing.html">Releasing</a></li><li><a href="contributing.html">Contributing</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">Menu bar</h1>
+<p dir="auto">MacroSIP keeps a status item in the menu bar from the first launch. The app keeps working with the main window closed, so the menu bar icon is where you see the registration state, answer the question "did I miss a call?" and dial quickly.</p>
+<h2 dir="auto">Status item icon</h2>
+<p dir="auto">A monochrome handset that follows the menu bar's appearance:</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>State</th>
+<th>Appearance</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Offline</td>
+<td>outline handset</td>
+<td>No account is registered, or there are no accounts. Tooltip "Offline".</td>
+</tr>
+<tr>
+<td>Registered</td>
+<td>solid handset</td>
+<td>At least one account is registered.</td>
+</tr>
+<tr>
+<td>On call</td>
+<td>solid handset with the call timer beside it, "04:12"</td>
+<td>A connected call exists. Clicking the icon brings the main window forward.</td>
+</tr>
+<tr>
+<td>Missed</td>
+<td>red count badge on the handset</td>
+<td>Unseen missed calls. The timer wins while a call is active; the badge comes back after the call.</td>
+</tr>
+<tr>
+<td>Do Not Disturb</td>
+<td>moon glyph beside the handset</td>
+<td>DND is on.</td>
+</tr>
+<tr>
+<td>No network</td>
+<td>outline handset with a slash; tooltip "MacroSIP · No network"</td>
+<td>The Mac has no network path.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">The missed-call badge clears when you open the Call Log tab.</p>
+<h2 dir="auto">The menu</h2>
+<p dir="auto">Click the icon for a native menu, top to bottom:</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Item</th>
+<th>Behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Account lines, one per enabled account</td>
+<td>Status dot, account name and address. A failed account is red with "Failed: 403 Forbidden". Click opens Settings › Accounts with that account selected.</td>
+</tr>
+<tr>
+<td><strong>Voicemail: 2 new</strong>, one per enabled account with a voicemail number</td>
+<td>Envelope glyph, filled while messages wait. Click calls the account's voicemail number through that account. Reads "Voicemail · Office: 2 new" when several accounts have a number; dimmed ("Voicemail: 0 new") while the account's indicator says nothing waits. Needs <strong>Voicemail number</strong> in the account editor (<a href="accounts.html">Accounts</a>); the count comes from the voicemail indicator (MWI), see <a href="incoming-calls.html">Incoming calls</a>.</td>
+</tr>
+<tr>
+<td>Quick dial: "Call number or name…" with a green call button</td>
+<td>Type a number or SIP URI and press Return; the call goes through the default outgoing account. Contact suggestions exist only in the main window.</td>
+</tr>
+<tr>
+<td><strong>Recent Calls</strong></td>
+<td>The last five entries with direction icon, name or number and time; missed calls in red. Click calls back through the entry's account.</td>
+</tr>
+<tr>
+<td><strong>Do Not Disturb ▸</strong></td>
+<td>Checkmark when on. Submenu: <strong>Off</strong>, <strong>On</strong>, <strong>For 30 minutes</strong>, <strong>For 1 hour</strong>, <strong>Until tomorrow 9:00</strong>. While a timer runs the title reads "Do Not Disturb · 27 min". DND rejects calls with 486 Busy Here and publishes Do Not Disturb.</td>
+</tr>
+<tr>
+<td><strong>My Status ▸</strong> "Available ›"</td>
+<td><strong>Available</strong>, <strong>Away</strong>, <strong>Do Not Disturb</strong>. Publishes your presence on every account with <strong>Publish my presence</strong> on. Choosing Do Not Disturb here also turns DND on; the two stay in sync.</td>
+</tr>
+<tr>
+<td><strong>Show MacroSIP</strong> (⌘0)</td>
+<td>Brings up the main window.</td>
+</tr>
+<tr>
+<td><strong>Settings…</strong> (⌘,)</td>
+<td>Opens Settings.</td>
+</tr>
+<tr>
+<td><strong>Quit MacroSIP</strong> (⌘Q)</td>
+<td>Quits. With a call in progress it asks "End the call and quit?".</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">With no accounts the account lines are absent, quick dial is disabled and recent calls are still listed. Accounts without a voicemail number have no Voicemail item.</p>
+<p dir="auto">The main window's status bar has two related items at its right end: an envelope badge with the number of new voicemail messages (a click dials the voicemail number) and a gear button that opens Settings at the last used tab, the same as <strong>Settings…</strong> here (see <a href="accounts.html">Accounts</a>).</p>
+<h2 dir="auto">Shortcuts</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Shortcut</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>⌥⌘D</td>
+<td>Toggle Do Not Disturb (Call menu).</td>
+</tr>
+<tr>
+<td>⌘0</td>
+<td>Show MacroSIP.</td>
+</tr>
+<tr>
+<td>⌘,</td>
+<td>Settings.</td>
+</tr>
+<tr>
+<td>⌘Q</td>
+<td>Quit.</td>
+</tr>
+<tr>
+<td>⌘1 – ⌘9</td>
+<td>Quick keys 1–9 while MacroSIP is frontmost (see <a href="quick-keys.html">Quick keys</a>).</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<h2 dir="auto">Dock badge</h2>
+<p dir="auto">The Dock icon carries the same red count of unseen missed calls as the menu bar icon and the Call Log tab, and clears with them when the Call Log tab is opened.</p>
+<h2 dir="auto">Keep running in the menu bar</h2>
+<p dir="auto">Settings › General › <strong>Keep running in the menu bar when the window is closed</strong> is on by default: closing the main window (⌘W or the red button) leaves MacroSIP registered and reachable; incoming calls still show the floating window and notification (<a href="incoming-calls.html">Incoming calls</a>). Turn it off if closing the window should quit the app.</p>
+<h2 dir="auto">Show icon in the Dock</h2>
+<p dir="auto">Settings › General › <strong>Show icon in the Dock</strong> hides or shows the Dock icon. With the Dock icon hidden the menu bar icon and the main window remain, and you reach the window with <strong>Show MacroSIP</strong> (⌘0) from the menu. The missed-call badge is then visible on the menu bar icon only.</p>
+<h2 dir="auto">Launch at login</h2>
+<p dir="auto">Settings › General › <strong>Launch at login</strong> starts MacroSIP when you log in, so the menu bar icon and your registrations are there before the first call of the day. There is no prompt about it on first run.</p>
+<h2 dir="auto">Presence seen by others</h2>
+<p dir="auto">What you choose under <strong>My Status</strong> is what colleagues who watch your number see as the dot on your contact (see <a href="contacts-and-call-log.html">Contacts and call log</a>). A timed Do Not Disturb restores the previous status when it ends.</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

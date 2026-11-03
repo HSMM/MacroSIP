@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Audio · MacroSIP documentation</title>
+<meta name="description" content="MacroSIP documentation">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/audio.html">
+<link rel="alternate" hreflang="ru" href="../ru/audio.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/audio.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/audio.html" hreflang="en" aria-current=true>English</a><a href="../ru/audio.html" hreflang="ru">Русский</a><a href="../zh/audio.html" hreflang="zh-Hans">中文</a></div></header>
+<div class="layout">
+<nav aria-label="Contents"><details><summary>Contents</summary><div class="links"><ul><li><a href="index.html">Home</a></li></ul><h2>User guide</h2><ul><li><a href="installation.html">Installation</a></li><li><a href="accounts.html">Accounts</a></li><li><a href="calls.html">Calls</a></li><li><a href="incoming-calls.html">Incoming calls</a></li><li><a href="contacts-and-call-log.html">Contacts and call log</a></li><li><a href="directory.html">Directory</a></li><li><a href="quick-keys.html">Quick keys</a></li><li><a href="audio.html" aria-current=page>Audio</a></li><li><a href="settings.html">Settings</a></li><li><a href="menu-bar.html">Menu bar</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul><h2>For developers</h2><ul><li><a href="architecture.html">Architecture</a></li><li><a href="building.html">Building</a></li><li><a href="testing.html">Testing</a></li><li><a href="releasing.html">Releasing</a></li><li><a href="contributing.html">Contributing</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">Audio</h1>
+<p dir="auto">Everything on this page lives in Settings › Audio, Settings › Codecs and Settings › Network. Changes apply immediately; a few network values need an engine restart and say so.</p>
+<h2 dir="auto">Devices</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Row</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Microphone</strong></td>
+<td>Popup with every input device plus <strong>System default</strong>; a live level meter next to it (green segments, the top one yellow near clipping) shows that the right microphone is picked.</td>
+</tr>
+<tr>
+<td><strong>Speaker</strong></td>
+<td>Popup with every output device plus <strong>System default</strong>. The test tone is in the Audio test group below.</td>
+</tr>
+<tr>
+<td><strong>Ringtone device</strong></td>
+<td>Output for the ringtone only: "Ring through the speakers even when a headset is used for calls."</td>
+</tr>
+<tr>
+<td><strong>Switch to a headset when it is connected</strong></td>
+<td>On by default. "Uses a newly connected headset for calls until it is unplugged."</td>
+</tr>
+<tr>
+<td><strong>Headset buttons</strong></td>
+<td>On by default. Answer, hang up, hold, mute and redial from the call controls of a USB headset; the secondary text reads "Connected: Jabra Evolve2 65" or "No headset with call controls". Details below.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">"System default" follows macOS Sound settings. If a chosen device is unplugged, MacroSIP falls back to the system default and switches back when it returns. The device list updates live.</p>
+<h3 dir="auto">Headset auto-switch</h3>
+<p dir="auto">When a device with both input and output appears (a USB or Bluetooth headset, AirPods), it becomes the microphone and the speaker for calls and a banner says "Switched to AirPods Pro" for four seconds. When it is removed the chosen devices come back ("Back to MacBook Pro Speakers", or "Back to the system default"). Picking a microphone or speaker by hand, or turning the switch off, ends the following. The ringtone device is never changed, and devices already present at start are not followed.</p>
+<h3 dir="auto">Headset buttons</h3>
+<p dir="auto">With <strong>Headset buttons</strong> on, a USB headset that exposes HID telephony controls drives the calls; the row names the connected device ("Connected: Jabra Evolve2 65") or reads "No headset with call controls". Turning the switch off releases the device.</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Control on the headset</th>
+<th>Does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hook (answer / end)</td>
+<td>Answers the ringing call (the active one goes on hold); ends the active call. A plain hook button answers if a call rings, otherwise hangs up the current call.</td>
+</tr>
+<tr>
+<td>Flash</td>
+<td>Answers the waiting call, or swaps the held call in.</td>
+</tr>
+<tr>
+<td>Hold</td>
+<td>Holds or resumes the current call.</td>
+</tr>
+<tr>
+<td>Mute</td>
+<td>Toggles your microphone, like <strong>Mute</strong> in the call panel.</td>
+</tr>
+<tr>
+<td>Redial</td>
+<td>Calls the last outgoing number when no call is in progress.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">The headset's indicator lights follow the call when the device has them: off-hook while a call is answered or being placed, ring while one rings, mute while the microphone is off. A long first press cannot answer and hang up in one go.</p>
+<p dir="auto">Limitations: Bluetooth headsets whose buttons speak the hands-free profile (HFP) rather than HID are handled by macOS itself and are not supported; they never appear in this row. The media keys of a keyboard and a headset on the 3.5 mm jack have no telephony controls and are ignored. A headset that offers its controls only inside a consumer-control device may be refused by macOS; the log then reads "headset buttons: cannot open …" (see <a href="troubleshooting.html">Troubleshooting</a>).</p>
+<h2 dir="auto">Ringtone</h2>
+<p dir="auto"><strong>Sound</strong>: <strong>Classic</strong>, <strong>Digital</strong>, <strong>Soft</strong> (built in) or <strong>Custom file…</strong> (WAV, AIFF, M4A, MP3); the popup then shows "Custom: office-bell.m4a". <strong>Play</strong> previews it. <strong>Volume</strong> is a slider from 0 to 100 %, applied live and used by the preview. Call waiting uses a short tone in the earpiece instead of the ringtone; see <a href="calls.html">Calls</a>.</p>
+<h2 dir="auto">Hold music</h2>
+<p dir="auto"><strong>Source</strong> in Settings › Audio › Hold music is what the caller hears while you hold the call: <strong>Built-in</strong> (a short looping melody, the default), <strong>Custom file…</strong> (WAV, AIFF, M4A, MP3 and anything else macOS can read; the popup then shows "Custom: office-hold.m4a") or <strong>Off</strong> (silence). "The caller hears this while on hold." A change applies at once, also to calls already on hold. A file that cannot be read keeps the previous source; the group footer and a banner say "The file could not be used: …". The music goes to the held call only: you do not hear it, and it is not written into recordings. See also <a href="calls.html">Calls</a> and, if the caller hears something else, <a href="troubleshooting.html">Troubleshooting</a>.</p>
+<h2 dir="auto">Sound events</h2>
+<p dir="auto">Four switches in Settings › Audio › Sound events, all off by default. "Short beeps on the speaker; the other side never hears them." The beeps play on the speaker chosen for calls and never reach a call or a recording.</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Switch</th>
+<th>When the sound plays</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Call connected and ended</strong></td>
+<td>Two rising beeps when a call connects (not after a resume from hold); two falling beeps when a call ends. Only for calls that were established: a missed or declined call and a failed outgoing attempt make no sound.</td>
+</tr>
+<tr>
+<td><strong>Dial pad key presses</strong></td>
+<td>The DTMF tone of the key pressed on the dial pad while no call is active ("+" has no tone). During a call the keypad sends DTMF to the other side instead.</td>
+</tr>
+<tr>
+<td><strong>New voicemail</strong></td>
+<td>Three beeps when an account's voicemail indicator reports more new messages than before (see <a href="incoming-calls.html">Incoming calls</a>).</td>
+</tr>
+<tr>
+<td><strong>Registration error and lost network</strong></td>
+<td>Two low beeps when a registration fails or the network path goes away, at most once every 10 seconds.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<h2 dir="auto">Audio test</h2>
+<p dir="auto">Settings › Audio › Audio test has one row, <strong>Speaker and microphone</strong>: "Test plays two notes on the speaker for 2 seconds; the meter shows the microphone." <strong>Test</strong> plays two notes (660 and 880 Hz) on the speaker chosen in Devices (<strong>System default</strong> is the call output); a second press restarts it. If the chosen speaker has been unplugged, the tone plays on the system default instead. The meter beside the button is the live microphone level, the same as in the Microphone row. The tone never reaches a call or a recording.</p>
+<h2 dir="auto">Echo cancellation and voice processing</h2>
+<p dir="auto"><strong>Echo cancellation</strong> is on by default: "Turn off only when using a headset with its own echo cancellation."</p>
+<p dir="auto">With the default input and output devices the audio runs through the system.s voice-processing unit, which adds noise suppression and automatic gain control; there is no switch for it. When you choose a non-default device by hand the engine.s built-in echo canceller is used instead.</p>
+<h2 dir="auto">Codecs</h2>
+<p dir="auto">Settings › Codecs lists the codecs in order of preference; the order is what is offered in SDP. Drag rows or use <strong>Move up</strong> / <strong>Move down</strong>; unchecked codecs are never offered; at least one must stay enabled. <strong>Restore Defaults</strong> restores the order and turns on Opus, G.722 and PCMU only.</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Codec</th>
+<th>Default</th>
+<th>Sample rate</th>
+<th>Bitrate</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Opus</td>
+<td>on</td>
+<td>48 kHz</td>
+<td>6–510 kbit/s</td>
+</tr>
+<tr>
+<td>G.722</td>
+<td>on</td>
+<td>16 kHz</td>
+<td>64 kbit/s</td>
+</tr>
+<tr>
+<td>PCMU (G.711 µ-law)</td>
+<td>on</td>
+<td>8 kHz</td>
+<td>64 kbit/s</td>
+</tr>
+<tr>
+<td>PCMA (G.711 A-law)</td>
+<td>off</td>
+<td>8 kHz</td>
+<td>64 kbit/s</td>
+</tr>
+<tr>
+<td>G.722.1 (Siren 7), G.722.1C (Siren 14)</td>
+<td>off</td>
+<td>16 / 32 kHz</td>
+<td>16–32 / 24–48 kbit/s</td>
+</tr>
+<tr>
+<td>GSM</td>
+<td>off</td>
+<td>8 kHz</td>
+<td>13 kbit/s</td>
+</tr>
+<tr>
+<td>iLBC</td>
+<td>off</td>
+<td>8 kHz</td>
+<td>13–15 kbit/s</td>
+</tr>
+<tr>
+<td>Speex 8 / 16 / 32 kHz</td>
+<td>off</td>
+<td>8 / 16 / 32 kHz</td>
+<td>2–44 kbit/s</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">"Wideband codecs (Opus, G.722, G.722.1, Speex 16 and 32 kHz) work only if the PBX supports them." There is no G.729. If your PBX offers only G.711 A-law, turn PCMA on.</p>
+<h3 dir="auto">Opus switches</h3>
+<ul dir="auto">
+<li><strong>Packet-loss correction (FEC)</strong>, on: "adds a little data so lost packets can be repaired; keep it on for Wi-Fi and mobile networks."</li>
+<li><strong>Silence suppression (DTX)</strong>, off: "sends nothing during pauses to save bandwidth, but can clip the start of a word; turn it on only when bandwidth is tight."</li>
+</ul>
+<p dir="auto">Both are disabled while Opus is unchecked and apply at once to new and renegotiated streams.</p>
+<h2 dir="auto">Network settings that affect audio</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Setting (Settings › Network)</th>
+<th>Default</th>
+<th>Why it matters for audio</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>STUN server</strong></td>
+<td>empty</td>
+<td>Lets the engine learn its public address behind NAT. "Leave empty if you are not behind NAT."</td>
+</tr>
+<tr>
+<td><strong>Use ICE</strong></td>
+<td>on</td>
+<td>"Finds a working media path through NAT. Uses the STUN server above."</td>
+</tr>
+<tr>
+<td><strong>Use rport</strong></td>
+<td>on</td>
+<td>"Asks the server to reply to the address and port it sees. Helps behind NAT."</td>
+</tr>
+<tr>
+<td><strong>Keep-alive interval</strong></td>
+<td>15 s</td>
+<td>"Keeps NAT bindings open between registrations."</td>
+</tr>
+<tr>
+<td><strong>Port range</strong> (RTP)</td>
+<td>start 4000, 1000 ports</td>
+<td>"Audio uses this range. Each call needs two ports; 1024–65535." Open or forward this range on a firewall. Applies after the engine restart offered in the pane.</td>
+</tr>
+<tr>
+<td><strong>Local SIP port</strong></td>
+<td>5060</td>
+<td>0 picks a free port. Changing it re-registers all accounts.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">Transport (UDP/TCP/TLS) and SRTP are per account; see <a href="accounts.html">Accounts</a>.</p>
+<h2 dir="auto">Troubleshooting one-way audio</h2>
+<p dir="auto">One-way audio almost always means RTP packets do not find their way back through a NAT or firewall while SIP signalling works.</p>
+<ol dir="auto">
+<li><strong>Check the microphone permission.</strong> If the call panel says "Microphone access is off", allow MacroSIP in System Settings › Privacy &amp; Security › Microphone. After an update the permission is asked again (<a href="installation.html">Installation</a>).</li>
+<li><strong>Check the devices.</strong> Watch the level meter in Settings › Audio while you speak; pick the device explicitly if "System default" points at the wrong one.</li>
+<li><strong>Behind NAT: set a STUN server</strong> (your provider's, or a public one such as <code class="notranslate">stun.example.org:3478</code>) and keep <strong>Use ICE</strong> on, so the media is sent to an address the far side can reach.</li>
+<li><strong>Keep rport on</strong> so the server answers to the address and port it actually sees.</li>
+<li><strong>Firewall:</strong> allow UDP on the local SIP port and on the RTP port range (4000–4999 by default).</li>
+<li><strong>VPN or several interfaces:</strong> the engine re-registers and re-INVITEs calls on a network change; if audio still drops, lower the keep-alive interval.</li>
+</ol>
+<p dir="auto">Red quality bars and the "Poor connection" banner point at loss or jitter rather than NAT (<a href="calls.html">Calls</a>). The log file (<a href="troubleshooting.html">Troubleshooting</a>) shows the addresses and ports negotiated for each call.</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

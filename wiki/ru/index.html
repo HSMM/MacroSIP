@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Документация MacroSIP</title>
+<meta name="description" content="Документация MacroSIP">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/index.html">
+<link rel="alternate" hreflang="ru" href="../ru/index.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/index.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/index.html" hreflang="en">English</a><a href="../ru/index.html" hreflang="ru" aria-current=true>Русский</a><a href="../zh/index.html" hreflang="zh-Hans">中文</a></div></header>
+<div class="layout">
+<nav aria-label="Содержание"><details><summary>Содержание</summary><div class="links"><ul><li><a href="index.html" aria-current=page>Главная</a></li></ul><h2>Руководство пользователя</h2><ul><li><a href="installation.html">Установка</a></li><li><a href="accounts.html">Аккаунты</a></li><li><a href="calls.html">Звонки</a></li><li><a href="incoming-calls.html">Входящие звонки</a></li><li><a href="contacts-and-call-log.html">Контакты и журнал</a></li><li><a href="directory.html">Справочник</a></li><li><a href="quick-keys.html">Быстрые клавиши</a></li><li><a href="audio.html">Звук</a></li><li><a href="settings.html">Настройки</a></li><li><a href="menu-bar.html">Строка меню</a></li><li><a href="troubleshooting.html">Решение проблем</a></li></ul><h2>Для разработчиков</h2><ul><li><a href="architecture.html">Устройство</a></li><li><a href="building.html">Сборка</a></li><li><a href="testing.html">Тесты</a></li><li><a href="releasing.html">Релизы</a></li><li><a href="contributing.html">Участие</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">MacroSIP</h1>
+<p dir="auto">MacroSIP — SIP-софтфон для macOS 14 и новее. Он одновременно регистрирует несколько SIP-аккаунтов, ведёт до четырёх звонков с удержанием, переводом, локальной конференцией и записью и умещается в одно небольшое окно плюс значок в строке меню. Интерфейс написан на Swift и SwiftUI, SIP-движок — <a href="https://github.com/pjsip/pjproject">PJSIP</a> 2.17; ни Electron, ни Qt не используются.</p>
+<p dir="auto"><strong>Руководство пользователя</strong></p>
+<ul dir="auto">
+<li><a href="installation.html">Установка</a></li>
+<li><a href="accounts.html">Аккаунты</a></li>
+<li><a href="calls.html">Звонки</a></li>
+<li><a href="incoming-calls.html">Входящие-звонки</a></li>
+<li><a href="contacts-and-call-log.html">Контакты-и-журнал</a></li>
+<li><a href="directory.html">Справочник</a></li>
+<li><a href="quick-keys.html">Быстрые-клавиши</a></li>
+<li><a href="audio.html">Звук</a></li>
+<li><a href="settings.html">Настройки</a></li>
+<li><a href="menu-bar.html">Строка-меню</a></li>
+<li><a href="troubleshooting.html">Решение-проблем</a></li>
+</ul>
+<p dir="auto"><strong>Для разработчиков</strong></p>
+<ul dir="auto">
+<li><a href="architecture.html">Устройство</a></li>
+<li><a href="building.html">Сборка</a></li>
+<li><a href="testing.html">Тесты</a></li>
+<li><a href="releasing.html">Релизы</a></li>
+<li><a href="contributing.html">Участие</a></li>
+</ul>
+<h2 dir="auto">Версии</h2>
+<p dir="auto">Версии имеют вид <code class="notranslate">YY.MINOR.PATCH</code>, поэтому линейка 2026 года — <strong>26</strong>. Первый публичный выпуск — <strong>26.0.0</strong> (14 октября 2026); он содержит всё, что описано в этом руководстве. <strong>26.0.1</strong> (в тот же день) оставляет в интерфейсе только английский и русский.</p>
+<p dir="auto">Позже появятся нотаризация, видео, чат, глобальные горячие клавиши, импорт из MicroSIP и кнопки Bluetooth-гарнитур. Полный план — в <a href="https://github.com/HSMM/MacroSIP/blob/main/docs/ROADMAP.md">docs/ROADMAP.md</a>.</p>
+<h2 dir="auto">Руководство пользователя</h2>
+<ul dir="auto">
+<li><a href="installation.html">Установка</a> — требования, Homebrew или DMG, первый запуск, обновления, файл журнала.</li>
+<li><a href="accounts.html">Аккаунты</a> — добавление SIP-аккаунта, группа «Дополнительно», несколько аккаунтов, меню выбора аккаунта, состояния в строке состояния.</li>
+<li><a href="calls.html">Звонки</a> — набор номера, панель звонка, удержание, выключение звука, DTMF, перевод, несколько звонков, конференция, громкость, качество, запись.</li>
+<li><a href="incoming-calls.html">Входящие-звонки</a> — плавающее окно и уведомление, автоответ, «Не беспокоить», правила отклонения, индикатор голосовой почты.</li>
+<li><a href="contacts-and-call-log.html">Контакты-и-журнал</a> — карточка контакта, избранное, статусы, записи журнала и воспроизведение.</li>
+<li><a href="directory.html">Справочник</a> — источники LDAP, URL (CSV или JSON), Контакты Google и Контакты macOS, поиск и импорт.</li>
+<li><a href="quick-keys.html">Быстрые-клавиши</a> — клавиши быстрого набора и BLF, перехват, ⌘1–⌘9.</li>
+<li><a href="audio.html">Звук</a> — устройства, кнопки гарнитуры, мелодия звонка, музыка на удержании, звуковые события, проверка звука, эхоподавление, кодеки, сетевые настройки, влияющие на звук.</li>
+<li><a href="settings.html">Настройки</a> — все вкладки и все строки по порядку.</li>
+<li><a href="menu-bar.html">Строка-меню</a> — значок в строке меню, его меню, бейдж в Dock.</li>
+<li><a href="troubleshooting.html">Решение-проблем</a> — первый запуск, микрофон, 403 и 401, TLS, односторонний звук, журналы, где хранятся данные, как сообщить о проблеме.</li>
+</ul>
+<h2 dir="auto">Для разработчиков</h2>
+<ul dir="auto">
+<li><a href="architecture.html">Устройство</a></li>
+<li><a href="building.html">Сборка</a></li>
+<li><a href="testing.html">Тесты</a></li>
+<li><a href="releasing.html">Релизы</a></li>
+<li><a href="contributing.html">Участие</a></li>
+</ul>
+<h2 dir="auto">Ссылки</h2>
+<ul dir="auto">
+<li>Исходный код и выпуски: <a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a></li>
+<li>Ошибки и пожелания: <a href="https://github.com/HSMM/MacroSIP/issues">github.com/HSMM/MacroSIP/issues</a></li>
+<li>Лицензия: GPLv2 или новее, поскольку PJSIP распространяется под GPLv2+.</li>
+</ul>
+<p dir="auto">Английская версия этого руководства: <a href="../en/index.html">Home</a>; китайская: <a href="../zh/index.html">首页</a>.</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contributing · MacroSIP documentation</title>
+<meta name="description" content="MacroSIP documentation">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/contributing.html">
+<link rel="alternate" hreflang="ru" href="../ru/contributing.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/contributing.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/contributing.html" hreflang="en" aria-current=true>English</a><a href="../ru/contributing.html" hreflang="ru">Русский</a><a href="../zh/contributing.html" hreflang="zh-Hans">中文</a></div></header>
+<div class="layout">
+<nav aria-label="Contents"><details><summary>Contents</summary><div class="links"><ul><li><a href="index.html">Home</a></li></ul><h2>User guide</h2><ul><li><a href="installation.html">Installation</a></li><li><a href="accounts.html">Accounts</a></li><li><a href="calls.html">Calls</a></li><li><a href="incoming-calls.html">Incoming calls</a></li><li><a href="contacts-and-call-log.html">Contacts and call log</a></li><li><a href="directory.html">Directory</a></li><li><a href="quick-keys.html">Quick keys</a></li><li><a href="audio.html">Audio</a></li><li><a href="settings.html">Settings</a></li><li><a href="menu-bar.html">Menu bar</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul><h2>For developers</h2><ul><li><a href="architecture.html">Architecture</a></li><li><a href="building.html">Building</a></li><li><a href="testing.html">Testing</a></li><li><a href="releasing.html">Releasing</a></li><li><a href="contributing.html" aria-current=page>Contributing</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">Contributing</h1>
+<p dir="auto">MacroSIP is GPLv2 or later (PJSIP is GPLv2+, ADR 0007); any contribution is accepted under that license, and any bundled third-party code must be GPL-compatible. Bugs and feature requests go to <a href="https://github.com/HSMM/MacroSIP/issues">https://github.com/HSMM/MacroSIP/issues</a>. Before touching code read <code class="notranslate">docs/DEVELOPMENT.md</code> (the engineering notes), <code class="notranslate">docs/ROADMAP.md</code> (what is shipped and what comes next), <code class="notranslate">docs/GLOSSARY.md</code> (use its terms in code and docs), the ADRs in <code class="notranslate">docs/adr/</code> and the UI spec <code class="notranslate">docs/design/SCREENS.md</code> with <code class="notranslate">docs/design/mockups.html</code>.</p>
+<h2 dir="auto">Workflow (ADR 0008)</h2>
+<p dir="auto">Work is organised by the milestones in <code class="notranslate">docs/ROADMAP.md</code>. Each task starts from a written brief: goal, boundaries, files, done criteria and the facts already known; briefs are self-contained. Every milestone gets an independent review by someone who did not write the code (bugs, races, leaks, Keychain and TLS handling), then verification: build, tests, the loopback self-test and a call on a real SIP account. UI code starts only after the mockups are approved. Settled decisions are not reopened silently: to change one, add a new ADR (<code class="notranslate">docs/adr/README.md</code>: Context, Decision, Consequences; never edited after acceptance except for a "Superseded by" line). Do not add dependencies without an ADR.</p>
+<p dir="auto">Open a pull request against <code class="notranslate">main</code>; CI must pass on both the arm64 and the Intel job (see <a href="testing.html">Testing</a>). Keep <code class="notranslate">docs/design/SCREENS.md</code>, <code class="notranslate">mockups.html</code> and <code class="notranslate">docs/DEVELOPMENT.md</code> in sync with the code you change, in the same pull request.</p>
+<h2 dir="auto">Coding rules</h2>
+<ul dir="auto">
+<li><strong>Swift 6, strict concurrency.</strong> <code class="notranslate">MacroSIPCore</code> has no UI imports. PJSIP callbacks arrive on PJSIP worker threads: hop to the main actor before touching app state and never block a PJSIP thread on the main actor. Every <code class="notranslate">pjsua_*</code> call that can fail returns <code class="notranslate">pj_status_t</code>; check it and surface the text via <code class="notranslate">pj_strerror</code> (<code class="notranslate">EngineError.pjsip</code>). Errors never crash the engine.</li>
+<li><strong>One product, one build</strong> (ADR 0003): bundle id <code class="notranslate">com.hsmm.macrosip</code>, no build flags for features.</li>
+<li><strong><code class="notranslate">@Local</code>, not <code class="notranslate">@State</code>.</strong> With the current SDK <code class="notranslate">@State</code> is also an attached macro whose plugin ships only with Xcode, so it does not compile under the Command Line Tools. Use the <code class="notranslate">@Local</code> wrapper from <code class="notranslate">Sources/MacroSIPApp/Views/Components/Local.swift</code>; it is a drop-in replacement.</li>
+<li><strong>Logging.</strong> App code logs through <code class="notranslate">AppLog.app</code>, <code class="notranslate">.recording</code>, <code class="notranslate">.presence</code> (<code class="notranslate">Platform/AppLog.swift</code>: os_log plus the rotating file <code class="notranslate">~/Library/Logs/MacroSIP/MacroSIP.log</code>), never a bare <code class="notranslate">Logger</code>. Engine <code class="notranslate">.log</code> events land in the <code class="notranslate">engine</code> and <code class="notranslate">pjsip</code> categories. <code class="notranslate">--log-level</code> sets PJSIP verbosity only.</li>
+<li><strong>Passwords only in the Keychain</strong>; everything else is JSON in Application Support (ADR 0004). New fields in persisted structs decode missing keys as defaults, so older files keep loading.</li>
+<li><strong>Strings.</strong> Views never contain user-visible literals. Every string goes through <code class="notranslate">L</code> in <code class="notranslate">Model/Strings.swift</code> and exists in both <code class="notranslate">en.lproj</code> and <code class="notranslate">ru.lproj</code>; a string is not done until both languages have it. See "Add a string" below.</li>
+<li><strong>Tests with every change.</strong> New engine behaviour gets a Swift Testing case (loopback or stub based, no real network) and, when it is user-visible on a call, a self-test step; new models get value tests; new UI states get a demo state so they can be snapshotted. Run <code class="notranslate">scripts/test.sh</code>, <code class="notranslate">scripts/selftest-call.sh</code> and <code class="notranslate">scripts/check-strings.sh</code> before opening the pull request.</li>
+</ul>
+<h2 dir="auto">Add a string</h2>
+<ol dir="auto">
+<li>Add a <code class="notranslate">static var</code> or <code class="notranslate">func</code> to <code class="notranslate">L</code> with a dotted key and an English default, like the existing <code class="notranslate">static var tabsContacts: String { loc("tabs.contacts", "Contacts") }</code>. Interpolations become <code class="notranslate">%@</code> for text and <code class="notranslate">%lld</code> for integers; with two or more arguments use <code class="notranslate">%1$@</code>, <code class="notranslate">%2$@</code> in both files.</li>
+<li>Add the key to <code class="notranslate">Resources/en.lproj/Localizable.strings</code> and <code class="notranslate">Resources/ru.lproj/Localizable.strings</code>.</li>
+<li>Counts (contacts, calls, entries) go to <code class="notranslate">Localizable.stringsdict</code> instead, with <code class="notranslate">one</code>/<code class="notranslate">other</code> for English and <code class="notranslate">one</code>/<code class="notranslate">few</code>/<code class="notranslate">many</code>/<code class="notranslate">other</code> for Russian; never the same key in both files.</li>
+<li>Run <code class="notranslate">scripts/check-strings.sh</code>.</li>
+</ol>
+<p dir="auto">Product, codec and protocol names (SIP, SRTP, TLS, STUN, ICE, DTMF, REGISTER), the diagnostics report and log lines are not translated. Check the layout in Russian: <code class="notranslate">dist/MacroSIP.app/Contents/MacOS/MacroSIP --demo-state contacts -AppleLanguages "(ru)"</code>.</p>
+<h2 dir="auto">Add a setting</h2>
+<ol dir="auto">
+<li>Add the field to the right struct in <code class="notranslate">Sources/MacroSIPCore/Model/AppSettings.swift</code> (<code class="notranslate">GeneralSettings</code>, <code class="notranslate">AudioSettings</code>, <code class="notranslate">RecordingSettings</code>, <code class="notranslate">AutoAnswerSettings</code>, <code class="notranslate">NetworkSettings</code>, <code class="notranslate">CallOptions</code>, <code class="notranslate">CodecOptions</code>, <code class="notranslate">QuickKeysSettings</code>, <code class="notranslate">DirectorySettings</code>) with a default and a tolerant <code class="notranslate">init(from:)</code>, and a value test in <code class="notranslate">SettingsCompatTests</code> that an old <code class="notranslate">settings.json</code> still decodes.</li>
+<li>Apply it: engine-side options go through <code class="notranslate">AppModel+Engine.swift</code> (<code class="notranslate">applyCallOptions</code>, <code class="notranslate">applyCodecOptions</code>, <code class="notranslate">scheduleNetworkApply</code>; a network field that needs a restart is listed in <code class="notranslate">NetworkSettings.needsRestart(from:)</code>).</li>
+<li>Add the control to the pane in <code class="notranslate">Views/Settings/</code> (each pane is a <code class="notranslate">PaneContainer</code>, 680 pt wide) using <code class="notranslate">model.updateSettings { $0... = ... }</code>.</li>
+<li>Strings in <code class="notranslate">L</code> and both languages; describe the control and its states in <code class="notranslate">docs/design/SCREENS.md</code>, and update <code class="notranslate">mockups.html</code> if the pane layout changes.</li>
+<li>A demo state in <code class="notranslate">Model/DemoState.swift</code> if the control has a state worth a screenshot.</li>
+</ol>
+<h2 dir="auto">Add a codec</h2>
+<ol dir="auto">
+<li><code class="notranslate">third_party/pjsip/config_site.h</code>: set <code class="notranslate">PJMEDIA_HAS_&lt;NAME&gt;_CODEC 1</code> (and, if pjproject's configure has a <code class="notranslate">--disable-&lt;name&gt;-codec</code> flag, make sure <code class="notranslate">scripts/build-pjsip.sh</code> does not pass it; the script already fails when configure disables one of the expected codecs or a codec archive is missing). Rerun <code class="notranslate">scripts/build-pjsip.sh</code>: PJSIP is rebuilt for both architectures, OpenSSL and Opus stay cached.</li>
+<li><code class="notranslate">Package.swift</code>: add the archive to <code class="notranslate">pjsipLibraries</code>, keeping it in sync with <code class="notranslate">third_party/pjsip/LINKFLAGS</code>; then <code class="notranslate">rm -rf .build</code> and <code class="notranslate">swift build</code>.</li>
+<li><code class="notranslate">Engine.optionalCodecs</code> in <code class="notranslate">MacroSIPCore</code> (the ids shown after G.711, left at priority 0 until enabled) and <code class="notranslate">CodecCatalog</code> in <code class="notranslate">Views/Settings/CodecsPane.swift</code> (<code class="notranslate">all</code>, <code class="notranslate">onByDefault</code>; it appends ids a stored order lacks).</li>
+<li>Tests: an id listing test and a loopback call that negotiates the codec (<code class="notranslate">Engine262Tests</code> shows the pattern), plus the self-test "codecs" step.</li>
+</ol>
+<p dir="auto">No G.729 (bcg729 stays disabled); see ADR 0002 and ADR 0012 for the build.</p>
+<h2 dir="auto">Add a directory source kind</h2>
+<p dir="auto">From <code class="notranslate">docs/DIRECTORY.md</code>:</p>
+<ol dir="auto">
+<li>Add the case to <code class="notranslate">DirectorySourceKind</code> and, if it has settings, a <code class="notranslate">Codable</code> config struct with a tolerant <code class="notranslate">init(from:)</code> (every key optional) and a field on <code class="notranslate">DirectorySource</code> decoded with <code class="notranslate">try?</code>, so a damaged config does not drop the settings file.</li>
+<li>Implement <code class="notranslate">DirectoryProvider</code> (an <code class="notranslate">actor</code> when it keeps a cache, a <code class="notranslate">struct</code> otherwise): <code class="notranslate">search</code> returns at most <code class="notranslate">limit</code> entries, <code class="notranslate">lookup</code> uses <code class="notranslate">DirectoryNumber.matches</code>, <code class="notranslate">test</code> returns <code class="notranslate">.connected(entries:)</code>, <code class="notranslate">allEntries</code> everything for import. Throw <code class="notranslate">DirectoryError</code>; <code class="notranslate">.signInRequired</code> puts the source in "Sign in required". For a local list build a <code class="notranslate">DirectoryIndex</code>.</li>
+<li>Return it from <code class="notranslate">DirectoryService.defaultProvider</code>. Secrets go through <code class="notranslate">DirectoryCredentials</code>, never into <code class="notranslate">settings.json</code>.</li>
+<li>Tests in a <code class="notranslate">Directory*Tests.swift</code> file; <code class="notranslate">StubDirectoryProvider</code> in <code class="notranslate">DirectoryServiceTests.swift</code> covers the service side.</li>
+<li>UI: the type popup and fields in <code class="notranslate">Views/Directory/DirectorySourceSheet.swift</code>, strings, SCREENS.md section 13, and a <code class="notranslate">directory-sheet-&lt;kind&gt;</code> demo state.</li>
+</ol>
+<h2 dir="auto">Commit messages</h2>
+<p dir="auto">Plain English, present tense, what and why. The first line names the area and the change (<code class="notranslate">Engine: retry REGISTER with backoff after a transport error</code>, <code class="notranslate">Settings: Network pane with the RTP port range</code>); the body explains the reason when it is not obvious. No trailers. Commit each finished piece, including the docs that go with it.</p>
+<p dir="auto">See also <a href="architecture.html">Architecture</a>, <a href="building.html">Building</a>, <a href="testing.html">Testing</a>, <a href="releasing.html">Releasing</a>.</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

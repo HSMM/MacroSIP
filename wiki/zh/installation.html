@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>安装 · MacroSIP 文档</title>
+<meta name="description" content="MacroSIP 文档">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/installation.html">
+<link rel="alternate" hreflang="ru" href="../ru/installation.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/installation.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/installation.html" hreflang="en">English</a><a href="../ru/installation.html" hreflang="ru">Русский</a><a href="../zh/installation.html" hreflang="zh-Hans" aria-current=true>中文</a></div></header>
+<div class="layout">
+<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html" aria-current=page>安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html">通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="directory.html">目录</a></li><li><a href="quick-keys.html">快捷键</a></li><li><a href="audio.html">音频</a></li><li><a href="settings.html">设置</a></li><li><a href="menu-bar.html">菜单栏</a></li><li><a href="troubleshooting.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="architecture.html">架构</a></li><li><a href="building.html">构建</a></li><li><a href="testing.html">测试</a></li><li><a href="releasing.html">发布</a></li><li><a href="contributing.html">参与贡献</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">安装</h1>
+<h2 dir="auto">系统要求</h2>
+<ul dir="auto">
+<li>macOS 14 (Sonoma) 或更新版本。</li>
+<li>搭载 Apple 芯片或 Intel 处理器的 Mac。应用和 DMG 均为通用 (Universal) 版本，同一个下载包在两种架构上都能原生运行。</li>
+<li>一个 SIP 账户：电话服务商或 PBX 管理员提供的服务器地址、用户名和密码。联系人和通话记录无需账户即可使用。</li>
+</ul>
+<p dir="auto">Homebrew cask 和 DMG 自 26.0.0 版本起均可使用；从源代码构建的方法见 <a href="building.html">构建</a>。</p>
+<h2 dir="auto">使用 Homebrew</h2>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">brew tap hsmm/tap
+brew install --cask hsmm/tap/macrosip</pre></div>
+<p dir="auto">该 cask 安装的是与 GitHub Releases 提供的相同的已签名 DMG。cask 标记为 <code class="notranslate">auto_updates</code>，因此 <code class="notranslate">brew upgrade</code> 不会干预会自行更新的应用。</p>
+<h2 dir="auto">使用 DMG</h2>
+<ol dir="auto">
+<li>从<a href="https://github.com/HSMM/MacroSIP/releases/latest">最新发布版</a>下载 <code class="notranslate">MacroSIP-&lt;version&gt;.dmg</code>。</li>
+<li>打开 DMG，将 MacroSIP 拖移到“应用程序”文件夹。</li>
+<li>按下文所述打开应用一次。</li>
+</ol>
+<h3 dir="auto">首次启动：Gatekeeper 步骤</h3>
+<p dir="auto">MacroSIP 使用临时 (ad hoc) 签名，未经 Apple Developer ID 公证，因此 macOS 第一次会拒绝打开它（“无法打开，因为无法验证开发者”）。以下任一方法执行一次即可：</p>
+<ul dir="auto">
+<li>
+<p dir="auto">在“应用程序”中右键点按（或按住 Control 键点按）MacroSIP，选择<strong>打开</strong> (Open)，然后在对话框中确认。</p>
+</li>
+<li>
+<p dir="auto">或在终端中移除隔离标记：</p>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">xattr -dr com.apple.quarantine /Applications/MacroSIP.app</pre></div>
+</li>
+</ul>
+<p dir="auto">之后应用即可正常打开。Developer ID 签名和公证计划在获得签名身份后的后续版本中实现。</p>
+<h3 dir="auto">第一个窗口</h3>
+<p dir="auto">没有账户时，主窗口显示“添加一个 SIP 账户以开始通话”和一个<strong>添加账户…</strong> (Add Account…) 按钮。账户编辑器在 <a href="accounts.html">账户</a> 中介绍。菜单栏图标从首次启动起就会出现，处于离线状态。</p>
+<h3 dir="auto">麦克风权限</h3>
+<p dir="auto">MacroSIP 在第一次通话时请求麦克风权限，而不是在启动时。请选择<strong>允许</strong> (Allow)。如果拒绝，通话面板会显示“麦克风访问已关闭”并提供<strong>打开系统设置</strong> (Open System Settings) 按钮；请在“隐私与安全性”›“麦克风”中允许 MacroSIP。</p>
+<h2 dir="auto">更新</h2>
+<p dir="auto">应用会自行更新。</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>项目</th>
+<th>位置</th>
+<th>行为</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>每日检查</td>
+<td>自动</td>
+<td>MacroSIP 每天检查一次，安装前会先询问。</td>
+</tr>
+<tr>
+<td>立即检查</td>
+<td>MacroSIP 菜单 › <strong>检查更新…</strong> (Check for Updates…)，或设置 › 通用 › 更新 › <strong>立即检查</strong> (Check Now)</td>
+<td>上次检查日期显示为“上次检查于…”或“尚未检查”。</td>
+</tr>
+<tr>
+<td>关闭每日检查</td>
+<td>设置 › 通用 › 更新 › <strong>自动检查更新</strong> (Check for updates automatically)</td>
+<td>“每天一次。MacroSIP 在安装更新前会先询问。”</td>
+</tr>
+<tr>
+<td>候选发布版</td>
+<td>设置 › 通用 › 更新 › <strong>包含候选发布版</strong> (Include release candidates)</td>
+<td>“下一版本的测试构建，在正式发布前提供。”当前运行的构建本身是候选发布版时默认开启，否则默认关闭。</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">更新经过签名 (EdDSA) 并在安装前验证，更新后的应用打开时不会出现首次启动对话框。通话期间发现的更新会等到最后一路通话结束；通话中点按“安装并重新启动”同样会等待。有通话进行时退出会询问“结束通话并退出？”。</p>
+<p dir="auto">由于应用使用临时签名，macOS 会将麦克风权限绑定到确切的构建。<strong>每次更新后 macOS 都会再次请求麦克风访问权限</strong>；在第一次通话时再允许一次即可。应用改用 Developer ID 签名后，这一情况将不再出现。</p>
+<p dir="auto">“更新仅在已安装的应用中有效”：从构建文件夹运行的构建或以模拟引擎启动的构建不会检查更新。</p>
+<h2 dir="auto">登录时启动</h2>
+<p dir="auto">设置 › 通用 › <strong>登录时启动</strong> (Launch at login) 将 MacroSIP 注册为登录项。首次运行时不会就此弹出提示。如果 macOS 需要您批准，该行会显示“请在系统设置 › 通用 › 登录项中允许 MacroSIP。”并提供<strong>打开登录项…</strong> (Open Login Items…) 按钮。</p>
+<h2 dir="auto">日志文件的位置</h2>
+<p dir="auto">MacroSIP 将日志写入 <code class="notranslate">~/Library/Logs/MacroSIP/MacroSIP.log</code>，每个文件 2 MB，保留 3 个文件。设置 › 通用中有<strong>打开日志文件夹</strong> (Open Log Folder)（在访达中显示日志）和<strong>拷贝诊断信息</strong> (Copy Diagnostics)（版本、账户和设置，不含密码，可直接粘贴到问题报告中）。两者都位于“通用”面板底部折叠的<strong>高级</strong> (Advanced) 组中，标题为“故障排除”。使用方法见 <a href="troubleshooting.html">故障排除</a>。</p>
+<h2 dir="auto">卸载</h2>
+<p dir="auto">将 MacroSIP 拖出“应用程序”（或执行 <code class="notranslate">brew uninstall --cask macrosip</code>）。您的数据保留在 <code class="notranslate">~/Library/Application Support/MacroSIP/</code>（账户、联系人、通话记录、设置，均为 JSON）和登录钥匙串中（密码，服务名 <code class="notranslate">com.hsmm.macrosip</code>）；录音保留在 <code class="notranslate">~/Music/MacroSIP Recordings</code>，除非您选择了其他文件夹。若要彻底清除，请手动删除这些内容。</p>
+<p dir="auto">其他页面：<a href="index.html">首页</a> · <a href="../en/index.html">Home</a> (English)</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

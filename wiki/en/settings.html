@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Settings · MacroSIP documentation</title>
+<meta name="description" content="MacroSIP documentation">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/settings.html">
+<link rel="alternate" hreflang="ru" href="../ru/settings.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/settings.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/settings.html" hreflang="en" aria-current=true>English</a><a href="../ru/settings.html" hreflang="ru">Русский</a><a href="../zh/settings.html" hreflang="zh-Hans">中文</a></div></header>
+<div class="layout">
+<nav aria-label="Contents"><details><summary>Contents</summary><div class="links"><ul><li><a href="index.html">Home</a></li></ul><h2>User guide</h2><ul><li><a href="installation.html">Installation</a></li><li><a href="accounts.html">Accounts</a></li><li><a href="calls.html">Calls</a></li><li><a href="incoming-calls.html">Incoming calls</a></li><li><a href="contacts-and-call-log.html">Contacts and call log</a></li><li><a href="directory.html">Directory</a></li><li><a href="quick-keys.html">Quick keys</a></li><li><a href="audio.html">Audio</a></li><li><a href="settings.html" aria-current=page>Settings</a></li><li><a href="menu-bar.html">Menu bar</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul><h2>For developers</h2><ul><li><a href="architecture.html">Architecture</a></li><li><a href="building.html">Building</a></li><li><a href="testing.html">Testing</a></li><li><a href="releasing.html">Releasing</a></li><li><a href="contributing.html">Contributing</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">Settings</h1>
+<p dir="auto">Settings opens with ⌘, from the MacroSIP menu, the account pop-up or the menu bar icon. It is a standard macOS Settings window with toolbar tabs; changes apply immediately, there is no Save button. The tabs, in order: <strong>General, Accounts, Audio, Network, Codecs, Recording, Calls, Quick keys, Directory</strong>.</p>
+<p dir="auto"><a target="_blank" rel="noopener noreferrer nofollow" href="https://raw.githubusercontent.com/HSMM/MacroSIP/main/docs/screenshots/light/settings-recording.png?v=1"><img src="https://raw.githubusercontent.com/HSMM/MacroSIP/main/docs/screenshots/light/settings-recording.png?v=1" alt="Recording pane" style="max-width: 100%;"></a></p>
+<h2 dir="auto">General</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Row</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Launch at login</strong></td>
+<td>Registers MacroSIP as a login item.</td>
+</tr>
+<tr>
+<td><strong>Keep running in the menu bar when the window is closed</strong></td>
+<td>Off: closing the window quits the app.</td>
+</tr>
+<tr>
+<td><strong>Show icon in the Dock</strong></td>
+<td>Hides or shows the Dock icon; the menu bar icon stays.</td>
+</tr>
+<tr>
+<td><strong>Do Not Disturb</strong></td>
+<td>Off / On / For 30 minutes / For 1 hour / Until tomorrow 9:00. "Declines incoming calls with 486 Busy Here and publishes Do Not Disturb." Shows "Until 14:30 · 27 min left" while a timer runs.</td>
+</tr>
+<tr>
+<td><strong>Language</strong></td>
+<td>System / English / Русский. "Takes effect after MacroSIP restarts."</td>
+</tr>
+<tr>
+<td><strong>Updates</strong></td>
+<td><strong>Check for updates automatically</strong> (once a day, asks before installing), <strong>Include release candidates</strong>, <strong>Check Now</strong>, "Last checked …". See <a href="installation.html">Installation</a>.</td>
+</tr>
+<tr>
+<td><strong>Advanced › Links</strong></td>
+<td>"Open sip: and tel: links with MacroSIP" with <strong>Make Default</strong> (a warning names another app that handles tel: links). <strong>When a link is opened</strong>: Ask before calling (fills the field) / Call immediately / Only fill the dial field.</td>
+</tr>
+<tr>
+<td><strong>Advanced › Troubleshooting</strong></td>
+<td><strong>Open Log Folder</strong> (<code class="notranslate">~/Library/Logs/MacroSIP/MacroSIP.log</code>, 2 MB per file, 3 files) and <strong>Copy Diagnostics</strong> (versions, accounts and settings, without passwords).</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">The Advanced group is collapsed by default.</p>
+<h2 dir="auto">Accounts</h2>
+<p dir="auto">A table with a status dot, <strong>Name</strong> (blue <strong>Default</strong> badge on the default outgoing account), <strong>Address</strong>, <strong>Transport</strong> and <strong>Status</strong> (Registered, Registering…, a short error such as 403, Disabled, Outgoing only, Reconnecting…). Drag to reorder; the order is used in the account pop-up and the status bar. Buttons <strong>+</strong>, <strong>−</strong> (confirms) and <strong>Edit…</strong>; double-click edits. With eight or more accounts a <strong>Filter accounts</strong> field appears. The group "Office · last error" shows the last REGISTER failure with <strong>Retry</strong>. The editor's fields are described in <a href="accounts.html">Accounts</a>; its Advanced group includes the Voicemail rows <strong>Voicemail number</strong> ("Dialled from the menu bar and the status bar.") and <strong>Voicemail indicator (MWI)</strong> ("Shows the number of new messages the server reports.").</p>
+<h2 dir="auto">Audio</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Group</th>
+<th>Rows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Devices</strong></td>
+<td><strong>Microphone</strong> (level meter, popup with System default), <strong>Speaker</strong> (popup), <strong>Ringtone device</strong>, <strong>Switch to a headset when it is connected</strong>, <strong>Headset buttons</strong> ("Connected: Jabra Evolve2 65" or "No headset with call controls").</td>
+</tr>
+<tr>
+<td><strong>Ringtone</strong></td>
+<td><strong>Sound</strong> (Classic / Digital / Soft / Custom file…, with <strong>Play</strong>), <strong>Volume</strong> 0–100 %.</td>
+</tr>
+<tr>
+<td><strong>Hold music</strong></td>
+<td><strong>Source</strong>: Built-in / Custom file… / Off. "The caller hears this while on hold."</td>
+</tr>
+<tr>
+<td><strong>Sound events</strong></td>
+<td><strong>Call connected and ended</strong>, <strong>Dial pad key presses</strong>, <strong>New voicemail</strong>, <strong>Registration error and lost network</strong>; all off. "Short beeps on the speaker; the other side never hears them."</td>
+</tr>
+<tr>
+<td><strong>Audio test</strong></td>
+<td><strong>Speaker and microphone</strong>: <strong>Test</strong> and the microphone meter. "Test plays two notes on the speaker for 2 seconds; the meter shows the microphone."</td>
+</tr>
+<tr>
+<td><strong>Processing</strong></td>
+<td><strong>Echo cancellation</strong>: "Turn off only when using a headset with its own echo cancellation."</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">Details in <a href="audio.html">Audio</a>.</p>
+<h2 dir="auto">Network</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Group</th>
+<th>Rows</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Connection</strong></td>
+<td><strong>STUN server</strong> ("Leave empty if you are not behind NAT."), <strong>Local SIP port</strong> ("0 picks a free port automatically."), <strong>Keep-alive interval</strong> in seconds ("Keeps NAT bindings open between registrations."), <strong>Use ICE</strong> ("Finds a working media path through NAT. Uses the STUN server above.").</td>
+<td>empty, 5060, 15, on</td>
+</tr>
+<tr>
+<td><strong>RTP</strong></td>
+<td><strong>Port range</strong> with <strong>Start</strong> and <strong>Ports</strong> ("Audio uses this range. Each call needs two ports; 1024–65535."), <strong>Use rport</strong> ("Asks the server to reply to the address and port it sees. Helps behind NAT.").</td>
+<td>4000 / 1000, on</td>
+</tr>
+<tr>
+<td><strong>DNS</strong></td>
+<td><strong>Use DNS SRV records</strong> ("Finds the server and port of an account through SRV records, then falls back to the domain itself."), <strong>Nameserver</strong> ("Address of a DNS server. Empty uses the system's servers."), enabled only with SRV on.</td>
+<td>off, empty</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">"Changing the port re-registers all accounts. Calls in progress are not interrupted. Transport and SRTP are set per account in the account editor." The port range and DNS apply after a restart of the engine; an orange banner offers <strong>Restart now</strong> (disabled during a call: "End your calls first."). Valid values: local port 0 or 1024–65535, keep-alive 0 (off) or 5–600 s.</p>
+<h2 dir="auto">Codecs</h2>
+<p dir="auto">"Audio codecs, in order of preference": a table with a checkbox, <strong>Codec</strong>, <strong>Sample rate</strong>, <strong>Bitrate</strong> and a drag handle; <strong>Move up</strong>, <strong>Move down</strong>, <strong>Restore Defaults</strong>. Unchecked codecs are never offered; at least one must stay enabled. An <strong>Opus</strong> group adds <strong>Packet-loss correction (FEC)</strong> (on) and <strong>Silence suppression (DTX)</strong> (off). The codec list is in <a href="audio.html">Audio</a>.</p>
+<h2 dir="auto">Recording</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Row</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Save recordings to</strong></td>
+<td>Folder popup, default "MacroSIP Recordings" in ~/Music; <strong>Choose Folder…</strong>. "Folder not found" if it went missing.</td>
+</tr>
+<tr>
+<td><strong>Record all calls automatically</strong></td>
+<td>Off by default; the Record button in the call panel works either way.</td>
+</tr>
+<tr>
+<td><strong>Channels</strong></td>
+<td><strong>Mono</strong> ("Both sides mixed into one channel.") or <strong>Stereo</strong> ("You on the left channel, the caller on the right.").</td>
+</tr>
+<tr>
+<td><strong>Notice tone › Play a notice tone while recording</strong></td>
+<td>Off by default. A short beep heard by both sides and written into the recording, one second after the recording starts and then <strong>Every</strong> 5–60 <strong>seconds</strong> (15). "A short beep every 15 seconds tells both sides that the call is recorded."</td>
+</tr>
+<tr>
+<td><strong>Show Recordings Folder</strong></td>
+<td><strong>Open in Finder</strong>.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">Footer: "Recordings are saved as M4A (AAC). The temporary WAV files are deleted after conversion." and "File name: 2026-10-10 14.52 Alesia Kazlouskaya (in).m4a".</p>
+<h2 dir="auto">Calls</h2>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Group</th>
+<th>Rows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Incoming calls</strong></td>
+<td><strong>Reject calls from</strong>: Nobody / Everyone / Numbers not in Contacts / Anonymous callers. "A rejected call never rings. The caller gets 603 Decline and the call log shows “Rejected: rule”."</td>
+</tr>
+<tr>
+<td><strong>During a call</strong></td>
+<td><strong>When a call comes in during a call</strong>: Call waiting (tone and window) / Window only / Busy (single-call mode). <strong>DTMF method</strong>: Automatic / RFC 2833 / SIP INFO / In-band ("Automatic uses RFC 2833 and falls back to SIP INFO."). <strong>Bring the main window to the front on an incoming call</strong> ("The incoming-call window still appears as well.").</td>
+</tr>
+<tr>
+<td><strong>Auto-answer</strong></td>
+<td><strong>Answer incoming calls automatically</strong>: Off / All calls / Contacts only. <strong>Delay before answering</strong> in seconds (5). <strong>Honour the server's answer-after request</strong> ("Answers when the PBX sends Call-Info: answer-after=N (intercom, paging), even if the mode is Off.").</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">Footer: "Do Not Disturb wins over auto-answer. Auto-answer never answers a second call while you are already on one." See <a href="incoming-calls.html">Incoming calls</a>.</p>
+<h2 dir="auto">Quick keys</h2>
+<p dir="auto">A table of 12 rows (<strong>Name</strong>, <strong>Number</strong>, <strong>Type</strong>, <strong>BLF</strong>, <strong>Key</strong>), "5 of 12 keys", then <strong>Panel › Show panel</strong> (Off / Right / Bottom) and <strong>Pickup code</strong> (<code class="notranslate">*8</code>). See <a href="quick-keys.html">Quick keys</a>.</p>
+<h2 dir="auto">Directory</h2>
+<p dir="auto"><strong>Contacts › Sort by</strong> (First name / Last name); the source list with <strong>Source</strong>, <strong>Status</strong>, <strong>On</strong>, buttons <strong>+</strong>, <strong>−</strong>, <strong>Edit…</strong> and <strong>Import now</strong>; the <strong>Search</strong> group with <strong>Search directories from the number field</strong>, <strong>Minimum characters</strong> (2), <strong>Results per source</strong> (5) and <strong>Look up names of incoming callers</strong>. See <a href="directory.html">Directory</a>.</p>
+<h2 dir="auto">Where settings are stored</h2>
+<p dir="auto"><code class="notranslate">~/Library/Application Support/MacroSIP/settings.json</code> (plus <code class="notranslate">accounts.json</code>, <code class="notranslate">contacts.json</code>, <code class="notranslate">calllog.json</code>); passwords in the login Keychain. See <a href="troubleshooting.html">Troubleshooting</a>.</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

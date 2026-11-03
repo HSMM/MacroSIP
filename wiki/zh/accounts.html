@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>账户 · MacroSIP 文档</title>
+<meta name="description" content="MacroSIP 文档">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/accounts.html">
+<link rel="alternate" hreflang="ru" href="../ru/accounts.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/accounts.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/accounts.html" hreflang="en">English</a><a href="../ru/accounts.html" hreflang="ru">Русский</a><a href="../zh/accounts.html" hreflang="zh-Hans" aria-current=true>中文</a></div></header>
+<div class="layout">
+<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html" aria-current=page>账户</a></li><li><a href="calls.html">通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="directory.html">目录</a></li><li><a href="quick-keys.html">快捷键</a></li><li><a href="audio.html">音频</a></li><li><a href="settings.html">设置</a></li><li><a href="menu-bar.html">菜单栏</a></li><li><a href="troubleshooting.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="architecture.html">架构</a></li><li><a href="building.html">构建</a></li><li><a href="testing.html">测试</a></li><li><a href="releasing.html">发布</a></li><li><a href="contributing.html">参与贡献</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">账户</h1>
+<p dir="auto">一个账户 (Account) 就是一个 SIP 身份：用户、服务器、凭据和传输方式。多个账户可以同时启用并注册；其中一个是<strong>默认外拨账户</strong> (default outgoing account)。</p>
+<p dir="auto"><a target="_blank" rel="noopener noreferrer nofollow" href="https://raw.githubusercontent.com/HSMM/MacroSIP/main/docs/screenshots/light/account-popup.png?v=1"><img src="https://raw.githubusercontent.com/HSMM/MacroSIP/main/docs/screenshots/light/account-popup.png?v=1" alt="账户弹出菜单" style="max-width: 100%;"></a></p>
+<h2 dir="auto">添加账户</h2>
+<p dir="auto">可以从首次启动界面（<strong>添加账户…</strong> (Add Account…)）、设置 › 账户（<strong>+</strong>、<strong>编辑…</strong> (Edit…) 或连按某一行）或账户弹出菜单（<strong>账户设置…</strong> (Account Settings…)，⌘,）打开编辑器。</p>
+<p dir="auto">通常只需填写基本字段：</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>字段</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>账户名称</strong> (Account name)</td>
+<td>在账户弹出菜单、状态栏、通话面板和菜单栏中使用的简短标签，例如“Office”。</td>
+</tr>
+<tr>
+<td><strong>SIP 服务器</strong> (SIP server)</td>
+<td>主机名或 IP 地址，例如 <code class="notranslate">pbx.example.com</code>。值无效时显示“请输入类似 pbx.example.com 的主机名，或一个 IP 地址。”</td>
+</tr>
+<tr>
+<td><strong>用户名</strong> (Username)</td>
+<td>SIP 用户，例如 <code class="notranslate">andrei</code>。</td>
+</tr>
+<tr>
+<td><strong>密码</strong> (Password)</td>
+<td>仅存储在登录钥匙串中，绝不写入文件。</td>
+</tr>
+<tr>
+<td><strong>启用</strong> (Enabled)</td>
+<td>关闭后停止注册和外拨；账户仍以灰显状态留在弹出菜单中，但从状态栏消失。设置和钥匙串项会保留。</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto"><strong>存储</strong> (Save) 将密码存入钥匙串并开始注册；按钮旁的状态实时更新（“未存储”、“正在注册…”、“已注册”）。</p>
+<h2 dir="auto">“高级”组</h2>
+<p dir="auto">其他所有内容都折叠在<strong>高级</strong> (Advanced) 展开组中。只要其中任何一个值与默认值不同，该组就会自动展开，这样您就能看出账户为何表现如此。</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>行</th>
+<th>含义</th>
+<th>默认值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>显示名称</strong> (Display name)</td>
+<td>“显示给您呼叫的对方。”发送给远端的来电显示名。</td>
+<td>空</td>
+</tr>
+<tr>
+<td><strong>认证用户名</strong> (Auth username)</td>
+<td>“仅在与用户名不同时填写。”用于摘要认证。</td>
+<td>空</td>
+</tr>
+<tr>
+<td><strong>域</strong> (Domain)</td>
+<td>“留空则使用 SIP 服务器。”用于从拨号字符串构建 SIP URI。</td>
+<td>空</td>
+</tr>
+<tr>
+<td><strong>出站代理</strong> (Outgoing proxy)</td>
+<td>路由集，例如 <code class="notranslate">sip:proxy.example.com;lr</code>。</td>
+<td>空</td>
+</tr>
+<tr>
+<td><strong>传输</strong> (Transport)</td>
+<td>UDP、TCP 或 TLS。</td>
+<td>UDP</td>
+</tr>
+<tr>
+<td><strong>媒体加密 (SRTP)</strong> (Media encryption (SRTP))</td>
+<td>禁用、可选或强制。SRTP 与信令传输方式相互独立。</td>
+<td>禁用</td>
+</tr>
+<tr>
+<td><strong>注册有效期</strong> (Registration expiry)</td>
+<td>60 到 3600 秒。</td>
+<td>300</td>
+</tr>
+<tr>
+<td><strong>验证服务器证书</strong> (Verify server certificate)</td>
+<td>仅 TLS。“仅对使用自签名证书的服务器关闭。”</td>
+<td>开</td>
+</tr>
+<tr>
+<td><strong>语音信箱号码</strong> (Voicemail number)</td>
+<td>“从菜单栏和状态栏拨打。”语音信箱项所呼叫的号码或 SIP URI，例如 <code class="notranslate">*97</code>。位于“语音信箱”组中。</td>
+<td>空</td>
+</tr>
+<tr>
+<td><strong>语音信箱指示 (MWI)</strong> (Voicemail indicator (MWI))</td>
+<td>“显示服务器报告的新留言数量。”订阅服务器的 message-summary；新留言在状态栏显示为信封标记，在菜单栏显示为“语音信箱”项（见 <a href="incoming-calls.html">来电</a>）。服务器未经订阅直接推送的指示也会显示。</td>
+<td>开</td>
+</tr>
+<tr>
+<td><strong>向服务器注册</strong> (Register with server)</td>
+<td>关闭后该账户<strong>仅用于外拨</strong>：从不注册，不接收来电，并在设置 › 账户中显示“仅外拨”。</td>
+<td>开</td>
+</tr>
+<tr>
+<td><strong>默认用于外拨</strong> (Default for outgoing calls)</td>
+<td>只能有一个默认账户；开启此项会清除之前的默认账户。</td>
+<td>第一个账户为开</td>
+</tr>
+<tr>
+<td><strong>发布我的在线状态</strong> (Publish my presence)</td>
+<td>“让关注您的联系人看到在线 / 离开 / 勿扰。”</td>
+<td>关</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">STUN、ICE、本地 SIP 端口和保活不是按账户设置的；它们位于设置 › 网络（见 <a href="settings.html">设置</a>）。</p>
+<h2 dir="auto">“测试”按钮</h2>
+<p dir="auto">填写 SIP 服务器、用户名和密码后，<strong>测试</strong> (Test) 按钮即可用。它用一个临时账户注册，并在原位显示结果：</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>结果</th>
+<th>文本</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>成功</td>
+<td>“注册成功 (120 ms)”</td>
+</tr>
+<tr>
+<td>被拒绝</td>
+<td>“测试失败：401 Unauthorized”（或 403 等），附带“服务器拒绝了用户名或密码。未存储任何内容。”和<strong>重新测试</strong> (Test Again) 按钮。</td>
+</tr>
+<tr>
+<td>无应答</td>
+<td>“测试失败：无响应”，附带“服务器未及时应答。未存储任何内容。”</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<h2 dir="auto">多个账户</h2>
+<p dir="auto">设置 › 账户列出所有账户，包括状态圆点、名称（蓝色的<strong>默认</strong> (Default) 标记表示默认外拨账户）、地址、传输和状态。拖移行可重新排序；此顺序用于账户弹出菜单和状态栏。账户达到八个或更多时会出现<strong>过滤账户</strong> (Filter accounts) 字段来缩小列表。</p>
+<p dir="auto"><strong>−</strong> 在确认“删除账户‘Office’？”——“其密码将从钥匙串中移除。通话记录会保留。”后移除所选账户。</p>
+<h2 dir="auto">账户弹出菜单</h2>
+<p dir="auto">主窗口号码栏上方的按钮显示外拨账户及其注册圆点。点按它打开弹出菜单：</p>
+<ul dir="auto">
+<li>每个账户一行：所选外拨账户带有勾号，然后是圆点、名称以及其下方的 SIP 地址（“<a href="mailto:andrei@pbx.example.com">andrei@pbx.example.com</a>”；注册失败的账户以红色显示“403 Forbidden · <a href="mailto:andrei@pbx.example.com">andrei@pbx.example.com</a>”），右侧是一个<strong>开关</strong>。</li>
+<li>点按名称将其选为<strong>仅下一次通话</strong>的外拨账户并关闭菜单。初始值是默认外拨账户。</li>
+<li>开关可在不关闭菜单的情况下启用或停用账户。它与编辑器中的<strong>启用</strong>和设置 › 账户中的“已停用”是同一个状态。两次点按即可让一个失败的账户安静下来。</li>
+<li>账户达到八个或更多时，最上方会出现<strong>搜索账户</strong> (Search accounts) 字段，已启用的账户排在已停用的账户之前。</li>
+<li><strong>账户设置…</strong>（⌘,）打开设置并定位到“账户”。</li>
+</ul>
+<h2 dir="auto">状态栏与状态</h2>
+<p dir="auto">主窗口底部的状态栏按账户顺序为每个已启用账户显示一项。点按某项会打开设置 › 账户并选中该账户。状态栏右端依次是显示新语音留言数量的信封标记（只要有任何账户报告有留言等待就会显示；点按它拨打语音信箱号码，见 <a href="incoming-calls.html">来电</a>）、快捷键按钮和一个齿轮按钮，后者打开设置并定位到上次使用的标签页（工具提示“设置…”）。</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>圆点</th>
+<th>状态文本</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>绿色</td>
+<td>账户名称，“已注册”</td>
+<td>REGISTER 被接受。</td>
+</tr>
+<tr>
+<td>橙色</td>
+<td>“正在注册…”</td>
+<td>已发送 REGISTER，尚无最终应答。持续一两秒属正常。</td>
+</tr>
+<tr>
+<td>红色</td>
+<td>“Office: 403”；设置 › 账户显示“403 Forbidden — REGISTER 于 14:52 被拒绝。请检查用户名和密码。”并提供<strong>重试</strong> (Retry)</td>
+<td>服务器拒绝了注册。403 和 401 几乎总是意味着用户名、认证用户名或密码有误。</td>
+</tr>
+<tr>
+<td>橙色</td>
+<td>“Office · 8 秒后重试”、“Office · 正在重试…”、“正在重新连接…”</td>
+<td>临时故障（超时、5xx、连接中断）；引擎按退避策略重试。</td>
+</tr>
+<tr>
+<td>灰色空心</td>
+<td>灰色账户名称，“仅外拨”</td>
+<td>已启用，但<strong>向服务器注册</strong>已关闭。</td>
+</tr>
+<tr>
+<td>灰色空心</td>
+<td>“已停用”（仅在设置中显示；账户从状态栏消失）</td>
+<td>已关闭。</td>
+</tr>
+<tr>
+<td>灰色图形</td>
+<td>“无网络”</td>
+<td>Mac 没有可用的网络路径；账户会自行恢复。</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">已启用账户为一到三个时，每个账户各占一项。从四个起，状态栏只显示一条摘要“6 个中 4 个在线 · 2 个失败”，有账户失败时为红色，仍有账户在连接时为橙色，其余情况为绿色；点按它打开账户弹出菜单。没有任何账户时显示“无账户”，没有账户启用时显示“所有账户已关闭”。</p>
+<p dir="auto">其他页面：<a href="index.html">首页</a> · <a href="../en/index.html">Home</a> (English)</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>
