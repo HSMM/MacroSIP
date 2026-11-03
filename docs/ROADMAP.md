@@ -54,7 +54,7 @@ App:
 
 `26.0.2` (2026-11-02): fixes from the first weeks of use. Quitting no longer crashes (IOHIDManager assertion in the headset-button controller); a REGISTER that met a REGISTER in flight is no longer sent twice, so retries after a timeout back off as designed instead of hitting PJSIP_EBUSY every time; hanging up a call that just ended shows no error; the log file follows `--log-level` (debug lines only at level 4), skips PJSIP's "Ports connection already exists", drops the false "destroy tone port (PJ_EGONE)" warning and writes REGISTER retries and listener restarts at debug after the first attempts; release builds compile with Swift 6.3.
 
-## 26.1 (in development)
+## 26.1 (released 2026-11-03)
 
 - Global hotkeys: answer, hang up and mute from any app (Carbon `RegisterEventHotKey`, no permission needed); off by default, ⌃⌥A / ⌃⌥H / ⌃⌥M offered when switched on, each changeable or clearable in Settings › Calls; a combination another app holds is reported next to its field.
 - Import from MicroSIP: accounts and contacts from `MicroSIP.ini` and `Contacts.xml` (Settings › Accounts › Import from MicroSIP…) with a preview before anything is written; accounts come in switched off and ask for their password (MicroSIP's cannot be read).
