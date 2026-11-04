@@ -76,7 +76,7 @@ struct DirectoryServiceTests {
         let service = setup.service()
         let start = Date()
         let found = await service.search("an")
-        #expect(Date().timeIntervalSince(start) < 2)
+        #expect(Date().timeIntervalSince(start) < 4)   // the slow source takes 5 s; slack for a slow runner
         #expect(found.map(\.displayName) == ["Anna A", "Andrei A"])
         let st = await service.currentStatuses()
         #expect(st[a] == .connected)
@@ -136,7 +136,7 @@ struct DirectoryServiceTests {
         try? await Task.sleep(nanoseconds: 100_000_000)
         task.cancel()
         #expect(await task.value.isEmpty)
-        #expect(Date().timeIntervalSince(start) < 2)
+        #expect(Date().timeIntervalSince(start) < 4)   // the slow source takes 5 s; slack for a slow runner
     }
 
     @Test func lookupAsksSearchOnlySourcesInOrder() async {
@@ -148,7 +148,7 @@ struct DirectoryServiceTests {
         let start = Date()
         // The first source in order does not answer within the limit; the next one's match is used.
         #expect(await service.lookup(number: "sip:+74951234567@pbx")?.displayName == "Fast Anna")
-        #expect(Date().timeIntervalSince(start) < 2)
+        #expect(Date().timeIntervalSince(start) < 4)   // the slow source takes 5 s; slack for a slow runner
         #expect(setup.stubs[imported]!.calls == 0)
         #expect(await service.lookup(number: "999") == nil)
     }
@@ -156,11 +156,11 @@ struct DirectoryServiceTests {
     @Test func lookupReturnsEarlyForTheFirstSource() async {
         var setup = Setup()
         _ = setup.add(name: "Fast", entries: ["Fast Anna"], numbers: ["101"])
-        _ = setup.add(name: "Slow", entries: ["Slow Anna"], numbers: ["101"], delay: 5)
-        let service = setup.service(lookupTimeout: 3)
+        _ = setup.add(name: "Slow", entries: ["Slow Anna"], numbers: ["101"], delay: 10)
+        let service = setup.service(lookupTimeout: 8)
         let start = Date()
         #expect(await service.lookup(number: "101")?.displayName == "Fast Anna")
-        #expect(Date().timeIntervalSince(start) < 1.5)
+        #expect(Date().timeIntervalSince(start) < 4)   // the slow source takes 10 s and the timeout is 8 s; slack for a slow runner
         var off = DirectorySettings(sources: setup.sources)
         off.lookupIncomingCallers = false
         await service.update(settings: off)

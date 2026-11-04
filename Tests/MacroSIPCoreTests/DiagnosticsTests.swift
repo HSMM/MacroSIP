@@ -133,6 +133,31 @@ struct DiagnosticsTests {
         #expect(try String(contentsOf: logs.appendingPathComponent("MacroSIP.log"), encoding: .utf8) == original)
     }
 
+    @Test func archiveHasNoAppleDoubleEntries() async throws {
+        let base = try temp(); defer { try? FileManager.default.removeItem(at: base) }
+        let logs = base.appendingPathComponent("logs")
+        try FileManager.default.createDirectory(at: logs, withIntermediateDirectories: true)
+        let log = logs.appendingPathComponent("MacroSIP.log")
+        try "line\n".write(to: log, atomically: true, encoding: .utf8)
+        // An extended attribute is what makes ditto write a `._` twin into the ZIP.
+        let value = Array("x".utf8)
+        #expect(setxattr(log.path, "com.example.test", value, value.count, 0, 0) == 0)
+        let dest = base.appendingPathComponent("MacroSIP-diagnostics-test.zip")
+        _ = try await DiagnosticsArchive.create(destination: dest, logDirectory: logs, crashReportsDirectory: base.appendingPathComponent("none"),
+                                                diagnosticsText: "MacroSIP 26.1\n")
+        let list = Process()
+        list.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
+        list.arguments = ["-Z1", dest.path]
+        let pipe = Pipe()
+        list.standardOutput = pipe
+        try list.run()
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        list.waitUntilExit()
+        let names = String(decoding: data, as: UTF8.self).split(separator: "\n").map(String.init)
+        #expect(names.contains { $0.hasSuffix("MacroSIP.log") })
+        #expect(!names.contains { $0.split(separator: "/").contains { $0.hasPrefix("._") } }, "\(names)")
+    }
+
     @Test func archiveWithNothingToInclude() async throws {
         let base = try temp(); defer { try? FileManager.default.removeItem(at: base) }
         let dest = base.appendingPathComponent("empty.zip")

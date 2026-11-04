@@ -11,7 +11,7 @@ extension AppModel {
 
     /// Starts the engine, registers every account, applies audio settings.
     func bootstrap() async {
-        AppLog.app.info("\(Product.name) \(AppInfo.versionLine) started, macOS \(ProcessInfo.processInfo.operatingSystemVersionString), PJSIP log level \(launch.logLevel)")
+        AppLog.app.info("\(Product.name) \(AppInfo.versionLine) started, macOS \(ProcessInfo.processInfo.operatingSystemVersionString), PJSIP log level \(effectiveLogLevel)\(settings.general.debugMode ? " (debug mode)" : "")")
         syncLoginItemStatus()
         migrateLegacyPrefs()
         restoreDND()

@@ -100,10 +100,12 @@ public enum DiagnosticsArchive {
         return Result(url: destination, logFiles: logNames, crashReports: crashNames, bytes: size)
     }
 
+    /// `--norsrc` keeps resource forks and extended attributes out: without it every file and folder gets a `._` AppleDouble
+    /// twin in the ZIP, which only clutters what the user sends.
     private static func ditto(folder: URL, zip: URL) async throws {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
-        process.arguments = ["-c", "-k", "--keepParent", folder.path, zip.path]
+        process.arguments = ["-c", "-k", "--norsrc", "--keepParent", folder.path, zip.path]
         let errors = Pipe()
         process.standardError = errors
         process.standardOutput = FileHandle.nullDevice
