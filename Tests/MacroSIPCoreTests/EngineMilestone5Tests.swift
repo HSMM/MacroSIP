@@ -4,10 +4,10 @@ import os
 import Testing
 @testable import MacroSIPCore
 
-/// Largest length difference of a stereo pair, in bytes: 200 ms at 16 kHz, 16 bit. The two recorders
-/// are created one after the other, so on a loaded runner the clock can tick between them
-/// (5 frames, 3200 bytes, were seen on the Intel CI runner).
-private let stereoLengthTolerance = 6400
+/// Largest length difference of a stereo pair, in bytes: none. One writer puts every bridge frame
+/// into both files (`cpjsua_stereo_recorder`), so even one frame (640 bytes at 16 kHz) means the
+/// two sides have come apart; where they did, `EngineRecordingAlignmentTests` shows by how much.
+private let stereoLengthTolerance = 0
 
 // Milestone 5: conference, recording, presence, Call-Info answer-after.
 
@@ -457,8 +457,8 @@ extension EngineTests {
 
     /// Stereo split recording of a loopback call: a 600 Hz tone is played into the answering
     /// leg, so it reaches the recorded leg as remote audio; our side is the null audio device
-    /// (silence). 3 s with the middle second muted: both files final and as long as each
-    /// other (one 20 ms frame = 640 bytes at most), the remote file carries the tone, the
+    /// (silence). 3 s with the middle second muted: both files final and exactly as long as
+    /// each other (`stereoLengthTolerance`), the remote file carries the tone, the
     /// local one is silent, the local recorder is at level 0 while muted; then a stereo M4A.
     /// Second recording: the call ends while recording; `.callEnded` (isRecording) arrives
     /// with both files final, and `recordingFiles(of:)` still names them afterwards.

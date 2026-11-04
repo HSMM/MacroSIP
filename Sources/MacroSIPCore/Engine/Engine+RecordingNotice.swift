@@ -39,8 +39,9 @@ extension Engine {
     /// One tone generator per recording owner, transmitting to the recorded call's port (the
     /// far end), its conference partners (recorded too), the speaker (slot 0) and the
     /// recording's files that carry the far end (the mixed file, the remote file of a stereo
-    /// split); the local (microphone) file stays clean. The recorder takes what the call port
-    /// *receives*, so a beep sent into the port would not reach the file by itself. Players
+    /// split) while the recorded leg's media is up; the local (microphone) file stays clean.
+    /// The recorder takes what the call port *receives*, so a beep sent into the port would
+    /// not reach the file by itself. Players
     /// of finished recordings are destroyed; a recording that moved to another leg
     /// (`rehomeRecordings`) gets a new player and timer. Runs at the end of every `reconcileMedia`.
     func reconcileRecordingNotices() {
@@ -79,8 +80,13 @@ extension Engine {
                     sinks.insert(other.confSlot)
                 }
             }
-            for port in recording.ports where port.role != .local && port.confSlot != PJ.invalidID {
-                sinks.insert(port.confSlot)
+            // The files only while the recorded leg's media is up, as `reconcileMedia` wires
+            // them: a port with a transmitter gets a frame every 20 ms even from an idle
+            // generator, so a held call would keep growing them with silence.
+            if snap.mediaStatus == .active || snap.mediaStatus == .remoteHold {
+                for port in recording.ports where port.role != .local && port.confSlot != PJ.invalidID {
+                    sinks.insert(port.confSlot)
+                }
             }
             noticePlayers[id]?.setSinks(sinks)
             startNoticeTimer(id)

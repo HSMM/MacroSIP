@@ -6,8 +6,8 @@ import MacroSIPCore
 /// side is the null audio device, i.e. silence).
 extension SelfTest {
     /// Records the call for 3 s as `.stereoSplit`, muted for the middle second (the local
-    /// file must keep pace with the remote one). Both WAVs final, lengths within one 20 ms
-    /// frame (640 bytes at 16 kHz), the remote one has the tone, the local one is silent;
+    /// file must keep pace with the remote one). Both WAVs final and of the same length (one
+    /// writer puts every frame into both), the remote one has the tone, the local one is silent;
     /// then `RecordingConverter.convert(files:)` must give a 2-channel M4A whose right
     /// (remote) channel carries the energy.
     static func stereoRecording(_ engine: Engine, _ id: CallID, scratch: URL, step: (String) -> Void) async throws {
@@ -37,9 +37,9 @@ extension SelfTest {
         let remoteHeader = try checkWAV(remote, minBytes: 50_000)
         let localHeader = try checkWAV(local, minBytes: 50_000, silent: true)
         let difference = abs(remoteHeader.fileSize - localHeader.fileSize)
-        guard difference <= 640 else {
+        guard difference == 0 else {
             throw Failure(description: "stereo WAVs differ by \(difference) bytes (local \(localHeader.fileSize), "
-                          + "remote \(remoteHeader.fileSize)); more than one 20 ms frame")
+                          + "remote \(remoteHeader.fileSize)); they must have the same length")
         }
         step("stereo recording (muted 1 s of 3): local \(localHeader.fileSize) bytes RMS \(localHeader.rms), "
              + "remote \(remoteHeader.fileSize) bytes RMS \(remoteHeader.rms), difference \(difference) bytes")

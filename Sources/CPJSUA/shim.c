@@ -478,8 +478,8 @@ pj_status_t cpjsua_recorders_destroy_wait(const pjsua_recorder_id *ids, unsigned
         }
     }
 
-    /* All removals are queued in this one call, so the bridge drops the ports on the same
-     * audio frame: recorders fed from the same clock end with the same sample count. */
+    /* All removals are queued in this one call, but each is a bridge operation of its own:
+     * a frame can pass between two of them (see cpjsua_stereo_recorder for a pair). */
     for (i = 0; i < count; ++i) {
         pj_status_t status = pjsua_recorder_destroy(ids[i]);
         if (status != PJ_SUCCESS) {
@@ -509,6 +509,282 @@ pj_status_t cpjsua_recorders_destroy_wait(const pjsua_recorder_id *ids, unsigned
         /* else: the handler still owns done[i] and sets it later; leaked on purpose. */
     }
     return result;
+}
+
+/* =================================================== stereo recorder === */
+
+/* Stereo split recording. A pjsua recorder only grows on frames on which it has a source:
+ * the bridge sends a port without transmitters a NULL frame, which the WAV writer skips
+ * (conference.c write_port). Its sources are connected, disconnected and removed through
+ * queued bridge operations, applied at the start of a frame one at a time, and
+ * pjsua_conf_connect2 takes the pjsua lock (which a SIP worker may hold during a re-INVITE)
+ * before it queues; so a frame can pass between the local and the remote recorder's
+ * operations, and two recorders start, pause for hold, resume and end on different frames
+ * and drift apart by whole frames. Here both sides are sinks of one writer instead: every
+ * bridge frame that reaches either side goes into both files at once (the side that had
+ * nothing on it as silence), a frame that reached neither goes into neither. */
+
+#define STEREO_REC_SIGNATURE PJMEDIA_SIG_CLASS_PORT_AUD('S', 'W')
+
+/* What a side got on the pending bridge frame. */
+enum { SREC_UNSET = 0, SREC_EMPTY = 1, SREC_AUDIO = 2 };
+
+typedef struct stereo_side {
+    pjmedia_port                   base;
+    struct cpjsua_stereo_recorder *rec;
+    unsigned                       index;   /* 0 local, 1 remote */
+} stereo_side;
+
+struct cpjsua_stereo_recorder {
+    pj_pool_t          *pool;
+    pj_mutex_t         *mutex;      /* the bridge clock (frames) against the owner (close) */
+    stereo_side         side[2];
+    pjsua_conf_port_id  slot[2];
+    pjmedia_port       *writer[2];  /* WAV writers, never in the bridge */
+    pj_int16_t         *frame[2];
+    int                 state[2];   /* SREC_* */
+    pj_bool_t           pending;    /* a side has reported the frame `pending_ts` */
+    pj_uint64_t         pending_ts;
+    pj_bool_t           closed;     /* files finished: later frames are ignored */
+    pj_status_t         failed;     /* first write error; nothing is written after it */
+    unsigned            samples;    /* per frame */
+    int                 refs;       /* the owner, and each side until the bridge lets go */
+};
+
+static void srec_release(struct cpjsua_stereo_recorder *rec)
+{
+    if (__atomic_sub_fetch(&rec->refs, 1, __ATOMIC_ACQ_REL) != 0)
+        return;
+    pj_mutex_destroy(rec->mutex);
+    pj_pool_release(rec->pool);     /* rec lives in this pool */
+}
+
+/* Writes the pending frame to both files, or to neither (mutex held). */
+static void srec_flush(struct cpjsua_stereo_recorder *rec)
+{
+    unsigned i;
+
+    if (rec->pending && rec->failed == PJ_SUCCESS
+        && (rec->state[0] == SREC_AUDIO || rec->state[1] == SREC_AUDIO))
+    {
+        for (i = 0; i < 2; ++i) {
+            pjmedia_frame f;
+            pj_status_t status;
+
+            if (rec->state[i] != SREC_AUDIO)
+                pjmedia_zero_samples(rec->frame[i], rec->samples);
+            pj_bzero(&f, sizeof(f));
+            f.type = PJMEDIA_FRAME_TYPE_AUDIO;
+            f.buf = rec->frame[i];
+            f.size = rec->samples * sizeof(pj_int16_t);
+            f.timestamp.u64 = rec->pending_ts;
+            status = pjmedia_port_put_frame(rec->writer[i], &f);
+            if (status != PJ_SUCCESS) {
+                /* The writer dropped the frame (its buffer could not be flushed: disk full,
+                 * volume gone). Both files end here, so neither runs on without the other;
+                 * the local file keeps this frame when only the remote write failed. */
+                rec->failed = status;
+                PJ_PERROR(2, ("stereo-rec", status, "Writing %.*s failed, stereo recording stops",
+                              (int)rec->writer[i]->info.name.slen, rec->writer[i]->info.name.ptr));
+                break;
+            }
+        }
+    }
+    rec->state[0] = rec->state[1] = SREC_UNSET;
+    rec->pending = PJ_FALSE;
+}
+
+/* The bridge calls each side once per frame, both within the same frame and with the same
+ * timestamp. Another timestamp, or a side that reports twice, means the pending frame is
+ * complete although the other side was not called for it (not added yet, or removed). */
+static pj_status_t srec_put_frame(pjmedia_port *this_port, pjmedia_frame *frame)
+{
+    stereo_side *side = (stereo_side *)this_port;
+    struct cpjsua_stereo_recorder *rec = side->rec;
+    unsigned i = side->index;
+
+    pj_mutex_lock(rec->mutex);
+    if (!rec->closed) {
+        if (rec->pending && (rec->pending_ts != frame->timestamp.u64 || rec->state[i] != SREC_UNSET))
+            srec_flush(rec);
+        rec->pending = PJ_TRUE;
+        rec->pending_ts = frame->timestamp.u64;
+        if (frame->type == PJMEDIA_FRAME_TYPE_AUDIO && frame->buf && frame->size > 0) {
+            pj_size_t bytes = rec->samples * sizeof(pj_int16_t);
+            pj_size_t n = frame->size < bytes ? frame->size : bytes;
+
+            pj_memcpy(rec->frame[i], frame->buf, n);
+            if (n < bytes)
+                pj_bzero((char *)rec->frame[i] + n, bytes - n);
+            rec->state[i] = SREC_AUDIO;
+        } else {
+            rec->state[i] = SREC_EMPTY;
+        }
+        if (rec->state[1 - i] != SREC_UNSET)
+            srec_flush(rec);
+    }
+    pj_mutex_unlock(rec->mutex);
+    return PJ_SUCCESS;
+}
+
+static pj_status_t srec_get_frame(pjmedia_port *this_port, pjmedia_frame *frame)
+{
+    PJ_UNUSED_ARG(this_port);
+    frame->type = PJMEDIA_FRAME_TYPE_NONE;
+    frame->size = 0;
+    return PJ_SUCCESS;
+}
+
+/* Runs once the bridge and the owner have both let go of the side. */
+static pj_status_t srec_side_on_destroy(pjmedia_port *this_port)
+{
+    srec_release(((stereo_side *)this_port)->rec);
+    return PJ_SUCCESS;
+}
+
+/* Finishes both files (mutex not held). The writers are not in the bridge, so destroying
+ * them is synchronous: buffered samples, header sizes, close. */
+static void srec_close(struct cpjsua_stereo_recorder *rec)
+{
+    pjmedia_port *writer[2];
+    unsigned i;
+
+    pj_mutex_lock(rec->mutex);
+    if (rec->closed) {
+        pj_mutex_unlock(rec->mutex);
+        return;
+    }
+    srec_flush(rec);
+    rec->closed = PJ_TRUE;
+    for (i = 0; i < 2; ++i) {
+        writer[i] = rec->writer[i];
+        rec->writer[i] = NULL;
+    }
+    pj_mutex_unlock(rec->mutex);
+    for (i = 0; i < 2; ++i) {
+        pj_status_t status;
+
+        if (!writer[i])
+            continue;
+        status = pjmedia_port_destroy(writer[i]);   /* the last flush and the header */
+        if (status != PJ_SUCCESS && rec->failed == PJ_SUCCESS)
+            rec->failed = status;                   /* closed: no frame touches it any more */
+    }
+}
+
+/* Removes the first `count` sides from the bridge and drops the owner's reference to each:
+ * the bridge gave them a group lock when it added them, so this only releases ours; a side
+ * that never made it into the bridge is destroyed here. */
+static void srec_detach_sides(struct cpjsua_stereo_recorder *rec, unsigned count)
+{
+    unsigned i;
+
+    for (i = 0; i < count; ++i) {
+        if (rec->slot[i] != PJSUA_INVALID_ID) {
+            pjsua_conf_remove_port(rec->slot[i]);
+            rec->slot[i] = PJSUA_INVALID_ID;
+        }
+        pjmedia_port_destroy(&rec->side[i].base);
+    }
+}
+
+pj_status_t cpjsua_stereo_recorder_create(const char *local_path, const char *remote_path,
+                                          cpjsua_stereo_recorder **out,
+                                          pjsua_conf_port_id *out_local_slot,
+                                          pjsua_conf_port_id *out_remote_slot)
+{
+    static const char *names[2] = { "stereo rec local", "stereo rec remote" };
+    struct pjsua_data *var = pjsua_get_var();
+    pjmedia_port *master;
+    const char *paths[2];
+    struct cpjsua_stereo_recorder *rec;
+    pj_pool_t *pool;
+    pj_status_t status;
+    unsigned clock_rate, channels, spf, bits, i, sides = 0;
+
+    if (!local_path || !remote_path || !out || !out_local_slot || !out_remote_slot)
+        return PJ_EINVAL;
+    *out = NULL;
+    *out_local_slot = *out_remote_slot = PJSUA_INVALID_ID;
+    paths[0] = local_path;
+    paths[1] = remote_path;
+
+    /* The bridge's own format (what pjsua_recorder_create gives its writer too), so the
+     * bridge hands frames over unconverted and the files look like a mono recording's. */
+    master = var->mconf ? pjmedia_conf_get_master_port(var->mconf) : NULL;
+    if (!master)
+        return PJ_EINVALIDOP;
+    clock_rate = PJMEDIA_PIA_SRATE(&master->info);
+    channels = PJMEDIA_PIA_CCNT(&master->info);
+    spf = PJMEDIA_PIA_SPF(&master->info);
+    bits = PJMEDIA_PIA_BITS(&master->info);
+    if (bits != 16 || channels == 0 || spf == 0)
+        return PJ_EINVAL;
+
+    pool = pjsua_pool_create("stereo-rec", 1000, 1000);
+    if (!pool)
+        return PJ_ENOMEM;
+    rec = PJ_POOL_ZALLOC_T(pool, struct cpjsua_stereo_recorder);
+    rec->pool = pool;
+    rec->refs = 1;
+    rec->samples = spf;
+    rec->slot[0] = rec->slot[1] = PJSUA_INVALID_ID;
+    status = pj_mutex_create_simple(pool, "stereo-rec", &rec->mutex);
+    if (status != PJ_SUCCESS) {
+        pj_pool_release(pool);
+        return status;
+    }
+
+    for (i = 0; i < 2; ++i) {
+        pj_str_t name = pj_str((char *)names[i]);
+
+        rec->frame[i] = (pj_int16_t *)pj_pool_zalloc(pool, spf * sizeof(pj_int16_t));
+        status = pjmedia_wav_writer_port_create(pool, paths[i], clock_rate, channels, spf, bits,
+                                                0, 0, &rec->writer[i]);
+        if (status != PJ_SUCCESS)
+            goto on_error;
+        status = pjmedia_port_info_init(&rec->side[i].base.info, &name, STEREO_REC_SIGNATURE,
+                                        clock_rate, channels, bits, spf);
+        if (status != PJ_SUCCESS)
+            goto on_error;
+        rec->side[i].base.put_frame = &srec_put_frame;
+        rec->side[i].base.get_frame = &srec_get_frame;
+        rec->side[i].base.on_destroy = &srec_side_on_destroy;
+        rec->side[i].rec = rec;
+        rec->side[i].index = i;
+    }
+    for (i = 0; i < 2; ++i) {
+        __atomic_add_fetch(&rec->refs, 1, __ATOMIC_ACQ_REL);   /* released by on_destroy */
+        sides = i + 1;
+        status = pjsua_conf_add_port(pool, &rec->side[i].base, &rec->slot[i]);
+        if (status != PJ_SUCCESS) {
+            rec->slot[i] = PJSUA_INVALID_ID;
+            goto on_error;
+        }
+    }
+    *out = rec;
+    *out_local_slot = rec->slot[0];
+    *out_remote_slot = rec->slot[1];
+    return PJ_SUCCESS;
+
+on_error:
+    srec_close(rec);
+    srec_detach_sides(rec, sides);
+    srec_release(rec);
+    return status;
+}
+
+pj_status_t cpjsua_stereo_recorder_destroy(cpjsua_stereo_recorder *rec)
+{
+    pj_status_t status;
+
+    if (!rec)
+        return PJ_EINVAL;
+    srec_close(rec);
+    status = rec->failed;           /* closed: stays as it is */
+    srec_detach_sides(rec, 2);
+    srec_release(rec);
+    return status;
 }
 
 /* ========================================================== presence === */

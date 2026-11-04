@@ -6,6 +6,8 @@ enum PortOwner: Hashable, Sendable {
     case soundDevice
     case call(serial: UInt64)
     case recorder(pjsua_recorder_id)
+    /// One side of a stereo split writer (`StereoRecorder.id`).
+    case stereoRecorder(UInt, RecorderPort.Role)
 }
 
 // MARK: - Conference
@@ -132,7 +134,7 @@ extension Engine {
         }
         for recording in recordings.values {
             for port in recording.ports where port.confSlot != PJ.invalidID {
-                owners[port.confSlot] = .recorder(port.recorderID)
+                owners[port.confSlot] = recording.owner(of: port)
             }
         }
 

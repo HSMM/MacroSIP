@@ -1,7 +1,8 @@
 internal import CPJSUA
 import Foundation
 
-/// One pjsua recorder: a WAV writer port in the conference bridge.
+/// One recorder port in the conference bridge: a pjsua recorder (`.mixed`) or one side of
+/// a stereo split writer (`.local`, `.remote`).
 struct RecorderPort: Sendable {
     enum Role: Sendable {
         /// Mono layout: the call, its conference partners and the microphone.
@@ -13,20 +14,36 @@ struct RecorderPort: Sendable {
     }
 
     var role: Role
+    /// The pjsua recorder; `PJ.invalidID` for the sides of a stereo split (`Recording.stereo`).
     var recorderID: pjsua_recorder_id
     var confSlot: pjsua_conf_port_id
     var url: URL
+}
+
+/// The writer of a stereo split (`cpjsua_stereo_recorder_create`): both sides' ports feed
+/// it and it writes both files frame by frame together. Engine-actor confined.
+struct StereoRecorder: @unchecked Sendable {
+    let handle: OpaquePointer
+    var id: UInt { UInt(bitPattern: handle) }
 }
 
 /// One call recording: one recorder (`.mono`) or a local/remote pair (`.stereoSplit`).
 struct Recording: Sendable {
     var files: RecordingFiles
     var ports: [RecorderPort]
+    /// Stereo split: the writer behind both ports.
+    var stereo: StereoRecorder?
     /// Conference of the owning call when last seen; the recording stays with it.
     var conference: UInt64?
     /// Stereo split: the tx level last applied to the local recorder's port (false = 0,
     /// the owning call is muted). nil until the first `reconcileMedia`.
     var localAudible: Bool?
+
+    /// Who a port's bridge slot belongs to (`slotOwners`).
+    func owner(of port: RecorderPort) -> PortOwner {
+        if let stereo { return .stereoRecorder(stereo.id, port.role) }
+        return .recorder(port.recorderID)
+    }
 }
 
 extension Engine {
@@ -42,7 +59,8 @@ extension Engine {
     /// default). `.mono` (the default) writes `wavURL`: the remote side plus our microphone
     /// (left out while muted). `.stereoSplit` writes two files next to it,
     /// `<base>-local.wav` (the microphone only; silence while muted) and `<base>-remote.wav`
-    /// (the remote side), created and destroyed together so their lengths match (see
+    /// (the remote side), with one writer that puts every audio frame into both, so the two
+    /// share one timeline and always have the same length (see
     /// `RecordingFiles.planned(for:layout:)`). For a conference leg every leg of that
     /// conference goes into the (remote) file, and the recording belongs to the conference:
     /// if its call ends or is split off while other legs remain, it moves to one of them
@@ -70,27 +88,37 @@ extension Engine {
             throw EngineError.invalidArgument("cannot create \(dir.path): \(error.localizedDescription)")
         }
         let files = RecordingFiles.planned(for: wavURL, layout: layout)
-        let plan: [(RecorderPort.Role, URL)]
+        let recording: Recording
         switch layout {
-        case .mono: plan = [(.mixed, wavURL)]
-        case .stereoSplit: plan = [(.local, files.local!), (.remote, files.remote!)]
-        }
-        // All recorders in this one engine turn: the bridge adds them on the same frame.
-        var ports: [RecorderPort] = []
-        for (role, url) in plan {
-            let path = url.path
+        case .mono:
             var recorder = PJ.invalidID
             var confSlot = PJ.invalidID
-            let status = path.withCString { cpjsua_recorder_create($0, &recorder, &confSlot) }
-            guard status == PJ.success else {
-                destroyRecorders(ports)
-                for port in ports { try? FileManager.default.removeItem(at: port.url) }
-                throw PJ.error(status, "create recorder \(path)")
+            let status = wavURL.path.withCString { cpjsua_recorder_create($0, &recorder, &confSlot) }
+            guard status == PJ.success else { throw PJ.error(status, "create recorder \(wavURL.path)") }
+            let port = RecorderPort(role: .mixed, recorderID: recorder, confSlot: confSlot, url: wavURL)
+            recording = Recording(files: files, ports: [port], conference: conference)
+        case .stereoSplit:
+            // Two pjsua recorders would each start, pause and stop on the frame their own
+            // connection is applied on, and drift apart; one writer keeps both sides together.
+            let localURL = files.local!, remoteURL = files.remote!
+            var handle: OpaquePointer?
+            var localSlot = PJ.invalidID, remoteSlot = PJ.invalidID
+            let status = localURL.path.withCString { l in
+                remoteURL.path.withCString { r in
+                    cpjsua_stereo_recorder_create(l, r, &handle, &localSlot, &remoteSlot)
+                }
             }
-            ports.append(RecorderPort(role: role, recorderID: recorder, confSlot: confSlot, url: url))
+            guard status == PJ.success, let handle else {
+                for url in files.all { try? FileManager.default.removeItem(at: url) }
+                throw PJ.error(status == PJ.success ? -1 : status, "create stereo recorder \(wavURL.path)")
+            }
+            let ports = [RecorderPort(role: .local, recorderID: PJ.invalidID, confSlot: localSlot, url: localURL),
+                         RecorderPort(role: .remote, recorderID: PJ.invalidID, confSlot: remoteSlot, url: remoteURL)]
+            recording = Recording(files: files, ports: ports, stereo: StereoRecorder(handle: handle),
+                                  conference: conference)
         }
         finishedRecordings[id] = nil
-        recordings[id] = Recording(files: files, ports: ports, conference: conference)
+        recordings[id] = recording
         do {
             try updateRecord(id) { $0.isRecording = true }   // also wires the recorders
         } catch {
@@ -226,7 +254,7 @@ extension Engine {
         let slots = Set(recording.ports.map(\.confSlot))
         requestedWiring = requestedWiring.filter { !slots.contains($0.key.src) && !slots.contains($0.key.sink) }
         for slot in slots { slotOwners[slot] = nil }
-        destroyRecorders(recording.ports)
+        destroyRecorders(recording)
         if keepFiles {
             finishedRecordings[id] = recording.files
             if finishedRecordings.count > Engine.finishedRecordingsKept,
@@ -236,10 +264,24 @@ extension Engine {
         }
     }
 
-    /// `cpjsua_recorders_destroy_wait` for all ports at once (same bridge frame, so a
-    /// stereo pair ends with the same length), then repairs headers the bridge did not
-    /// finish in time.
-    func destroyRecorders(_ ports: [RecorderPort]) {
+    /// Finishes the recording's files. A stereo split's writer finishes both at once and
+    /// synchronously (it is not a bridge port itself). A pjsua recorder is finished by the
+    /// bridge on its next frame: `cpjsua_recorders_destroy_wait`, then the header is repaired
+    /// if the bridge did not get there in time.
+    func destroyRecorders(_ recording: Recording) {
+        if let stereo = recording.stereo {
+            let status = cpjsua_stereo_recorder_destroy(stereo.handle)
+            if status != PJ.success {
+                // A write failed (disk full, volume gone): both files end at that frame. Reported
+                // like a mono header the bridge could not finish; there is no event for it.
+                let names = recording.files.all.map(\.lastPathComponent).joined(separator: ", ")
+                let text = "recording \(names): writing failed (\(PJ.errorText(status))); both files end there"
+                bridge.engineLogger.error("\(text, privacy: .public)")
+                emit(.log(level: 2, "engine: \(text)"))
+            }
+            return
+        }
+        let ports = recording.ports
         guard !ports.isEmpty else { return }
         var ids = ports.map(\.recorderID)
         var finalised = [Int32](repeating: 0, count: ports.count)
@@ -280,6 +322,60 @@ extension Engine {
     /// The call still has its bridge record (it has not reached DISCONNECTED).
     func isLive(_ id: CallID) -> Bool {
         bridge.record(id.raw)?.serial == id.serial
+    }
+
+    // MARK: test hooks
+
+    /// Tests: one tone burst into every file of the recording that covers `id`, starting on
+    /// the same audio frame in all of them: a single idle tone generator is connected to each
+    /// recorder port, and only once PJSIP lists every connection is the burst started. Where
+    /// the burst lands in each file shows how the files line up. Returns after the burst, with
+    /// the generator removed again (it would otherwise keep the recorders fed during hold).
+    func playTestMarker(_ id: CallID, frequency: Int16 = 1000, ms: Int16 = 60) async throws {
+        guard isStarted, PJ.registerThread(), let owner = recordingOwner(for: id),
+              let recording = recordings[owner] else {
+            throw EngineError.invalidArgument("call \(id) is not being recorded")
+        }
+        let slots = Set(recording.ports.map(\.confSlot).filter { $0 != PJ.invalidID })
+        guard let first = slots.min() else { throw EngineError.invalidArgument("recording of \(id) has no ports") }
+        let player = try TonePlayer(name: "test marker", deviceID: nil, sink: first) { pool in
+            var src: UnsafeMutablePointer<pjmedia_port>?
+            try PJ.check(cpjsua_dtmf_generator_create(pool, &src), "test marker generator")
+            guard let src else { throw EngineError.pjsip(status: -1, message: "test marker: no port") }
+            return src
+        }
+        defer { player.stop() }
+        player.setSinks(slots)
+        let deadline = ContinuousClock.now + .seconds(2)
+        while !player.appliedSinks().isSuperset(of: slots) {
+            guard ContinuousClock.now < deadline else {
+                throw EngineError.invalidArgument("test marker: connections not applied")
+            }
+            try await Task.sleep(for: .milliseconds(5))
+            _ = PJ.registerThread()
+        }
+        guard let source = player.source else { throw EngineError.invalidArgument("test marker: stopped") }
+        var tone = pjmedia_tone_desc(freq1: frequency, freq2: 0, on_msec: ms, off_msec: 0, volume: 8000, flags: 0)
+        try PJ.check(cpjsua_tone_sequence_play_once(source, &tone, 1), "test marker")
+        try await Task.sleep(for: .milliseconds(Int(ms) + 120))
+        _ = PJ.registerThread()
+    }
+
+    /// Tests: disconnects every source from one side (`role`) of the recording that covers
+    /// `id` for `duration`, then rewires. The other side keeps its sources, as when the bridge
+    /// applies the two sides' (dis)connections on different frames, or when the call's port is
+    /// replaced and reconnected a little later.
+    func cutTestRecorderSide(_ id: CallID, role: RecorderPort.Role, for duration: Duration) async throws {
+        guard isStarted, PJ.registerThread(), let owner = recordingOwner(for: id),
+              let port = recordings[owner]?.ports.first(where: { $0.role == role }) else {
+            throw EngineError.invalidArgument("call \(id) has no \(role) recorder")
+        }
+        for (wire, on) in requestedWiring where on && wire.sink == port.confSlot {
+            PJ.warn(pjsua_conf_disconnect(wire.src, wire.sink), "test cut \(wire.src)->\(wire.sink)")
+        }
+        try await Task.sleep(for: duration)
+        _ = PJ.registerThread()
+        reconcileMedia()          // requested but no longer applied: connected again
     }
 }
 
