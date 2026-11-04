@@ -62,11 +62,18 @@ App:
 
 `26.1.1` (2026-11-04): after launch or a Contact change behind NAT, an account could show as registered with no binding on the server, so incoming calls did not arrive until the next refresh ([#3](https://github.com/HSMM/MacroSIP/issues/3)). The account now registers again when the answer leaves out its Contact.
 
-## 26.2 (in development)
+## 26.2 (released 2026-11-04)
 
 - Accounts on a server addressed by a private IP address (an office PBX at 10.x, 172.16-31.x, 192.168.x or a 100.64-127.x VPN address, on the LAN or over a VPN) no longer use STUN: the first REGISTER carries the Mac's own address instead of the public one, so the server does not have to repair the Contact, and incoming calls also reach a server that does not rewrite it.
-- Planned: noise suppression with RNNoise on the microphone and on the incoming audio, a toggle and a level in Settings › Audio; today Apple's voice processing covers only the default devices.
+- Stereo recording: one writer fills both files from the same bridge frames, so the local and the far side no longer drift apart (20 ms at hold/resume, up to 220 ms when one side fell silent, with two separate recorders); with the recording notice on, a held call no longer grows the files with silence.
+- Updates are checked at launch as well as once a day; the status bar with no accounts shows only the gear, without the "Settings… ⌘," link; settings panes scroll clear of the toolbar.
+- Diagnostics archive without AppleDouble (`._*`) entries; the log's start line reports the effective PJSIP level and marks debug mode.
+- Screenshots of the hotkeys, MicroSIP import and troubleshooting screens in the READMEs; the import sheet shows paths with `~`.
+- Engine: the thread is registered on entry to the echo-canceller switch (a test-only abort on a slow runner).
 
+## 26.3 (in development)
+
+- Noise suppression with RNNoise on the microphone and on the incoming audio, a toggle and a level in Settings › Audio; today Apple's voice processing covers only the default devices.
 ## Later
 
 - Developer ID signing and notarization, so the first launch needs no workaround (when the signing identity is available).
