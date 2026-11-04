@@ -470,4 +470,7 @@ pj_status_t cpjsua_err_session_state(void); /* PJSIP_ESESSIONSTATE */
 /** PJSIP_REGC_EXPIRATION_NOT_SPECIFIED (0xFFFFFFFF): 2xx without an Expires value. */
 unsigned cpjsua_regc_expiration_not_specified(void);
 
+/** 1 if the final response to a REGISTER lists the account's current Contact, else 0. */
+int cpjsua_regc_lists_our_contact(const struct pjsip_regc_cbparam *param, pjsua_acc_id acc_id);
+
 #endif /* CPJSUA_H */

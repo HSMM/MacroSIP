@@ -17,7 +17,16 @@ import Testing
 /// line, "drop" (no answer at all) or "trying" (100 Trying only; a CANCEL then gets 200 and
 /// the INVITE 487). OPTIONS get `optionsStatus`.
 final class NetworkStub: Sendable {
-    enum RegisterMode: Sendable { case ok, forbidden, silent }
+    enum RegisterMode: Sendable {
+        case ok, forbidden, silent
+        /// 200 without any Contact, whatever was registered (a registrar that breaks RFC 3261).
+        case okWithoutContact
+        /// What Asterisk with `rewrite_contact=yes` does behind NAT: the source address replaces
+        /// the host and port of every Contact of the request, and bindings are kept by that
+        /// result. The Via tells the client the same address. `otherDevice` is a binding of
+        /// another phone on the same extension, listed in every 200.
+        case rewritingContact(host: String, otherDevice: String?)
+    }
 
     struct Register: Sendable {
         var at: Date
@@ -55,6 +64,9 @@ final class NetworkStub: Sendable {
     private let stopped = OSAllocatedUnfairLock(initialState: false)
     private let mode = OSAllocatedUnfairLock(initialState: Modes())
     private let stats = OSAllocatedUnfairLock(initialState: Stats())
+    private let boundContacts = OSAllocatedUnfairLock(initialState: [String]())
+    /// The bindings a `.rewritingContact` registrar holds now.
+    var bindings: [String] { boundContacts.withLock { $0 } }
     /// Where the caller wants RTCP (its SDP's RTP port + 1), from the latest offer.
     private let rtcpTarget = OSAllocatedUnfairLock(initialState: UInt16(0))
     /// Header lines of a re-INVITE left at 100 Trying (to answer 487 after a CANCEL).
@@ -177,6 +189,7 @@ final class NetworkStub: Sendable {
         var cseq = ""
         var expiresZero = false
         var topVia = ""
+        var contacts: [String] = []
         for line in lines.dropFirst() {
             guard let colon = line.firstIndex(of: ":") else { continue }
             let name = line[..<colon].trimmingCharacters(in: .whitespaces).lowercased()
@@ -189,7 +202,9 @@ final class NetworkStub: Sendable {
             case "cseq": echoed.append(line); cseq = value
             case "to", "t": toLine = line
             case "expires": if value == "0" { expiresZero = true }
-            case "contact", "m": if value.lowercased().contains("expires=0") { expiresZero = true }
+            case "contact", "m":
+                contacts.append(value)
+                if value.lowercased().contains("expires=0") { expiresZero = true }
             default: break
             }
         }
@@ -211,7 +226,31 @@ final class NetworkStub: Sendable {
             switch registerMode {
             case .silent: return
             case .forbidden: reply("403 Forbidden")
-            case .ok: reply("200 OK", extra: ["Expires: \(entry.unregister ? 0 : 300)"])
+            case .ok:
+                let listed = entry.unregister ? [] : contacts.map { "Contact: \($0);expires=299" }
+                reply("200 OK", extra: listed + ["Expires: \(entry.unregister ? 0 : 300)"])
+            case .okWithoutContact:
+                reply("200 OK", extra: ["Expires: \(entry.unregister ? 0 : 300)"])
+            case let .rewritingContact(host, otherDevice):
+                let port = UInt16(bigEndian: from.sin_port)
+                let source = "sip:1001@\(host):\(port)"
+                let requested = contacts
+                let bound = boundContacts.withLock { bound -> [String] in
+                    for contact in requested {
+                        bound.removeAll { $0 == source }
+                        if !contact.lowercased().contains("expires=0") { bound.append(source) }
+                    }
+                    return bound
+                }
+                let viaLine = "Via: \(topVia.replacingOccurrences(of: ";rport", with: ""));rport=\(port);received=\(host)"
+                var viaDone = false
+                let echo = echoed.map { line -> String in
+                    guard !viaDone, line.lowercased().hasPrefix("via") else { return line }
+                    viaDone = true
+                    return viaLine
+                }
+                let listed = (bound + (otherDevice.map { [$0] } ?? [])).map { "Contact: <\($0)>;expires=299" }
+                reply("200 OK", extra: listed + ["Expires: 300"], echo: echo)
             }
         case "INVITE":
             stats.withLock { if inDialog { $0.reinvites += 1 } else { $0.invites += 1 } }
@@ -406,6 +445,51 @@ extension EngineTests {
             await engine.stop()
             consumer.cancel()
         }
+    }
+
+    /// Behind NAT, with `rewrite_contact=yes` on the server, the REGISTER that replaces our
+    /// Contact takes away the binding it adds: PJSIP sends the new Contact and the old one with
+    /// expires=0, the server rewrites both to one address, and its 200 lists nothing. The account
+    /// must not count as registered until a binding exists (incoming calls would not arrive).
+    @Test(arguments: [nil, "sip:1001@10.99.0.77:5060"] as [String?])
+    func contactRewriteThatLosesTheBindingRegistersAgain(otherDevice: String?) async throws {
+        let stub = try NetworkStub()
+        defer { stub.stop() }
+        stub.registerMode = .rewritingContact(host: "10.99.0.9", otherDevice: otherDevice)
+        let engine = await makeEngine()
+        try await engine.start(network: Self.network)
+        let cfg = AccountConfig(displayName: "B", username: "1001", domain: "127.0.0.1",
+                                registrar: "127.0.0.1:\(stub.port)", enabled: true)
+        try await engine.addAccount(cfg, password: "pw")
+        #expect(await waitUntil { await engine.registrationState(of: cfg.id).isRegistered })
+        #expect(stub.bindings.count == 1, "bindings when shown as registered: \(stub.bindings)")
+        // first with the local Contact, then the rewrite that loses the binding, then the repair
+        #expect(stub.registers.count == 3)
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(stub.registers.count == 3)
+        await engine.stop()
+    }
+
+    /// A server that never lists Contact gets one extra REGISTER, not one per refresh, and the
+    /// account is registered: its 200 may still mean what it says.
+    @Test func serverThatNeverListsContactIsAskedOnlyOnce() async throws {
+        let stub = try NetworkStub()
+        defer { stub.stop() }
+        stub.registerMode = .okWithoutContact
+        let engine = await makeEngine()
+        try await engine.start(network: Self.network)
+        let cfg = AccountConfig(displayName: "B", username: "1001", domain: "127.0.0.1",
+                                registrar: "127.0.0.1:\(stub.port)", enabled: true)
+        try await engine.addAccount(cfg, password: "pw")
+        #expect(await waitUntil { await engine.registrationState(of: cfg.id).isRegistered })
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(stub.registers.count == 2)
+        try await engine.setRegistered(cfg.id, true)        // a refresh
+        #expect(await waitUntil { stub.registers.count == 3 })
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(stub.registers.count == 3)
+        #expect(await engine.registrationState(of: cfg.id).isRegistered)
+        await engine.stop()
     }
 
     /// The registrar stops answering: `.reconnecting(1, 2 s)`, the retry 2 s later fails too:

@@ -114,6 +114,8 @@ final class EngineBridge: Sendable {
         var pendingRegistration: [AccountID: Bool] = [:]
         /// Failed REGISTER attempts since the last success (temporary failures only).
         var retryAttempts: [AccountID: Int] = [:]
+        /// Accounts with a repair of a missing binding going on, or given up (see `BindingRepair`).
+        var bindingRepair: [AccountID: BindingRepair] = [:]
         /// Calls pjsua re-INVITEd in the current network change (by call serial).
         var ipChangeReinvited: Set<UInt64> = []
         /// Current network-change round (tags pjsua's progress reports).
@@ -234,6 +236,7 @@ final class EngineBridge: Sendable {
                 st.registration[old.id] = nil
                 st.pendingRegistration[old.id] = nil
                 st.retryAttempts[old.id] = nil
+                st.bindingRepair[old.id] = nil
                 st.voicemail[old.id] = nil
             }
         }
@@ -305,6 +308,22 @@ final class EngineBridge: Sendable {
 
     func takePendingRegistration(_ id: AccountID) -> Bool? {
         state.withLock { $0.pendingRegistration.removeValue(forKey: id) }
+    }
+
+    /// A 2xx to a REGISTER arrived: true if it should be sent again because the binding is missing.
+    func bindingRepairNeeded(_ id: AccountID, listed: Bool) -> Bool {
+        state.withLock { st in
+            let (next, repair) = BindingRepair.afterSuccess(st.bindingRepair[id], listed: listed)
+            st.bindingRepair[id] = next
+            return repair
+        }
+    }
+
+    /// A REGISTER ended without success: the repair in flight, if any, is over. `.givenUp` stays.
+    func bindingRepairInterrupted(_ id: AccountID) {
+        state.withLock { st in
+            if st.bindingRepair[id] == .inFlight { st.bindingRepair[id] = nil }
+        }
     }
 
     // MARK: calls
@@ -593,6 +612,25 @@ final class EngineBridge: Sendable {
 
 // MARK: - Registration result mapping
 
+/// A 2xx to a REGISTER must list the bindings the server holds (RFC 3261 10.3). One that leaves
+/// ours out means incoming calls will not arrive, whatever its status says. It happens at every
+/// Contact rewrite behind NAT with Asterisk's `rewrite_contact=yes`: PJSIP sends the new Contact
+/// with the old one at expires=0 in one request, the server rewrites both to the source address,
+/// and adds and removes the same binding. A REGISTER sent again carries one Contact and restores
+/// it. A server that still leaves it out does not list Contact at all, or changes it each time:
+/// asked once, then believed, so it does not get two REGISTERs per refresh.
+enum BindingRepair: Equatable, Sendable {
+    case inFlight, givenUp
+
+    static func afterSuccess(_ state: BindingRepair?, listed: Bool) -> (next: BindingRepair?, repair: Bool) {
+        if listed { return (nil, false) }
+        switch state {
+        case nil: return (.inFlight, true)
+        case .inFlight, .givenUp: return (.givenUp, false)
+        }
+    }
+}
+
 enum RegistrationMapping {
     /// Maps an on_reg_state2 result. `renew == false` is the answer to an un-REGISTER:
     /// the user switched the account off, whatever the server said.
@@ -876,8 +914,10 @@ private func pjOnRegState2(_ accID: pjsua_acc_id, _ info: UnsafeMutablePointer<p
     var new: RegistrationState
     var source: SignallingSource?
     var transientError: String?
+    var ourContactListed = true
     if let info, let param = info.pointee.cbparam {
         let p = param.pointee
+        ourContactListed = cpjsua_regc_lists_our_contact(param, accID) != 0
         source = SignallingSource.read(p.rdata)
         new = RegistrationMapping.state(
             renew: info.pointee.renew != 0, status: p.status, code: Int(p.code),
@@ -896,6 +936,19 @@ private func pjOnRegState2(_ accID: pjsua_acc_id, _ info: UnsafeMutablePointer<p
         transientError = "Registration failed"
     }
 
+    let pending = bridge.takePendingRegistration(id)
+    if case .registered = new {
+        if pending != false, account.wantsRegistration, bridge.bindingRepairNeeded(id, listed: ourContactListed) {
+            // Not registered yet as far as anyone can tell: the state stays as it was until the answer.
+            bridge.warn("account \(id.raw): the REGISTER answer does not list our Contact; registering again")
+            bridge.resetRetryAttempts(id)
+            bridge.hop { await $0.applyPendingRegistration(id, true) }
+            return
+        }
+    } else {
+        bridge.bindingRepairInterrupted(id)
+    }
+
     // The server that accepted the REGISTER is the trusted source of intercom INVITEs.
     let wasRegistered: Bool
     if case .registered = bridge.registration(of: id) { wasRegistered = true } else { wasRegistered = false }
@@ -907,7 +960,6 @@ private func pjOnRegState2(_ accID: pjsua_acc_id, _ info: UnsafeMutablePointer<p
         bridge.setRegistrarSource(accID, nil)
     }
 
-    let pending = bridge.takePendingRegistration(id)
     // A temporary failure of an account that should be registered: retry with backoff
     // (pjsua's own retry is off). Anything else ends the series of attempts.
     var retry: (attempt: Int, delay: TimeInterval)?

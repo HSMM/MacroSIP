@@ -1137,6 +1137,38 @@ unsigned cpjsua_regc_expiration_not_specified(void)
     return (unsigned)PJSIP_REGC_EXPIRATION_NOT_SPECIFIED;
 }
 
+int cpjsua_regc_lists_our_contact(const struct pjsip_regc_cbparam *param, pjsua_acc_id acc_id)
+{
+    pj_pool_t *pool;
+    pjsua_acc *acc;
+    pj_str_t ours;
+    pjsip_uri *our_uri;
+    int found = 0;
+    unsigned i;
+
+    if (!param || !pjsua_acc_is_valid(acc_id) || param->contact_cnt == 0)
+        return 0;
+    acc = &pjsua_get_var()->acc[acc_id];
+    pool = pjsua_pool_create("regc-contact", 512, 512);
+    if (!pool)
+        return 1;       /* cannot tell: do not treat the registration as lost */
+    pj_strdup_with_null(pool, &ours, &acc->contact);
+    our_uri = pjsip_parse_uri(pool, ours.ptr, ours.slen, PJSIP_PARSE_URI_AS_NAMEADDR);
+    if (!our_uri) {
+        pj_pool_release(pool);
+        return 1;
+    }
+    for (i = 0; i < param->contact_cnt && !found; ++i) {
+        const pjsip_contact_hdr *h = param->contact[i];
+        if (h && h->uri &&
+            pjsip_uri_cmp(PJSIP_URI_IN_CONTACT_HDR, pjsip_uri_get_uri(h->uri),
+                          pjsip_uri_get_uri(our_uri)) == PJ_SUCCESS)
+            found = 1;
+    }
+    pj_pool_release(pool);
+    return found;
+}
+
 /* ======================================================== Opus options === */
 
 static const pj_str_t OPUS_ID = {"opus", 4};
