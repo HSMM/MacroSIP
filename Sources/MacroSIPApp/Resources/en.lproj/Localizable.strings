@@ -374,7 +374,7 @@
 "updates.menu.check" = "Check for Updates…";
 "updates.header" = "Updates";
 "updates.automatic" = "Check for updates automatically";
-"updates.automatic.help" = "Once a day. MacroSIP asks before installing an update.";
+"updates.automatic.help" = "At launch and once a day. MacroSIP asks before installing an update.";
 "updates.releaseCandidates" = "Include release candidates";
 "updates.releaseCandidates.help" = "Test builds of the next version, offered before it is final.";
 "updates.checkNow" = "Check Now";

@@ -535,7 +535,7 @@ enum L {
     static var updatesMenuCheck: String { loc("updates.menu.check", "Check for Updates…") }
     static var updatesHeader: String { loc("updates.header", "Updates") }
     static var updatesAutomatic: String { loc("updates.automatic", "Check for updates automatically") }
-    static var updatesAutomaticHelp: String { loc("updates.automatic.help", "Once a day. MacroSIP asks before installing an update.") }
+    static var updatesAutomaticHelp: String { loc("updates.automatic.help", "At launch and once a day. MacroSIP asks before installing an update.") }
     static var updatesReleaseCandidates: String { loc("updates.releaseCandidates", "Include release candidates") }
     static var updatesReleaseCandidatesHelp: String { loc("updates.releaseCandidates.help", "Test builds of the next version, offered before it is final.") }
     static var updatesCheckNow: String { loc("updates.checkNow", "Check Now") }

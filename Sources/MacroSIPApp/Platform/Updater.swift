@@ -71,6 +71,23 @@ final class Updater: NSObject {
             self?.callsChanged(busy: busy)
         }
         AppLog.app.info("updates: updater started, automatic checks \(updater.automaticallyChecksForUpdates ? "on" : "off"), release candidates \(includeReleaseCandidates ? "on" : "off")")
+        checkAtLaunch(delay: Self.launchCheckDelay)
+    }
+
+    /// Seconds after the start before the check at launch, so it does not compete with the engine start.
+    private static let launchCheckDelay: Duration = .seconds(8)
+
+    /// Check at launch: with "Check for updates automatically" on, one background check shortly after the start
+    /// (`checkForUpdatesInBackground`: no window unless an update exists; a found update during a call waits for the
+    /// calls to end, see the user driver delegate). Sparkle's own daily schedule is untouched. The call does nothing
+    /// while a session is in progress, so it cannot overlap Sparkle's own check at start or a check the user began.
+    private func checkAtLaunch(delay: Duration) {
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: delay)
+            guard let updater = self?.controller?.updater, updater.automaticallyChecksForUpdates, !updater.sessionInProgress else { return }
+            AppLog.app.info("updates: check at launch")
+            updater.checkForUpdatesInBackground()
+        }
     }
 
     /// "Check for Updates…" and "Check Now": Sparkle shows its own progress and result windows.

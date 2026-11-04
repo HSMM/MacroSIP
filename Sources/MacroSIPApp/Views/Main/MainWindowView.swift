@@ -126,10 +126,6 @@ struct StatusBar: View {
                     Text(model.accounts.isEmpty ? L.statusNoAccounts : L.statusNoneEnabled)
                 }
                 Spacer(minLength: 0)
-                Button { model.openSettings(tab: .accounts) } label: {
-                    Text("\(L.menuSettings) ⌘,")
-                }
-                .buttonStyle(.plain)
             } else if !model.networkOnline {
                 HStack(spacing: 5) {
                     Image(systemName: "wifi.slash").font(.system(size: 10))

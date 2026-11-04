@@ -1245,7 +1245,7 @@ Screen 10. Main window with no accounts.
 |---|---|---|
 | 1 | Common frame | Account pop-up button reads "No account" (dimmed). Number field disabled. Tabs enabled. |
 | 2 | Empty-state body | Centred column, 398 pt high, 24 pt padding. |
-| 3 | Status bar | "No accounts" with a grey hollow dot, and "Settings… ⌘," at right. |
+| 3 | Status bar | "No accounts" with a grey hollow dot; at right the Quick Keys and Settings buttons, as in every status bar (no text link). |
 
 ### Empty-state body
 
@@ -1315,7 +1315,7 @@ Strings marked "(proposed)" are not in the mockups; they are needed by the spec 
 | | No account | `account.popup.none` | Pop-up button label when there are no accounts; dimmed. |
 | | No accounts | `status.noAccounts` | Status bar. |
 | | %@: %@ | `status.account.failed` | Account name, short reason; red. |
-| | Settings… | `menu.settings` | Shown in status bar in first launch as "Settings… ⌘,". |
+| | Settings… | `menu.settings` | Menu bar item, the Settings button tooltip in the status bar and the Quick keys panel. |
 | | Show %@ | `menu.showApp` | Menu bar item; %@ app name. |
 | | Quit %@ | `menu.quitApp` | Menu bar item; %@ app name. |
 | | %1$lld of %2$lld online | `status.summary` | Status bar summary (4+ enabled accounts). |

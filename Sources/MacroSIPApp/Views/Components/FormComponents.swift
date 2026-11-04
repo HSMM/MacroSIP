@@ -67,22 +67,31 @@ struct FormDivider: View {
 }
 
 /// Pane body: grey background, 18 pt top and 22 pt side padding, fixed 680 pt width. The pane is as tall as its
-/// content (measured) up to `maxHeight`, so a 13-inch screen still shows the window whole; taller content scrolls.
+/// content (measured) up to `maxHeight`, so a 13-inch screen still shows the window whole; taller content scrolls,
+/// with `scrollEndPadding` more below the last group so the previous group's footer text does not end up cut
+/// by the toolbar's edge at the end of the scroll.
 struct PaneContainer<Content: View>: View {
     var minHeight: CGFloat = 380
     var maxHeight: CGFloat = 640
     @ViewBuilder var content: Content
     @Local private var contentHeight: CGFloat = 0
+    @Local private var scrolls = false
+    private static var scrollEndPadding: CGFloat { 3 }
 
     var body: some View {
         ScrollView(.vertical) {
             VStack(alignment: .leading, spacing: 18) { content }
-                .padding(.top, 18).padding(.bottom, 22).padding(.horizontal, 22)
+                .padding(.top, 18).padding(.bottom, 22 + (scrolls ? Self.scrollEndPadding : 0)).padding(.horizontal, 22)
                 .frame(width: 680, alignment: .topLeading)
                 .background(GeometryReader { Color.clear.preference(key: PaneHeightKey.self, value: $0.size.height) })
         }
         .scrollBounceBehavior(.basedOnSize)
-        .onPreferenceChange(PaneHeightKey.self) { h in MainActor.assumeIsolated { contentHeight = h } }
+        .onPreferenceChange(PaneHeightKey.self) { h in
+            MainActor.assumeIsolated {
+                contentHeight = h
+                scrolls = h - (scrolls ? Self.scrollEndPadding : 0) > maxHeight
+            }
+        }
         .frame(width: 680, height: paneHeight)
         .background(Theme.groupBackground)
         .background(FitWindowToPane(height: paneHeight))

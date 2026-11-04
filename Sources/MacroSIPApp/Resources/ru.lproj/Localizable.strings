@@ -374,7 +374,7 @@
 "updates.menu.check" = "Проверить наличие обновлений…";
 "updates.header" = "Обновления";
 "updates.automatic" = "Проверять обновления автоматически";
-"updates.automatic.help" = "Раз в день. MacroSIP спрашивает перед установкой обновления.";
+"updates.automatic.help" = "При запуске и раз в день. MacroSIP спрашивает перед установкой обновления.";
 "updates.releaseCandidates" = "Включать предварительные версии";
 "updates.releaseCandidates.help" = "Тестовые сборки следующей версии до её выхода.";
 "updates.checkNow" = "Проверить";
