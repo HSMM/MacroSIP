@@ -74,6 +74,7 @@ App:
 ## 26.3 (in development)
 
 - Noise suppression with RNNoise on the microphone and on the incoming audio, a toggle and a level in Settings › Audio; today Apple's voice processing covers only the default devices.
+
 ## Later
 
 - Developer ID signing and notarization, so the first launch needs no workaround (when the signing identity is available).
