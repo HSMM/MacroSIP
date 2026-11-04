@@ -280,6 +280,9 @@ extension Engine {
     func switchEchoCanceller(software: Bool, capture: Int32, playback: Int32, throwing: Bool,
                              forceOpen: Bool = false,
                              open: (Int32, Int32) -> pj_status_t = { cpjsua_open_snd_devs($0, $1) }) throws {
+        // Registers again although applySoundDevices did: tests enter here directly, and the
+        // engine queue may run this job on a GCD thread pjlib has not seen yet.
+        try requireStarted()
         let options = UInt32(PJMEDIA_ECHO_WEBRTC.rawValue) | (software ? UInt32(PJMEDIA_ECHO_USE_SW_ECHO.rawValue) : 0)
         // On the null device after an earlier failure, calls still need a real device now.
         let mustOpen = forceOpen || pjsua_snd_is_active() != 0
