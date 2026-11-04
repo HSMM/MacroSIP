@@ -9,8 +9,38 @@
             <sparkle:version>31</sparkle:version>
             <sparkle:shortVersionString>26.2.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<p dir="auto">With ad hoc signing macOS asks for microphone access again after each update; allow it once more.</p>
-<p dir="auto"><strong>Full Changelog</strong>: <a class="commit-link" href="https://github.com/HSMM/MacroSIP/compare/26.1.1...26.2.0"><tt>26.1.1...26.2.0</tt></a></p>]]></description>
+            <description><![CDATA[<h2 dir="auto">What's new</h2>
+<ul dir="auto">
+<li><strong>Servers on a private network.</strong> An account whose server is addressed by a private IP (an office PBX at 10.x, 172.16-31.x, 192.168.x, or a 100.64-127.x VPN address) no longer uses STUN: the first REGISTER carries the Mac's own address instead of the public one, so the server does not have to repair the Contact, and incoming calls also reach a server that does not rewrite it. Servers addressed by a host name keep STUN.</li>
+<li><strong>Updates are checked at launch</strong> as well as once a day. Sparkle shows a window only when an update exists.</li>
+</ul>
+<h2 dir="auto">What's fixed</h2>
+<ul dir="auto">
+<li><strong>Stereo recording.</strong> The local and the far side were written by two separate recorders and could drift apart: 20 ms after hold and resume, more when one side fell silent. Both files are now written together from the same audio frames and are always of equal length. With the recording notice on, a held call no longer grows the files with silence.</li>
+<li>The diagnostics archive no longer contains <code class="notranslate">._*</code> metadata entries, and the first line of the log reports the level that is in force, including debug mode.</li>
+<li>The status bar with no accounts shows only the gear button; the "Settings… ⌘," link next to it did the same thing.</li>
+<li>Settings panes that scroll end clear of the toolbar.</li>
+<li>Screenshots of the global hotkeys, the MicroSIP import and the troubleshooting group are in the README, in English and Russian, light and dark.</li>
+</ul>
+<p dir="auto">Not yet checked on a real network: the STUN change over a VPN or with an office PBX; until the server's first answer the media address is still that of the default route, so a PBX without symmetric RTP may need that answer first.</p>
+<p dir="auto">With ad hoc signing macOS asks for microphone access again after each update; allow it once more.</p>
+<p dir="auto"><strong>Full Changelog</strong>: <a class="commit-link" href="https://github.com/HSMM/MacroSIP/compare/26.1.1...26.2.0"><tt>26.1.1...26.2.0</tt></a></p>
+<hr>
+<h2 dir="auto">Что нового</h2>
+<ul dir="auto">
+<li><strong>Серверы в частной сети.</strong> Аккаунт, сервер которого задан частным IP-адресом (офисная АТС 10.x, 172.16-31.x, 192.168.x или VPN-адрес 100.64-127.x), больше не использует STUN: первый REGISTER несёт собственный адрес Mac, а не публичный, поэтому серверу не нужно исправлять Contact, а входящие доходят и до сервера, который его не переписывает. Серверы, заданные именем хоста, по-прежнему используют STUN.</li>
+<li><strong>Обновления проверяются при запуске</strong> и раз в сутки. Окно Sparkle появляется только если обновление есть.</li>
+</ul>
+<h2 dir="auto">Что исправлено</h2>
+<ul dir="auto">
+<li><strong>Стереозапись.</strong> Локальная и дальняя стороны писались двумя отдельными рекордерами и могли расходиться: на 20 мс после удержания и возобновления, больше, если одна сторона замолкала. Теперь оба файла пишутся вместе из одних и тех же аудиокадров и всегда одинаковой длины. При включённом сигнале записи удерживаемый звонок больше не растит файлы тишиной.</li>
+<li>В архиве диагностики больше нет служебных записей <code class="notranslate">._*</code>, а первая строка журнала показывает действующий уровень, включая режим отладки.</li>
+<li>В строке состояния без аккаунтов осталась только шестерёнка; ссылка «Настройки… ⌘,» рядом делала то же самое.</li>
+<li>Прокручиваемые панели настроек заканчиваются чисто под панелью инструментов.</li>
+<li>Скриншоты глобальных горячих клавиш, импорта из MicroSIP и устранения неполадок добавлены в README на двух языках, в светлой и тёмной теме.</li>
+</ul>
+<p dir="auto">На реальной сети ещё не проверено: изменение STUN через VPN или с офисной АТС; до первого ответа сервера адрес медиа остаётся адресом маршрута по умолчанию, поэтому АТС без симметричного RTP может понадобиться этот ответ.</p>
+<p dir="auto">При ad hoc подписи macOS после каждого обновления заново спрашивает доступ к микрофону, разрешите его ещё раз.</p>]]></description>
             <enclosure url="https://github.com/HSMM/MacroSIP/releases/download/26.2.0/MacroSIP-26.2.0.dmg" length="18377947" type="application/octet-stream" sparkle:edSignature="kjGY1abtNZvhfeL2BdpdeeNgoK0Gpp9aXfYRqDTmLL6u0aoI7f5Ubg7VRbtbjXoGmRmbKT7yS6PHUPMIER+hAg=="/>
         </item>
         <item>
