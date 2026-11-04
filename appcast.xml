@@ -9,16 +9,18 @@
             <sparkle:version>23</sparkle:version>
             <sparkle:shortVersionString>26.1.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<p dir="auto">With ad hoc signing macOS asks for microphone access again after each update; allow it once more.</p>
-<h2 dir="auto">What's Changed</h2>
+            <description><![CDATA[<h2 dir="auto">What's fixed</h2>
 <ul dir="auto">
-<li>Register again when the server answer leaves out our Contact (26.1.1) by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/HSMM/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/HSMM">@HSMM</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="6201220709" data-permission-text="Title is private" data-url="https://github.com/HSMM/MacroSIP/issues/4" data-hovercard-type="pull_request" data-hovercard-url="/HSMM/MacroSIP/pull/4/hovercard" href="https://github.com/HSMM/MacroSIP/pull/4">#4</a></li>
+<li>Incoming calls no longer fail after launch on servers that rewrite Contact behind NAT or VPN, for example FreePBX or Asterisk with <code class="notranslate">rewrite_contact=yes</code>. The account could show as registered with no registration on the server until the next refresh, up to 5 minutes by default. MacroSIP now checks the server's answer, registers again if the answer does not list the account, and shows it as registered only after that (<a href="https://github.com/HSMM/MacroSIP/issues/3" data-hovercard-type="issue" data-hovercard-url="/HSMM/MacroSIP/issues/3/hovercard">#3</a>).</li>
 </ul>
-<h2 dir="auto">New Contributors</h2>
+<p dir="auto">With ad hoc signing macOS asks for microphone access again after each update; allow it once more.</p>
+<p dir="auto"><strong>Full Changelog</strong>: <a class="commit-link" href="https://github.com/HSMM/MacroSIP/compare/26.1.0...26.1.1"><tt>26.1.0...26.1.1</tt></a></p>
+<hr>
+<h2 dir="auto">Что исправлено</h2>
 <ul dir="auto">
-<li><a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/HSMM/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/HSMM">@HSMM</a> made their first contribution in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="6201220709" data-permission-text="Title is private" data-url="https://github.com/HSMM/MacroSIP/issues/4" data-hovercard-type="pull_request" data-hovercard-url="/HSMM/MacroSIP/pull/4/hovercard" href="https://github.com/HSMM/MacroSIP/pull/4">#4</a></li>
+<li>Входящие звонки больше не теряются после запуска на серверах, которые переписывают Contact за NAT или VPN, например FreePBX или Asterisk с <code class="notranslate">rewrite_contact=yes</code>. Аккаунт мог показываться как зарегистрированный, хотя на сервере регистрации не было до следующей перерегистрации, по умолчанию до 5 минут. Теперь MacroSIP проверяет ответ сервера, регистрируется повторно, если аккаунта в ответе нет, и только после этого показывает его как зарегистрированный (<a href="https://github.com/HSMM/MacroSIP/issues/3" data-hovercard-type="issue" data-hovercard-url="/HSMM/MacroSIP/issues/3/hovercard">#3</a>).</li>
 </ul>
-<p dir="auto"><strong>Full Changelog</strong>: <a class="commit-link" href="https://github.com/HSMM/MacroSIP/compare/26.1.0...26.1.1"><tt>26.1.0...26.1.1</tt></a></p>]]></description>
+<p dir="auto">При ad hoc подписи macOS после каждого обновления заново спрашивает доступ к микрофону, разрешите его ещё раз.</p>]]></description>
             <enclosure url="https://github.com/HSMM/MacroSIP/releases/download/26.1.1/MacroSIP-26.1.1.dmg" length="18362969" type="application/octet-stream" sparkle:edSignature="KeT0f6k/8poaWg2idL9P3/eFvUpzzjlhePisjuSZUVKgAxjCKrKWPrhlvuESNT099wwmCBCn07lfj0ZIx9tdDg=="/>
         </item>
         <item>
