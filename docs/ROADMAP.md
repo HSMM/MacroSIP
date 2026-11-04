@@ -65,6 +65,7 @@ App:
 ## 26.2 (in development)
 
 - Accounts on a server addressed by a private IP address (an office PBX at 10.x, 172.16-31.x, 192.168.x or a 100.64-127.x VPN address, on the LAN or over a VPN) no longer use STUN: the first REGISTER carries the Mac's own address instead of the public one, so the server does not have to repair the Contact, and incoming calls also reach a server that does not rewrite it.
+- Planned: noise suppression with RNNoise on the microphone and on the incoming audio, a toggle and a level in Settings › Audio; today Apple's voice processing covers only the default devices.
 
 ## Later
 
