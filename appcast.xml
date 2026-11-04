@@ -3,6 +3,25 @@
     <channel>
         <title>MacroSIP</title>
         <item>
+            <title>26.1.1</title>
+            <pubDate>Wed, 04 Nov 2026 11:33:31 +0000</pubDate>
+            <link>https://github.com/HSMM/MacroSIP</link>
+            <sparkle:version>23</sparkle:version>
+            <sparkle:shortVersionString>26.1.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<p dir="auto">With ad hoc signing macOS asks for microphone access again after each update; allow it once more.</p>
+<h2 dir="auto">What's Changed</h2>
+<ul dir="auto">
+<li>Register again when the server answer leaves out our Contact (26.1.1) by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/HSMM/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/HSMM">@HSMM</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="6201220709" data-permission-text="Title is private" data-url="https://github.com/HSMM/MacroSIP/issues/4" data-hovercard-type="pull_request" data-hovercard-url="/HSMM/MacroSIP/pull/4/hovercard" href="https://github.com/HSMM/MacroSIP/pull/4">#4</a></li>
+</ul>
+<h2 dir="auto">New Contributors</h2>
+<ul dir="auto">
+<li><a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/HSMM/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/HSMM">@HSMM</a> made their first contribution in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="6201220709" data-permission-text="Title is private" data-url="https://github.com/HSMM/MacroSIP/issues/4" data-hovercard-type="pull_request" data-hovercard-url="/HSMM/MacroSIP/pull/4/hovercard" href="https://github.com/HSMM/MacroSIP/pull/4">#4</a></li>
+</ul>
+<p dir="auto"><strong>Full Changelog</strong>: <a class="commit-link" href="https://github.com/HSMM/MacroSIP/compare/26.1.0...26.1.1"><tt>26.1.0...26.1.1</tt></a></p>]]></description>
+            <enclosure url="https://github.com/HSMM/MacroSIP/releases/download/26.1.1/MacroSIP-26.1.1.dmg" length="18362969" type="application/octet-stream" sparkle:edSignature="KeT0f6k/8poaWg2idL9P3/eFvUpzzjlhePisjuSZUVKgAxjCKrKWPrhlvuESNT099wwmCBCn07lfj0ZIx9tdDg=="/>
+        </item>
+        <item>
             <title>26.1.0</title>
             <pubDate>Tue, 03 Nov 2026 17:22:56 +0000</pubDate>
             <link>https://github.com/HSMM/MacroSIP</link>
