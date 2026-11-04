@@ -50,6 +50,14 @@ The app follows the macOS appearance. Light theme on the left, dark theme on the
   <img src="docs/screenshots/dark/account-popup.png?v=1" width="260" alt="Account pop-up, dark theme">
 </p>
 
+Global hotkeys, import from MicroSIP and the diagnostics archive (they follow the system theme):
+
+<p align="center">
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/settings-hotkeys.png?v=1"><img src="docs/screenshots/light/settings-hotkeys.png?v=1" width="330" alt="Settings, Calls: global hotkeys"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/import-microsip.png?v=1"><img src="docs/screenshots/light/import-microsip.png?v=1" width="260" alt="Import from MicroSIP, preview"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/settings-diagnostics.png?v=1"><img src="docs/screenshots/light/settings-diagnostics.png?v=1" width="330" alt="Settings, General: Troubleshooting with Debug mode"></picture>
+</p>
+
 More screenshots, in English and Russian, light and dark: [docs/screenshots](docs/screenshots).
 
 Guide: https://hsmm.github.io/MacroSIP/wiki/

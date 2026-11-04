@@ -10,7 +10,7 @@ import SwiftUI
 ///                 | account-popup | settings-accounts | account-editor | account-editor-basic | account-editor-open | editor-first-launch
 ///                 | quality-good | quality-fair | quality-poor | recording-long | many-accounts | many-accounts-settings | quality-poor-calls | network-offline | reconnecting | call-volume | headset | headset-back
 ///                 | settings-audio | settings-codecs | timed-dnd | call-log-playback | busy-mode | quick-keys | quick-keys-bottom | contact-card | contact-card-new
-///                 | settings-diagnostics | diagnostics-selftest | settings-hotkeys | import-microsip | import-microsip-done | hotkeys-selftest | import-selftest
+///                 | settings-diagnostics | settings-diagnostics-on | diagnostics-selftest | settings-hotkeys | settings-hotkeys-on | import-microsip | import-microsip-done | hotkeys-selftest | import-selftest
 ///                 | directory | directory-done | directory-incoming | directory-sheet | directory-import | settings-directory
 /// Data goes to a throw-away directory (see LaunchOptions); the Keychain is never touched.
 enum DemoState {
@@ -233,6 +233,9 @@ enum DemoState {
             await quickKeysDemo(model, bottom: state == "quick-keys-bottom")
         case let s where isDirectoryState(s) && s != "settings-directory":
             await runDirectory(model, state: s)
+        case "settings-diagnostics-on":     // Troubleshooting with Debug mode switched on (README screenshots)
+            model.updateSettings { $0.general.debugMode = true }
+            await runDiagnostics(model, state: "settings-diagnostics")
         case let s where isDiagnosticsState(s):
             await runDiagnostics(model, state: s)
         case let s where isHotkeyImportState(s):

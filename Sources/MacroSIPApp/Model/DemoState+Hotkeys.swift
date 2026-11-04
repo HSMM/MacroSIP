@@ -5,23 +5,28 @@ import AppKit
 
 /// Demo states of the global hotkeys and the MicroSIP import (26.1):
 ///   settings-hotkeys      Settings › Calls with the hotkeys on; the Mute field shows the "could not be registered" message
+///   settings-hotkeys-on   the same without the message: the three default combinations (for the README screenshots)
 ///   import-microsip       Settings › Accounts with the Import from MicroSIP preview open (sample files in a temp folder)
 ///   import-microsip-done  the same after pressing Import (the report step)
 ///   hotkeys-selftest      only the hotkey checks of `selftest` (registers real hotkeys briefly: Control-Option-Shift-Command with F13 to F16)
 ///   import-selftest       only the import checks of `selftest`
 extension DemoState {
     static func isHotkeyImportState(_ state: String) -> Bool {
-        ["settings-hotkeys", "import-microsip", "import-microsip-done", "hotkeys-selftest", "import-selftest"].contains(state)
+        ["settings-hotkeys", "settings-hotkeys-on", "import-microsip", "import-microsip-done", "hotkeys-selftest", "import-selftest"].contains(state)
     }
 
     @MainActor
     static func runHotkeyImport(_ model: AppModel, state: String) async {
         try? await Task.sleep(for: .seconds(1.2))
         switch state {
-        case "settings-hotkeys":
+        case "settings-hotkeys", "settings-hotkeys-on":
             model.updateSettings { $0.hotkeys = HotkeySettings(enabled: true, answer: .defaultAnswer, hangUp: .defaultHangUp, mute: .defaultMute, prefilled: true) }
-            model.hotkeyFailures = [.mute: .inUse]          // what a refused registration looks like; nothing is registered in a demo
+            if state == "settings-hotkeys" { model.hotkeyFailures = [.mute: .inUse] }   // what a refused registration looks like; nothing is registered in a demo
             model.openSettings(tab: .calls)
+            if state == "settings-hotkeys-on" {     // no focus ring on the delay field of the Auto-answer group below
+                try? await Task.sleep(for: .seconds(0.8))
+                for window in NSApp.windows where window.isVisible && window.title != model.appName { window.makeFirstResponder(nil) }
+            }
         case "import-microsip", "import-microsip-done":
             let ini = writeMicroSIPSamples(existingNumber: model.contacts.first?.defaultNumber?.value ?? "100")
             model.openSettings(tab: .accounts)
@@ -55,11 +60,19 @@ extension DemoState {
 
     // MARK: Sample files
 
-    /// A MicroSIP.ini and a Contacts.xml in a new temporary folder. The ini holds two new accounts, one that
+    /// A MicroSIP.ini and a Contacts.xml in a new folder: `MicroSIP` inside the demo's throw-away data directory, so the
+    /// sheet shows a short path (a demo with `--data-dir` somewhere short, e.g. /tmp/x, shows /tmp/x/MicroSIP); a new
+    /// folder in the temporary directory when there is no data directory. Nothing goes outside those. The ini holds two new accounts, one that
     /// MacroSIP already has (the demo Office account), one without a user name, one without a server, one with a
     /// transport nobody knows and a dial plan, and "encrypted" passwords that must never reach the app.
     static func writeMicroSIPSamples(existingNumber: String) -> URL {
-        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("MacroSIP-import-sample-\(UUID().uuidString.prefix(8))", isDirectory: true)
+        let folder: URL
+        if let data = LaunchOptions.current.dataDirectory {
+            folder = data.appendingPathComponent("MicroSIP", isDirectory: true)
+            try? FileManager.default.removeItem(at: folder)
+        } else {
+            folder = FileManager.default.temporaryDirectory.appendingPathComponent("MacroSIP-import-sample-\(UUID().uuidString.prefix(8))", isDirectory: true)
+        }
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let ini = """
         [Settings]

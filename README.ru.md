@@ -50,6 +50,14 @@ Electron и Qt. Одно небольшое окно, значок в строк
   <img src="docs/screenshots/ru/dark/account-popup.png?v=1" width="260" alt="Меню аккаунтов, тёмная тема">
 </p>
 
+Глобальные горячие клавиши, импорт из MicroSIP и архив для диагностики (оформление следует теме системы):
+
+<p align="center">
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/settings-hotkeys.png?v=1"><img src="docs/screenshots/ru/light/settings-hotkeys.png?v=1" width="330" alt="Настройки, Звонки: глобальные горячие клавиши"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/import-microsip.png?v=1"><img src="docs/screenshots/ru/light/import-microsip.png?v=1" width="260" alt="Импорт из MicroSIP, предпросмотр"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/settings-diagnostics.png?v=1"><img src="docs/screenshots/ru/light/settings-diagnostics.png?v=1" width="330" alt="Настройки, Основные: устранение неполадок и режим отладки"></picture>
+</p>
+
 Больше скриншотов на двух языках и в обеих темах: [docs/screenshots](docs/screenshots).
 
 Руководство: https://hsmm.github.io/MacroSIP/wiki/ru/index.html

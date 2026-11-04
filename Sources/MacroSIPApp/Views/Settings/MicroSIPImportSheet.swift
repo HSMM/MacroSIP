@@ -43,7 +43,7 @@ struct MicroSIPImportSheet: View {
 
     private func fileRow(_ session: MicroSIPImportSession) -> some View {
         FormGroup {
-            FormRow(label: session.iniURL.lastPathComponent, help: session.iniURL.deletingLastPathComponent().path) { EmptyView() }
+            FormRow(label: session.iniURL.lastPathComponent, help: (session.iniURL.deletingLastPathComponent().path as NSString).abbreviatingWithTildeInPath) { EmptyView() }
             if session.report == nil, case .preview = session.outcome {
                 FormDivider()
                 FormRow(label: L.importContactsFile, help: session.contactsURL?.lastPathComponent ?? L.importContactsNone) {
