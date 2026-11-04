@@ -15,11 +15,21 @@ struct PJAccountSettings: Equatable, Sendable {
     var proxies: [String]
     var srtp: SRTPMode
     var srtpSecureSignaling: Int
+    /// The account's transport; PJSUA_INVALID_ID for a UDP account of a private server while
+    /// STUN is on, so its Contact and Via do not carry the STUN address (`settings`).
     var transportID: Int32
     var allowContactRewrite: Bool
     var allowViaRewrite: Bool
     var keepAliveSeconds: Int
     var iceEnabled: Bool
+    /// STUN for the account's signalling and media (`sip_stun_use`, `media_stun_use`): false
+    /// for a server in a private network (`PrivateServer`); true keeps pjsua's defaults.
+    var sipSTUN: Bool = true
+    var mediaSTUN: Bool = true
+    /// `allow_sdp_nat_rewrite`: without STUN pjsua offers the default route's address in SDP,
+    /// which over a split-tunnel VPN is not the one the server sees; with it the SDP takes the
+    /// address the registrar reported in Via (received), as Contact does. On for private servers.
+    var sdpNATRewrite: Bool = false
     /// RTP base port and range (NetworkSettings.rtpPortStart/rtpPortCount); the first port is
     /// picked at random inside the range so two PJSIP phones on one host (or a restarted
     /// engine) do not fight over 4000, 4002, ...
@@ -69,6 +79,71 @@ struct TransportIDs: Equatable, Sendable {
     }
 }
 
+/// STUN learns the address a NAT gives us towards the internet, which is what a server on the
+/// internet must see in Contact, Via and SDP. A server addressed by a private or local IP is
+/// reached inside the same network or through a VPN, where that public address is wrong: PJSIP
+/// learns the real one only from the first answer and registers again, and a server that does
+/// not rewrite Contact would send incoming calls to the public address. Host names are not
+/// resolved here (that would block, and the answer may change with the network); they keep STUN.
+enum PrivateServer {
+    /// Every signalling hop of the account is a private or local IP literal: the registrar and
+    /// the outbound proxy when one is set, otherwise the domain (INVITE, SUBSCRIBE and PUBLISH
+    /// go there directly). One public address or host name among them keeps STUN.
+    static func allHopsPrivate(_ account: AccountConfig) -> Bool {
+        hops(account).allSatisfy(isPrivate(uri:))
+    }
+
+    /// Every hop is a dotted IPv4 literal. pjsua asks for an IPv6 transport for any host with a
+    /// colon (`pjsua_acc_get_uac_addr`; ::ffff:a.b.c.d too) and the engine creates none, so an
+    /// account with such a hop must stay bound to its transport (`AccountMapping.settings`).
+    static func allHopsIPv4(_ account: AccountConfig) -> Bool {
+        hops(account).allSatisfy { uri in
+            var v4 = in_addr()
+            guard let host = SignallingSource.proxy(uri, transport: .udp)?.address else { return false }
+            return inet_pton(AF_INET, host, &v4) == 1
+        }
+    }
+
+    private static func hops(_ account: AccountConfig) -> [String] {
+        let proxy = account.outboundProxy?.trimmingCharacters(in: .whitespaces) ?? ""
+        return [account.registrarURI, proxy.isEmpty ? account.domain : proxy]
+    }
+
+    /// The host of "10.0.0.1", "10.0.0.1:5080", "sip:pbx@192.168.1.10;transport=tcp",
+    /// "[fd00::1]:5060" or "fe80::1" is a private or local IP literal.
+    static func isPrivate(uri: String) -> Bool {
+        guard let host = SignallingSource.proxy(uri, transport: .udp)?.address else { return false }
+        return isPrivate(address: host)
+    }
+
+    /// RFC 1918 (10/8, 172.16/12, 192.168/16), shared address space 100.64/10 (RFC 6598: carrier
+    /// NAT, Tailscale; never routed on the internet), loopback 127/8 and link-local 169.254/16;
+    /// for IPv6 ::1, unique local fc00::/7, link-local fe80::/10 and IPv4-mapped forms of the
+    /// above. Anything that is not an IP literal is not private.
+    static func isPrivate(address raw: String) -> Bool {
+        let a = raw.trimmingCharacters(in: CharacterSet(charactersIn: "[] "))
+        var v4 = in_addr()
+        if inet_pton(AF_INET, a, &v4) == 1 {
+            return isPrivate(ipv4: UInt32(bigEndian: v4.s_addr))
+        }
+        var v6 = in6_addr()
+        guard inet_pton(AF_INET6, a, &v6) == 1 else { return false }
+        let b = withUnsafeBytes(of: &v6) { Array($0) }
+        if b[0..<15].allSatisfy({ $0 == 0 }) && b[15] == 1 { return true }                 // ::1
+        if b[0] & 0xfe == 0xfc { return true }                                              // fc00::/7
+        if b[0] == 0xfe && b[1] & 0xc0 == 0x80 { return true }                              // fe80::/10
+        if b[0..<10].allSatisfy({ $0 == 0 }) && b[10] == 0xff && b[11] == 0xff {            // ::ffff:a.b.c.d
+            return isPrivate(ipv4: UInt32(b[12]) << 24 | UInt32(b[13]) << 16 | UInt32(b[14]) << 8 | UInt32(b[15]))
+        }
+        return false
+    }
+
+    private static func isPrivate(ipv4 a: UInt32) -> Bool {
+        a >> 24 == 10 || a >> 20 == 0xac1 || a >> 16 == 0xc0a8 || a >> 22 == 0x191 || a >> 24 == 127
+            || a >> 16 == 0xa9fe
+    }
+}
+
 enum AccountMapping {
     static func settings(
         for account: AccountConfig,
@@ -81,6 +156,19 @@ enum AccountMapping {
             throw EngineError.transportUnavailable(account.transport)
         }
         let proxy = account.outboundProxy?.trimmingCharacters(in: .whitespaces) ?? ""
+        let stun = !PrivateServer.allHopsPrivate(account)
+        // sip_stun_use alone does not change Contact and Via: for an account bound to its UDP
+        // transport pjsua takes them from the transport's published address, which STUN made
+        // the public one (pjsip_tpmgr_find_local_addr2 ignores local_if under a transport
+        // selector). Unbound, pjsua takes the local address of the route to the server
+        // (get_net_interface) with the transport's port; requests still leave through the one
+        // UDP transport, and large ones stay on UDP (disable_tcp_switch). TCP and TLS listeners
+        // are never published with a STUN address, and without a STUN server there is nothing
+        // to undo: those accounts stay bound. So do IPv6 hops: unbound, pjsua would want an
+        // IPv6 transport for them and refuse the account.
+        let stunServer = network.stunServer?.trimmingCharacters(in: .whitespaces) ?? ""
+        let unbound = !stun && !stunServer.isEmpty && account.transport == .udp
+            && PrivateServer.allHopsIPv4(account)
         return PJAccountSettings(
             idURI: account.uri,
             regURI: account.registrarURI,
@@ -94,11 +182,14 @@ enum AccountMapping {
             // Mandatory SRTP over TLS also requires secure signalling (sips); otherwise
             // SRTP is allowed over plain UDP/TCP signalling.
             srtpSecureSignaling: (account.srtp == .mandatory && account.transport == .tls) ? 1 : 0,
-            transportID: transportID,
+            transportID: unbound ? PJ.invalidID : transportID,
             allowContactRewrite: true,
             allowViaRewrite: true,
             keepAliveSeconds: max(0, network.keepAliveSeconds),
             iceEnabled: network.useICE,
+            sipSTUN: stun,
+            mediaSTUN: stun,
+            sdpNATRewrite: !stun,
             rtpPort: network.effectiveRTPRange.start,
             rtpPortRange: rtpPortRange(count: network.effectiveRTPRange.count),
             randomizeRTPPort: true,
@@ -193,6 +284,9 @@ enum AccountMapping {
 
         cfg.pointee.ice_cfg_use = PJSUA_ICE_CONFIG_USE_CUSTOM
         cfg.pointee.ice_cfg.enable_ice = s.iceEnabled ? 1 : 0
+        if !s.sipSTUN { cfg.pointee.sip_stun_use = PJSUA_STUN_USE_DISABLED }
+        if !s.mediaSTUN { cfg.pointee.media_stun_use = PJSUA_STUN_USE_DISABLED }
+        cfg.pointee.allow_sdp_nat_rewrite = s.sdpNATRewrite ? 1 : 0
 
         cfg.pointee.rtp_cfg.port = UInt32(s.rtpPort)
         cfg.pointee.rtp_cfg.port_range = UInt32(s.rtpPortRange)
@@ -238,6 +332,9 @@ enum AccountMapping {
             allowViaRewrite: c.allow_via_rewrite != 0,
             keepAliveSeconds: Int(c.ka_interval),
             iceEnabled: c.ice_cfg_use == PJSUA_ICE_CONFIG_USE_CUSTOM && c.ice_cfg.enable_ice != 0,
+            sipSTUN: c.sip_stun_use != PJSUA_STUN_USE_DISABLED,
+            mediaSTUN: c.media_stun_use != PJSUA_STUN_USE_DISABLED,
+            sdpNATRewrite: c.allow_sdp_nat_rewrite != 0,
             rtpPort: Int(c.rtp_cfg.port),
             rtpPortRange: Int(c.rtp_cfg.port_range),
             randomizeRTPPort: c.rtp_cfg.randomize_port != 0,

@@ -422,10 +422,11 @@ public actor Engine {
         pjsip_cfg().pointee.endpt.disable_rport = network.useRport ? 0 : 1
 
         // RFC 3261 18.1.1: PJSIP puts TCP in front of UDP for a request above 1300 bytes
-        // (an authorised INVITE with SDP easily is). Every account is bound to its own
-        // transport, so for a UDP account that TCP attempt always fails with
-        // PJSIP_ETPNOTSUITABLE ("will try next server") before the UDP copy goes out.
-        // Keep the account's transport (docs/ENGINE.md, "Unsuitable transport").
+        // (an authorised INVITE with SDP easily is). For an account bound to its UDP transport
+        // that TCP attempt always fails with PJSIP_ETPNOTSUITABLE ("will try next server")
+        // before the UDP copy goes out; a UDP account of a private server that is not bound
+        // while STUN is on ("No STUN for private servers") would really switch to TCP, which
+        // the server may not offer. Keep UDP (docs/ENGINE.md, "Unsuitable transport").
         pjsip_cfg().pointee.endpt.disable_tcp_switch = 1
     }
 

@@ -62,6 +62,10 @@ App:
 
 `26.1.1` (2026-11-04): after launch or a Contact change behind NAT, an account could show as registered with no binding on the server, so incoming calls did not arrive until the next refresh ([#3](https://github.com/HSMM/MacroSIP/issues/3)). The account now registers again when the answer leaves out its Contact.
 
+## 26.2 (in development)
+
+- Accounts on a server addressed by a private IP address (an office PBX at 10.x, 172.16-31.x, 192.168.x or a 100.64-127.x VPN address, on the LAN or over a VPN) no longer use STUN: the first REGISTER carries the Mac's own address instead of the public one, so the server does not have to repair the Contact, and incoming calls also reach a server that does not rewrite it.
+
 ## Later
 
 - Developer ID signing and notarization, so the first launch needs no workaround (when the signing identity is available).

@@ -119,6 +119,73 @@ final class DNSStub: Sendable {
     }
 }
 
+// MARK: - STUN stub
+
+/// A STUN server on 127.0.0.1 (one UDP socket, random port) behind which every socket appears
+/// as `mapped` with its own port (a port-preserving NAT): each Binding request gets a success
+/// response with that XOR-MAPPED-ADDRESS. Answers both the RFC 5389 request pjnath sends when
+/// pjsua checks the server at start and the RFC 3489 form of PJSIP's SIP and RTP sockets (no
+/// magic cookie there, but they undo the XOR with it all the same). Records the source port of
+/// every request.
+final class STUNStub: Sendable {
+    let port: UInt16
+    private let fd: Int32
+    private let mapped: [UInt8]
+    private let stopped = OSAllocatedUnfairLock(initialState: false)
+    private let asked = OSAllocatedUnfairLock(initialState: [UInt16]())
+
+    /// Source ports of the Binding requests answered so far.
+    var sources: [UInt16] { asked.withLock { $0 } }
+
+    init(mapped address: String) throws {
+        mapped = address.split(separator: ".").compactMap { UInt8($0) }
+        let sock = socket(AF_INET, SOCK_DGRAM, 0)
+        guard sock >= 0, mapped.count == 4 else { throw EngineError.unsupported("socket") }
+        var addr = sockaddr_in()
+        addr.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
+        addr.sin_family = sa_family_t(AF_INET)
+        addr.sin_addr.s_addr = inet_addr("127.0.0.1")
+        var len = socklen_t(MemoryLayout<sockaddr_in>.size)
+        let ok = withUnsafeMutablePointer(to: &addr) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                bind(sock, $0, len) == 0 && getsockname(sock, $0, &len) == 0
+            }
+        }
+        guard ok else { close(sock); throw EngineError.unsupported("bind") }
+        var tv = timeval(tv_sec: 0, tv_usec: 100_000)
+        setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
+        fd = sock
+        port = UInt16(bigEndian: addr.sin_port)
+        Thread.detachNewThread { [self] in self.serve() }
+    }
+
+    func stop() { stopped.withLock { $0 = true } }
+
+    private func serve() {
+        var buf = [UInt8](repeating: 0, count: 2048)
+        while !stopped.withLock({ $0 }) {
+            var from = sockaddr_in()
+            var fromLen = socklen_t(MemoryLayout<sockaddr_in>.size)
+            let n = withUnsafeMutablePointer(to: &from) {
+                $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { recvfrom(fd, &buf, buf.count, 0, $0, &fromLen) }
+            }
+            // A Binding request: type 0x0001, then length, cookie and transaction id (20 bytes).
+            guard n >= 20, buf[0] == 0x00, buf[1] == 0x01 else { continue }
+            let sourcePort = UInt16(bigEndian: from.sin_port)
+            asked.withLock { $0.append(sourcePort) }
+            let cookie: [UInt8] = [0x21, 0x12, 0xa4, 0x42]
+            let xport = sourcePort ^ 0x2112
+            var attr: [UInt8] = [0x00, 0x20, 0x00, 0x08, 0x00, 0x01, UInt8(xport >> 8), UInt8(xport & 0xff)]
+            attr += zip(mapped, cookie).map { $0 ^ $1 }
+            let reply: [UInt8] = [0x01, 0x01, 0x00, UInt8(attr.count)] + buf[4..<20] + attr
+            _ = withUnsafePointer(to: &from) {
+                $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { sendto(fd, reply, reply.count, 0, $0, fromLen) }
+            }
+        }
+        close(fd)
+    }
+}
+
 // MARK: - value tests (no pjsua)
 
 @Suite("26.2 engine values")
@@ -260,6 +327,83 @@ struct Engine262ValueTests {
                 == [CodecInfo(id: "G7221/16000/1", priority: 200), CodecInfo(id: "GSM/8000/1", priority: 0)])
         #expect(CodecMapping.displayOrder(list).map(\.id) == [
             "opus/48000/2", "PCMU/8000/1", "PCMA/8000/1", "G7221/16000/1", "GSM/8000/1", "speex/8000/1", "L16/8000/1"])
+    }
+
+    /// Private and local IP literals, IPv4 and IPv6, bare or in a URI with user, port and
+    /// parameters; public literals and host names are not private.
+    @Test func privateServerAddresses() {
+        for a in ["10.10.0.53", "10.255.255.255", "172.16.0.1", "172.31.255.254", "192.168.1.10", "127.0.0.1",
+                  "100.64.0.1", "100.127.255.254", "169.254.10.20", "::1", "[::1]", "fd00::1", "fc12:3456::1",
+                  "fe80::1", "fe80::1%en0", "febf::1", "::ffff:10.1.2.3", "::ffff:100.100.1.1"] {
+            #expect(PrivateServer.isPrivate(address: a), "\(a)")
+        }
+        for a in ["37.214.38.155", "172.15.255.255", "172.32.0.1", "192.169.0.1", "11.0.0.1", "169.253.0.1",
+                  "100.63.255.255", "100.128.0.1", "203.0.113.5", "2001:db8::1", "fec0::1", "ff02::1", "::",
+                  "::ffff:8.8.8.8", "pbx.example.com", "localhost", "10.0.0", ""] {
+            #expect(!PrivateServer.isPrivate(address: a), "\(a)")
+        }
+        for u in ["10.10.0.53", "10.10.0.53:5060", "sip:10.10.0.53", "sip:10.10.0.53:5080;transport=tcp",
+                  "sips:pbx@192.168.1.10:5061", "[fd00::1]:5060", "sip:[fe80::1]", "<sip:127.0.0.1;lr>"] {
+            #expect(PrivateServer.isPrivate(uri: u), "\(u)")
+        }
+        for u in ["sip:pbx.office.lan", "pbx.office.lan:5060", "sip:198.51.100.7:5060", "[2001:db8::1]:5060", " "] {
+            #expect(!PrivateServer.isPrivate(uri: u), "\(u)")
+        }
+    }
+
+    /// STUN is off only when every signalling hop is private: registrar and proxy, or registrar
+    /// and domain without a proxy. In pjsua_acc_config: `sip_stun_use` and `media_stun_use`
+    /// DISABLED and `allow_sdp_nat_rewrite` on for such an account, pjsua's defaults otherwise; a
+    /// UDP account of a private server with IPv4 hops is not bound to the UDP transport while a
+    /// STUN server is set (IPv6 hops stay bound: no IPv6 transport exists). allow_contact_rewrite
+    /// and allow_via_rewrite stay on either way.
+    @Test func privateServerAccountsDoNotUseSTUN() throws {
+        func account(_ domain: String, registrar: String? = nil, proxy: String? = nil,
+                     transport: TransportKind = .udp) -> AccountConfig {
+            AccountConfig(displayName: "S", username: "999", domain: domain, registrar: registrar,
+                          outboundProxy: proxy, transport: transport)
+        }
+        let privateAccounts = [
+            account("10.10.0.53"),
+            account("10.10.0.53:5080", transport: .tcp),
+            account("10.10.0.53", registrar: "sip:10.10.0.53:5080"),
+            account("pbx.office.lan", registrar: "10.10.0.53", proxy: "sip:10.10.0.1;lr"),   // all via the proxy
+            account("192.168.1.10", proxy: "192.168.1.1:5060"),
+            account("100.101.102.103"),                                      // a tailnet
+            account("[fd00::5]"),                                            // IPv6: stays bound
+            account("[::ffff:10.1.2.3]"),                                    // so does a mapped IPv4
+        ]
+        let stunAccounts = [
+            account("pbx.example.com"),
+            account("198.51.100.7"),                                         // public literal
+            account("10.10.0.53", proxy: "sip:198.51.100.7"),                // proxy public
+            account("198.51.100.7", proxy: "10.10.0.1"),                     // registrar public
+            account("10.10.0.53", proxy: "proxy.office.lan"),                // proxy by name
+            account("pbx.office.lan", registrar: "10.10.0.53"),              // calls go to a host name
+            account("localhost"),                                            // names are not resolved
+        ]
+        let transports = TransportIDs(udp: 0, tcp: 1, tls: 2, tlsNoVerify: 3)
+        let noSTUN = NetworkSettings(stunServer: nil)
+        for (accounts, stun) in [(privateAccounts, false), (stunAccounts, true)] {
+            for a in accounts {
+                #expect(PrivateServer.allHopsPrivate(a) == !stun, "\(a.registrarURI) \(a.outboundProxy ?? "-")")
+                let ipv6 = a.domain.hasPrefix("[")
+                if !stun { #expect(PrivateServer.allHopsIPv4(a) == !ipv6, "\(a.registrarURI)") }
+                let bound: Int32 = a.transport == .tcp ? 1 : 0
+                for network in [NetworkSettings.default, noSTUN] {
+                    let s = try AccountMapping.settings(for: a, password: "pw", network: network, transports: transports)
+                    let back = AccountMapping.withPJConfig(s) { AccountMapping.readBack($0) }
+                    let unbound = !stun && !ipv6 && a.transport == .udp && network.stunServer != nil
+                    for (label, x) in [("settings", s), ("pjsua_acc_config", back)] {
+                        let what = "\(label) \(a.registrarURI) STUN server \(network.stunServer ?? "none")"
+                        #expect(x.sipSTUN == stun && x.mediaSTUN == stun, "\(what)")
+                        #expect(x.sdpNATRewrite == !stun, "\(what)")
+                        #expect(x.transportID == (unbound ? -1 : bound), "\(what)")
+                        #expect(x.allowContactRewrite && x.allowViaRewrite, "\(what)")
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -404,6 +548,86 @@ extension EngineTests {
         var other = net
         other.nameserver = "127.0.0.2"
         #expect(try await engine.applyNetworkSettings(other) == .needsRestart)
+        await engine.stop()
+    }
+
+    /// A server in a private network gets no STUN. The STUN stub maps every socket to
+    /// 203.0.113.5, so the UDP transport is published with that address. An account that reaches
+    /// the registrar by name ("localhost") keeps STUN: 203.0.113.5 in Via, Contact and SDP, and
+    /// its RTP sockets ask the stub. The account at 127.0.0.1 sends Via and Contact with
+    /// 127.0.0.1, registers, and its call neither asks STUN nor offers the mapped address: the
+    /// SDP has the Contact's address, not the default route's.
+    @Test func privateServerAccountDoesNotUseSTUN() async throws {
+        let stun = try STUNStub(mapped: "203.0.113.5")
+        defer { stun.stop() }
+        let sip = try NetworkStub()
+        defer { sip.stop() }
+        // All interfaces, as in the app. A bind address would be published for SIP and RTP
+        // alike (public_addr), so pjsua would ask STUN for neither and the SDP address would be
+        // fixed: nothing here could tell the private account from the named one.
+        let engine = await makeEngine(bindAddress: nil)
+        var net = Self.network
+        net.stunServer = "127.0.0.1:\(stun.port)"
+        try await engine.start(network: net)
+        let sipPort = UInt16(await engine.localPort(of: .udp))
+        #expect(stun.sources.contains(sipPort), "STUN asked from \(stun.sources), SIP port \(sipPort)")
+        let rtp = net.effectiveRTPRange
+        func mediaSTUNRequests() -> Int { stun.sources.filter { (rtp.start..<(rtp.start + rtp.count)).contains(Int($0)) }.count }
+
+        let named = AccountConfig(displayName: "N", username: "2002", domain: "localhost",
+                                  registrar: "localhost:\(sip.port)", enabled: true)
+        try await engine.addAccount(named, password: "pw")
+        #expect(await waitUntil { await engine.registrationState(of: named.id).isRegistered })
+        let n = try #require(sip.registers.first { $0.contact.contains("sip:2002@") })
+        #expect(n.via.hasPrefix("SIP/2.0/UDP 203.0.113.5:\(sipPort)"), "\(n.via)")
+        #expect(n.contact.contains("sip:2002@203.0.113.5:\(sipPort)"), "\(n.contact)")
+
+        let office = AccountConfig(displayName: "P", username: "2001", domain: "127.0.0.1",
+                                   registrar: "127.0.0.1:\(sip.port)", enabled: true)
+        try await engine.addAccount(office, password: "pw")
+        #expect(await waitUntil { await engine.registrationState(of: office.id).isRegistered })
+        let mine = sip.registers.filter { $0.contact.contains("sip:2001@") }
+        #expect(!mine.isEmpty)
+        for r in mine {
+            #expect(r.via.hasPrefix("SIP/2.0/UDP 127.0.0.1:\(sipPort)"), "\(r.via)")
+            #expect(r.contact.contains("sip:2001@127.0.0.1:\(sipPort)"), "\(r.contact)")
+        }
+
+        for (account, host, viaSTUN) in [(office, "127.0.0.1", false), (named, "localhost", true)] {
+            let before = mediaSTUNRequests()
+            let call = try await engine.makeCall(to: DialString(uri: "sip:300@\(host):\(sip.port)", display: "300"),
+                                                 from: account.id)
+            #expect(await waitUntil { await engine.calls().first { $0.id == call }?.state == .connected })
+            let offer = sip.snapshot.offerAddresses.last ?? ""
+            #expect(offer.contains("203.0.113.5") == viaSTUN, "\(account.username) offered \(offer)")
+            if !viaSTUN { #expect(offer == "IN IP4 127.0.0.1", "SDP \(offer), Contact at 127.0.0.1") }
+            #expect((mediaSTUNRequests() > before) == viaSTUN, "\(account.username): \(mediaSTUNRequests() - before) media STUN requests")
+            try await engine.hangup(call)
+            #expect(await waitUntil { await engine.calls().isEmpty })
+        }
+        await engine.stop()
+    }
+
+    /// An IPv6 private server keeps its account bound to the UDP transport while STUN is on:
+    /// unbound, pjsua would want an IPv6 transport for it (none exists) and refuse the account.
+    /// Bound, it is added and its failing REGISTER is retried like any temporary failure.
+    @Test func privateIPv6ServerAccountIsAdded() async throws {
+        let stun = try STUNStub(mapped: "203.0.113.5")
+        defer { stun.stop() }
+        let engine = await makeEngine()
+        var net = Self.network
+        net.stunServer = "127.0.0.1:\(stun.port)"
+        try await engine.start(network: net)
+        let account = AccountConfig(displayName: "6", username: "2006", domain: "[::1]",
+                                    registrar: "[::1]:5999", enabled: true)
+        try await engine.addAccount(account, password: "pw")
+        let retried = await waitUntil {
+            if case .reconnecting = await engine.registrationState(of: account.id) { return true }
+            return false
+        }
+        let state = await engine.registrationState(of: account.id)
+        #expect(retried, "state: \(state)")
+        try await engine.removeAccount(account.id)
         await engine.stop()
     }
 

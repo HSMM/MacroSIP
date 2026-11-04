@@ -186,9 +186,10 @@ struct EngineTests {
     /// A loopback engine with null audio that does not watch the host's network (it counts
     /// as online; network tests inject paths). Stops an engine a failed test left started,
     /// so one failure does not turn into "Engine is already started" for every later test.
-    func makeEngine(monitorNetwork: Bool = false) async -> Engine {
+    /// `bindAddress: nil` binds to all interfaces, as the app does.
+    func makeEngine(monitorNetwork: Bool = false, bindAddress: String? = "127.0.0.1") async -> Engine {
         await stopLeakedEngine()
-        return Engine(logLevel: 1, nullAudio: true, bindAddress: "127.0.0.1", caBundleURL: tempCABundle(),
+        return Engine(logLevel: 1, nullAudio: true, bindAddress: bindAddress, caBundleURL: tempCABundle(),
                       monitorNetwork: monitorNetwork)
     }
 
@@ -625,6 +626,7 @@ struct EngineTests {
             #expect(x.allowContactRewrite && x.allowViaRewrite, "\(label)")
             #expect(x.keepAliveSeconds == 25, "\(label)")
             #expect(x.iceEnabled, "\(label)")
+            #expect(x.sipSTUN && x.mediaSTUN, "\(label)")        // host names keep STUN
             #expect(x.rtpPort == 4000 && x.rtpPortRange == 998 && x.randomizeRTPPort, "\(label)")
             #expect(x.bindAddress == nil, "\(label)")
             #expect(x.publishEnabled == c.account.publishPresence, "\(label)")

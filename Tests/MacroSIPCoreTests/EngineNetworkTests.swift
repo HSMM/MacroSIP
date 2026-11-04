@@ -34,6 +34,8 @@ final class NetworkStub: Sendable {
         var unregister: Bool
         /// The top Via header value ("SIP/2.0/UDP 127.0.0.1:5060;rport;branch=...").
         var via: String = ""
+        /// The first Contact header value ("<sip:1001@127.0.0.1:5060;ob>").
+        var contact: String = ""
     }
 
     struct Stats: Sendable {
@@ -45,12 +47,17 @@ final class NetworkStub: Sendable {
         var byes = 0
         /// Bodies of INFO requests (DTMF over SIP INFO: "Signal=5\r\nDuration=...").
         var infos: [String] = []
+        /// The connection address of each INVITE's SDP offer ("IN IP4 192.0.2.10").
+        var offerAddresses: [String] = []
         /// Status lines of responses to requests the stub sent itself (`sendInvite`).
         var responses: [String] = []
     }
 
     struct Modes: Sendable {
         var register = RegisterMode.ok
+        /// Seconds before a REGISTER is answered (and, for `.rewritingContact`, before the
+        /// bindings change), so a state reported between two answers lasts long enough to be seen.
+        var registerDelay: TimeInterval = 0
         var ringOnly = false
         var reinvite = "200 OK"
         var options = "200 OK"
@@ -82,6 +89,11 @@ final class NetworkStub: Sendable {
     var registerMode: RegisterMode {
         get { mode.withLock { $0.register } }
         set { mode.withLock { $0.register = newValue } }
+    }
+
+    var registerDelay: TimeInterval {
+        get { mode.withLock { $0.registerDelay } }
+        set { mode.withLock { $0.registerDelay = newValue } }
     }
 
     var reinviteStatus: String {
@@ -188,6 +200,7 @@ final class NetworkStub: Sendable {
         var toLine = ""
         var cseq = ""
         var expiresZero = false
+        var expiresHeaderZero = false
         var topVia = ""
         var contacts: [String] = []
         for line in lines.dropFirst() {
@@ -201,7 +214,7 @@ final class NetworkStub: Sendable {
             case "from", "f", "call-id", "i": echoed.append(line)
             case "cseq": echoed.append(line); cseq = value
             case "to", "t": toLine = line
-            case "expires": if value == "0" { expiresZero = true }
+            case "expires": if value == "0" { expiresZero = true; expiresHeaderZero = true }
             case "contact", "m":
                 contacts.append(value)
                 if value.lowercased().contains("expires=0") { expiresZero = true }
@@ -221,8 +234,11 @@ final class NetworkStub: Sendable {
 
         switch method {
         case "REGISTER":
-            let entry = Register(at: Date(), cseq: cseq, unregister: expiresZero, via: topVia)
+            let entry = Register(at: Date(), cseq: cseq, unregister: expiresZero, via: topVia,
+                                 contact: contacts.first ?? "")
             stats.withLock { $0.registers.append(entry) }
+            let delay = registerDelay
+            if delay > 0 { Thread.sleep(forTimeInterval: delay) }
             switch registerMode {
             case .silent: return
             case .forbidden: reply("403 Forbidden")
@@ -235,10 +251,15 @@ final class NetworkStub: Sendable {
                 let port = UInt16(bigEndian: from.sin_port)
                 let source = "sip:1001@\(host):\(port)"
                 let requested = contacts
+                // A Contact without its own expires takes the Expires header's value (an
+                // un-REGISTER from PJSIP carries only "Expires: 0").
+                let expiresHeaderZero = expiresHeaderZero
                 let bound = boundContacts.withLock { bound -> [String] in
                     for contact in requested {
+                        let c = contact.lowercased()
                         bound.removeAll { $0 == source }
-                        if !contact.lowercased().contains("expires=0") { bound.append(source) }
+                        let removed = c.contains("expires=0") || (!c.contains("expires=") && expiresHeaderZero)
+                        if !removed { bound.append(source) }
                     }
                     return bound
                 }
@@ -254,6 +275,9 @@ final class NetworkStub: Sendable {
             }
         case "INVITE":
             stats.withLock { if inDialog { $0.reinvites += 1 } else { $0.invites += 1 } }
+            if let c = body.components(separatedBy: "\r\n").first(where: { $0.hasPrefix("c=") }) {
+                stats.withLock { $0.offerAddresses.append(String(c.dropFirst(2))) }
+            }
             if let m = body.components(separatedBy: "\r\n").first(where: { $0.hasPrefix("m=audio ") }),
                let port = UInt16(m.split(separator: " ")[1]) {
                 rtcpTarget.withLock { $0 = port + 1 }
@@ -854,6 +878,58 @@ extension EngineTests {
             stub.registers.count > count && stub.registers.last?.unregister == false
         })
         #expect(await waitUntil { await engine.registrationState(of: cfg.id).isRegistered })
+        await engine.stop()
+    }
+
+    /// "No calls after sleep" behind a Contact-rewriting server (issue #3): the un-REGISTER at
+    /// sleep drops pjsua's Contact, so wake registers the local one again, the server rewrites it,
+    /// PJSIP's Contact rewrite loses the binding once more and the repair REGISTER restores it.
+    /// The account may show as registered only once the server holds the binding. The stub
+    /// answers each REGISTER 0.2 s late, so a "registered" between the rewrite and the repair
+    /// would be seen with no binding.
+    @Test func wakeBehindContactRewritingServerRegistersWithBinding() async throws {
+        let stub = try NetworkStub()
+        defer { stub.stop() }
+        stub.registerMode = .rewritingContact(host: "10.99.0.9", otherDevice: nil)
+        stub.registerDelay = 0.2
+        let engine = await makeEngine()
+        let log = TimedEventLog()
+        let consumer = log.consume(engine)
+        defer { consumer.cancel() }
+        try await engine.start(network: Self.network)
+        #expect(await waitUntil(timeout: 3) { !log.network().isEmpty })
+        let cfg = AccountConfig(displayName: "W", username: "1001", domain: "127.0.0.1",
+                                registrar: "127.0.0.1:\(stub.port)", enabled: true)
+        try await engine.addAccount(cfg, password: "pw")
+        #expect(await waitUntil { await engine.registrationState(of: cfg.id).isRegistered })
+        #expect(stub.bindings.count == 1)
+
+        await engine.handleSleep()
+        #expect(await waitUntil { stub.registers.last?.unregister == true && stub.bindings.isEmpty })
+        #expect(await waitUntil { await engine.registrationState(of: cfg.id) == .unregistered })
+        let beforeWake = stub.registers.count
+
+        await engine.handleWake()
+        var boundWhenRegistered: [String]?
+        #expect(await waitUntil(timeout: 8) {
+            guard await engine.registrationState(of: cfg.id).isRegistered else { return false }
+            boundWhenRegistered = stub.bindings
+            return true
+        })
+        #expect(boundWhenRegistered?.count == 1, "bindings when shown as registered: \(boundWhenRegistered ?? [])")
+        // At least the local Contact, the rewrite that loses the binding and the repair; then
+        // quiet: once the count has settled, no REGISTER follows.
+        var afterWake = stub.registers.count
+        for _ in 0..<10 {
+            try await Task.sleep(for: .milliseconds(600))
+            if stub.registers.count == afterWake { break }
+            afterWake = stub.registers.count
+        }
+        #expect(afterWake - beforeWake >= 3, "REGISTERs after wake: \(stub.registers.suffix(afterWake - beforeWake).map(\.contact))")
+        try await Task.sleep(for: .seconds(1))
+        #expect(stub.registers.count == afterWake)
+        #expect(stub.bindings.count == 1)
+        #expect(await engine.registrationState(of: cfg.id).isRegistered)
         await engine.stop()
     }
 
