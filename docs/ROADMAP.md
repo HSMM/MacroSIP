@@ -60,6 +60,8 @@ App:
 - Import from MicroSIP: accounts and contacts from `MicroSIP.ini` and `Contacts.xml` (Settings › Accounts › Import from MicroSIP…) with a preview before anything is written; accounts come in switched off and ask for their password (MicroSIP's cannot be read).
 - Debug mode and diagnostics archive (Settings › General › Advanced › Troubleshooting): a Debug mode switch raises the log level to 4 for the log file and PJSIP at once, no restart, and stays on until switched off (an explicit `--log-level` / `MACROSIP_LOG_LEVEL` wins and the switch says so); Create Archive… saves a ZIP with the log files, the diagnostics report and up to 5 recent MacroSIP crash reports. Passwords, digest responses, nonces and similar secrets are removed from the copies in the archive; phone numbers and server addresses stay.
 
+`26.1.1` (2026-11-04): after launch or a Contact change behind NAT, an account could show as registered with no binding on the server, so incoming calls did not arrive until the next refresh ([#3](https://github.com/HSMM/MacroSIP/issues/3)). The account now registers again when the answer leaves out its Contact.
+
 ## Later
 
 - Developer ID signing and notarization, so the first launch needs no workaround (when the signing identity is available).

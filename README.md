@@ -9,7 +9,7 @@
 ![macOS 14+](https://img.shields.io/badge/macOS-14%2B-lightgrey)
 ![Universal: Apple Silicon and Intel](https://img.shields.io/badge/arch-universal-lightgrey)
 ![PJSIP 2.17](https://img.shields.io/badge/PJSIP-2.17-green)
-![Release 26.1.0](https://img.shields.io/badge/release-26.1.0-brightgreen)
+![Release 26.1.1](https://img.shields.io/badge/release-26.1.1-brightgreen)
 
 A MicroSIP-style SIP softphone for macOS on Apple Silicon and Intel. Native Swift and
 SwiftUI interface, [PJSIP](https://github.com/pjsip/pjproject) 2.17 engine,
@@ -54,7 +54,7 @@ More screenshots, in English and Russian, light and dark: [docs/screenshots](doc
 
 Guide: https://hsmm.github.io/MacroSIP/wiki/
 
-Status: `26.1.0` released 2026-11-03. What comes next: [docs/ROADMAP.md](docs/ROADMAP.md).
+Status: `26.1.1` released 2026-11-04. What comes next: [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Installing
 
