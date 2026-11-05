@@ -807,6 +807,7 @@ func pjLogWriter(_ level: Int32, _ data: UnsafePointer<CChar>?, _ len: Int32) {
     guard let data, len > 0 else { return }
     var text = String(decoding: UnsafeRawBufferPointer(start: data, count: Int(len)), as: UTF8.self)
     while let last = text.last, last.isNewline { text.removeLast() }   // "\r\n" is one Character
+    text = MessageLogRedaction.redact(text)                            // no message text in any log
     let bridge = EngineBridge.shared
     let type: OSLogType
     switch level {

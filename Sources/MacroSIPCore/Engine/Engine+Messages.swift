@@ -83,6 +83,62 @@ struct PendingMessage: Sendable {
     var target: String
 }
 
+/// Keeps the text of MESSAGEs out of the log (`pjLogWriter`: os_log, `.log` events, the file
+/// log and the diagnostics archive). PJSIP writes it in pjsua_im.c's "Message '<text>' delivered
+/// successfully" (level 4) and "Failed to deliver message '<text>': <code>/<reason>" (level 3),
+/// and in the packet dumps of a MESSAGE request: pjsua's "RX/TX ... bytes ...:\n<packet>\n--end
+/// msg--" (level 4) and pjsip's "Dropped packet:<packet>\n-- end of packet." (level 4). The text
+/// or the body becomes "…"; status, reason, request line and headers stay. Where the end of the
+/// text is ambiguous, more is replaced, never less.
+enum MessageLogRedaction {
+    static let placeholder = "…"
+
+    static func redact(_ line: String) -> String {
+        // Every log line passes here: only lines that can carry a MESSAGE are looked at.
+        guard line.contains("essage '") || line.contains("MESSAGE ") else { return line }
+        var out = line
+        if !redactDelivery(&out) { redactPacketBody(&out) }
+        return out
+    }
+
+    /// pjsua_im.c's delivery lines. Returns true when the line was one.
+    private static func redactDelivery(_ s: inout String) -> Bool {
+        if let start = s.range(of: "Message '"),
+           let end = s.range(of: "' delivered successfully", options: .backwards), start.upperBound <= end.lowerBound {
+            s.replaceSubrange(start.upperBound..<end.lowerBound, with: placeholder)
+            return true
+        }
+        guard let start = s.range(of: "Failed to deliver message '") else { return false }
+        // The text ends at the last "': <digits>/" (pjsua appends "<code>/<reason>").
+        var searchEnd = s.endIndex
+        while let quote = s.range(of: "': ", options: .backwards, range: start.upperBound..<searchEnd) {
+            let tail = s[quote.upperBound...]
+            let digits = tail.prefix { $0.isASCII && $0.isNumber }
+            if !digits.isEmpty, tail.dropFirst(digits.count).first == "/" {
+                s.replaceSubrange(start.upperBound..<quote.lowerBound, with: placeholder)
+                return true
+            }
+            searchEnd = quote.lowerBound
+        }
+        s.replaceSubrange(start.upperBound..<s.endIndex, with: placeholder + "'")
+        return true
+    }
+
+    /// The body of a dumped MESSAGE request (after its blank line, up to the end marker).
+    private static func redactPacketBody(_ s: inout String) {
+        for (startMarker, endMarker) in [("Dropped packet:", "\n-- end of packet."), (":\n", "\n--end msg--")] {
+            guard let end = s.range(of: endMarker, options: .backwards),
+                  let start = s.range(of: startMarker, range: s.startIndex..<end.lowerBound) else { continue }
+            let packet = start.upperBound..<end.lowerBound
+            guard s[packet].drop(while: { $0.isWhitespace }).hasPrefix("MESSAGE ") else { continue }
+            guard let blank = s.range(of: "\r\n\r\n", range: packet) ?? s.range(of: "\n\n", range: packet),
+                  blank.upperBound < end.lowerBound else { return }      // no body
+            s.replaceSubrange(blank.upperBound..<end.lowerBound, with: placeholder)
+            return
+        }
+    }
+}
+
 /// Pure mappings of the MESSAGE callbacks (tested without pjsua).
 enum MessageMapping {
     /// `on_pager_status2` -> result. 2xx: accepted. A response: its code and reason phrase. No

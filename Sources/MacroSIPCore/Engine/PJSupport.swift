@@ -179,22 +179,57 @@ extension AccountID {
 }
 
 extension RemoteParty {
-    /// Parses a printed name-addr such as `"Alice" <sip:100@example.com;transport=tcp>`.
+    /// Parses a printed name-addr such as `"Alice" <sip:100@example.com;transport=tcp>` (also the
+    /// sender of a MESSAGE, whose `uri` is the reply target). The URI is the last `<...>` outside
+    /// the quoted display name (`"x <y>" <sip:a@b>` -> `sip:a@b`); a quoted name is unescaped
+    /// (`"A \"B\""` -> `A "B"`), an unquoted one trimmed. Without brackets the whole value is the URI.
     static func parse(_ raw: String) -> RemoteParty {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         var name: String?
         var uri = trimmed
-        if let lt = trimmed.firstIndex(of: "<"),
-           let gt = trimmed[lt...].firstIndex(of: ">") {
-            uri = String(trimmed[trimmed.index(after: lt)..<gt])
-            let n = trimmed[..<lt]
-                .trimmingCharacters(in: .whitespaces)
-                .trimmingCharacters(in: CharacterSet(charactersIn: "\""))
+        if let (lt, gt) = lastAngleBrackets(trimmed) {
+            uri = String(trimmed[trimmed.index(after: lt)..<gt]).trimmingCharacters(in: .whitespaces)
+            let n = displayName(trimmed[..<lt].trimmingCharacters(in: .whitespaces))
             name = n.isEmpty ? nil : n
         }
         var number = DialString.userPart(of: uri)
         if let semi = number.firstIndex(of: ";") { number = String(number[..<semi]) }
         return RemoteParty(displayName: name, uri: uri, number: number)
+    }
+
+    /// The last complete `<...>` pair outside double quotes (backslash escapes inside quotes).
+    private static func lastAngleBrackets(_ s: String) -> (String.Index, String.Index)? {
+        var inQuotes = false
+        var escaped = false
+        var open: String.Index?
+        var pair: (String.Index, String.Index)?
+        for i in s.indices {
+            let ch = s[i]
+            if inQuotes {
+                if escaped { escaped = false } else if ch == "\\" { escaped = true } else if ch == "\"" { inQuotes = false }
+                continue
+            }
+            switch ch {
+            case "\"": inQuotes = true
+            case "<": open = i
+            case ">":
+                if let o = open { pair = (o, i); open = nil }
+            default: break
+            }
+        }
+        return pair
+    }
+
+    /// A display name as printed: a quoted string loses its quotes and backslash escapes
+    /// (RFC 3261 quoted-pair); anything after the closing quote is ignored. A token is kept.
+    private static func displayName(_ s: String) -> String {
+        guard s.first == "\"" else { return s }
+        var out = ""
+        var escaped = false
+        for ch in s.dropFirst() {
+            if escaped { out.append(ch); escaped = false } else if ch == "\\" { escaped = true } else if ch == "\"" { break } else { out.append(ch) }
+        }
+        return out.trimmingCharacters(in: .whitespaces)
     }
 }
 

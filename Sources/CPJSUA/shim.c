@@ -930,6 +930,7 @@ static pj_bool_t im_filter_on_rx_request(pjsip_rx_data *rdata)
     const pjsip_msg *msg = rdata ? rdata->msg_info.msg : NULL;
     const pjsip_media_type *ct;
     pjsip_hdr hdrs;
+    pj_status_t status;
 
     if (!msg || msg->type != PJSIP_REQUEST_MSG ||
         pj_strcmp2(&msg->line.req.method.name, "MESSAGE") != 0 || !msg->body)
@@ -944,8 +945,11 @@ static pj_bool_t im_filter_on_rx_request(pjsip_rx_data *rdata)
                (int)ct->type.slen, ct->type.ptr, (int)ct->subtype.slen, ct->subtype.ptr));
     pj_list_init(&hdrs);
     pj_list_push_back(&hdrs, pjsua_im_create_accept(rdata->tp_info.pool));
-    pjsip_endpt_respond_stateless(pjsua_get_pjsip_endpt(), rdata, PJSIP_SC_UNSUPPORTED_MEDIA_TYPE,
-                                  NULL, &hdrs, NULL);
+    status = pjsip_endpt_respond_stateless(pjsua_get_pjsip_endpt(), rdata, PJSIP_SC_UNSUPPORTED_MEDIA_TYPE,
+                                           NULL, &hdrs, NULL);
+    if (status != PJ_SUCCESS)
+        PJ_PERROR(2, ("macrosip-im", status, "Cannot answer MESSAGE with 415"));
+    /* Handled either way: pjsua must not accept it with 200 (the sender retransmits). */
     return PJ_TRUE;
 }
 

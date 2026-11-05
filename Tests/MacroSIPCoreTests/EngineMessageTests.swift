@@ -495,6 +495,48 @@ extension EngineTests {
         await engine.stop()
     }
 
+    /// At log level 4 (Debug mode) PJSIP writes delivery lines and packet dumps that carry the
+    /// text; none of it reaches a `.log` event (nor os_log, which gets the same string), while
+    /// the redacted lines with code and reason are still there.
+    @Test func messageTextStaysOutOfTheLog() async throws {
+        let stub = try MessageStub()
+        defer { stub.stop() }
+        let engine = await makeEngine()
+        await engine.setLogLevel(4)
+        let log = EventLog()
+        let consumer = log.consume(engine)
+        defer { consumer.cancel() }
+        try await engine.start(network: Self.network)
+        let account = localAccount("102")
+        try await engine.addAccount(account, password: "")
+        let dial = DialString(uri: "sip:103@127.0.0.1:\(stub.port)", display: "103")
+        let accepted = "секрет 200\nвторая строка"
+        let refused = "секрет 404: it's 5/5"
+        let incoming = "секрет входящее"
+
+        let ok = try await engine.sendMessage(accepted, to: dial, from: account.id)
+        #expect(await waitUntil(timeout: 5) { !log.messageStatuses(ok).isEmpty })
+        stub.answer = "404 Not Found"
+        let failed = try await engine.sendMessage(refused, to: dial, from: account.id)
+        #expect(await waitUntil(timeout: 5) { !log.messageStatuses(failed).isEmpty })
+        let port = await engine.localPort(of: .udp)
+        stub.sendMessage(toPort: port, user: "102", fromNumber: "+375291234567", displayName: nil,
+                         contentType: "text/plain;charset=utf-8", body: Array(incoming.utf8))
+        #expect(await waitUntil(timeout: 5) { log.receivedMessages.count == 1 })
+        try await Task.sleep(for: .milliseconds(300))
+        await engine.stop()
+
+        let lines = log.all.compactMap { if case let .log(_, text) = $0 { return text }; return nil }
+        for secret in ["секрет", "вторая строка"] {
+            #expect(!lines.contains { $0.contains(secret) }, "\(secret): \(lines.filter { $0.contains(secret) })")
+        }
+        #expect(lines.contains { $0.contains("Message '…' delivered successfully") })
+        #expect(lines.contains { $0.contains("Failed to deliver message '…': 404/Not Found") })
+        let dumps = lines.filter { $0.contains("MESSAGE sip:") && $0.hasSuffix("--end msg--") }
+        #expect(dumps.count >= 3, "\(dumps.count) MESSAGE dumps")
+        #expect(dumps.allSatisfy { $0.contains("\r\n\r\n…\n--end msg--") })
+    }
+
     /// A MESSAGE inside a call is reported like one outside (the call's account, the peer from
     /// the dialog); a non-text one inside the call gets 415 too.
     @Test func messageInsideACall() async throws {
@@ -553,6 +595,41 @@ struct MessageMappingTests {
         #expect(MessageMapping.result(code: 502, reason: "", answered: false) == .failed(code: 0, reason: "Bad Gateway"))
         #expect(MessageMapping.result(code: 408, reason: "Request Timeout", answered: false)
                 == .failed(code: 408, reason: "Request Timeout"))
+    }
+
+    @Test func logRedaction() {
+        let prefix = "15:04:05.123         pjsua_im.h  ."
+        #expect(MessageLogRedaction.redact(prefix + "Message 'Привет\n'двойные' кавычки' delivered successfully")
+                == prefix + "Message '…' delivered successfully")
+        #expect(MessageLogRedaction.redact(prefix + "Failed to deliver message 'it's: 5/5 ok': 404/Not Found")
+                == prefix + "Failed to deliver message '…': 404/Not Found")
+        #expect(MessageLogRedaction.redact(prefix + "Failed to deliver message 'a': 408/Request Timeout")
+                == prefix + "Failed to deliver message '…': 408/Request Timeout")
+        #expect(MessageLogRedaction.redact(prefix + "Failed to deliver message 'no code at all")
+                == prefix + "Failed to deliver message '…'")
+
+        let head = "15:04:05.124       pjsua_core.c  .TX 520 bytes Request msg MESSAGE/cseq=7 (tdta0x1) to UDP 127.0.0.1:5070:\n"
+        let headers = "MESSAGE sip:102@127.0.0.1:5070 SIP/2.0\r\nVia: SIP/2.0/UDP 127.0.0.1:5060\r\n"
+            + "Content-Type: text/plain;charset=utf-8\r\nContent-Length:    12\r\n\r\n"
+        #expect(MessageLogRedaction.redact(head + headers + "секрет\r\n\r\nещё\n--end msg--")
+                == head + headers + "…\n--end msg--")
+        let lfOnly = "MESSAGE sip:a@b SIP/2.0\nContent-Length: 4\n\n"
+        #expect(MessageLogRedaction.redact(head + lfOnly + "text\n--end msg--") == head + lfOnly + "…\n--end msg--")
+        let dropped = "15:04:05.125   sip_transport.c  Dropped packet:MESSAGE sip:a@b SIP/2.0\r\nContent-Length: 4\r\n\r\n"
+        #expect(MessageLogRedaction.redact(dropped + "text\n-- end of packet.") == dropped + "…\n-- end of packet.")
+
+        // Untouched: a MESSAGE without a body, its 200, other requests, other lines.
+        let empty = head + "MESSAGE sip:a@b SIP/2.0\r\nContent-Length: 0\r\n\r\n\n--end msg--"
+        #expect(MessageLogRedaction.redact(empty) == empty)
+        let response = "15:04:05.126       pjsua_core.c  .RX 300 bytes Response msg 200/MESSAGE/cseq=7 (rdata0x2) from UDP 127.0.0.1:5070:\n"
+            + "SIP/2.0 200 OK\r\nCSeq: 7 MESSAGE\r\nContent-Length: 0\r\n\r\n\n--end msg--"
+        #expect(MessageLogRedaction.redact(response) == response)
+        let invite = head + "INVITE sip:a@b SIP/2.0\r\nContent-Type: application/sdp\r\n\r\nv=0\r\no=MESSAGE x\n--end msg--"
+        #expect(MessageLogRedaction.redact(invite) == invite)
+        for line in ["15:04:05.127   pjsua_acc.c  Registration sent", "Processing incoming message: Request msg MESSAGE/cseq=1",
+                     "engine: account x: MESSAGE from +375291234567, 12 bytes"] {
+            #expect(MessageLogRedaction.redact(line) == line)
+        }
     }
 
     @Test func incomingMapping() {

@@ -759,6 +759,17 @@ struct EngineHelperTests {
         #expect(b == RemoteParty(displayName: nil, uri: "sip:+74951234567@example.com", number: "+74951234567"))
         let c = RemoteParty.parse("sip:test@127.0.0.1:5080")
         #expect(c == RemoteParty(displayName: nil, uri: "sip:test@127.0.0.1:5080", number: "test"))
+        // Escaped quotes in the display name are unescaped.
+        let d = RemoteParty.parse(#""A \"B\" C:\\x" <sip:200@pbx>"#)
+        #expect(d == RemoteParty(displayName: #"A "B" C:\x"#, uri: "sip:200@pbx", number: "200"))
+        // '<' inside the quoted name is not the URI: the last <...> outside quotes is.
+        let e = RemoteParty.parse(#""x <y>" <sip:a@b;transport=tcp>"#)
+        #expect(e == RemoteParty(displayName: "x <y>", uri: "sip:a@b;transport=tcp", number: "a"))
+        let f = RemoteParty.parse(#""Иван <boss>" <sip:+375291234567@pbx>"#)
+        #expect(f == RemoteParty(displayName: "Иван <boss>", uri: "sip:+375291234567@pbx", number: "+375291234567"))
+        // An unquoted (token) display name stays as it is.
+        let g = RemoteParty.parse("Alice <sip:100@example.com>")
+        #expect(g == RemoteParty(displayName: "Alice", uri: "sip:100@example.com", number: "100"))
     }
 
     func snapshot(outgoing: Bool, state: InviteState, media: MediaStatus = .none,
