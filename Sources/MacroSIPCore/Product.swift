@@ -14,5 +14,5 @@ public enum Product {
         return fallbackVersion
     }()
 
-    public static let fallbackVersion = "26.2.0"
+    public static let fallbackVersion = "26.3.0"
 }

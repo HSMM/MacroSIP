@@ -71,7 +71,7 @@ App:
 - Screenshots of the hotkeys, MicroSIP import and troubleshooting screens in the READMEs; the import sheet shows paths with `~`.
 - Engine: the thread is registered on entry to the echo-canceller switch (a test-only abort on a slow runner).
 
-## 26.3 (in development)
+## 26.3 (released 2026-11-05)
 
 - Text messages over SIP `MESSAGE` ([#5](https://github.com/HSMM/MacroSIP/issues/5)): send and receive `text/plain` (UTF-8, Cyrillic included), a Messages tab with conversations kept between launches, unread counts and macOS notifications, delivery status per message (a 2xx means the SIP server or peer accepted the message, not that a phone received it) and retry; SMS forwarded by Asterisk `chan_dongle` arrive as ordinary messages. Not in the first version: group chat, attachments, typing indicators, end-to-end encryption, SMS concatenation.
 
