@@ -13,8 +13,8 @@ struct RecordingPane: View {
     }
 
     private var sampleName: String {
-        // 2026-10-10 14.52 Alesia Kazlouskaya (in).m4a
-        RecordingFileName.make(date: Date(timeIntervalSince1970: 1_791_643_920), remote: DemoPeople.alesia,
+        // 2026-10-10 14.52 Name or number (in).m4a
+        RecordingFileName.make(date: Date(timeIntervalSince1970: 1_791_643_920), remote: L.recordingFileSample,
                                direction: .incoming, timeZone: TimeZone(identifier: "UTC") ?? .current)
     }
 

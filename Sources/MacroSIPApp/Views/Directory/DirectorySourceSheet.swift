@@ -77,7 +77,7 @@ struct DirectorySourceSheet: View {
                 .padding(.horizontal, 22).padding(.top, 16).padding(.bottom, 8)
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    FormGroup(footer: existing == nil ? L.directoryTypesFooter : nil) {
+                    FormGroup {
                         FormRow(label: L.directoryAddType) {
                             Picker("", selection: $kind) {
                                 Text(L.directoryTypeLDAP).tag(DirectorySourceKind.ldap)

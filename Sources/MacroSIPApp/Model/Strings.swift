@@ -225,7 +225,6 @@ enum L {
     static var messagesSwitchFooter: String {
         loc("settings.general.messages.footer", "Shows the Messages tab, delivers incoming messages and adds Send Message to the Contacts and Call Log menus.")
     }
-    static var languageFooter: String { loc("settings.general.language.footer", "Choices: System, English, Русский.") }
     static var languageRestartTitle: String { loc("settings.general.language.restart.title", "Restart to change the language?") }
     static var languageRestartBody: String { loc("settings.general.language.restart.body", "The new language is used after MacroSIP restarts.") }
     static var languageRestartNow: String { loc("settings.general.language.restart.now", "Restart Now") }
@@ -236,7 +235,7 @@ enum L {
     static var linksIsDefault: String { loc("settings.general.links.isDefault", "MacroSIP handles these links.") }
     static var linksMakeDefault: String { loc("settings.general.links.makeDefault", "Make Default") }
     static var linksOnOpen: String { loc("settings.general.links.onOpen", "When a link is opened") }
-    static var linksOnOpenHelp: String { loc("settings.general.links.onOpen.help", "Fills the number field so you can check it first.") }
+    static var linksOnOpenHelp: String { loc("settings.general.links.onOpen.help", "“Only fill the dial field” lets you check the number first.") }
     static var linksAsk: String { loc("settings.general.links.askBeforeCalling", "Ask before calling") }
     static var linksCallNow: String { loc("settings.general.links.callImmediately", "Call immediately") }
     static var linksFillOnly: String { loc("settings.general.links.fillOnly", "Only fill the dial field") }
@@ -247,16 +246,16 @@ enum L {
     }
     static var troubleshootingHeader: String { loc("settings.general.troubleshooting.header", "Troubleshooting") }
     static var logFileTitle: String { loc("settings.general.log.title", "Log file") }
-    static var logFileHelp: String { loc("settings.general.log.help", "~/Library/Logs/MacroSIP/MacroSIP.log, 3 files of 2 MB (8 MB in Debug mode).") }
+    static var logFileHelp: String { loc("settings.general.log.help", "Saved in ~/Library/Logs/MacroSIP. Three files of 2 MB (8 MB in debug mode).") }
     static var logOpenFolder: String { loc("settings.general.log.openFolder", "Open Log Folder") }
     static var diagnosticsTitle: String { loc("settings.general.diagnostics.title", "Diagnostics") }
     static var diagnosticsHelp: String { loc("settings.general.diagnostics.help", "Versions, accounts and settings, without passwords. Paste it into a bug report.") }
     static var diagnosticsCopy: String { loc("settings.general.diagnostics.copy", "Copy Diagnostics") }
     static var diagnosticsCopied: String { loc("settings.general.diagnostics.copied", "Diagnostics copied to the clipboard.") }
     static var debugModeTitle: String { loc("settings.general.debug.title", "Debug mode") }
-    static var debugModeHelp: String { loc("settings.general.debug.help", "Writes much more detail to the log, including SIP messages, so the log grows faster. Turn it off after you send the archive.") }
+    static var debugModeHelp: String { loc("settings.general.debug.help", "Adds SIP messages and more detail to the log, so it grows faster. Turn it off when you are done.") }
     static func debugModeFixed(_ level: Int) -> String {
-        String(format: loc("settings.general.debug.fixed", "The log level was set to %lld when MacroSIP started (--log-level or MACROSIP_LOG_LEVEL), so this switch has no effect until MacroSIP is started without it."), level)
+        String(format: loc("settings.general.debug.fixed", "The log level was fixed at launch (%lld), so this switch has no effect."), level)
     }
     static var archiveTitle: String { loc("settings.general.archive.title", "Diagnostics archive") }
     static var archiveHelp: String { loc("settings.general.archive.help", "A ZIP with the log files, the diagnostics report and recent crash reports. It contains phone numbers and server addresses but no passwords. Send it only to someone you trust.") }
@@ -298,9 +297,9 @@ enum L {
     static var audioSpeaker: String { loc("settings.audio.speaker", "Speaker") }
     static var audioTest: String { loc("settings.audio.test", "Test") }
     static var audioRingtoneDevice: String { loc("settings.audio.ringtoneDevice", "Ringtone device") }
-    static var audioRingtoneDeviceHelp: String { loc("settings.audio.ringtoneDevice.help", "Ring through the speakers even when a headset is used for calls.") }
+    static var audioRingtoneDeviceHelp: String { loc("settings.audio.ringtoneDevice.help", "Plays the ringtone through the speakers even when calls use a headset.") }
     static var audioSystemDefault: String { loc("settings.audio.systemDefault", "System default") }
-    static var audioDevicesFooter: String { loc("settings.audio.devices.footer", "“System default” follows macOS Sound settings. If a chosen device is unplugged, MacroSIP falls back to the system default and switches back when it returns.") }
+    static var audioDevicesFooter: String { loc("settings.audio.devices.footer", "“System default” follows the Sound settings in macOS. If a chosen device is unplugged, MacroSIP uses the system default until it returns.") }
     static var audioRingtoneHeader: String { loc("settings.audio.ringtone.header", "Ringtone") }
     static var audioSound: String { loc("settings.audio.ringtoneSound", "Sound") }
     static var audioPlay: String { loc("settings.audio.ringtonePlay", "Play") }
@@ -310,10 +309,10 @@ enum L {
     static var ringtoneCustom: String { loc("settings.audio.ringtone.custom", "Custom file…") }
     static func ringtoneCustomName(_ name: String) -> String { loc("settings.audio.ringtone.customName", "Custom: \(name)") }
     static var audioVolume: String { loc("settings.audio.ringtoneVolume", "Volume") }
-    static var audioRingtoneFooter: String { loc("settings.audio.ringtone.footer", "Built-in choices: Classic, Digital, Soft. “Custom file…” accepts WAV, AIFF, M4A, MP3.") }
+    static var audioRingtoneFooter: String { loc("settings.audio.ringtone.footer", "“Custom file…” accepts WAV, AIFF, M4A and MP3.") }
     static var audioProcessingHeader: String { loc("settings.audio.processing.header", "Processing") }
     static var audioEcho: String { loc("settings.audio.echoCancellation", "Echo cancellation") }
-    static var audioEchoHelp: String { loc("settings.audio.echoCancellation.help", "Turn off only when using a headset with its own echo cancellation.") }
+    static var audioEchoHelp: String { loc("settings.audio.echoCancellation.help", "Turn it off only if your headset cancels echo itself.") }
 
     static var netConnectionHeader: String { loc("settings.network.connection.header", "Connection") }
     static var netSTUN: String { loc("settings.network.stun", "STUN server") }
@@ -324,8 +323,8 @@ enum L {
     static var netKeepAliveHelp: String { loc("settings.network.keepAlive.help", "Keeps NAT bindings open between registrations.") }
     static var unitSeconds: String { loc("settings.unit.seconds", "seconds") }
     static var netICE: String { loc("settings.network.ice", "Use ICE") }
-    static var netICEHelp: String { loc("settings.network.ice.help", "Finds a working media path through NAT. Uses the STUN server above.") }
-    static var netFooter: String { loc("settings.network.footer", "Changing the port re-registers all accounts. Calls in progress are not interrupted. Transport and SRTP are set per account in the account editor.") }
+    static var netICEHelp: String { loc("settings.network.ice.help", "Helps audio get through NAT. Uses the STUN server above.") }
+    static var netFooter: String { loc("settings.network.footer", "Changing the port re-registers all accounts; calls in progress are not interrupted. Transport and SRTP are set per account.") }
 
     static var codecsHeader: String { loc("settings.codecs.header", "Audio codecs, in order of preference") }
     static var codecsColCodec: String { loc("settings.codecs.column.codec", "Codec") }
@@ -356,7 +355,7 @@ enum L {
     static var accountPassword: String { loc("account.field.password", "Password") }
     static var accountPasswordHelp: String { loc("account.field.password.help", "Stored in the Keychain.") }
     static var accountDomain: String { loc("account.field.domain", "Domain") }
-    static var accountDomainHelp: String { loc("account.field.domain.help", "Empty uses the SIP server.") }
+    static var accountDomainHelp: String { loc("account.field.domain.help", "If empty, the SIP server is used.") }
     static var accountProxy: String { loc("account.field.proxy", "Outgoing proxy") }
     static var accountProxyPlaceholder: String { loc("account.field.proxy.placeholder", "Optional, e.g. sip:proxy.example.com;lr") }
     static var accountGroupConnection: String { loc("account.group.connection", "Connection") }
@@ -368,14 +367,14 @@ enum L {
     static var accountExpiry: String { loc("account.field.expiry", "Registration expiry") }
     static var accountEnabled: String { loc("account.field.enabled", "Enabled") }
     static var accountEnabledHelp: String {
-        loc("account.field.enabled.help", "Off stops registration and outgoing calls; the account stays in the pop-up, dimmed, and leaves the status bar.")
+        loc("account.field.enabled.help", "When off, the account does not register or call; it stays dimmed in the list and leaves the status bar.")
     }
     static var accountRegister: String { loc("account.field.register", "Register with server") }
     static var accountRegisterHelp: String { loc("account.field.register.help", "Off keeps the account for outgoing calls only.") }
     static var accountDefaultOutgoing: String { loc("account.field.defaultOutgoing", "Default for outgoing calls") }
     static var accountDelete: String { loc("account.delete", "Delete Account…") }
     static func accountDeleteTitle(_ name: String) -> String { loc("account.delete.confirm.title", "Delete account “\(name)”?") }
-    static var accountDeleteBody: String { loc("account.delete.confirm.body", "Its password is removed from Keychain. Call history is kept.") }
+    static var accountDeleteBody: String { loc("account.delete.confirm.body", "Its password is removed from the Keychain. Call history is kept.") }
     static var accountTest: String { loc("account.test", "Test") }
     static var accountUnsaved: String { loc("account.status.unsaved", "Not saved") }
     static var accountTesting: String { loc("account.test.running", "Testing…") }
@@ -434,7 +433,7 @@ enum L {
     static var autoAnswerDelay: String { loc("settings.autoAnswer.delay", "Delay before answering") }
     static var autoAnswerHonour: String { loc("settings.autoAnswer.honourServer", "Honour the server's answer-after request") }
     static var autoAnswerHonourHelp: String {
-        loc("settings.autoAnswer.honourServer.help", "Answers when the PBX sends Call-Info: answer-after=N (intercom, paging), even if the mode is Off.")
+        loc("settings.autoAnswer.honourServer.help", "Answers when the PBX asks it to (intercom, paging), even if auto-answer is off.")
     }
     static var autoAnswerFooter: String {
         loc("settings.autoAnswer.footer", "Do Not Disturb wins over auto-answer. Auto-answer never answers a second call while you are already on one.")
@@ -450,11 +449,12 @@ enum L {
     static var recordingLayoutMono: String { loc("settings.recording.layout.mono", "Mono") }
     static var recordingLayoutStereo: String { loc("settings.recording.layout.stereo", "Stereo") }
     static var recordingLayoutMonoHelp: String { loc("settings.recording.layout.mono.help", "Both sides mixed into one channel.") }
-    static var recordingLayoutStereoHelp: String { loc("settings.recording.layout.stereo.help", "You on the left channel, the caller on the right.") }
+    static var recordingLayoutStereoHelp: String { loc("settings.recording.layout.stereo.help", "You on the left channel, the other party on the right.") }
     static var recordingFooter: String {
-        loc("settings.recording.footer", "Recordings are saved as M4A (AAC). The temporary WAV files are deleted after conversion.")
+        loc("settings.recording.footer", "Recordings are saved as M4A files; the temporary WAV is deleted afterwards.")
     }
     static func recordingFileName(_ sample: String) -> String { loc("settings.recording.fileName", "File name: \(sample)") }
+    static var recordingFileSample: String { loc("settings.recording.fileName.sample", "Name or number") }
     static var recordingShowFolder: String { loc("settings.recording.showFolder", "Show Recordings Folder") }
     static var recordingOpenFinder: String { loc("settings.recording.openFinder", "Open in Finder") }
     static func bannerRecordingKeptAsWAV(_ reason: String, _ file: String) -> String {
@@ -479,7 +479,7 @@ enum L {
     static var menuStatusDND: String { loc("menu.status.dnd", "Do Not Disturb") }
     static var accountPublishPresence: String { loc("account.field.publishPresence", "Publish my presence") }
     static var accountPublishPresenceHelp: String {
-        loc("account.field.publishPresence.help", "Lets contacts who watch you see Available / Away / DND.")
+        loc("account.field.publishPresence.help", "Lets contacts who watch you see Available, Away or Do Not Disturb.")
     }
     static var accountVerifyCertificate: String { loc("account.field.verifyCertificate", "Verify server certificate") }
     static var accountVerifyCertificateHelp: String {
@@ -555,7 +555,7 @@ enum L {
     static var codecsOpusFEC: String { loc("settings.codecs.opus.fec", "Packet-loss correction (FEC)") }
     static var codecsOpusDTX: String { loc("settings.codecs.opus.dtx", "Silence suppression (DTX)") }
     static var codecsOpusFooter: String {
-        loc("settings.codecs.opus.footer", "Packet-loss correction adds a little data so lost packets can be repaired; keep it on for Wi-Fi and mobile networks. Silence suppression sends nothing during pauses to save bandwidth, but can clip the start of a word; turn it on only when bandwidth is tight.")
+        loc("settings.codecs.opus.footer", "Packet-loss correction repairs lost packets for a little extra data; keep it on for Wi-Fi and mobile networks. Silence suppression saves bandwidth during pauses but can clip the start of a word; use it only on a slow connection.")
     }
 
     static var accountAdvanced: String { loc("account.group.advanced", "Advanced") }
@@ -594,17 +594,17 @@ enum L {
     static var callsHeader: String { loc("settings.calls.duringCall.header", "During a call") }
     static var callsIncomingWhileOnCall: String { loc("settings.general.calls.incomingWhileOnCall", "When a call comes in during a call") }
     static var callsIncomingWhileOnCallHelp: String {
-        loc("settings.general.calls.incomingWhileOnCall.help", "Busy answers the second caller with 486 Busy Here; you see nothing of it except in the call log.")
+        loc("settings.general.calls.incomingWhileOnCall.help", "Busy declines the second call with 486 Busy Here; it shows up only in the call log.")
     }
     static var callsWaiting: String { loc("settings.general.calls.waiting", "Call waiting (tone and window)") }
     static var callsWindowOnly: String { loc("settings.general.calls.windowOnly", "Window only") }
     static var callsBusy: String { loc("settings.general.calls.busy", "Busy (single-call mode)") }
     static var callsDTMF: String { loc("settings.general.calls.dtmf", "DTMF method") }
-    static var callsDTMFHelp: String { loc("settings.general.calls.dtmf.help", "Automatic uses RFC 2833 and falls back to SIP INFO.") }
+    static var callsDTMFHelp: String { loc("settings.general.calls.dtmf.help", "Automatic picks the method your server supports.") }
     static var callsDTMFAutomatic: String { loc("settings.general.calls.dtmf.automatic", "Automatic") }
     static var callsDTMFInBand: String { loc("settings.general.calls.dtmf.inBand", "In-band") }
     static var callsBringToFront: String { loc("settings.general.calls.bringToFront", "Bring the main window to the front on an incoming call") }
-    static var callsBringToFrontHelp: String { loc("settings.general.calls.bringToFront.help", "The incoming-call window still appears as well.") }
+    static var callsBringToFrontHelp: String { loc("settings.general.calls.bringToFront.help", "The incoming-call window appears either way.") }
     static var dndOff: String { loc("dnd.off", "Off") }
     static var dndOn: String { loc("dnd.on", "On") }
     static var dnd30Minutes: String { loc("dnd.minutes30", "For 30 minutes") }
@@ -612,7 +612,7 @@ enum L {
     static var dndTomorrow: String { loc("dnd.tomorrow", "Until tomorrow 9:00") }
     static func menuDNDRemaining(_ remaining: String) -> String { loc("menu.dnd.remaining", "Do Not Disturb · \(remaining)") }
     static func dndUntil(_ time: String, _ remaining: String) -> String { loc("settings.general.dnd.until", "Until \(time) · \(remaining) left") }
-    static var dndHelp: String { loc("settings.general.dnd.help", "Declines incoming calls with 486 Busy Here and publishes Do Not Disturb.") }
+    static var dndHelp: String { loc("settings.general.dnd.help", "Declines incoming calls and shows Do Not Disturb to contacts who watch you.") }
     static func durationShort(minutes: Int) -> String {
         let h = minutes / 60, m = minutes % 60
         if h == 0 { return loc("duration.minutes", "\(m) min") }
@@ -657,7 +657,7 @@ enum L {
     static var settingsContactSort: String { loc("settings.general.sort", "Sort by") }
     static var settingsContactSortFirst: String { loc("settings.general.sort.first", "First name") }
     static var settingsContactSortLast: String { loc("settings.general.sort.last", "Last name") }
-    static var settingsContactSortFooter: String { loc("settings.general.sort.footer", "Names are always shown as “First Last”. Sorting by last name also groups the sections by its first letter.") }
+    static var settingsContactSortFooter: String { loc("settings.general.sort.footer", "Names always appear as “First Last”. Sorting by last name groups the list by the last name’s first letter.") }
     static func contactsMorePill(_ n: Int) -> String { "+\(n)" }
     static func contactsFavoritesCount(_ n: Int) -> String { loc("contacts.favorites.count", "\(n) favorites") }
     static func phoneLabel(_ l: PhoneLabel) -> String {
@@ -695,7 +695,7 @@ enum L {
     static var quickKeysTypeBlind: String { loc("quickkeys.type.blindTransfer", "Blind transfer") }
     static var quickKeysTypeAttended: String { loc("quickkeys.type.attendedTransfer", "Attended transfer") }
     static var quickKeysTypeConference: String { loc("quickkeys.type.conference", "Add to conference") }
-    static var quickKeysSmartCaption: String { loc("quickkeys.type.smart.caption", "Smart: call when idle, act on the call when in one") }
+    static var quickKeysSmartCaption: String { loc("quickkeys.type.smart.caption", "Smart: call when idle; transfer or conference during a call.") }
     static var quickKeysTypeCallBlind: String { loc("quickkeys.type.callBlind", "Call / Blind transfer") }
     static var quickKeysTypeCallAttended: String { loc("quickkeys.type.callAttended", "Call / Attended transfer") }
     static var quickKeysTypeCallConference: String { loc("quickkeys.type.callConference", "Call / Conference") }
@@ -704,34 +704,34 @@ enum L {
     static var quickKeysPanelOff: String { loc("quickkeys.panel.off", "Off") }
     static var quickKeysPanelRight: String { loc("quickkeys.panel.right", "Right") }
     static var quickKeysPanelBottom: String { loc("quickkeys.panel.bottom", "Bottom") }
-    static var quickKeysPanelFooter: String { loc("quickkeys.panel.footer", "Right widens the window to 560 pt; Bottom adds a 3-column strip.") }
+    static var quickKeysPanelFooter: String { loc("quickkeys.panel.footer", "Right makes the window wider; Bottom adds a strip of keys below.") }
     static var quickKeysPickupLabel: String { loc("quickkeys.pickup.label", "Pickup code") }
     static var quickKeysPickupSub: String { loc("quickkeys.pickup.sub", "Used when you click a ringing key.") }
-    static var quickKeysShortcutsNote: String { loc("quickkeys.shortcuts.note", "⌘1 – ⌘9 press keys 1–9 while MacroSIP is the frontmost app, also when the panel is hidden. Keys 10–12 are clicked only. Shortcuts follow the order of the list.") }
+    static var quickKeysShortcutsNote: String { loc("quickkeys.shortcuts.note", "⌘1–⌘9 press keys 1–9 when MacroSIP is frontmost, even with the panel hidden, in list order. Keys 10–12 are click-only.") }
     // MARK: quick keys, ringing line
     static func quickKeysRingingFor(_ minutes: Int) -> String { loc("quickkeys.blf.ringing.for", "Ringing · \(minutes) min") }
     // MARK: 26.2 network, codecs, incoming-call rule
     static var netRTPHeader: String { loc("settings.network.rtp.header", "RTP") }
     static var netRTPPortRange: String { loc("settings.network.rtp.portRange", "Port range") }
-    static var netRTPPortRangeHelp: String { loc("settings.network.rtp.portRange.help", "Audio uses this range. Each call needs two ports; 1024–65535.") }
+    static var netRTPPortRangeHelp: String { loc("settings.network.rtp.portRange.help", "Ports for call audio, 1024–65535. Each call needs two.") }
     static var netRTPStart: String { loc("settings.network.rtp.start", "Start") }
     static var netRTPCount: String { loc("settings.network.rtp.count", "Ports") }
     static var netRport: String { loc("settings.network.rport", "Use rport") }
-    static var netRportHelp: String { loc("settings.network.rport.help", "Asks the server to reply to the address and port it sees. Helps behind NAT.") }
+    static var netRportHelp: String { loc("settings.network.rport.help", "Helps behind NAT: the server replies to the address you are calling from.") }
     static var netDNSHeader: String { loc("settings.network.dns.header", "DNS") }
     static var netDNSSRV: String { loc("settings.network.dns.srv", "Use DNS SRV records") }
-    static var netDNSSRVHelp: String { loc("settings.network.dns.srv.help", "Finds the server and port of an account through SRV records, then falls back to the domain itself.") }
+    static var netDNSSRVHelp: String { loc("settings.network.dns.srv.help", "Finds an account’s server automatically; if that fails, uses the domain itself.") }
     static var netNameserver: String { loc("settings.network.dns.nameserver", "Nameserver") }
     static var netNameserverHelp: String { loc("settings.network.dns.nameserver.help", "Address of a DNS server. Empty uses the system's servers.") }
     static var netNameserverPlaceholder: String { loc("settings.network.dns.nameserver.placeholder", "System") }
-    static var netRestartFooter: String { loc("settings.network.restartFooter", "Changes to the port range and DNS apply after a restart of the engine.") }
-    static var netRestartBanner: String { loc("settings.network.restart.banner", "Network changes are waiting for a restart of the engine. Accounts register again.") }
-    static var netRestartNow: String { loc("settings.network.restart.now", "Restart now") }
+    static var netRestartFooter: String { loc("settings.network.restartFooter", "Port range and DNS changes apply after a restart.") }
+    static var netRestartBanner: String { loc("settings.network.restart.banner", "Network changes will apply after a restart. Accounts register again.") }
+    static var netRestartNow: String { loc("settings.network.restart.now", "Restart Now") }
     static var netRestartBusy: String { loc("settings.network.restart.busy", "End your calls first.") }
     static var codecsWidebandNote: String { loc("settings.codecs.footer.wideband", "Wideband codecs (Opus, G.722, G.722.1, Speex 16 and 32 kHz) work only if the PBX supports them.") }
     static var denyHeader: String { loc("settings.general.deny.header", "Incoming calls") }
     static var denyLabel: String { loc("settings.general.deny.label", "Reject calls from") }
-    static var denyHelp: String { loc("settings.general.deny.help", "A rejected call never rings. The caller gets 603 Decline and the call log shows “Rejected: rule”.") }
+    static var denyHelp: String { loc("settings.general.deny.help", "A rejected call never rings. The caller gets a refusal, and the call log shows “Rejected: rule”.") }
     static var denyNobody: String { loc("settings.general.deny.nobody", "Nobody") }
     static var denyEveryone: String { loc("settings.general.deny.everyone", "Everyone") }
     static var denyNotInContacts: String { loc("settings.general.deny.notInContacts", "Numbers not in Contacts") }
@@ -783,9 +783,9 @@ enum L {
     static var directorySignInButton: String { loc("directory.signin.button", "Sign In…") }
     static var directorySearchHeader: String { loc("directory.search.header", "Search") }
     static var directoryMinLength: String { loc("directory.search.minLength", "Minimum characters") }
-    static var directoryMinLengthSub: String { loc("directory.search.minLength.sub", "Search starts after this many characters and a 300 ms pause in typing.") }
+    static var directoryMinLengthSub: String { loc("directory.search.minLength.sub", "Search starts once this many characters are typed and you pause for 300 ms.") }
     static var directoryLookupEnable: String { loc("directory.lookup.enable", "Look up names of incoming callers") }
-    static var directoryLookupSub: String { loc("directory.lookup.sub", "Asks search-only sources for at most 1 second while the call rings.") }
+    static var directoryLookupSub: String { loc("directory.lookup.sub", "Waits up to 1 second for search-only sources while the call rings.") }
     static var directoryAddTitle: String { loc("directory.add.title", "Add Directory Source") }
     static var directoryEditTitle: String { loc("directory.edit.title", "Edit Directory Source") }
     static var directoryAddType: String { loc("directory.add.type", "Type") }
@@ -827,7 +827,7 @@ enum L {
     static var directoryURLRefreshWeek: String { loc("directory.url.refresh.week", "Week") }
     static var directoryURLFooter: String { loc("directory.url.footer", "CSV with a header row, or a JSON array of objects. Columns named name, first name, last name, number, mobile, email are recognised.") }
     static var directoryGoogleSignIn: String { loc("directory.google.signin", "Sign in with Google") }
-    static var directoryGoogleFooter: String { loc("directory.google.footer", "Opens Google in your browser once to allow read-only access to your contacts. MacroSIP keeps only the access token, in the Keychain; you can remove access in your Google Account at any time.") }
+    static var directoryGoogleFooter: String { loc("directory.google.footer", "Opens Google in your browser once to give read-only access to your contacts. Only an access token is kept, in the Keychain; you can revoke it in your Google Account.") }
     static var directoryMacOSAllow: String { loc("directory.macos.allow", "Allow access") }
     static var directoryMacOSFooter: String { loc("directory.macos.footer", "MacroSIP asks macOS for access to Contacts when you press Allow access.") }
     static var directoryMacOSName: String { loc("directory.macos.name", "macOS Contacts") }
@@ -844,7 +844,6 @@ enum L {
     static var directoryGoogleAccount: String { loc("directory.google.account", "Google account") }
     static var directorySearchEnable: String { loc("directory.search.enable", "Search directories from the number field") }
     static var directoryResultsPerSource: String { loc("directory.search.limit", "Results per source") }
-    static var directoryTypesFooter: String { loc("directory.add.types.footer", "Types: LDAP, URL (CSV or JSON), Google Contacts, macOS Contacts.") }
     static var directoryURLFormat: String { loc("directory.url.format", "Format") }
     static var autoAnswerHeader: String { loc("settings.autoAnswer.header", "Auto-answer") }
     static var advancedHeader: String { loc("settings.general.advanced.header", "Advanced") }
@@ -854,7 +853,7 @@ enum L {
     static var audioHoldMusicSource: String { loc("settings.audio.holdMusic.source", "Source") }
     static var audioHoldMusicBuiltIn: String { loc("settings.audio.holdMusic.builtIn", "Built-in") }
     static var audioHoldMusicOff: String { loc("settings.audio.holdMusic.off", "Off") }
-    static var audioHoldMusicFooter: String { loc("settings.audio.holdMusic.footer", "The caller hears this while on hold.") }
+    static var audioHoldMusicFooter: String { loc("settings.audio.holdMusic.footer", "The other party hears this while the call is on hold.") }
     static func audioHoldMusicError(_ reason: String) -> String { loc("settings.audio.holdMusic.error", "The file could not be used: \(reason)") }
     static var audioSoundEventsHeader: String { loc("settings.audio.soundEvents.header", "Sound events") }
     static var audioSoundCallEvents: String { loc("settings.audio.soundEvents.callEvents", "Call connected and ended") }
@@ -862,10 +861,10 @@ enum L {
     static var audioSoundVoicemail: String { loc("settings.audio.soundEvents.voicemail", "New voicemail") }
     static var audioSoundError: String { loc("settings.audio.soundEvents.error", "Registration error and lost network") }
     static var audioSoundMessage: String { loc("settings.audio.soundEvents.message", "New message") }
-    static var audioSoundEventsFooter: String { loc("settings.audio.soundEvents.footer", "Short beeps on the speaker; the other side never hears them.") }
+    static var audioSoundEventsFooter: String { loc("settings.audio.soundEvents.footer", "Short beeps on the speaker; the other party does not hear them.") }
     static var audioTestHeader: String { loc("settings.audio.audioTest.header", "Audio test") }
     static var audioTestRow: String { loc("settings.audio.audioTest.row", "Speaker and microphone") }
-    static var audioTestHelp: String { loc("settings.audio.audioTest.help", "Test plays two notes on the speaker for 2 seconds; the meter shows the microphone.") }
+    static var audioTestHelp: String { loc("settings.audio.audioTest.help", "Plays two notes on the speaker for 2 seconds; the meter shows the microphone level.") }
     static var audioHeadsetButtons: String { loc("settings.audio.headsetButtons", "Headset buttons") }
     static func audioHeadsetConnected(_ name: String) -> String { loc("settings.audio.headsetButtons.connected", "Connected: \(name)") }
     static var audioHeadsetNone: String { loc("settings.audio.headsetButtons.none", "No headset with call controls") }
