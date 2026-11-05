@@ -14,7 +14,7 @@ Vocabulary follows `docs/GLOSSARY.md` (account, registration, call, active call,
 
 ## Common main-window frame
 
-Used by screens 1 to 5 and 10. Window width 340 pt, height 520 pt, fixed.
+Used by screens 1 to 5, 10 and 14. Window width 340 pt, height 520 pt, fixed.
 
 ### Layout (top to bottom)
 
@@ -23,7 +23,7 @@ Used by screens 1 to 5 and 10. Window width 340 pt, height 520 pt, fixed.
 | 1 | Title bar with standard traffic lights. Title centred. | 30 pt high |
 | 2 | Account row: outgoing account pop-up button at the left, nothing else | 35 pt high (row padding 3 pt top, 10 pt sides, 6 pt bottom; button min height 26 pt) |
 | 3 | Number row: number field | 46 pt high, 10 pt side padding |
-| 4 | Tab control (segmented, three segments) | 36 pt high incl. padding |
+| 4 | Tab control (segmented, four segments from 26.3; see screen 14) | 36 pt high incl. padding |
 | 5 | Tab body | fills the rest; 392 pt in call states |
 | 6 | Status bar | 26 pt high, full width |
 
@@ -86,8 +86,9 @@ Status dot mapping for the account pop-up, status bar and Accounts table:
 
 | Element | Type | Behaviour |
 |---|---|---|
-| Tabs | segmented control, 3 segments: Dialpad, Contacts, Call Log | Selects the tab body. Keeps state when switched. |
+| Tabs | segmented control, 4 segments: Dialpad, Contacts, Call Log, Messages (screen 14). Labels 12 pt; each segment is as wide as its label and badge plus an equal share of the remaining width (see 14, Tab control). | Selects the tab body. Keeps state when switched. |
 | Call Log badge | red count pill inside the third segment | Shows the number of unseen missed calls. Hidden when zero. Cleared when the Call Log tab is opened. |
+| Messages badge | red count pill inside the fourth segment | Unread messages over all conversations (screen 14). Hidden when zero. Not cleared by opening the tab; it falls as conversations are read. |
 
 Tabs are always enabled, including with no accounts.
 
@@ -732,7 +733,7 @@ Native NSMenu, width about 286 pt. Structure, top to bottom:
 
 | Element | Behaviour |
 |---|---|
-| Dock icon badge | Red pill, count of unseen missed calls. Hidden when zero. Clears when the Call Log tab is opened. |
+| Dock icon badge | Red pill, count of unseen missed calls plus unread messages (screen 14). Hidden when zero. The missed part clears when the Call Log tab is opened; the message part falls as conversations are read. |
 | Dock icon visibility | Controlled by Settings › General "Show icon in the Dock". Hidden Dock icon: the menu bar icon and the window remain. |
 
 ### 7.4 My Status submenu
@@ -938,6 +939,7 @@ Group footer: "The caller hears this while on hold." A file the engine cannot re
 | Dial pad key presses | toggle | The DTMF tone of the key pressed on the dial pad while no call is active ("+" has no tone). During a call the key pad sends DTMF instead. |
 | New voicemail | toggle | Three beeps when an account's indicator reports more new messages than before. |
 | Registration error and lost network | toggle | Two low beeps when a registration fails or the network path goes away; at most once every 10 seconds. |
+| New message | toggle | Two short high beeps when a text message arrives (screen 14); not while Do Not Disturb is on; at most once every 2 seconds. |
 
 Group footer: "Short beeps on the speaker; the other side never hears them."
 
@@ -1308,6 +1310,7 @@ Strings marked "(proposed)" are not in the mockups; they are needed by the spec 
 | | Dialpad | `tabs.dialpad` | |
 | | Contacts | `tabs.contacts` | |
 | | Call Log | `tabs.callLog` | |
+| | Messages | `tabs.messages` | Fourth tab (screen 14). |
 | | Name or number | `main.numberField.placeholder` | |
 | | Outgoing account | `main.accountPicker.help` | Tooltip. |
 | | Accounts | `account.popup.header` | Account pop-up header. |
@@ -1606,6 +1609,7 @@ Strings marked "(proposed)" are not in the mockups; they are needed by the spec 
 | | Dial pad key presses | `settings.audio.soundEvents.keyPress` | |
 | | New voicemail | `settings.audio.soundEvents.voicemail` | |
 | | Registration error and lost network | `settings.audio.soundEvents.error` | |
+| | New message | `settings.audio.soundEvents.message` | Screen 14. |
 | | Short beeps on the speaker; the other side never hears them. | `settings.audio.soundEvents.footer` | |
 | | Audio test | `settings.audio.audioTest.header` | |
 | | Speaker and microphone | `settings.audio.audioTest.row` | |
@@ -1777,6 +1781,49 @@ Strings marked "(proposed)" are not in the mockups; they are needed by the spec 
 | | Contacts and the call log work without an account. | `firstrun.footnote` | |
 | | "MacroSIP needs the microphone so the other person can hear you during calls." | `NSMicrophoneUsageDescription` (Info.plist, not String Catalog) | Usage string. |
 | | Don't Allow, Allow | system | Provided by macOS. |
+
+### 14 Messages
+
+| Ed. | English | Key | Notes |
+|---|---|---|---|
+| | Messages | `tabs.messages` | Fourth tab; listed under Common too. |
+| | New Message | `messages.new` | Tool-row button and the 14.3 header title. |
+| | No messages | `messages.empty.title` | |
+| | Messages you receive appear here. Click New Message to write one. | `messages.empty.body` | |
+| | You: %@ | `messages.row.you` | Preview of an outgoing last message; %@ the text. |
+| | %lld unread | `messages.row.unread` | Plural; accessibility label of the row's count pill. |
+| | Today | `messages.day.today` | Day separator. |
+| | Yesterday | `messages.day.yesterday` | Day separator and the row time column. |
+| | All conversations | `messages.back.help` | Back button tooltip and accessibility label. |
+| | Call | `messages.call.help` | Header Call button tooltip. |
+| | Message | `messages.composer.placeholder` | |
+| | Send | `messages.send.help` | Send button tooltip and accessibility label. |
+| | %@ is switched off | `messages.composer.accountOff` | Composer placeholder; %@ account name. |
+| | The account of this conversation was removed | `messages.composer.accountRemoved` | Composer placeholder. |
+| | Too long to send | `messages.composer.tooLong` | Red line above the composer. |
+| | Sending… | `messages.status.sending` | |
+| | Sent | `messages.status.sent` | 2xx: accepted, not delivered. |
+| | Accepted by the server. This does not confirm that the message reached the recipient's phone. | `messages.status.sent.help` | Tooltip on "Sent". |
+| | Not sent | `messages.status.failed` | Row marker; accessibility label of the failed glyph. |
+| | Not sent · %@ | `messages.status.failedReason` | %@ the reason ("404 Not Found" as received, or one of the two below). |
+| | Interrupted | `messages.error.interrupted` | Code 0, the app quit while sending. |
+| | No connection | `messages.error.local` | Code 0, other local failure; the engine text is the tooltip. |
+| | Retry | `messages.retry` | Link under a failed message and bubble menu item. |
+| | Call | `messages.menu.call` | Row context menu. |
+| | Add to Contacts | `messages.menu.addContact` | Row context menu, no contact only. |
+| | Copy Number | `messages.menu.copyNumber` | Row context menu. |
+| | Delete Conversation… | `messages.menu.deleteConversation` | Row context menu, ⌘⌫. |
+| | Copy Text | `messages.menu.copyText` | Bubble context menu. |
+| | Delete Message | `messages.menu.deleteMessage` | Bubble context menu. |
+| | Delete the conversation with %@? | `messages.delete.title` | Alert title; %@ name or number. Buttons `common.cancel`, `common.delete`. |
+| | %lld messages are removed from this Mac. | `messages.delete.body` | Plural. |
+| | To: | `messages.new.to` | 14.3; the field placeholder is `main.numberField.placeholder`. |
+| | From %@, the account chosen above | `messages.new.from` | 14.3; %@ the outgoing account name. |
+| | Send Message | `contacts.menu.message` | Contacts context menu. |
+| | Send Message | `calllog.menu.message` | Call Log context menu. |
+| | New message | `settings.audio.soundEvents.message` | Settings › Audio › Sound events; listed under 8 Settings too. |
+
+Notification title, subtitle and body are data (sender, account name, text), not strings.
 
 ### Proposed strings not in the mockups
 
@@ -2240,3 +2287,203 @@ Where the app differs from the tables above:
 - **Test and passwords**: the LDAP password typed in the sheet is used by Test as typed and stored in the Keychain only by Save; Cancel leaves the stored password as it was. The macOS Contacts source has no name of its own: the list shows "macOS Contacts" in the app's language.
 - **Sheet**: LDAP has a "Use StartTLS" switch; URL has a CSV / JSON switch (chosen from the URL's extension until touched). Google: "Sign in with Google" opens the consent page in the browser and waits for the redirect (two minutes at most); the e-mail is shown in the row and stored by Save. macOS Contacts: the "Allow access" button runs the Test (the system prompt), with an "Open System Settings…" row when access is denied.
 - **Caller names**: a caller's name from the directory is used when the SIP display name is empty or just the number; the name is also stored in the call log entry.
+
+---
+
+## 14. Messages
+
+Screen 14. Text messages (SIP `MESSAGE`, `text/plain; charset=utf-8`) in a fourth main-window tab. The window stays 340 by 520 pt (common frame). The tab shows the conversation list; a click opens a conversation in place of the list, with a back button. Out of scope: group chat, attachments, typing indicators, end-to-end encryption, SMS concatenation.
+
+A conversation is one remote party on one account (glossary: account, remote party). Every message in it is sent and received through that account.
+
+### Tab control
+
+| Element | Behaviour |
+|---|---|
+| Segments | Dialpad, Contacts, Call Log, Messages. Labels 12 pt (was 12.5 pt with three segments), regular. |
+| Segment width | Each segment is as wide as its label plus its badge, plus an equal share of the remaining width. Equal widths do not fit: the segment area is 316 pt (320 pt minus the 2 pt control padding on each side), 79 pt per segment, while "Сообщения" with a badge needs about 90 pt at 12 pt. Measured at 12 pt: en 43 / 51 / 46 / 57 pt; ru "Набор" 38, "Контакты" 56, "Журнал" 46, "Сообщения" 68 pt. With both badges at "99+" the Russian labels still leave about 5 pt on each side of every label. The existing 0.85 minimum scale stays as a last resort. |
+| Messages badge | Red count pill (`CountPill`, as the Call Log badge) after the label: the number of unread messages over all conversations. Shows "99+" above 99. Hidden when zero. Opening the tab does not clear it; it falls as conversations are read (below). |
+
+### Layout
+
+| # | Element | Notes |
+|---|---|---|
+| 1 | Common frame | Messages segment selected. The number field and the account row keep working as on the other tabs (Return in the number field places a call). |
+| 2 | Tab body, 357 pt | One of three views: 14.1 conversation list, 14.2 conversation, 14.3 new message. The tab remembers which one was shown when the user switches tabs. |
+
+### 14.1 Conversation list
+
+| # | Element | Notes |
+|---|---|---|
+| 1 | Tool row | As the Call Log tool row: 8 pt padding, bottom hairline, 40 pt high. Only the New Message button, at the right. |
+| 2 | List | Conversations, newest activity first, no section headers. Row height 44 pt. Scrolls. |
+
+| Element | Type | Behaviour | Enabled / disabled |
+|---|---|---|---|
+| New Message | button, small, plus glyph and text (`messages.new`) | Opens 14.3. When the number field holds text, it is copied into the To field. | Disabled when no account is enabled. |
+| Conversation row | list row | Avatar (32 pt; photo or initials of the contact, "#" on grey for a number without a contact). Line 1: name (13 pt, medium; bold while the conversation has unread messages), then the account chip (10 pt, grey, as in the call log). Line 2: the last message on one line, 11.5 pt, secondary, truncated at the end; an outgoing last message starts with "You: " (`messages.row.you`). Right column: time of the last message (11.5 pt, tabular digits; accent colour while unread) above the unread count. Click selects; double-click or Return opens 14.2. | Enabled. |
+| Name | label | The contact's display name (`contactID`, matched as in the call log); otherwise the display name of the last incoming message; otherwise the number. | n/a |
+| Not sent marker | label in line 2 | When the last outgoing message failed: red exclamation glyph and "Not sent" (`messages.status.failed`) in red, then " · ", then the preview. | n/a |
+| Unread count | pill, blue (accent), white 10.5 pt bold, min 18 by 16 pt | Unread incoming messages of this conversation. Hidden when zero. Accessibility label `messages.row.unread`. | Read-only. |
+| Time | label | Today: time ("14:52"). Yesterday: `messages.day.yesterday`. Within the last 6 days: abbreviated weekday ("Mon"). Older: short date without the year ("6 Oct"), with the year when not this year. All from the system formatter except "Yesterday". | n/a |
+
+**Row context menu:**
+
+| Item | Behaviour |
+|---|---|
+| Call (`messages.menu.call`) | Calls the number through the conversation's account. |
+| Add to Contacts (`messages.menu.addContact`) | Only when the conversation has no contact. Opens the contact card (screen 12) prefilled with the display name and number. |
+| Copy Number (`messages.menu.copyNumber`) | Copies the number. |
+| separator | |
+| Delete Conversation… (`messages.menu.deleteConversation`), shortcut Command-Delete | Opens the alert below. |
+
+**Delete alert** (standard alert sheet on the main window, as the Clear call log alert): title "Delete the conversation with %@?" (`messages.delete.title`, name or number), body "%lld messages are removed from this Mac." (`messages.delete.body`, plural), buttons Cancel (`common.cancel`) and Delete (`common.delete`, destructive). Escape cancels; Return does not delete.
+
+**Empty state:** speech-bubble glyph (30 pt, tertiary), "No messages" (`messages.empty.title`, 13 pt semibold) and "Messages you receive appear here. Click New Message to write one." (`messages.empty.body`, 12 pt, secondary, centred, wraps to two lines). The tool row stays.
+
+### 14.2 Conversation
+
+| # | Element | Notes |
+|---|---|---|
+| 1 | Header row | 44 pt, bottom hairline: back chevron, avatar (28 pt), name and second line, Call button at the right. |
+| 2 | Message list | Bubbles, oldest at the top; opens scrolled to the newest message. Scrolls. |
+| 3 | Composer | Above the status bar, top hairline: text field and Send button. |
+
+| Element | Type | Behaviour | Enabled / disabled |
+|---|---|---|---|
+| Back | icon button, chevron left, accent colour, 22 by 26 pt | Returns to 14.1 and keeps the draft. Tooltip and accessibility label `messages.back.help`. | Enabled. |
+| Name | label, 13 pt semibold | As in the row. | n/a |
+| Second line | label, 11 pt, secondary | Number (tabular digits), " · ", account chip. When the name is the number itself the line shows only the chip. | n/a |
+| Call | 24 pt round button, green handset (as the contact row call button) | Calls the number through the conversation's account. Tooltip `messages.call.help`. | Disabled while the account is switched off or removed. |
+| Day separator | label, 11 pt semibold, secondary, centred | Before the first message of each day: `messages.day.today`, `messages.day.yesterday`, then the system date ("Mon, 6 Oct"), as the call log sections. | n/a |
+| Incoming bubble | text, left aligned | Grey (fill 2), primary text, 13 pt, corner radius 15 pt with a 5 pt bottom-left corner, padding 6 by 10 pt, at most 76 % of the list width; wraps on words and breaks long words. Text is selectable. Links are not made clickable in 26.3. | n/a |
+| Outgoing bubble | text, right aligned | Accent fill, white text, 5 pt bottom-right corner; otherwise as incoming. | n/a |
+| Time line | label, 10.5 pt, secondary, tabular digits, under the bubble on its side | Time of the message ("11:47"). Consecutive messages in the same direction less than 2 minutes apart form a group: the time is shown only under the last bubble of the group, and the bubbles are 2 pt apart (8 pt between groups). | n/a |
+| Status (outgoing) | appended to the time line after " · " | **Sending…** (`messages.status.sending`, with a 9 pt spinner): under every message waiting for the answer. **Sent** (`messages.status.sent`): only under the last outgoing message, when it was accepted (2xx). Tooltip `messages.status.sent.help`. **Not sent** (`messages.status.failedReason`, red) with the reason, then " · " and **Retry** (`messages.retry`, accent-colour link): under every failed message, never hidden. | n/a |
+| Failed glyph | red exclamation in a circle, 16 pt, left of a failed bubble | Click opens the bubble menu. Accessibility label `messages.status.failed`. | Enabled. |
+| Composer field | multi-line text field, 13 pt, rounded 15 pt, min 30 pt high; grows to 5 lines, then scrolls | Placeholder "Message" (`messages.composer.placeholder`). Focused when the conversation opens. Keeps a draft per conversation until sent or the app quits. | Disabled while the account is switched off or removed; the placeholder then reads `messages.composer.accountOff` or `messages.composer.accountRemoved`. |
+| Send | 26 pt round button, accent fill, white arrow up (`arrow.up`) | Sends the field text (leading and trailing white space trimmed) through the conversation's account, appends the bubble with Sending…, clears the field. Tooltip `messages.send.help`. | Disabled (grey fill) when the trimmed text is empty, when it is over 4,000 UTF-8 bytes (a red line "Too long to send", `messages.composer.tooLong`, appears above the field), or when the composer is disabled. |
+
+**Meaning of Sent.** A 2xx answer means the SIP server or the peer accepted the message. It never means delivery to a phone. The tooltip on "Sent" says: "Accepted by the server. This does not confirm that the message reached the recipient's phone." (`messages.status.sent.help`). No checkmarks or "Delivered" wording anywhere.
+
+**Failure reasons** (after "Not sent · "):
+
+| Engine result | Text |
+|---|---|
+| SIP code 300 to 699 | Code and reason phrase as received, not translated: "404 Not Found", "408 Request Timeout", "480 Temporarily Unavailable". |
+| Code 0, reason "interrupted" (the app quit while sending; set at launch by the store) | `messages.error.interrupted`. |
+| Code 0, any other local failure | `messages.error.local`; the engine's text is the tooltip. |
+
+**Retry** (link or menu item) sends the same text again through the same account. The message goes back to Sending…, takes the current time and moves to the end of the list.
+
+**Bubble context menu:**
+
+| Item | Behaviour |
+|---|---|
+| Copy Text (`messages.menu.copyText`) | Copies the whole message text. |
+| Retry (`messages.retry`) | Only on a failed outgoing message. As the Retry link. |
+| separator | |
+| Delete Message (`messages.menu.deleteMessage`), destructive | Removes the message at once, without confirmation. Deleting the last message removes the conversation and returns to 14.1. |
+
+**Read state.** A conversation is read while it is shown in 14.2 and the main window is the key window: its unread count drops to zero, and the tab and Dock badges drop with it. A message that arrives for the open conversation while the window is key is read at once (no notification, the sound event still plays). If the window is not key, the messages stay unread until it becomes key with the conversation shown.
+
+### 14.3 New message
+
+The body of 14.2 with a To row in place of the header's contact part.
+
+| # | Element | Notes |
+|---|---|---|
+| 1 | Header row | 44 pt: back chevron, title "New Message" (`messages.new`, 13 pt semibold, centred). |
+| 2 | To row | "To:" (`messages.new.to`, 12.5 pt, secondary) and a one-line text field (13 pt, 26 pt high), placeholder `main.numberField.placeholder`. Focused when the view opens. |
+| 3 | From line | 11 pt, secondary, under the To field, bottom hairline: registration dot of the outgoing account and "From %@, the account chosen above" (`messages.new.from`). |
+| 4 | Empty message area | |
+| 5 | Composer | As 14.2. |
+
+| Element | Behaviour | Enabled / disabled |
+|---|---|---|
+| To field | Accepts a number, a SIP user ("102"), a `sip:` or `tel:` URI, or a name. The address is built with `DialString.parse` exactly as for a call. While typing it shows the suggestion list of the number field (screen 1 and screen 13: local contacts first, then the directory sections, same rows, same keys, same 2-character and 300 ms rules). It reuses that list component; nothing is drawn differently. Choosing a suggestion puts the name as a token (accent tint) followed by the number in secondary text; Delete on the token clears the field. | Enabled. |
+| Outgoing account | The message goes out through the account chosen in the account row of the main window (the account pop-up of the common frame). Changing the account there updates the From line. | n/a |
+| Existing conversation | When the chosen address and the outgoing account match an existing conversation (same account, same number after `Contact.normalize`), the view switches to that conversation (14.2) and keeps the typed text in its composer. | n/a |
+| Send | Creates the conversation and the first message, then shows 14.2. | Disabled until the To field has an address and the text is not empty. |
+| Back | Returns to 14.1; nothing is kept. | Enabled. |
+
+### 14.4 Notification and Dock badge
+
+| Element | Behaviour |
+|---|---|
+| Notification | One notification per incoming message, posted through the app's notification center like the incoming-call notification (6.3), in the style the user set for MacroSIP in System Settings. Title: the sender (name as in the row, else the number). Subtitle: the account name. Body: the message text (macOS cuts it to its own length). No action buttons. `threadIdentifier` = the conversation id, so Notification Center groups by conversation. No notification sound (the sound event below is the only sound). |
+| When none is posted | The conversation is open in 14.2 and the main window is key; or Do Not Disturb is on (menu bar, screen 7). macOS Focus modes filter the rest by themselves. |
+| Click | Brings the main window forward, selects the Messages tab, opens the conversation (14.2) and focuses the composer. |
+| Removal | Notifications of a conversation are removed from Notification Center when it is read in the app or deleted. |
+| Dock badge | The unread messages are added to the unseen missed calls (7.3): one red number. Hidden when both are zero. |
+| Menu bar icon | Unchanged: its badge counts missed calls only (7.1). |
+| Do Not Disturb | No notification and no sound; the message is stored, and the row, tab and Dock badges count it as usual. |
+
+### 14.5 Settings › Audio › Sound events
+
+One more toggle row, last in the existing Sound events group (8.3): "New message" (`settings.audio.soundEvents.message`), off by default. When on: two short high beeps on the speaker when a message arrives, also for the open conversation; never during Do Not Disturb; at most once every 2 seconds; never sent to a call or a recording. The group footer stays. Drawn in the mockup (14.5) and added to the screen 8 Audio pane.
+
+### Entry points elsewhere
+
+| Where | Item | Behaviour |
+|---|---|---|
+| Contacts context menu (screens 2 and 12), after Call from | Send Message (`contacts.menu.message`) | Opens the Messages tab: the conversation with the contact's default number on the outgoing account if it exists, otherwise 14.3 with the contact in the To field. |
+| Call Log context menu (screen 3), after Call from | Send Message (`calllog.menu.message`) | The same, for the entry's number and the entry's account. |
+
+### States
+
+| State | Appearance |
+|---|---|
+| No conversations | 14.1 empty state. |
+| Unread messages | Bold row, accent time, blue count pill; red badge on the tab and on the Dock icon. |
+| Last message not sent | Red "Not sent" marker in the row; in 14.2 the failed glyph, the red reason and Retry. |
+| Sending | "Sending…" with a spinner under the bubble. |
+| Sent | "Sent" under the last outgoing message, with the tooltip. |
+| Account switched off | Row unchanged (chip shown). In 14.2 the composer and Call are disabled; placeholder `messages.composer.accountOff`. Incoming messages are not received while the account is off. |
+| Account removed | Conversations stay, without a chip. Composer and Call disabled; placeholder `messages.composer.accountRemoved`. |
+| No account enabled | New Message disabled; existing conversations can be read and deleted. |
+| Text over 4,000 bytes | Red "Too long to send" above the field; Send disabled. |
+| App started with messages still sending | They show as Not sent · Interrupted with Retry. |
+| During a call | The summary bar of screen 4 sits above the tool row or header, as on the other tabs; the body shrinks by its height. |
+| Do Not Disturb | No notification, no sound; badges count. |
+
+### Keyboard
+
+| Key | Where | Action |
+|---|---|---|
+| Up / Down | 14.1 | Moves the row selection. |
+| Return, double-click | 14.1 | Opens the selected conversation. |
+| Command-Delete | 14.1 | Delete Conversation… (alert). The same key deletes a contact on the Contacts tab; each acts only on its own tab. |
+| Return | composer | Sends (when Send is enabled). While an input method has marked text, Return commits the text and does not send. |
+| Shift-Return, Option-Return | composer | New line. |
+| Escape | 14.2 | Back to 14.1; the draft is kept. |
+| Escape | 14.3 | Closes the suggestion list when it is open; otherwise back to 14.1. |
+| Up / Down, Return | 14.3 To field | Move through and pick suggestions (as the number field). Return with nothing highlighted moves the focus to the composer. |
+| Tab | 14.3 | To field, then composer. |
+| Command-C | bubbles | Copies the selected text (system behaviour). |
+
+No new menu shortcut. Command-N stays unassigned (File › New is removed in `AppCommands`); Command-D, Shift-Command-M, Command-Up/Down, Option-Command-D, Command-0, Command-1 to 9, Command-comma, Command-F, Command-E, Command-Return and Command-Period keep their meanings. The number field keeps its rule "focused whenever the window is key" except while 14.2 or 14.3 is shown, where the composer or the To field has the focus; a click puts the focus back into the number field.
+
+### Strings
+
+See **Strings › 14 Messages**. The Russian texts in the mockup are drafts; the final Russian strings are written with the implementation.
+
+### Decided — designer
+
+Open points of the brief, decided while drawing; the owner may change any of them.
+
+- **D14.1 Tab sizes.** Four segments at 12 pt, widths following the labels, so "Сообщения" and a badge fit in 320 pt; badge capped at "99+".
+- **D14.2 Tab badge.** Counts unread messages and is not cleared by opening the tab (unlike the Call Log badge), because an unread message stays unread until its conversation is seen.
+- **D14.3 Dock badge.** Unread messages plus unseen missed calls; the menu bar icon keeps counting missed calls only.
+- **D14.4 Rows.** Avatar as on the Contacts tab; account chip after the name; "You: " before an outgoing preview; no section headers in the list (dates are in the time column); unread count as a blue pill so it does not read as the red missed-call badge.
+- **D14.5 Status lines.** "Sent" only under the last outgoing message; "Sending…" and "Not sent" under every such message. Failed messages use red, like a failed account. Retry moves the message to the end.
+- **D14.6 Time grouping.** Messages in the same direction less than 2 minutes apart share one time line.
+- **D14.7 Header Call button.** A green Call button in the conversation header, using the conversation's account.
+- **D14.8 Accounts.** Replies always use the conversation's account (shown as the chip); only a new message uses the account row. Choosing an address that already has a conversation on that account opens it.
+- **D14.9 Deleting.** Delete Conversation asks first (alert); Delete Message does not, like Delete Entry in the call log.
+- **D14.10 Keys.** No New Message shortcut; Command-N stays free. Escape goes back and keeps the draft.
+- **D14.11 Notification.** No Reply action and no notification sound in 26.3; the "New message" sound event is the only sound. No notification for the conversation open in the key window.
+- **D14.12 Sound event.** Drawn as one more row of the existing group (14.5) and added to the screen 8 Audio pane.
+- **D14.13 Entry points.** "Send Message" in the Contacts and Call Log context menus; New Message copies the number field into To.
+- **D14.14 Length.** Over 4,000 UTF-8 bytes the composer shows "Too long to send" and Send is disabled; no byte counter.
+- **D14.15 Key name.** The tab title uses `tabs.messages`, next to the other `tabs.*` keys; everything else uses `messages.*`.

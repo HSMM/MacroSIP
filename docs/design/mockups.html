@@ -539,6 +539,76 @@ kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:
 .radios label{display:flex;align-items:center;gap:7px}
 .gbtn-google{display:inline-flex;align-items:center;gap:8px;padding:4px 12px;border-radius:6px;background:var(--m-ctl);box-shadow:0 0 0 .5px var(--m-ctl-border),0 1px 1.5px rgba(0,0,0,.08);font-size:13px;font-weight:500}
 .gbtn-google .g{width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font:700 11px/1 var(--font-ui);color:#fff;background:conic-gradient(#ea4335 0 25%,#fbbc05 0 50%,#34a853 0 75%,#4285f4 0)}
+/* ---------- messages (screen 14) ---------- */
+.seg.four span{flex:1 1 auto;padding:3px 6px;font-size:12px}
+.tbdg{display:inline-block;min-width:16px;padding:0 4px;margin-left:4px;border-radius:8px;background:var(--m-red);color:#fff;font-size:10px;font-weight:700;line-height:15px;text-align:center;vertical-align:1px}
+.mw .body.m14{height:357px;display:flex;flex-direction:column;position:relative}
+.toolrow.m14{min-height:40px}
+.cv-list{flex:1;overflow:hidden;padding:3px 0}
+.cvrow{display:flex;align-items:center;gap:9px;padding:6px 10px;margin:0 5px;border-radius:6px;min-height:44px}
+.cvrow .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.cvrow .l1{display:flex;align-items:center;gap:5px;min-width:0}
+.cvrow .l1 b{font-weight:500;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.cvrow.unread .l1 b{font-weight:700}
+.cvrow .pv{font-size:11.5px;color:var(--m-label2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cvrow .pv .ns{color:var(--m-red);font-weight:500}
+.cvrow .pv .ns svg{width:11px;height:11px;vertical-align:-1.5px;margin-right:2px;stroke-width:1.8}
+.cvrow .rc{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:3px;font-size:11.5px;color:var(--m-label2);white-space:nowrap;align-self:stretch}
+.cvrow.unread .rc .t{color:var(--m-blue);font-weight:500}
+.cvrow .rc .sp{height:16px}
+.upill{min-width:18px;height:16px;border-radius:8px;background:var(--m-blue);color:#fff;font-size:10.5px;font-weight:700;display:grid;place-items:center;padding:0 5px;line-height:1}
+.cvrow.ctx{box-shadow:inset 0 0 0 2px var(--m-blue)}
+.cvrow .acctag{flex:none}
+.empty14{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;padding:0 34px 20px}
+.empty14 b{font-size:13px;font-weight:600}
+.empty14 span{font-size:12px;color:var(--m-label2);line-height:1.4}
+.empty14 svg{width:30px;height:30px;color:var(--m-label3);stroke-width:1.2;margin-bottom:6px}
+.cvhead{display:flex;align-items:center;gap:8px;padding:5px 10px 5px 6px;border-bottom:.5px solid var(--m-sep);min-height:44px;flex:none}
+.cvhead .back{color:var(--m-blue);display:grid;place-items:center;width:22px;height:26px;border-radius:5px;flex:none}
+.cvhead .back svg{width:14px;height:14px;stroke-width:2.2;transform:rotate(180deg)}
+.cvhead .avatar{width:28px;height:28px;font-size:11px}
+.cvhead .who{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.25}
+.cvhead .who b{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cvhead .who span{font-size:11px;color:var(--m-label2);display:flex;gap:5px;align-items:center;white-space:nowrap}
+.cvhead .rbtn{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--m-fill);color:var(--m-green);flex:none}
+.cvhead .rbtn svg{width:13px;height:13px;fill:currentColor;stroke:none}
+.cvhead .ttl{flex:1;font-size:13px;font-weight:600;text-align:center;margin-right:22px}
+.thread{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:4px 10px 6px;position:relative}
+.daysep{align-self:center;font-size:11px;font-weight:600;color:var(--m-label2);padding:8px 0 5px;flex:none}
+.bub{max-width:76%;padding:6px 10px;border-radius:15px;font-size:13px;line-height:1.32;overflow-wrap:anywhere;flex:none}
+.bub.in{align-self:flex-start;background:var(--m-fill2);color:var(--m-label);border-bottom-left-radius:5px}
+.bub.out{align-self:flex-end;background:var(--m-blue);color:#fff;border-bottom-right-radius:5px}
+.bub + .bub{margin-top:2px}
+.bmeta{font-size:10.5px;color:var(--m-label2);padding:2px 6px 7px;flex:none;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bmeta.in{align-self:flex-start} .bmeta.out{align-self:flex-end}
+.bmeta .err{color:var(--m-red);font-weight:500}
+.bmeta .lnk{color:var(--m-blue);font-weight:500}
+.bmeta.sending{display:flex;align-items:center;gap:5px}
+.bmeta .spin{width:9px;height:9px}
+.failrow{align-self:flex-end;display:flex;align-items:center;gap:6px;max-width:84%;flex:none}
+.failrow .bub{max-width:none}
+.failrow .x{color:var(--m-red);display:grid;place-items:center;flex:none}
+.failrow .x svg{width:16px;height:16px;stroke-width:1.7}
+.composer{display:flex;align-items:flex-end;gap:7px;padding:7px 10px 8px;border-top:.5px solid var(--m-sep);flex:none}
+.composer .field{flex:1;border-radius:15px;min-height:30px;padding:5px 11px;font-size:13px;line-height:1.35;align-items:flex-start}
+.composer .field .caret{display:inline-block;width:1px;height:16px;background:var(--m-blue);vertical-align:-3px;margin-left:1px}
+.sendbtn{width:26px;height:26px;border-radius:50%;background:var(--m-blue);color:#fff;display:grid;place-items:center;flex:none;margin-bottom:2px}
+.sendbtn svg{width:14px;height:14px;stroke-width:2.2}
+.sendbtn.dis{background:var(--m-fill3);color:var(--m-content)}
+.composer.off .field{opacity:.55}
+.torow{display:flex;align-items:center;gap:6px;padding:7px 10px 4px;flex:none}
+.torow .lb{font-size:12.5px;color:var(--m-label2)}
+.torow .field{flex:1;min-height:26px;font-size:13px}
+.fromline{display:flex;align-items:center;gap:5px;padding:0 10px 7px 37px;font-size:11px;color:var(--m-label2);border-bottom:.5px solid var(--m-sep);flex:none;white-space:nowrap}
+.fromline .dot{width:7px;height:7px}
+.newhint{margin:auto;text-align:center;font-size:11.5px;color:var(--m-label3);max-width:220px}
+.tokn{display:inline-flex;align-items:center;gap:4px;padding:0 7px;border-radius:9px;background:var(--m-blue-tint);color:var(--m-blue);font-size:12.5px;line-height:19px;white-space:nowrap}
+.notif.msg .main .tx{gap:0}
+.notif.msg .main .tx .sub{font-weight:500}
+.notif.msg .main .tx .body{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.notif.msg .when{position:absolute;top:10px;right:13px;font-size:11px;color:var(--m-label2)}
+.notif.msg{position:relative}
+.ctxcap{font:500 10.5px/1.2 var(--font-mono);color:var(--ink-3);margin:0 0 6px}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -594,6 +664,9 @@ kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:
   <symbol id="i-book" viewBox="0 0 16 16"><path d="M8 3.6C6.6 2.6 4.6 2.25 2.25 2.5v10c2.35-.25 4.35.1 5.75 1.1 1.4-1 3.4-1.35 5.75-1.1v-10C11.4 2.25 9.4 2.6 8 3.6zM8 3.6v10"/></symbol>
   <symbol id="i-server" viewBox="0 0 16 16"><rect x="2.25" y="2.5" width="11.5" height="4.5" rx="1.2"/><rect x="2.25" y="9" width="11.5" height="4.5" rx="1.2"/><path d="M4.75 4.75h.01M4.75 11.25h.01"/></symbol>
   <symbol id="i-cloud" viewBox="0 0 16 16"><path d="M4.5 12.75a3 3 0 0 1-.35-5.98A4.25 4.25 0 0 1 12.3 6a3.4 3.4 0 0 1-.55 6.75z"/></symbol>
+  <symbol id="i-arrow-up" viewBox="0 0 16 16"><path d="M8 13V3.5M3.75 7.5 8 3.25l4.25 4.25"/></symbol>
+  <symbol id="i-excl" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.25"/><path d="M8 4.75v4M8 11.1v.1"/></symbol>
+  <symbol id="i-bubble" viewBox="0 0 16 16"><path d="M8 2.5c3.45 0 6.25 2.2 6.25 4.9S11.45 12.3 8 12.3c-.6 0-1.2-.07-1.75-.2L3 13.75l.75-2.6C2.5 10.25 1.75 8.9 1.75 7.4 1.75 4.7 4.55 2.5 8 2.5z"/></symbol>
   <symbol id="i-mark" viewBox="0 0 1024 1024"><rect x="100" y="100" width="824" height="824" rx="185" fill="url(#g-icon)"/><g fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="14"><circle cx="512" cy="290" r="40"/><circle cx="512" cy="438" r="40"/><circle cx="512" cy="734" r="40"/></g><path d="M312 734V290L512 586 712 290V734" fill="none" stroke="#fff" stroke-width="48" stroke-linecap="round" stroke-linejoin="round"/><g fill="#fff"><circle cx="312" cy="290" r="48"/><circle cx="312" cy="438" r="48"/><circle cx="312" cy="586" r="48"/><circle cx="312" cy="734" r="48"/><circle cx="512" cy="586" r="48"/><circle cx="712" cy="290" r="48"/><circle cx="712" cy="438" r="48"/><circle cx="712" cy="586" r="48"/><circle cx="712" cy="734" r="48"/></g></symbol>
 </svg>
 
@@ -633,6 +706,7 @@ kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:
       <a href="#quickkeys" data-s="quickkeys"><span class="n">11</span>Quick keys</a>
       <a href="#contactcard" data-s="contactcard"><span class="n">12</span>Contact card</a>
       <a href="#directory" data-s="directory"><span class="n">13</span>Directory</a>
+      <a href="#messages" data-s="messages"><span class="n">14</span>Messages</a>
     </nav>
 
     <div class="legend">
@@ -1568,6 +1642,7 @@ kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:
               <div class="gr"><span class="gl">Dial pad key presses</span><span class="switch"></span></div>
               <div class="gr"><span class="gl">New voicemail</span><span class="switch on"></span></div>
               <div class="gr"><span class="gl">Registration error and lost network</span><span class="switch"></span></div>
+              <div class="gr"><span class="gl">New message</span><span class="switch"></span></div>
             </div><div class="gf">Short beeps on the speaker; the other side never hears them.</div></div>
             <div class="grp"><span class="gh">Audio test</span><div class="gbox">
               <div class="gr"><span class="gl">Speaker and microphone<small>Test plays two notes on the speaker for 2 seconds; the meter shows the microphone.</small></span><span class="gv"><span class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i></span><span class="btn sm">Test</span></span></div>
@@ -1678,7 +1753,7 @@ kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:
       <div data-pane-body="audio" hidden><h3>Audio</h3><ul>
         <li>The level meter is live while this pane is open. <b>Audio test</b>: Test plays two notes for 2 seconds on the speaker device, next to the microphone meter.</li>
         <li><b>Hold music</b>: Built-in melody, a custom file (converted once by the engine) or Off; the far end hears it while on hold. A file that cannot be read keeps the previous source and the footer says why.</li>
-        <li><b>Sound events</b>: short beeps on the speaker for connect/end, dial pad keys outside a call, new voicemail and registration or network errors (at most once per 10 s); all off by default, never heard by the other side.</li>
+        <li><b>Sound events</b>: short beeps on the speaker for connect/end, dial pad keys outside a call, new voicemail, a new text message (screen 14) and registration or network errors (at most once per 10 s); all off by default, never heard by the other side.</li>
         <li><b>Headset buttons</b>: HID telephony buttons of a USB headset answer, hang up, hold, mute and redial; the row names the connected headset.</li>
         <li>Device lists update when devices are plugged in or out.</li>
         <li><b>Ringtone volume</b> sets the ringtone level only; call audio is set in the call panel's volume popover (screen 4).</li>
@@ -2359,6 +2434,299 @@ kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:
         <li><span class="qid">Q13.5</span><span>Decided (2026-10-12): macOS Contacts asks for the Contacts permission when the source is added, not at launch. Replaces Q2.1.</span></li>
         <li><span class="qid">Q13.6</span><span>Decided (2026-10-12): LDAP passwords are kept in the Keychain; ldaps:// and StartTLS are supported, plain ldap:// is allowed.</span></li>
         <li><span class="qid">Q13.7</span><span>Decided (2026-10-12): incoming calls look up the caller's name in the sources for at most 1 second (switch in Settings › Directory, on).</span></li>
+      </ol></div>
+    </aside>
+  </div>
+</section>
+<section class="screen" id="s-messages" data-screen="messages">
+  <header class="screen-head"><span class="n">14</span><h1>Messages</h1><span class="meta">Main window · fourth tab · SIP MESSAGE conversations</span></header>
+  <div class="layout">
+    <div class="stage"><div class="stage-inner">
+      <div class="fig" data-fig="list-en">
+        <p class="cap"><b>14.1 Conversation list</b> · 2 unread, one SMS from a bare number, one message not sent</p>
+        <div class="win mw mac">
+          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t">MacroSIP</div></div>
+          <div class="acctrow"><span class="popup acct-pop" title="Outgoing account"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+          <div class="numrow"><div class="field"><span class="ph">Name or number</span></div></div>
+          <div class="tabs"><div class="seg full four"><span data-go="dialpad">Dialpad</span><span data-go="contacts">Contacts</span><span data-go="calllog">Call Log</span><span class="on">Messages<b class="tbdg">2</b></span></div></div>
+          <div class="body m14">
+            <div class="toolrow m14"><span class="btn sm"><svg class="i" style="width:12px;height:12px"><use href="#i-plus"/></svg>New Message</span></div>
+            <div class="cv-list">
+              <div class="cvrow unread"><span class="avatar b">AK</span><span class="tx"><span class="l1"><b>Alesia Kazlouskaya</b><span class="acctag">Office</span></span><span class="pv">Can you call me after the meeting?</span></span><span class="rc tnum"><span class="t">14:52</span><span class="upill">1</span></span></div>
+              <div class="cvrow unread"><span class="avatar ">#</span><span class="tx"><span class="l1"><b>+375 29 123-45-67</b><span class="acctag">Home</span></span><span class="pv">Parcel 2214 is ready for pickup until 12 Nov.</span></span><span class="rc tnum"><span class="t">13:05</span><span class="upill">1</span></span></div>
+              <div class="cvrow"><span class="avatar o">AK</span><span class="tx"><span class="l1"><b>Andrei Kavaliou</b><span class="acctag">Office</span></span><span class="pv">You: Got it, thanks!</span></span><span class="rc tnum"><span class="t">11:47</span><span class="sp"></span></span></div>
+              <div class="cvrow"><span class="avatar p">VM</span><span class="tx"><span class="l1"><b>Volha Marozava</b><span class="acctag">Office</span></span><span class="pv"><span class="ns"><svg class="i"><use href="#i-excl"/></svg>Not sent · </span>You: See you at 10 at the entrance.</span></span><span class="rc tnum"><span class="t">Yesterday</span><span class="sp"></span></span></div>
+              <div class="cvrow"><span class="avatar g">DN</span><span class="tx"><span class="l1"><b>Dzmitry Navitski</b><span class="acctag">Home</span></span><span class="pv">Thanks, the invoice is paid.</span></span><span class="rc tnum"><span class="t">Mon</span><span class="sp"></span></span></div>
+              <div class="cvrow"><span class="avatar r">KZ</span><span class="tx"><span class="l1"><b>Katsiaryna Zhuk</b><span class="acctag">Office</span></span><span class="pv">Room 4 is free on Thursday.</span></span><span class="rc tnum"><span class="t">6 Oct</span><span class="sp"></span></span></div>
+            </div>
+          </div>
+          <div class="statusbar">
+            <span class="acc"><span class="dot ok"></span>Office</span>
+            <span class="acc"><span class="dot ok"></span>Home</span>
+            <span class="right" title="Settings…"><svg class="i" style="width:12px;height:12px"><use href="#i-gear"/></svg></span>
+          </div>
+        </div>
+      </div>
+      <div class="fig" data-fig="list-ru">
+        <p class="cap"><b>14.1 Russian</b> · four tabs at 12 pt fit in 320 pt, badge included</p>
+        <div class="win mw mac">
+          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t">MacroSIP</div></div>
+          <div class="acctrow"><span class="popup acct-pop" title="Outgoing account"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+          <div class="numrow"><div class="field"><span class="ph">Имя или номер</span></div></div>
+          <div class="tabs"><div class="seg full four"><span>Набор</span><span>Контакты</span><span>Журнал</span><span class="on">Сообщения<b class="tbdg">2</b></span></div></div>
+          <div class="body m14">
+            <div class="toolrow m14"><span class="btn sm"><svg class="i" style="width:12px;height:12px"><use href="#i-plus"/></svg>Новое сообщение</span></div>
+            <div class="cv-list">
+              <div class="cvrow unread"><span class="avatar b">АК</span><span class="tx"><span class="l1"><b>Алеся Козловская</b><span class="acctag">Office</span></span><span class="pv">Перезвони, пожалуйста, после совещания.</span></span><span class="rc tnum"><span class="t">14:52</span><span class="upill">1</span></span></div>
+              <div class="cvrow unread"><span class="avatar ">#</span><span class="tx"><span class="l1"><b>+375 29 123-45-67</b><span class="acctag">Home</span></span><span class="pv">Посылка 2214 ждёт вас в пункте выдачи до 12 ноября.</span></span><span class="rc tnum"><span class="t">13:05</span><span class="upill">1</span></span></div>
+              <div class="cvrow"><span class="avatar o">АК</span><span class="tx"><span class="l1"><b>Андрей Ковалёв</b><span class="acctag">Office</span></span><span class="pv">Вы: Получил, спасибо!</span></span><span class="rc tnum"><span class="t">11:47</span><span class="sp"></span></span></div>
+              <div class="cvrow"><span class="avatar p">ОМ</span><span class="tx"><span class="l1"><b>Ольга Морозова</b><span class="acctag">Office</span></span><span class="pv"><span class="ns"><svg class="i"><use href="#i-excl"/></svg>Не отправлено · </span>Вы: Встречаемся в 10 у входа.</span></span><span class="rc tnum"><span class="t">Вчера</span><span class="sp"></span></span></div>
+              <div class="cvrow"><span class="avatar g">ДН</span><span class="tx"><span class="l1"><b>Дмитрий Новицкий</b><span class="acctag">Home</span></span><span class="pv">Спасибо, счёт оплачен.</span></span><span class="rc tnum"><span class="t">пн</span><span class="sp"></span></span></div>
+              <div class="cvrow"><span class="avatar r">ЕЖ</span><span class="tx"><span class="l1"><b>Екатерина Жук</b><span class="acctag">Office</span></span><span class="pv">Переговорная 4 свободна в четверг.</span></span><span class="rc tnum"><span class="t">6 окт.</span><span class="sp"></span></span></div>
+            </div>
+          </div>
+          <div class="statusbar">
+            <span class="acc"><span class="dot ok"></span>Office</span>
+            <span class="acc"><span class="dot ok"></span>Home</span>
+            <span class="right" title="Settings…"><svg class="i" style="width:12px;height:12px"><use href="#i-gear"/></svg></span>
+          </div>
+        </div>
+      </div>
+      <div class="fig" data-fig="empty-en">
+        <p class="cap"><b>14.1 Empty</b> · no conversations yet</p>
+        <div class="win mw mac">
+          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t">MacroSIP</div></div>
+          <div class="acctrow"><span class="popup acct-pop" title="Outgoing account"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+          <div class="numrow"><div class="field"><span class="ph">Name or number</span></div></div>
+          <div class="tabs"><div class="seg full four"><span data-go="dialpad">Dialpad</span><span data-go="contacts">Contacts</span><span data-go="calllog">Call Log</span><span class="on">Messages</span></div></div>
+          <div class="body m14">
+            <div class="toolrow m14"><span class="btn sm"><svg class="i" style="width:12px;height:12px"><use href="#i-plus"/></svg>New Message</span></div>
+            <div class="empty14"><svg class="i"><use href="#i-bubble"/></svg><b>No messages</b><span>Messages you receive appear here. Click New Message to write one.</span></div>
+          </div>
+          <div class="statusbar">
+            <span class="acc"><span class="dot ok"></span>Office</span>
+            <span class="acc"><span class="dot ok"></span>Home</span>
+            <span class="right" title="Settings…"><svg class="i" style="width:12px;height:12px"><use href="#i-gear"/></svg></span>
+          </div>
+        </div>
+      </div>
+      <div class="fig" data-fig="conv-en">
+        <p class="cap"><b>14.2 Conversation</b> · last message accepted ("Sent", tooltip on hover), typing a reply</p>
+        <div class="win mw mac">
+          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t">MacroSIP</div></div>
+          <div class="acctrow"><span class="popup acct-pop" title="Outgoing account"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+          <div class="numrow"><div class="field"><span class="ph">Name or number</span></div></div>
+          <div class="tabs"><div class="seg full four"><span data-go="dialpad">Dialpad</span><span data-go="contacts">Contacts</span><span data-go="calllog">Call Log</span><span class="on">Messages<b class="tbdg">1</b></span></div></div>
+          <div class="body m14">
+            <div class="cvhead"><span class="back" title="All conversations"><svg class="i"><use href="#i-chev-r"/></svg></span><span class="avatar o">AK</span><span class="who"><b>Andrei Kavaliou</b><span><span class="tnum">104</span> · <span class="acctag">Office</span></span></span><span class="rbtn" title="Call"><svg class="i"><use href="#i-handset"/></svg></span></div>
+            <div class="thread">
+              <div class="daysep">Yesterday</div>
+              <div class="bub in">Did you get the contract?</div>
+              <div class="bmeta in">17:30</div>
+              <div class="bub out">Not yet. I'll check in the morning.</div>
+              <div class="bmeta out">17:32</div>
+              <div class="daysep">Today</div>
+              <div class="bub in">It's in the shared folder now.</div>
+              <div class="bmeta in">11:40</div>
+              <div class="bub out">Got it, thanks!</div>
+              <div class="bmeta out">11:47 · Sent</div>
+            </div>
+            <div class="composer"><div class="field focus"><span>I'll send my comments by 3</span><span class="caret"></span></div><span class="sendbtn" title="Send"><svg class="i"><use href="#i-arrow-up"/></svg></span></div>
+          </div>
+          <div class="statusbar">
+            <span class="acc"><span class="dot ok"></span>Office</span>
+            <span class="acc"><span class="dot ok"></span>Home</span>
+            <span class="right" title="Settings…"><svg class="i" style="width:12px;height:12px"><use href="#i-gear"/></svg></span>
+          </div>
+          <div class="popover qtip mac" style="position:absolute;right:14px;top:452px;width:214px;white-space:normal;line-height:1.35;--tip:186px">Accepted by the server. This does not confirm that the message reached the recipient's phone.</div>
+        </div>
+      </div>
+      <div class="fig" data-fig="fail-en">
+        <p class="cap"><b>14.2 Not sent</b> · the server answered 404; Retry sends it again, empty composer: send disabled</p>
+        <div class="win mw mac">
+          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t">MacroSIP</div></div>
+          <div class="acctrow"><span class="popup acct-pop" title="Outgoing account"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+          <div class="numrow"><div class="field"><span class="ph">Name or number</span></div></div>
+          <div class="tabs"><div class="seg full four"><span data-go="dialpad">Dialpad</span><span data-go="contacts">Contacts</span><span data-go="calllog">Call Log</span><span class="on">Messages<b class="tbdg">2</b></span></div></div>
+          <div class="body m14">
+            <div class="cvhead"><span class="back" title="All conversations"><svg class="i"><use href="#i-chev-r"/></svg></span><span class="avatar p">VM</span><span class="who"><b>Volha Marozava</b><span><span class="tnum">+375 44 555-77-10</span> · <span class="acctag">Office</span></span></span><span class="rbtn" title="Call"><svg class="i"><use href="#i-handset"/></svg></span></div>
+            <div class="thread">
+              <div class="daysep">Yesterday</div>
+              <div class="bub in">Are we still meeting tomorrow?</div>
+              <div class="bmeta in">18:02</div>
+              <div class="bub out">Yes.</div>
+              <div class="bmeta out">18:04</div>
+              <div class="failrow"><span class="x" title="Not sent"><svg class="i"><use href="#i-excl"/></svg></span><div class="bub out">See you at 10 at the entrance.</div></div>
+              <div class="bmeta out">18:05 · <span class="err">Not sent · 404 Not Found</span> · <span class="lnk">Retry</span></div>
+            </div>
+            <div class="composer"><div class="field"><span class="ph">Message</span></div><span class="sendbtn dis" title="Send"><svg class="i"><use href="#i-arrow-up"/></svg></span></div>
+          </div>
+          <div class="statusbar">
+            <span class="acc"><span class="dot ok"></span>Office</span>
+            <span class="acc"><span class="dot ok"></span>Home</span>
+            <span class="right" title="Settings…"><svg class="i" style="width:12px;height:12px"><use href="#i-gear"/></svg></span>
+          </div>
+        </div>
+      </div>
+      <div class="fig" data-fig="conv-ru">
+        <p class="cap"><b>14.2 Russian</b> · a long Cyrillic message wraps; the reply is still "Sending…"</p>
+        <div class="win mw mac">
+          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t">MacroSIP</div></div>
+          <div class="acctrow"><span class="popup acct-pop" title="Outgoing account"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+          <div class="numrow"><div class="field"><span class="ph">Имя или номер</span></div></div>
+          <div class="tabs"><div class="seg full four"><span>Набор</span><span>Контакты</span><span>Журнал</span><span class="on">Сообщения<b class="tbdg">1</b></span></div></div>
+          <div class="body m14">
+            <div class="cvhead"><span class="back" title="Все переписки"><svg class="i"><use href="#i-chev-r"/></svg></span><span class="avatar b">АК</span><span class="who"><b>Алеся Козловская</b><span><span class="tnum">+375 29 701-22-15</span> · <span class="acctag">Office</span></span></span><span class="rbtn" title="Позвонить"><svg class="i"><use href="#i-handset"/></svg></span></div>
+            <div class="thread">
+              <div class="daysep">Сегодня</div>
+              <div class="bub in">Добрый день! Напоминаю, что завтра в 9:30 приезжает делегация из Гродно. Нужно подготовить переговорную на третьем этаже, распечатать договор в двух экземплярах и заказать пропуска на пятерых. Если что-то не успеваешь, скажи сразу — подключу Екатерину.</div>
+              <div class="bmeta in">14:31</div>
+              <div class="bub out">Хорошо, всё сделаю до вечера.</div>
+              <div class="bmeta out sending">14:33 · <span class="spin" aria-hidden="true"></span>Отправляется…</div>
+            </div>
+            <div class="composer"><div class="field"><span class="ph">Сообщение</span></div><span class="sendbtn dis" title="Отправить"><svg class="i"><use href="#i-arrow-up"/></svg></span></div>
+          </div>
+          <div class="statusbar">
+            <span class="acc"><span class="dot ok"></span>Office</span>
+            <span class="acc"><span class="dot ok"></span>Home</span>
+            <span class="right" title="Settings…"><svg class="i" style="width:12px;height:12px"><use href="#i-gear"/></svg></span>
+          </div>
+        </div>
+      </div>
+      <div class="fig" data-fig="new-en">
+        <p class="cap"><b>14.3 New message</b> · "Ka" typed in To:, the number-field suggestion list (contacts, then directory)</p>
+        <div class="win mw mac">
+          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t">MacroSIP</div></div>
+          <div class="acctrow"><span class="popup acct-pop" title="Outgoing account"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+          <div class="numrow"><div class="field"><span class="ph">Name or number</span></div></div>
+          <div class="tabs"><div class="seg full four"><span data-go="dialpad">Dialpad</span><span data-go="contacts">Contacts</span><span data-go="calllog">Call Log</span><span class="on">Messages</span></div></div>
+          <div class="body m14">
+            <div class="cvhead"><span class="back" title="All conversations"><svg class="i"><use href="#i-chev-r"/></svg></span><span class="ttl">New Message</span></div>
+            <div class="torow"><span class="lb">To:</span><div class="field focus"><span>Ka</span><span class="caret" style="display:inline-block;width:1px;height:16px;background:var(--m-blue)"></span></div></div>
+            <div class="fromline"><span class="dot ok"></span>From Office, the account chosen above</div>
+            <div class="thread"></div>
+            <div class="composer"><div class="field"><span class="ph">Message</span></div><span class="sendbtn dis" title="Send"><svg class="i"><use href="#i-arrow-up"/></svg></span></div>
+          </div>
+          <div class="statusbar">
+            <span class="acc"><span class="dot ok"></span>Office</span>
+            <span class="acc"><span class="dot ok"></span>Home</span>
+            <span class="right" title="Settings…"><svg class="i" style="width:12px;height:12px"><use href="#i-gear"/></svg></span>
+          </div>
+          <div class="sugg mac" role="presentation" style="top:219px;left:44px">
+            <div class="mhead">Contacts</div>
+            <div class="sg hl"><span class="avatar r">KZ</span><span class="tx"><b><em>Ka</em>tsiaryna Zhuk</b><span>2230</span></span><span class="ret">↩</span></div>
+            <div class="sg"><span class="avatar b">AK</span><span class="tx"><b>Alesia <em>Ka</em>zlouskaya</b><span>+375 29 701-22-15</span></span></div>
+            <div class="sg"><span class="avatar o">AK</span><span class="tx"><b>Andrei <em>Ka</em>valiou</b><span>104</span></span></div>
+            <div class="mhead">Directory</div>
+            <div class="sg"><span class="avatar">NK</span><span class="tx"><b>Natallia <em>Ka</em>rpovich</b><span>2214</span></span><span class="srcb ldap">LDAP</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="fig" data-fig="new-ru">
+        <p class="cap"><b>14.3 Russian</b> · recipient picked from the directory, text typed, send enabled</p>
+        <div class="win mw mac">
+          <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="t">MacroSIP</div></div>
+          <div class="acctrow"><span class="popup acct-pop" title="Outgoing account"><span class="dot ok"></span><span class="nm">Office</span><span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+          <div class="numrow"><div class="field"><span class="ph">Имя или номер</span></div></div>
+          <div class="tabs"><div class="seg full four"><span>Набор</span><span>Контакты</span><span>Журнал</span><span class="on">Сообщения</span></div></div>
+          <div class="body m14">
+            <div class="cvhead"><span class="back" title="Все переписки"><svg class="i"><use href="#i-chev-r"/></svg></span><span class="ttl">Новое сообщение</span></div>
+            <div class="torow"><span class="lb">Кому:</span><div class="field"><span class="tokn">Наталья Карпович</span><span class="tnum" style="color:var(--m-label2);font-size:12px">2214</span></div></div>
+            <div class="fromline"><span class="dot ok"></span>С аккаунта Office, выбранного выше</div>
+            <div class="thread"></div>
+            <div class="composer"><div class="field focus"><span>Наталья, переговорная 4 нужна мне в четверг с 10 до 12.</span><span class="caret"></span></div><span class="sendbtn" title="Отправить"><svg class="i"><use href="#i-arrow-up"/></svg></span></div>
+          </div>
+          <div class="statusbar">
+            <span class="acc"><span class="dot ok"></span>Office</span>
+            <span class="acc"><span class="dot ok"></span>Home</span>
+            <span class="right" title="Settings…"><svg class="i" style="width:12px;height:12px"><use href="#i-gear"/></svg></span>
+          </div>
+        </div>
+      </div>
+      <div class="fig" data-fig="notif">
+        <p class="cap"><b>14.4 Notification and Dock</b> · banner per message (title = sender, subtitle = account, body = text); Dock badge = unread messages + unseen missed calls</p>
+        <div class="desktop mac" style="width:560px;height:250px">
+          <div class="menubar"><div class="l"><b>Notes</b><span>File</span><span>Edit</span><span>View</span></div><div class="r"><span class="sitem"><svg aria-hidden="true"><use href="#i-handset" class="hs-solid"/></svg></span><span>Thu 5 Nov 14:52</span></div></div>
+          <div class="notif msg" style="position:absolute;right:12px;top:36px">
+            <div class="main"><svg aria-hidden="true"><use href="#i-mark"/></svg><div class="tx"><b>Alesia Kazlouskaya</b><span class="sub">Office</span><span class="body">Can you call me after the meeting?</span></div></div>
+            <span class="when">now</span>
+          </div>
+          <div class="notif msg" style="position:absolute;right:12px;top:118px">
+            <div class="main"><svg aria-hidden="true"><use href="#i-mark"/></svg><div class="tx"><b class="tnum">+375 29 123-45-67</b><span class="sub">Home</span><span class="body">Посылка 2214 ждёт вас в пункте выдачи до 12 ноября. Код получения 4821.</span></div></div>
+            <span class="when">2m</span>
+          </div>
+          <div style="position:absolute;left:16px;bottom:12px;display:flex;gap:18px;align-items:flex-end;padding:12px 16px 8px;border-radius:18px;background:var(--m-menubar);outline:.5px solid var(--m-winborder)">
+            <span class="dockicon"><svg aria-hidden="true"><use href="#i-mark"/></svg><span class="bdg mac">2</span></span>
+          </div>
+        </div>
+      </div>
+      <div class="fig" data-fig="sound">
+        <p class="cap"><b>14.5 Settings › Audio › Sound events</b> · one more row, "New message", off by default</p>
+        <div class="win mac" style="width:480px;overflow:hidden">
+          <div class="pane" style="border-radius:11px;padding:16px 20px;min-height:0">
+            <div class="grp"><span class="gh">Sound events</span><div class="gbox">
+              <div class="gr"><span class="gl">Call connected and ended</span><span class="switch on"></span></div>
+              <div class="gr"><span class="gl">Dial pad key presses</span><span class="switch"></span></div>
+              <div class="gr"><span class="gl">New voicemail</span><span class="switch on"></span></div>
+              <div class="gr"><span class="gl">Registration error and lost network</span><span class="switch"></span></div>
+              <div class="gr"><span class="gl">New message</span><span class="switch"></span></div>
+            </div><div class="gf">Short beeps on the speaker; the other side never hears them.</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="fig" data-fig="menus">
+        <p class="cap"><b>Context menus</b> · conversation row, message bubble, and the delete confirmation</p>
+        <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start">
+          <div>
+            <p class="ctxcap">Conversation row (no contact)</p>
+            <div class="menu mac" style="width:226px">
+              <div class="mi hl"><svg class="i"><use href="#i-handset"/></svg>Call</div>
+              <div class="mi"><svg class="i"><use href="#i-person"/></svg>Add to Contacts</div>
+              <div class="mi"><span style="width:14px"></span>Copy Number</div>
+              <div class="msep"></div>
+              <div class="mi danger"><svg class="i"><use href="#i-trash"/></svg>Delete Conversation…<span class="sc">⌘⌫</span></div>
+            </div>
+          </div>
+          <div>
+            <p class="ctxcap">Message bubble (not sent)</p>
+            <div class="menu mac" style="width:200px">
+              <div class="mi hl"><span style="width:14px"></span>Copy Text</div>
+              <div class="mi"><span style="width:14px"></span>Retry</div>
+              <div class="msep"></div>
+              <div class="mi danger"><svg class="i"><use href="#i-trash"/></svg>Delete Message</div>
+            </div>
+          </div>
+          <div>
+            <p class="ctxcap">Delete Conversation… alert</p>
+            <div class="win mac" style="width:280px;padding:16px 18px;display:flex;flex-direction:column;gap:10px">
+              <svg style="width:40px;height:40px" aria-hidden="true"><use href="#i-mark"/></svg>
+              <b>Delete the conversation with Volha Marozava?</b>
+              <span style="font-size:12px;color:var(--m-label2)">4 messages are removed from this Mac.</span>
+              <div style="display:flex;gap:8px;justify-content:flex-end"><span class="btn">Cancel</span><span class="btn primary" style="background:var(--m-red)">Delete</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <aside class="notes">
+      <div><h3>Intent</h3><p>Text messages (SIP MESSAGE) to and from the same people you call, in the same 340 × 520 pt window. A fourth tab lists conversations; one click opens a conversation in place.</p></div>
+      <div><h3>Interaction</h3><ul>
+        <li>Tabs: four segments at 12 pt, each as wide as its label plus an equal share of the rest, so "Сообщения" and its badge fit. The red badge counts unread messages and stays until they are read; opening the tab alone does not clear it.</li>
+        <li>Rows: avatar, name (bold while unread) with the account chip, the last message on one line ("You:" before your own), time, blue unread count. A message that was not sent puts a red "Not sent" before the preview.</li>
+        <li><kbd>↩</kbd> or a click opens a conversation; <kbd>esc</kbd> or ‹ goes back and keeps the draft. In the composer <kbd>↩</kbd> sends and <kbd>⇧↩</kbd> starts a new line.</li>
+        <li>Replies go through the conversation's account (chip in the header). A new message goes through the account chosen in the account row.</li>
+        <li><b>Sent</b> means the SIP server or the peer answered 2xx: accepted, not delivered to a phone. The tooltip says so. Failed messages show the SIP reason and Retry.</li>
+        <li>Notification per incoming message unless the conversation is open in the front window; click opens it. Do Not Disturb: no banner and no sound, badges still count.</li>
+      </ul></div>
+      <div><h3>Decided — designer</h3><ol class="qs">
+        <li><span class="qid">D14.1</span><span>Segments 12 pt, widths follow the labels, so the Russian labels and a badge up to "99+" fit.</span></li>
+        <li><span class="qid">D14.2</span><span>The tab badge counts unread messages; opening the tab does not clear it.</span></li>
+        <li><span class="qid">D14.3</span><span>Dock badge = unread messages + unseen missed calls; the menu bar icon keeps counting missed calls only.</span></li>
+        <li><span class="qid">D14.5</span><span>"Sent" only under the last outgoing message; "Sending…" and "Not sent" under every such message. Retry moves the message to the end.</span></li>
+        <li><span class="qid">D14.8</span><span>Replies use the conversation's account; only a new message uses the account row.</span></li>
+        <li><span class="qid">D14.9</span><span>Delete Conversation asks first; Delete Message does not.</span></li>
+        <li><span class="qid">D14.10</span><span>No shortcut for New Message (⌘N stays free).</span></li>
+        <li><span class="qid">D14.13</span><span>"Send Message" in the Contacts and Call Log context menus. Full list in SCREENS.md, section 14.</span></li>
       </ol></div>
     </aside>
   </div>
