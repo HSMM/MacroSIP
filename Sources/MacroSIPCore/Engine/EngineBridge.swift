@@ -133,6 +133,13 @@ final class EngineBridge: Sendable {
         var watched: [UInt64: WatchedBuddy] = [:]
         /// Latest voicemail indicator per account (RFC 3842 message-summary NOTIFY).
         var voicemail: [AccountID: VoicemailState] = [:]
+        /// MESSAGEs sent and not answered yet, by the token in their pjsua user data. Whoever
+        /// removes an entry reports it: `on_pager_status2`, `sendMessage` after a failure
+        /// pjsua did not report, or `Engine.stop`.
+        var pendingMessages: [UInt64: PendingMessage] = [:]
+        /// `Engine.stop` is destroying pjsua: it terminates pending MESSAGEs itself (503, no
+        /// response), which are reported as interrupted.
+        var stopping = false
         /// Never reset, so CallIDs stay unique across engine restarts in one process.
         var nextSerial: UInt64 = 1
         /// `Engine.setCallOptions` / `start`: read by `on_incoming_call` (single-call mode).
@@ -603,6 +610,60 @@ final class EngineBridge: Sendable {
         }
     }
 
+    // MARK: text messages
+
+    func addPendingMessage(_ token: UInt64, _ message: PendingMessage) {
+        state.withLock { $0.pendingMessages[token] = message }
+    }
+
+    /// Removes the entry; nil when its outcome was reported already.
+    func takePendingMessage(_ token: UInt64) -> PendingMessage? {
+        state.withLock { $0.pendingMessages.removeValue(forKey: token) }
+    }
+
+    /// Removes every entry, oldest first (`Engine.stop`: no answer can come any more).
+    func takeAllPendingMessages() -> [PendingMessage] {
+        state.withLock { st in
+            defer { st.pendingMessages = [:] }
+            return st.pendingMessages.sorted { $0.key < $1.key }.map(\.value)
+        }
+    }
+
+    /// `Engine.stop`: from now on a MESSAGE that fails without an answer was interrupted.
+    func beginStopping() {
+        state.withLock { $0.stopping = true }
+    }
+
+    /// The final answer to a MESSAGE we sent: emits `.messageStatus` once, the first time the
+    /// token is reported.
+    func reportMessageStatus(token: UInt64, _ reported: MessageSendResult) {
+        state.withLock { st in
+            guard let m = st.pendingMessages.removeValue(forKey: token) else { return }
+            var result = reported
+            if st.stopping, case .failed(0, _) = reported {
+                result = .failed(code: 0, reason: Engine.messageInterruptedReason)
+            }
+            switch result {
+            case let .accepted(code):
+                st.sink?.yield(.log(level: 4, "engine: \(m.id) to \(m.target) accepted (\(code))"))
+            case let .failed(code, reason):
+                st.sink?.yield(.log(level: 3, "engine: \(m.id) to \(m.target) failed: \(code > 0 ? "\(code) " : "")\(reason)"))
+            }
+            st.sink?.yield(.messageStatus(m.id, result))
+        }
+    }
+
+    /// Emits `.messageReceived` for an account the engine knows (none during shutdown).
+    func reportIncomingMessage(_ message: IncomingMessage, inCall slot: Int32) {
+        state.withLock { st in
+            guard st.accounts.values.contains(where: { $0.id == message.accountID }) else { return }
+            let sender = message.remote.number.isEmpty ? message.remote.uri : message.remote.number
+            st.sink?.yield(.log(level: 4, "engine: account \(message.accountID.raw): MESSAGE from \(sender), "
+                                + "\(message.text.utf8.count) bytes\(slot >= 0 ? " (in call \(slot))" : "")"))
+            st.sink?.yield(.messageReceived(message))
+        }
+    }
+
     /// Logs a warning (os_log + `.log` event) from a callback.
     func warn(_ text: String) {
         engineLogger.notice("\(text, privacy: .public)")
@@ -737,7 +798,8 @@ func installPJCallbacks(_ cb: inout pjsua_callback) {
     cb.on_transport_state = pjOnTransportState
     cb.on_ip_change_progress = pjOnIPChangeProgress
     cb.on_mwi_info = pjOnMwiInfo
-    // on_pager (instant messages) stays unset: pjsua answers MESSAGE with 200 and drops it.
+    cb.on_pager2 = pjOnPager2                   // text messages (Engine+Messages.swift)
+    cb.on_pager_status2 = pjOnPagerStatus2
 }
 
 /// PJSIP log writer: os_log (subsystem com.hsmm.macrosip, category pjsip) + `.log` event.
@@ -1138,6 +1200,45 @@ private func pjOnMwiInfo(_ accID: pjsua_acc_id, _ info: UnsafeMutablePointer<pjs
     }
     let body = String(decoding: buf.prefix(Int(n)).map { UInt8(bitPattern: $0) }, as: UTF8.self)
     bridge.reportVoicemail(account.id, MessageSummary.parse(body), solicited: solicited != 0)
+}
+
+/// An incoming MESSAGE outside a dialog or inside a call. pjsua answered it 200 before this
+/// runs; bodies other than text/plain got 415 from the shim's filter and never get here. `from`
+/// is the From name-addr (`"Name" <sip:user@host>`, no tag).
+private func pjOnPager2(_ callID: pjsua_call_id, _ from: UnsafePointer<pj_str_t>?, _ to: UnsafePointer<pj_str_t>?,
+                        _ contact: UnsafePointer<pj_str_t>?, _ mimeType: UnsafePointer<pj_str_t>?,
+                        _ body: UnsafePointer<pj_str_t>?, _ rdata: UnsafeMutablePointer<pjsip_rx_data>?,
+                        _ accID: pjsua_acc_id) {
+    let bridge = EngineBridge.shared
+    let sender = from.map { PJ.string($0.pointee) } ?? ""
+    guard let account = bridge.account(for: accID) else {
+        bridge.emit(.log(level: 4, "engine: MESSAGE from \(sender) for pjsua account \(accID) ignored (not ours)"))
+        return
+    }
+    let mime = mimeType.map { PJ.string($0.pointee) } ?? ""
+    guard let message = MessageMapping.incoming(account: account.id, from: sender, mimeType: mime,
+                                                body: body.map { PJ.string($0.pointee) } ?? "", at: Date())
+    else {
+        bridge.emit(.log(level: 4, "engine: MESSAGE from \(sender) ignored (\(mime.isEmpty ? "no body" : mime))"))
+        return
+    }
+    bridge.reportIncomingMessage(message, inCall: callID)
+}
+
+/// The final answer to a MESSAGE of `Engine.sendMessage` (user data = its token). pjsua calls it
+/// once per request: for a response, a timeout (408) and a local failure alike, never for 1xx;
+/// after a 401/407 it sends the request again with credentials and reports that one.
+private func pjOnPagerStatus2(_ callID: pjsua_call_id, _ to: UnsafePointer<pj_str_t>?, _ body: UnsafePointer<pj_str_t>?,
+                              _ userData: UnsafeMutableRawPointer?, _ status: pjsip_status_code,
+                              _ reason: UnsafePointer<pj_str_t>?, _ tdata: UnsafeMutablePointer<pjsip_tx_data>?,
+                              _ rdata: UnsafeMutablePointer<pjsip_rx_data>?, _ accID: pjsua_acc_id) {
+    let code = Int(status.rawValue)
+    guard code >= 200 else { return }       // not a final answer: the request is still pending
+    let token = UInt64(UInt(bitPattern: userData))
+    guard token != 0 else { return }
+    let text = reason.map { PJ.string($0.pointee) } ?? ""
+    EngineBridge.shared.reportMessageStatus(token: token, MessageMapping.result(code: code, reason: text,
+                                                                                answered: rdata != nil))
 }
 
 private func pjOnBuddyState(_ buddyID: pjsua_buddy_id) {

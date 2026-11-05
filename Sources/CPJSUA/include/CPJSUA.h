@@ -268,6 +268,30 @@ pj_status_t cpjsua_acc_set_presence(pjsua_acc_id acc_id, int online,
  *  NOTIFY belongs to our own subscription (evsub set), 0 for an unsolicited one. */
 int cpjsua_mwi_body(const pjsua_mwi_info *info, char *buf, unsigned size, int *solicited);
 
+/* ------------------------------------------------- text messages (MESSAGE) --- */
+
+/** Content-Type of every MESSAGE MacroSIP sends. */
+#define CPJSUA_IM_CONTENT_TYPE "text/plain;charset=utf-8"
+
+/** Out-of-dialog MESSAGE (pjsua_im_send) from account `acc_id` to the SIP URI `to` with
+ *  `len` bytes of `content` (may contain any bytes) and Content-Type CPJSUA_IM_CONTENT_TYPE
+ *  (pjsua_parse_media_type splits only at '/', so the parameter stays in the subtype and is
+ *  printed as it is). `token` goes into user_data and comes back in on_pager_status2.
+ *  pjsua reports the final answer there (never a provisional one), also for a timeout (408)
+ *  and for a transport or DNS error (503/502 without a response). An error returned here
+ *  either comes before the transaction exists (no callback follows) or after pjsua already
+ *  ran on_pager_status2 for it (pjsip_endpt_send_request terminates the transaction). */
+pj_status_t cpjsua_im_send(pjsua_acc_id acc_id, const char *to, const char *content,
+                           unsigned len, unsigned long long token);
+
+/** Registers, once per pjsua instance (call after pjsua_init), a module in front of the
+ *  dialog layer that answers an incoming MESSAGE whose body is neither text/plain (any
+ *  parameters) nor application/im-iscomposing+xml with 415 Unsupported Media Type and
+ *  pjsua's Accept (text/plain, application/im-iscomposing+xml), in and outside dialogs. pjsua 2.17 would answer 200 to any body and
+ *  hand it to on_pager2 (pjsua_im_accept_pager accepts everything). A MESSAGE without a body
+ *  passes. */
+pj_status_t cpjsua_im_filter_register(void);
+
 /* ------------------------------------------------- Call-Info answer-after --- */
 
 /** Seconds from an `answer-after=N` parameter in a Call-Info header value: the parameter

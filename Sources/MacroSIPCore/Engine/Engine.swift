@@ -336,6 +336,8 @@ public actor Engine {
         bridge.unwatchAll()
         buddies = [:]
         pendingHolds = [:]
+        // pjsua_destroy terminates MESSAGEs still waiting for an answer (reported as interrupted).
+        bridge.beginStopping()
         pjsua_call_hangup_all()
         PJ.warn(pjsua_destroy(), "pjsua_destroy")
         if transactionTimeoutOverrideMs != nil { cpjsua_set_tsx_timeout(Engine.defaultTransactionTimeoutMs) }
@@ -353,8 +355,10 @@ public actor Engine {
         appliedSoftwareEC = nil
         let ids = Array(accounts.keys)
         accounts = [:]
+        let interrupted = interruptedMessageEvents()
         bridge.detach(self)
         for id in ids { emit(.registration(id, .unregistered)) }
+        for event in interrupted { emit(event) }
     }
 
     private func initPJSUA(_ network: NetworkSettings) throws {
@@ -413,6 +417,8 @@ public actor Engine {
         try withExtendedLifetime(arena) {
             try PJ.check(pjsua_init(ua, log, media), "pjsua_init")
         }
+        // 415 for MESSAGE bodies other than text/plain (pjsua would accept them with 200).
+        PJ.warn(cpjsua_im_filter_register(), "MESSAGE content-type filter")
         if dnsServers.contains(where: { $0.port != 53 }) { applyNameservers(dnsServers) }
         if !dnsServers.isEmpty {
             emit(.log(level: 3, "engine: DNS SRV via \(dnsServers.map(\.description).joined(separator: ", "))"))

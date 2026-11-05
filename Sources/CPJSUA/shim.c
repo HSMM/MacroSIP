@@ -894,6 +894,72 @@ int cpjsua_mwi_body(const pjsua_mwi_info *info, char *buf, unsigned size, int *s
     return (int)len;
 }
 
+/* ====================================================== text messages === */
+
+pj_status_t cpjsua_im_send(pjsua_acc_id acc_id, const char *to, const char *content,
+                           unsigned len, unsigned long long token)
+{
+    pj_str_t dst, mime, body;
+
+    if (!to || !content || len == 0)
+        return PJ_EINVAL;
+    dst = cpjsua_str(to);
+    mime = cpjsua_str(CPJSUA_IM_CONTENT_TYPE);
+    body.ptr = (char *)content;
+    body.slen = (pj_ssize_t)len;
+    return pjsua_im_send(acc_id, &dst, &mime, &body, NULL, (void *)(pj_size_t)token);
+}
+
+static pj_bool_t im_filter_on_rx_request(pjsip_rx_data *rdata);
+
+/* Runs before the dialog layer (UA_PROXY_LAYER), so MESSAGEs inside a call are seen too;
+ * retransmissions of requests that already have a transaction never get here. */
+static pjsip_module im_filter_mod =
+{
+    NULL, NULL,                                 /* prev, next          */
+    { "mod-macrosip-im-filter", 22 },           /* name                */
+    -1,                                         /* id                  */
+    PJSIP_MOD_PRIORITY_UA_PROXY_LAYER - 1,      /* priority            */
+    NULL, NULL, NULL, NULL,                     /* load, start, stop, unload */
+    &im_filter_on_rx_request,                   /* on_rx_request       */
+    NULL, NULL, NULL, NULL,                     /* on_rx_response, on_tx_request, on_tx_response, on_tsx_state */
+};
+
+static pj_bool_t im_filter_on_rx_request(pjsip_rx_data *rdata)
+{
+    const pjsip_msg *msg = rdata ? rdata->msg_info.msg : NULL;
+    const pjsip_media_type *ct;
+    pjsip_hdr hdrs;
+
+    if (!msg || msg->type != PJSIP_REQUEST_MSG ||
+        pj_strcmp2(&msg->line.req.method.name, "MESSAGE") != 0 || !msg->body)
+        return PJ_FALSE;
+    ct = &msg->body->content_type;
+    if ((pj_stricmp2(&ct->type, "text") == 0 && pj_stricmp2(&ct->subtype, "plain") == 0) ||
+        (pj_stricmp2(&ct->type, "application") == 0 &&
+         pj_stricmp2(&ct->subtype, "im-iscomposing+xml") == 0))
+        return PJ_FALSE;
+
+    PJ_LOG(4, ("macrosip-im", "MESSAGE with Content-Type %.*s/%.*s answered 415",
+               (int)ct->type.slen, ct->type.ptr, (int)ct->subtype.slen, ct->subtype.ptr));
+    pj_list_init(&hdrs);
+    pj_list_push_back(&hdrs, pjsua_im_create_accept(rdata->tp_info.pool));
+    pjsip_endpt_respond_stateless(pjsua_get_pjsip_endpt(), rdata, PJSIP_SC_UNSUPPORTED_MEDIA_TYPE,
+                                  NULL, &hdrs, NULL);
+    return PJ_TRUE;
+}
+
+pj_status_t cpjsua_im_filter_register(void)
+{
+    pjsip_endpoint *endpt = pjsua_get_pjsip_endpt();
+
+    if (!endpt)
+        return PJ_EINVALIDOP;
+    if (im_filter_mod.id != -1)     /* reset by pjsip_endpt_destroy */
+        return PJ_SUCCESS;
+    return pjsip_endpt_register_module(endpt, &im_filter_mod);
+}
+
 /* ============================================ Call-Info answer-after === */
 
 static const char *skip_ws(const char *p)

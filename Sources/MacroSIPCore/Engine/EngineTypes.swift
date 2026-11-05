@@ -173,7 +173,53 @@ public enum EngineEvent: Sendable {
     /// whether messages wait and the new/old voice message counts. Emitted when the
     /// indicator changed (and on the first NOTIFY); `Engine.voicemailState(for:)` has the latest.
     case voicemail(AccountID, waiting: Bool, new: Int, old: Int)
+    /// A text/plain MESSAGE arrived on one of our accounts (docs/ENGINE.md "Text messages").
+    case messageReceived(IncomingMessage)
+    /// The final outcome of `Engine.sendMessage`, exactly once per id.
+    case messageStatus(MessageID, MessageSendResult)
     case log(level: Int, String)
+}
+
+// MARK: - Text messages (SIP MESSAGE, release 26.3)
+
+/// Token of one outgoing MESSAGE (`Engine.sendMessage`); `.messageStatus` names it.
+public struct MessageID: Hashable, Sendable, CustomStringConvertible {
+    public let raw: UUID
+
+    public init(raw: UUID = UUID()) {
+        self.raw = raw
+    }
+
+    public var description: String { "message#\(raw.uuidString.prefix(8))" }
+}
+
+/// A MESSAGE that arrived on one of our accounts (text/plain only).
+public struct IncomingMessage: Equatable, Sendable {
+    public var accountID: AccountID
+    /// From the From header: `number` is the user part ("+375291234567", "102"), `uri` the
+    /// sender's URI (the reply target), `displayName` the From display name, if any.
+    public var remote: RemoteParty
+    /// The body decoded as UTF-8 (with `charset=utf-8` or without a charset); invalid bytes
+    /// become U+FFFD.
+    public var text: String
+    public var receivedAt: Date
+
+    public init(accountID: AccountID, remote: RemoteParty, text: String, receivedAt: Date) {
+        self.accountID = accountID
+        self.remote = remote
+        self.text = text
+        self.receivedAt = receivedAt
+    }
+}
+
+/// How a MESSAGE we sent ended (`.messageStatus`).
+public enum MessageSendResult: Equatable, Sendable {
+    /// 2xx from the server or the peer: accepted, which does not mean delivered to a phone.
+    case accepted(code: Int)
+    /// Final failure: the SIP code and reason phrase of the answer (404 "Not Found", 480,
+    /// 403...), 408 "Request Timeout" when nothing answered, or code 0 with the PJSIP error
+    /// text when the request could not be sent at all (transport or DNS error, engine stopped).
+    case failed(code: Int, reason: String)
 }
 
 /// The latest voicemail indicator of an account (`Engine.voicemailState(for:)`).

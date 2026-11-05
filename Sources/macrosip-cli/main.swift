@@ -128,6 +128,14 @@ func describe(_ e: EngineEvent) -> String {
     case let .network(state): return "[network] \(state == .online ? "online" : "offline")"
     case let .voicemail(id, waiting, new, old):
         return "[voicemail] \(id.raw.uuidString.prefix(8)) \(waiting ? "waiting" : "none") new=\(new) old=\(old)"
+    case let .messageReceived(m):
+        let from = m.remote.displayName.map { "\"\($0)\" <\(m.remote.uri)>" } ?? m.remote.uri
+        return "[messageReceived] \(m.accountID.raw.uuidString.prefix(8)) from \(from): \(m.text)"
+    case let .messageStatus(id, result):
+        switch result {
+        case let .accepted(code): return "[messageStatus] \(id) accepted \(code)"
+        case let .failed(code, reason): return "[messageStatus] \(id) failed \(code) \(reason)"
+        }
     case let .log(level, text):
         return text.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline)
             .map { "  pj\(level)| \($0)" }.joined(separator: "\n")
