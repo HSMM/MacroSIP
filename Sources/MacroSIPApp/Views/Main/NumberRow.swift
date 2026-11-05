@@ -18,10 +18,11 @@ struct NumberRow: View {
     var body: some View {
         @Bindable var model = model
         // Computed once per body, from the contacts held in memory.
+        let mine = model.directory.owner == .numberField          // the To field of a new message uses the same search
         let local = model.directory.dismissed ? [] : self.suggestions
-        let sections = model.directorySections(excluding: local)
+        let sections = mine ? model.directorySections(excluding: local) : []
         let rows = SuggestionRow.rows(local: local, sections: sections)
-        let pending = model.directory.dismissed ? [] : model.directory.pending
+        let pending = model.directory.dismissed || !mine ? [] : model.directory.pending
         let visible = !rows.isEmpty
         HStack(spacing: 6) {
             TextField(L.numberPlaceholder, text: $model.dialText)
@@ -74,7 +75,7 @@ struct NumberRow: View {
             model.textChangedForDirectory(text)
         }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { note in
-            if (note.object as? NSWindow) === model.mainWindow, !model.showKeypad { focused = true }
+            if (note.object as? NSWindow) === model.mainWindow, !model.showKeypad, !model.messageFieldHasFocus { focused = true }
         }
         .onChange(of: model.showKeypad) { _, on in if !on { focused = true } }
         .onChange(of: model.tab) { _, tab in if tab == .dialpad, !model.showKeypad { focused = true } }

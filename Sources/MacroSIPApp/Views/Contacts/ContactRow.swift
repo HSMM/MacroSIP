@@ -83,6 +83,8 @@ struct ContactRow: View {
                     Button(a.displayName) { model.placeCall(to: c, account: a.id) }
                 }
             }
+            Button(L.contactsMenuMessage) { model.sendMessage(to: c) }
+                .disabled(c.defaultNumber == nil || model.enabledAccounts.isEmpty)
             Button(L.contactsMenuCopy, action: onCopy).keyboardShortcut("c", modifiers: .command)
             Divider()
             Button(L.contactsMenuEdit, action: onEdit).keyboardShortcut("e", modifiers: .command)

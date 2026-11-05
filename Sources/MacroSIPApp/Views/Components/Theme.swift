@@ -147,43 +147,87 @@ struct StatusDot: View {
 }
 
 /// Segmented control look from the mockups, with an optional badge on a segment.
+/// `.equal` gives every segment the same width. `.byLabel` (the main window's four tabs, SCREENS.md 14 "Tab control")
+/// makes each segment as wide as its label and badge plus an equal share of the remaining width, so a long label
+/// ("Сообщения") and its badge fit where equal widths would not.
 struct SegmentedTabs<Value: Hashable>: View {
-    struct Item { let value: Value; let title: String; var badge: Int = 0 }
+    struct Item {
+        let value: Value
+        let title: String
+        var badge: Int = 0
+        /// Counts above this show as "<limit>+".
+        var badgeLimit: Int?
+    }
+    enum Widths { case equal, byLabel }
     let items: [Item]
     @Binding var selection: Value
     var height: CGFloat = 24
+    var fontSize: CGFloat = 12.5
+    var widths: Widths = .equal
 
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(items, id: \.value) { item in
-                let selected = item.value == selection
-                Button { selection = item.value } label: {
-                    HStack(spacing: 5) {
-                        Text(item.title).font(.system(size: 12.5)).lineLimit(1).minimumScaleFactor(0.85)
-                        if item.badge > 0 { CountPill(count: item.badge) }
-                    }
-                    .frame(maxWidth: .infinity, minHeight: height - 4)
-                    .background {
-                        if selected {
-                            RoundedRectangle(cornerRadius: 5).fill(Theme.segSelected)
-                                .shadow(color: .black.opacity(0.18), radius: 1, y: 1)
-                        }
-                    }
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(selected ? .isSelected : [])
+        Group {
+            switch widths {
+            case .equal: HStack(spacing: 0) { segments }
+            case .byLabel: LabelWidthsLayout { segments }
             }
         }
         .padding(2)
         .background(RoundedRectangle(cornerRadius: 7).fill(Color.primary.opacity(0.07)))
     }
+
+    private var segments: some View {
+        ForEach(items, id: \.value) { item in
+            let selected = item.value == selection
+            Button { selection = item.value } label: {
+                HStack(spacing: 5) {
+                    Text(item.title).font(.system(size: fontSize)).lineLimit(1).minimumScaleFactor(0.85)
+                    if item.badge > 0 { CountPill(count: item.badge, limit: item.badgeLimit) }
+                }
+                .frame(maxWidth: .infinity, minHeight: height - 4)
+                .background {
+                    if selected {
+                        RoundedRectangle(cornerRadius: 5).fill(Theme.segSelected)
+                            .shadow(color: .black.opacity(0.18), radius: 1, y: 1)
+                    }
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(selected ? .isSelected : [])
+        }
+    }
+}
+
+/// Each child is as wide as its natural width plus an equal share of what is left of the proposed width. When the natural
+/// widths do not fit, they shrink in proportion (the labels then fall back on their minimum scale).
+private struct LabelWidthsLayout: Layout {
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let natural = subviews.map { $0.sizeThatFits(.unspecified) }
+        return CGSize(width: proposal.width ?? natural.reduce(0) { $0 + $1.width }, height: natural.map(\.height).max() ?? 0)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let natural = subviews.map { $0.sizeThatFits(.unspecified).width }
+        let total = natural.reduce(0, +)
+        guard !subviews.isEmpty, total > 0 else { return }
+        let share = (bounds.width - total) / CGFloat(subviews.count)
+        var x = bounds.minX
+        for (i, subview) in subviews.enumerated() {
+            let width = total <= bounds.width ? natural[i] + share : natural[i] * bounds.width / total
+            subview.place(at: CGPoint(x: x, y: bounds.minY), anchor: .topLeading,
+                          proposal: ProposedViewSize(width: width, height: bounds.height))
+            x += width
+        }
+    }
 }
 
 struct CountPill: View {
     let count: Int
+    /// Counts above this show as "<limit>+".
+    var limit: Int?
     var body: some View {
-        Text("\(count)")
+        Text(limit.map { count > $0 ? "\($0)+" : "\(count)" } ?? "\(count)")
             .font(.system(size: 10, weight: .bold))
             .foregroundStyle(.white)
             .padding(.horizontal, 5)

@@ -21,6 +21,10 @@ struct MainWindowView: View {
         }
         .onChange(of: model.tab) { _, tab in
             if tab == .callLog { model.markLogSeen() }
+            model.updateMessageReadState()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { note in
+            if (note.object as? NSWindow) === model.mainWindow { model.updateMessageReadState() }
         }
         .onAppear { model.openSettingsAction = { openSettings() } }
     }
@@ -39,8 +43,9 @@ struct MainWindowView: View {
                     .init(value: MainTab.dialpad, title: L.tabsDialpad),
                     .init(value: MainTab.contacts, title: L.tabsContacts),
                     .init(value: MainTab.callLog, title: L.tabsCallLog, badge: model.missedUnseen),
+                    .init(value: MainTab.messages, title: L.tabsMessages, badge: model.messagesUnread, badgeLimit: 99),
                 ],
-                selection: $model.tab)
+                selection: $model.tab, fontSize: 12, widths: .byLabel)
                 .padding(.horizontal, 10)
                 .padding(.bottom, 8)
             Divider()
@@ -75,6 +80,11 @@ struct MainWindowView: View {
             VStack(spacing: 0) {
                 CallSummaryBar()
                 CallLogView()
+            }
+        case .messages:
+            VStack(spacing: 0) {
+                CallSummaryBar()
+                MessagesTab()
             }
         }
     }

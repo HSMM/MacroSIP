@@ -15,7 +15,8 @@ struct SuggestionList: View {
     let call: (SuggestionRow) -> Void
 
     private static let rowHeight: CGFloat = 27
-    private static let maxHeight: CGFloat = 340
+    /// The list scrolls beyond this height (the new-message form is shorter than the number field's room).
+    var maxHeight: CGFloat = 340
 
     private var entryCount: Int { sections.reduce(0) { $0 + $1.entries.count } }
     private var hasDirectory: Bool { !sections.isEmpty || !pending.isEmpty }
@@ -30,10 +31,10 @@ struct SuggestionList: View {
     var body: some View {
         let content = rowsView
         Group {
-            if estimatedHeight > Self.maxHeight {
+            if estimatedHeight > maxHeight {
                 ScrollViewReader { proxy in
                     ScrollView { content }
-                        .frame(height: Self.maxHeight)
+                        .frame(height: maxHeight)
                         .onChange(of: highlighted) { _, id in if let id { proxy.scrollTo(id) } }
                 }
             } else {
