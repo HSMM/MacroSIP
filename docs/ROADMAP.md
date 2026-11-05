@@ -74,7 +74,6 @@ App:
 ## 26.3 (released 2026-11-05)
 
 - Text messages over SIP `MESSAGE` ([#5](https://github.com/HSMM/MacroSIP/issues/5)): send and receive `text/plain` (UTF-8, Cyrillic included), a Messages tab with conversations kept between launches, unread counts and macOS notifications, delivery status per message (a 2xx means the SIP server or peer accepted the message, not that a phone received it) and retry; SMS forwarded by Asterisk `chan_dongle` arrive as ordinary messages. Not in the first version: group chat, attachments, typing indicators, end-to-end encryption, SMS concatenation.
-
 - Messages are off until switched on in Settings › General ([#8](https://github.com/HSMM/MacroSIP/issues/8)): with the switch off there is no Messages tab, no Send Message item, no notification and no sound, and incoming `MESSAGE` requests are dropped with a log line.
 - The ringtone chosen in Settings › Audio reaches the engine ([#7](https://github.com/HSMM/MacroSIP/issues/7)): Classic, Digital and Soft are three different melodies, a custom AIFF, M4A or MP3 file is converted to WAV once and reused, a file that cannot be read keeps the previous choice and says why, and the preview plays the real choice at the chosen volume.
 
