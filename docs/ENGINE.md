@@ -217,6 +217,7 @@ Pure Swift, tested.
 ## Storage (MacroSIPCore, no PJSIP)
 - `JSONStore<T: Codable>`: atomic write to `~/Library/Application Support/MacroSIP/<name>.json` (`FileManager.replaceItemAt`), load with default on missing/corrupt (corrupt file renamed `.broken-<timestamp>`).
 - `AccountStore`, `ContactStore`, `CallLogStore`, `SettingsStore` wrap it.
+- `MessageStore` keeps `messages.json` (`{ conversations, messages }`): conversations keyed by account and normalized number, unread counts, state of each outgoing message; the oldest messages are dropped past the limit (5000).
 - `Keychain`: `set(password:for: AccountID)`, `password(for:)`, `delete(for:)`; service `com.hsmm.macrosip` (so accounts carry over), account = UUID string.
 
 ## Error handling
