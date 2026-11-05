@@ -3,6 +3,21 @@
     <channel>
         <title>MacroSIP</title>
         <item>
+            <title>26.3.0</title>
+            <pubDate>Thu, 05 Nov 2026 18:37:06 +0000</pubDate>
+            <link>https://github.com/HSMM/MacroSIP</link>
+            <sparkle:version>56</sparkle:version>
+            <sparkle:shortVersionString>26.3.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<p dir="auto">With ad hoc signing macOS asks for microphone access again after each update; allow it once more.</p>
+<h2 dir="auto">What's Changed</h2>
+<ul dir="auto">
+<li>Text messages over SIP MESSAGE (26.3) by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/HSMM/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/HSMM">@HSMM</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="6225239037" data-permission-text="Title is private" data-url="https://github.com/HSMM/MacroSIP/issues/6" data-hovercard-type="pull_request" data-hovercard-url="/HSMM/MacroSIP/pull/6/hovercard" href="https://github.com/HSMM/MacroSIP/pull/6">#6</a></li>
+</ul>
+<p dir="auto"><strong>Full Changelog</strong>: <a class="commit-link" href="https://github.com/HSMM/MacroSIP/compare/26.2.0...26.3.0"><tt>26.2.0...26.3.0</tt></a></p>]]></description>
+            <enclosure url="https://github.com/HSMM/MacroSIP/releases/download/26.3.0/MacroSIP-26.3.0.dmg" length="18907378" type="application/octet-stream" sparkle:edSignature="nPOKSn8Qy1X0E9cPy1sJqcOK10hXiEiAi9kmeBaLbceeYoMSUXTCSZ6Bbx9F/TVVYigKgyWRwHnVYtAA6CHLAg=="/>
+        </item>
+        <item>
             <title>26.2.0</title>
             <pubDate>Wed, 04 Nov 2026 20:31:41 +0000</pubDate>
             <link>https://github.com/HSMM/MacroSIP</link>
