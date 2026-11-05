@@ -797,15 +797,13 @@ Layout: toggles, Do Not Disturb, Language, Updates, then a collapsed "Advanced" 
 
 | Row | Type | Behaviour |
 |---|---|---|
-| Do Not Disturb (secondary label: "Declines incoming calls with 486 Busy Here and publishes Do Not Disturb.", or "Until 14:30 · 27 min left" while timed) | popup | Off, On, For 30 minutes, For 1 hour, Until tomorrow 9:00; while a timer runs its first item is the running end ("Until 14:30 · 27 min left", "Until Tue 9:00 · …" on another day) and cannot be re-picked. Same as the menu bar submenu. "Until tomorrow 9:00" is the coming 9:00: 9:00 on the next calendar day, or 9:00 today when it is chosen between 0:00 and 9:00. |
+| Do Not Disturb (secondary label: "Declines incoming calls and shows Do Not Disturb to contacts who watch you.", or "Until 14:30 · 27 min left" while timed) | popup | Off, On, For 30 minutes, For 1 hour, Until tomorrow 9:00; while a timer runs its first item is the running end ("Until 14:30 · 27 min left", "Until Tue 9:00 · …" on another day) and cannot be re-picked. Same as the menu bar submenu. "Until tomorrow 9:00" is the coming 9:00: 9:00 on the next calendar day, or 9:00 today when it is chosen between 0:00 and 9:00. |
 
 **Group 2, language:**
 
 | Row | Type | Behaviour |
 |---|---|---|
 | Language (secondary label "Takes effect after MacroSIP restarts.") | popup, current value "System (English)" | Choices: System, English, Русский. Changing prompts for restart. |
-
-Group footer: "Choices: System, English, Русский."
 
 **Group Updates:** see ADR 0013 (automatic checks, release candidates, Check Now).
 
@@ -816,14 +814,14 @@ Group footer: "Choices: System, English, Русский."
 | Row | Type | Behaviour | Enabled |
 |---|---|---|---|
 | Open sip: and tel: links with MacroSIP (secondary label with status line) | label and button "Make Default" | Registers MacroSIP for `sip:`, `sips:` and `tel:` through Launch Services. The status line (warning dot, orange) says which other app owns `tel:` when it is not MacroSIP: "Another app currently handles tel: links." | Enabled. |
-| When a link is opened (secondary "Fills the number field so you can check it first.") | popup, current value "Ask before calling" | Ask before calling / Call immediately / Only fill the number. "Ask before calling" fills the number field; it does not place the call. | Enabled. |
+| When a link is opened (secondary "“Only fill the dial field” lets you check the number first.") | popup, current value "Ask before calling" | Ask before calling / Call immediately / Only fill the number. "Ask before calling" fills the number field; it does not place the call. | Enabled. |
 
 **Group Troubleshooting (header "Troubleshooting"):** four rows.
 
 | Row | Type | Behaviour |
 |---|---|---|
-| Log file (secondary "~/Library/Logs/MacroSIP/MacroSIP.log, 3 files of 2 MB (8 MB in Debug mode).") | button "Open Log Folder" | Reveals the log in Finder. |
-| Debug mode (secondary "Writes much more detail to the log, including SIP messages, so the log grows faster. Turn it off after you send the archive.") | switch, off by default | Log level 4 for the log file and PJSIP at once, no restart; stored in `settings.json` (`general.debugMode`), so it stays on across launches until switched off. In debug the files rotate at 8 MB instead of 2 MB (3 files). When the app was started with `--log-level` or `MACROSIP_LOG_LEVEL`, that level wins: the switch is disabled, shows the launch level and the secondary text says so. |
+| Log file (secondary "Saved in ~/Library/Logs/MacroSIP. Three files of 2 MB (8 MB in debug mode).") | button "Open Log Folder" | Reveals the log in Finder. |
+| Debug mode (secondary "Adds SIP messages and more detail to the log, so it grows faster. Turn it off when you are done.") | switch, off by default | Log level 4 for the log file and PJSIP at once, no restart; stored in `settings.json` (`general.debugMode`), so it stays on across launches until switched off. In debug the files rotate at 8 MB instead of 2 MB (3 files). When the app was started with `--log-level` or `MACROSIP_LOG_LEVEL`, that level wins: the switch is disabled, shows the launch level and the secondary text says so. |
 | Diagnostics (secondary "Versions, accounts and settings, without passwords. Paste it into a bug report.") | button "Copy Diagnostics" | Versions, macOS, accounts without passwords, settings, log level. |
 | Diagnostics archive (secondary "A ZIP with the log files, the diagnostics report and recent crash reports. It contains phone numbers and server addresses but no passwords. Send it only to someone you trust.") | button "Create Archive…" (while running "Creating…", disabled) | Save panel, default name `MacroSIP-diagnostics-YYYYMMDD-HHmm.zip` in Desktop. The ZIP holds `logs/` (all rotated log files), `diagnostics.txt` and `crash-reports/` (`MacroSIP-*.ips` of the last 30 days, at most 5). Built off the main thread; then revealed in Finder with the banner "Diagnostics archive saved: name". A failure shows the banner "Could not create the diagnostics archive: reason". Works with no log files and no crash reports. Digest `response`, `nonce`, `cnonce`, `opaque`, Basic/Bearer credentials, `password`-like keys and passwords in URLs are replaced by `<redacted>` in the copies; the log files themselves are not changed. |
 
@@ -908,7 +906,7 @@ Layout: six groups: Devices, Ringtone, Hold music, Sound events, Audio test, Pro
 |---|---|---|---|
 | Microphone | level meter (8 segments) and popup | Meter is live while this pane is open. Popup lists input devices plus "System default". | Meter: green segments, the top segment yellow when near clipping. |
 | Speaker | popup | Lists output devices plus "System default". The test tone moved to the Audio test group. | |
-| Ringtone device (secondary "Ring through the speakers even when a headset is used for calls.") | popup | Output for the ringtone only. Shows "MacBook Pro Speakers" in the mockup. | |
+| Ringtone device (secondary "Plays the ringtone through the speakers even when calls use a headset.") | popup | Output for the ringtone only. Shows "MacBook Pro Speakers" in the mockup. | |
 | Switch to a headset when it is connected (secondary "Uses a newly connected headset for calls until it is unplugged.") | toggle | On by default. A device that appears with both input and output becomes the microphone and the speaker (the chosen names above stay as they are) and a banner "Switched to AirPods Pro" shows for 4 s. When it is unplugged the chosen devices come back ("Back to MacBook Pro Speakers"; "Back to the system default" when none was chosen). Picking a microphone or speaker by hand, or switching this off, ends the following. The ringtone device is never changed. Devices already present at start are not followed. | on |
 | Headset buttons (secondary "Connected: Jabra Evolve2 65" or "No headset with call controls") | toggle | On by default. Answer, hang up, hold, mute and redial from the HID telephony buttons of a USB headset; the headset's LEDs follow the call. Off releases the devices. The secondary text names the connected headset. | on |
 
@@ -929,7 +927,7 @@ Group footer: "Built-in choices: Classic, Digital, Soft. "Custom file…" accept
 |---|---|---|
 | Source | popup | Built-in (a short looping melody, default), "Custom: office-hold.m4a" when a file was chosen, "Custom file…" (open panel: WAV, AIFF, M4A, MP3 and anything else AVFoundation reads; the engine converts it once), a separator, Off (silence). Applied at once, also to calls already on hold. |
 
-Group footer: "The caller hears this while on hold." A file the engine cannot read keeps the previous source; the footer then shows "The file could not be used: <reason>" and a banner says the same.
+Group footer: "The other party hears this while the call is on hold." A file the engine cannot read keeps the previous source; the footer then shows "The file could not be used: <reason>" and a banner says the same.
 
 **Sound events** (all off by default; short beeps on the speaker, never sent to the call or the recording):
 
@@ -941,19 +939,19 @@ Group footer: "The caller hears this while on hold." A file the engine cannot re
 | Registration error and lost network | toggle | Two low beeps when a registration fails or the network path goes away; at most once every 10 seconds. |
 | New message | toggle | Two short high beeps when a text message arrives (screen 14); not while Do Not Disturb is on; at most once every 2 seconds. |
 
-Group footer: "Short beeps on the speaker; the other side never hears them."
+Group footer: "Short beeps on the speaker; the other party does not hear them."
 
 **Audio test:**
 
 | Row | Type | Behaviour |
 |---|---|---|
-| Speaker and microphone (secondary "Test plays two notes on the speaker for 2 seconds; the meter shows the microphone.") | level meter (8 segments) and "Test" small button | Test plays two notes (660 and 880 Hz) for 2 seconds on the speaker chosen above (system default = the call output); a second press restarts it. The meter is the live microphone level, the same as in the Microphone row. |
+| Speaker and microphone (secondary "Plays two notes on the speaker for 2 seconds; the meter shows the microphone level.") | level meter (8 segments) and "Test" small button | Test plays two notes (660 and 880 Hz) for 2 seconds on the speaker chosen above (system default = the call output); a second press restarts it. The meter is the live microphone level, the same as in the Microphone row. |
 
 **Processing:**
 
 | Row | Type | Behaviour |
 |---|---|---|
-| Echo cancellation (secondary "Turn off only when using a headset with its own echo cancellation.") | toggle | On by default. |
+| Echo cancellation (secondary "Turn it off only if your headset cancels echo itself.") | toggle | On by default. |
 
 **Keyboard:** none beyond standard.
 
@@ -972,25 +970,25 @@ Layout: three groups (Connection, RTP, DNS), then an info note; a restart banner
 | STUN server (secondary "Leave empty if you are not behind NAT.") | text field, min width 220 pt | Host and optional port. Empty disables STUN. | "stun.example.org:3478" |
 | Local SIP port (secondary "0 picks a free port automatically.") | number field, 70 pt, with stepper | Range 0 to 65535. 0 picks a free port. Changing it re-registers all accounts. | 5060 |
 | Keep-alive interval (secondary "Keeps NAT bindings open between registrations.") | number field, 50 pt, stepper, unit "seconds" | Positive integer. | 15 |
-| Use ICE (secondary "Finds a working media path through NAT. Uses the STUN server above.") | toggle | On by default. | on |
+| Use ICE (secondary "Helps audio get through NAT. Uses the STUN server above.") | toggle | On by default. | on |
 
 **RTP (header "RTP"):**
 
 | Row | Type | Behaviour | Default |
 |---|---|---|---|
-| Port range (secondary "Audio uses this range. Each call needs two ports; 1024–65535.") | two number fields with steppers, 56 pt each, labelled "Start" and "Ports" | Start 1024 to 65535, at least 8 ports, the last port not past 65535. An invalid value outlines the field red while it has the focus and reverts on blur. Applies after an engine restart. | 4000, 1000 |
-| Use rport (secondary "Asks the server to reply to the address and port it sees. Helps behind NAT.") | toggle | Applies at once. | on |
+| Port range (secondary "Ports for call audio, 1024–65535. Each call needs two.") | two number fields with steppers, 56 pt each, labelled "Start" and "Ports" | Start 1024 to 65535, at least 8 ports, the last port not past 65535. An invalid value outlines the field red while it has the focus and reverts on blur. Applies after an engine restart. | 4000, 1000 |
+| Use rport (secondary "Helps behind NAT: the server replies to the address you are calling from.") | toggle | Applies at once. | on |
 
 **DNS (header "DNS"):**
 
 | Row | Type | Behaviour | Default |
 |---|---|---|---|
-| Use DNS SRV records (secondary "Finds the server and port of an account through SRV records, then falls back to the domain itself.") | toggle | Applies after an engine restart. | off |
+| Use DNS SRV records (secondary "Finds an account’s server automatically; if that fails, uses the domain itself.") | toggle | Applies after an engine restart. | off |
 | Nameserver (secondary "Address of a DNS server. Empty uses the system's servers.") | text field, 220 pt, placeholder "System" | Enabled only while SRV is on. Empty = system servers. Applies after an engine restart. | empty |
 
-**Restart banner:** when `applyNetworkSettings` answers `needsRestart`, an orange-tinted box above the groups says "Network changes are waiting for a restart of the engine. Accounts register again." with a "Restart now" button. The button stops and starts the engine (accounts register again); it is disabled while a call is active, with the line "End your calls first.". The banner goes away after the restart.
+**Restart banner:** when `applyNetworkSettings` answers `needsRestart`, an orange-tinted box above the groups says "Network changes will apply after a restart. Accounts register again." with a "Restart Now" button. The button stops and starts the engine (accounts register again); it is disabled while a call is active, with the line "End your calls first.". The banner goes away after the restart.
 
-**Info note (no box, secondary text with info glyph):** "Changing the port re-registers all accounts. Calls in progress are not interrupted. Transport and SRTP are set per account in the account editor." and, in a second line, "Changes to the port range and DNS apply after a restart of the engine."
+**Info note (no box, secondary text with info glyph):** "Changing the port re-registers all accounts; calls in progress are not interrupted. Transport and SRTP are set per account." and, in a second line, "Port range and DNS changes apply after a restart."
 
 Transport and SRTP are not in this pane [decided Q8.1].
 
@@ -1033,7 +1031,7 @@ These four codecs come first [decided Q8.3]. Seven more follow, all off until tu
 
 Restore Defaults puts the order back (classic four, then the new ones) and turns on Opus, G.722 and PCMU only. Second footer line: "Wideband codecs (Opus, G.722, G.722.1, Speex 16 and 32 kHz) work only if the PBX supports them."
 
-A second group "Opus" (footer: "Packet-loss correction adds a little data so lost packets can be repaired; keep it on for Wi-Fi and mobile networks. Silence suppression sends nothing during pauses to save bandwidth, but can clip the start of a word; turn it on only when bandwidth is tight."):
+A second group "Opus" (footer: "Packet-loss correction repairs lost packets for a little extra data; keep it on for Wi-Fi and mobile networks. Silence suppression saves bandwidth during pauses but can clip the start of a word; use it only on a slow connection."):
 
 | Row | Type | Behaviour | Default |
 |---|---|---|---|
@@ -1063,9 +1061,9 @@ Layout: three groups.
 |---|---|---|
 | Save recordings to | popup with folder icon, current "MacroSIP Recordings" | Choose folder; the picker remembers access with a security-scoped bookmark. |
 | Record all calls automatically | toggle, off | When on, every call is recorded. |
-| Channels | native segmented control "Mono" / "Stereo" (160 pt), default Mono; the row's secondary text describes the selected option ("Both sides mixed into one channel." / "You on the left channel, the caller on the right.") | Applies to recordings that start after the change. Stereo keeps you on the left channel and the caller (every conference participant) on the right; the temporary files are one WAV per side, converted into a single stereo M4A. If the conversion fails, every WAV is kept in the recordings folder (`<name>.wav` for mono, `<name>-local.wav` and `<name>-remote.wav` for stereo). |
+| Channels | native segmented control "Mono" / "Stereo" (160 pt), default Mono; the row's secondary text describes the selected option ("Both sides mixed into one channel." / "You on the left channel, the other party on the right.") | Applies to recordings that start after the change. Stereo keeps you on the left channel and the caller (every conference participant) on the right; the temporary files are one WAV per side, converted into a single stereo M4A. If the conversion fails, every WAV is kept in the recordings folder (`<name>.wav` for mono, `<name>-local.wav` and `<name>-remote.wav` for stereo). |
 
-Group footer: "Recordings are saved as M4A (AAC), mono or stereo with you on the left channel and the caller on the right. The temporary WAV files are deleted after conversion." then "File name: 2026-10-10 14.52 Alesia Kazlouskaya (in).m4a" (monospaced). Format: date and time to minutes, remote party name, direction in parentheses ("in" or "out").
+Group footer: "Recordings are saved as M4A files; the temporary WAV is deleted afterwards." then "File name: 2026-10-10 14.52 Name or number (in).m4a" (monospaced). Format: date and time to minutes, remote party name, direction in parentheses ("in" or "out").
 
 **Notice tone** (second group):
 
@@ -1094,15 +1092,15 @@ Tab "Calls" (ru «Звонки»; formerly "Auto-answer"; SF Symbol `phone.badge
 
 | Row | Type | Behaviour |
 |---|---|---|
-| Reject calls from (secondary: "A rejected call never rings. The caller gets 603 Decline and the call log shows “Rejected: rule”.") | popup, 220 pt, default Nobody | Nobody / Everyone / Numbers not in Contacts / Anonymous callers. Applies at once (`CallOptions.denyIncoming`). "Numbers not in Contacts" compares the caller with every number of every contact (`CallOptions.knownNumbers`, kept in sync whenever contacts change). The engine answers 603 Decline (433 Anonymity Disallowed for anonymous callers) before anything rings, so the app only sees the call end; the call log gets a missed entry with the note "Rejected: rule". Calls placed by the user are not affected. |
+| Reject calls from (secondary: "A rejected call never rings. The caller gets a refusal, and the call log shows “Rejected: rule”.") | popup, 220 pt, default Nobody | Nobody / Everyone / Numbers not in Contacts / Anonymous callers. Applies at once (`CallOptions.denyIncoming`). "Numbers not in Contacts" compares the caller with every number of every contact (`CallOptions.knownNumbers`, kept in sync whenever contacts change). The engine answers 603 Decline (433 Anonymity Disallowed for anonymous callers) before anything rings, so the app only sees the call end; the call log gets a missed entry with the note "Rejected: rule". Calls placed by the user are not affected. |
 
 **Group During a call (header "During a call", ru «Во время звонка»):**
 
 | Row | Type | Behaviour |
 |---|---|---|
 | When a call comes in during a call | popup, default "Call waiting (tone and window)" | Call waiting (tone and window) / Window only / Busy (single-call mode). Applies at once, also during calls. Secondary label explains Busy (486 Busy Here, only the call log shows it). |
-| DTMF method (secondary: "Automatic uses RFC 2833 and falls back to SIP INFO.") | popup, default Automatic | Automatic / RFC 2833 / SIP INFO / In-band. The next digits use the new method. |
-| Bring the main window to the front on an incoming call (secondary: "The incoming-call window still appears as well.") | toggle, default off | When on, the main window is brought to the front (not activated) when a call rings, in addition to the floating window; call keys stay ignored in it until the user clicks into it (see 6.6). |
+| DTMF method (secondary: "Automatic picks the method your server supports.") | popup, default Automatic | Automatic / RFC 2833 / SIP INFO / In-band. The next digits use the new method. |
+| Bring the main window to the front on an incoming call (secondary: "The incoming-call window appears either way.") | toggle, default off | When on, the main window is brought to the front (not activated) when a call rings, in addition to the floating window; call keys stay ignored in it until the user clicks into it (see 6.6). |
 
 **Group Global hotkeys (header "Global hotkeys", ru «Глобальные горячие клавиши»; 26.1):**
 
@@ -1133,7 +1131,7 @@ Demo and mock launches register nothing unless a self-check asks for it.
 |---|---|---|
 | Answer incoming calls automatically | segmented control: Off, All calls, Contacts only | Mode. Default Off. Selected mockup value: Contacts only. |
 | Delay before answering | number field (44 pt), stepper, unit "seconds" | Positive integer. Default 5. |
-| Honour the server's answer-after request (secondary: "Answers when the PBX sends Call-Info: answer-after=N (intercom, paging), even if the mode is Off.") | toggle | On by default in the mockup. |
+| Honour the server's answer-after request (secondary: "Answers when the PBX asks it to (intercom, paging), even if auto-answer is off.") | toggle | On by default in the mockup. |
 
 Group footer: "Do Not Disturb wins over auto-answer. Auto-answer never answers a second call while you are already on one."
 
@@ -1184,17 +1182,17 @@ Rows of the basics group are listed first; the others are inside Advanced.
 | Username | text field | SIP user. | Yes | empty |
 | Auth username (secondary "Only if different from the username.") | text field, placeholder "Optional" | Used for digest authentication; empty means username. | No | empty |
 | Password (secondary "Stored in the Keychain.") | secure text field | Stored only in Keychain. Shown as dots. | Yes | empty |
-| Domain (secondary "Empty uses the SIP server.") | text field, placeholder shows "pbx.example.com" | Used to build SIP URIs. | No | empty |
+| Domain (secondary "If empty, the SIP server is used.") | text field, placeholder shows "pbx.example.com" | Used to build SIP URIs. | No | empty |
 | Outgoing proxy | text field, placeholder "Optional, e.g. sip:proxy.example.com;lr" | Route set for requests. | No | empty |
 | Transport | segmented control: UDP, TCP, TLS | One value. | Yes | TLS in the mockup (default for new accounts: see Open items) |
 | Media encryption (SRTP) | popup | Disabled, Optional, Mandatory (glossary modes). | Yes | Mandatory in the mockup |
 | Registration expiry | number field, 56 pt, stepper, unit "seconds" | Expiry in seconds. | Yes | 300 |
 | Voicemail number (secondary "Dialled from the menu bar and the status bar.") | text field, placeholder "*97" | Number or SIP URI the app dials for the voicemail items (menu bar, status bar badge). Group "Voicemail" in Advanced. | No | empty |
 | Voicemail indicator (MWI) (secondary "Shows the number of new messages the server reports.") | toggle | Subscribes to the server's message-summary; new messages show in the status bar badge and the menu bar item. A server that pushes the indicator without a subscription is shown too. | | on |
-| Enabled (secondary "Off stops registration and outgoing calls; the account stays in the pop-up, dimmed, and leaves the status bar.") | toggle | First row of the switches group. The same state as the switch in the account pop-up on the main window. Off: no registration and no outgoing calls; shown as Disabled in Settings › Accounts. The account keeps its settings and its Keychain item. | | on |
+| Enabled (secondary "When off, the account does not register or call; it stays dimmed in the list and leaves the status bar.") | toggle | First row of the switches group. The same state as the switch in the account pop-up on the main window. Off: no registration and no outgoing calls; shown as Disabled in Settings › Accounts. The account keeps its settings and its Keychain item. | | on |
 | Register with server (secondary "Off keeps the account for outgoing calls only.") | toggle | Off: the account does not register, so it takes no incoming calls; it is still used for outgoing calls and shows as Outgoing only in Settings › Accounts. | | on |
 | Default for outgoing calls | toggle | Only one account is default; turning on clears the previous one. | | on in mockup |
-| Publish my presence (secondary "Lets contacts who watch you see Available / Away / DND.") | toggle | Per-account presence publish. | | on in mockup |
+| Publish my presence (secondary "Lets contacts who watch you see Available, Away or Do Not Disturb.") | toggle | Per-account presence publish. | | on in mockup |
 | Delete Account… | button, destructive | Asks for confirmation; removes the account and its Keychain item. | | |
 | Test | button | Registers once with the values in the sheet, without saving; shows the result inline (9.2). | Enabled when Server, Username and Password are filled. | |
 | Status text | label, with a dot | Live registration status of the saved account ("Registered"). For a new account: "Not saved". | | |
@@ -1533,30 +1531,29 @@ Strings marked "(proposed)" are not in the mockups; they are needed by the spec 
 | | Advanced | `settings.general.advanced.header` | Disclosure group at the bottom of General. |
 | | Debug mode, Diagnostics archive, Create Archive… | `settings.general.debug.*`, `settings.general.archive.*` | Troubleshooting rows (see 8.1). |
 | | Until %1$@ · %2$@ left | `settings.general.dnd.until` | Settings DND row while timed (time, remaining). |
-| | Declines incoming calls with 486 Busy Here and publishes Do Not Disturb. | `settings.general.dnd.help` | |
+| | Declines incoming calls and shows Do Not Disturb to contacts who watch you. | `settings.general.dnd.help` | |
 | | When a call comes in during a call | `settings.general.calls.incomingWhileOnCall` | |
-| | Busy answers the second caller with 486 Busy Here; you see nothing of it except in the call log. | `settings.general.calls.incomingWhileOnCall.help` | |
+| | Busy declines the second call with 486 Busy Here; it shows up only in the call log. | `settings.general.calls.incomingWhileOnCall.help` | |
 | | Call waiting (tone and window) / Window only / Busy (single-call mode) | `settings.general.calls.waiting`, `.windowOnly`, `.busy` | Popup values. |
 | | DTMF method | `settings.general.calls.dtmf` | |
-| | Automatic uses RFC 2833 and falls back to SIP INFO. | `settings.general.calls.dtmf.help` | |
+| | Automatic picks the method your server supports. | `settings.general.calls.dtmf.help` | |
 | | Automatic / In-band | `settings.general.calls.dtmf.automatic`, `.inBand` | "RFC 2833" and "SIP INFO" are not translated. |
 | | Bring the main window to the front on an incoming call | `settings.general.calls.bringToFront` | |
-| | The incoming-call window still appears as well. | `settings.general.calls.bringToFront.help` | |
+| | The incoming-call window appears either way. | `settings.general.calls.bringToFront.help` | |
 | | Incoming calls | `settings.general.deny.header` | Group header. |
 | | Reject calls from | `settings.general.deny.label` | |
-| | A rejected call never rings. The caller gets 603 Decline and the call log shows “Rejected: rule”. | `settings.general.deny.help` | |
+| | A rejected call never rings. The caller gets a refusal, and the call log shows “Rejected: rule”. | `settings.general.deny.help` | |
 | | Nobody / Everyone / Numbers not in Contacts / Anonymous callers | `settings.general.deny.nobody`, `.everyone`, `.notInContacts`, `.anonymous` | Popup values. |
 | | Rejected: rule | `calllog.note.denied` | Call log note of a call turned away by the rule. |
 | | Language | `settings.general.language` | |
 | | Takes effect after MacroSIP restarts. | `settings.general.language.help` | |
 | | System (English) | `settings.general.language.system` | Value shown; key includes the resolved language name. |
-| | Choices: System, English, Русский. | `settings.general.language.footer` | |
 | | Links | `settings.general.links.header` | |
 | | Open %@ and %@ links with MacroSIP | `settings.general.links.title` | %@ values sip: and tel:. Shown with monospaced scheme. |
 | | Another app currently handles tel: links. | `settings.general.links.otherHandler` | Warning line. |
 | | Make Default | `settings.general.links.makeDefault` | |
 | | When a link is opened | `settings.general.links.onOpen` | |
-| | Fills the number field so you can check it first. | `settings.general.links.onOpen.help` | |
+| | “Only fill the dial field” lets you check the number first. | `settings.general.links.onOpen.help` | |
 | | Ask before calling | `settings.general.links.askBeforeCalling` | Popup value. |
 | | Accounts list header and footer: "Double-click an account to edit it. Drag to reorder; the order is used in the account pop-up and the status bar." | `accounts.list.footer` | |
 | | Name, Address, Transport, Status | `accounts.column.name`, `accounts.column.address`, `accounts.column.transport`, `accounts.column.status` | Table headers. |
@@ -1577,9 +1574,9 @@ Strings marked "(proposed)" are not in the mockups; they are needed by the spec 
 | | Speaker | `settings.audio.speaker` | |
 | | Test | `settings.audio.test` | |
 | | Ringtone device | `settings.audio.ringtoneDevice` | |
-| | Ring through the speakers even when a headset is used for calls. | `settings.audio.ringtoneDevice.help` | |
+| | Plays the ringtone through the speakers even when calls use a headset. | `settings.audio.ringtoneDevice.help` | |
 | | System default | `settings.audio.systemDefault` | Popup item. |
-| | "System default" follows macOS Sound settings. If a chosen device is unplugged, MacroSIP falls back to the system default and switches back when it returns. | `settings.audio.devices.footer` | |
+| | “System default” follows the Sound settings in macOS. If a chosen device is unplugged, MacroSIP uses the system default until it returns. | `settings.audio.devices.footer` | |
 | | Ringtone | `settings.audio.ringtone.header` | |
 | | Sound | `settings.audio.ringtoneSound` | |
 | | Play | `settings.audio.ringtonePlay` | |
@@ -1592,17 +1589,17 @@ Strings marked "(proposed)" are not in the mockups; they are needed by the spec 
 | | Switched to %@ | `banner.audio.switched` | |
 | | Back to %@ | `banner.audio.back` | |
 | | Back to the system default | `banner.audio.backDefault` | |
-| | Built-in choices: Classic, Digital, Soft. "Custom file…" accepts WAV, AIFF, M4A, MP3. | `settings.audio.ringtone.footer` | |
+| | “Custom file…” accepts WAV, AIFF, M4A and MP3. | `settings.audio.ringtone.footer` | |
 | | Processing | `settings.audio.processing.header` | |
 | | Echo cancellation | `settings.audio.echoCancellation` | |
-| | Turn off only when using a headset with its own echo cancellation. | `settings.audio.echoCancellation.help` | |
+| | Turn it off only if your headset cancels echo itself. | `settings.audio.echoCancellation.help` | |
 | | Headset buttons | `settings.audio.headsetButtons` | |
 | | Connected: %@ | `settings.audio.headsetButtons.connected` | %@ device name. |
 | | No headset with call controls | `settings.audio.headsetButtons.none` | |
 | | Hold music | `settings.audio.holdMusic.header` | |
 | | Source | `settings.audio.holdMusic.source` | |
 | | Built-in, Off | `settings.audio.holdMusic.builtIn`, `.off` | Popup items; "Custom file…" and "Custom: %@" are reused from the ringtone. |
-| | The caller hears this while on hold. | `settings.audio.holdMusic.footer` | |
+| | The other party hears this while the call is on hold. | `settings.audio.holdMusic.footer` | |
 | | The file could not be used: %@ | `settings.audio.holdMusic.error` | Footer and banner; %@ reason. |
 | | Sound events | `settings.audio.soundEvents.header` | |
 | | Call connected and ended | `settings.audio.soundEvents.callEvents` | |
@@ -1610,10 +1607,10 @@ Strings marked "(proposed)" are not in the mockups; they are needed by the spec 
 | | New voicemail | `settings.audio.soundEvents.voicemail` | |
 | | Registration error and lost network | `settings.audio.soundEvents.error` | |
 | | New message | `settings.audio.soundEvents.message` | Screen 14. |
-| | Short beeps on the speaker; the other side never hears them. | `settings.audio.soundEvents.footer` | |
+| | Short beeps on the speaker; the other party does not hear them. | `settings.audio.soundEvents.footer` | |
 | | Audio test | `settings.audio.audioTest.header` | |
 | | Speaker and microphone | `settings.audio.audioTest.row` | |
-| | Test plays two notes on the speaker for 2 seconds; the meter shows the microphone. | `settings.audio.audioTest.help` | |
+| | Plays two notes on the speaker for 2 seconds; the meter shows the microphone level. | `settings.audio.audioTest.help` | |
 | | Connection | `settings.network.connection.header` | |
 | | STUN server | `settings.network.stun` | |
 | | Leave empty if you are not behind NAT. | `settings.network.stun.help` | |
@@ -1623,23 +1620,23 @@ Strings marked "(proposed)" are not in the mockups; they are needed by the spec 
 | | Keeps NAT bindings open between registrations. | `settings.network.keepAlive.help` | |
 | | seconds | `settings.unit.seconds` | Unit label; plural rules apply. |
 | | Use ICE | `settings.network.ice` | |
-| | Finds a working media path through NAT. Uses the STUN server above. | `settings.network.ice.help` | |
-| | Changing the port re-registers all accounts. Calls in progress are not interrupted. Transport and SRTP are set per account in the account editor. | `settings.network.footer` | |
+| | Helps audio get through NAT. Uses the STUN server above. | `settings.network.ice.help` | |
+| | Changing the port re-registers all accounts; calls in progress are not interrupted. Transport and SRTP are set per account. | `settings.network.footer` | |
 | | RTP | `settings.network.rtp.header` | |
 | | Port range | `settings.network.rtp.portRange` | |
-| | Audio uses this range. Each call needs two ports; 1024–65535. | `settings.network.rtp.portRange.help` | |
+| | Ports for call audio, 1024–65535. Each call needs two. | `settings.network.rtp.portRange.help` | |
 | | Start, Ports | `settings.network.rtp.start`, `.count` | Labels of the two number fields. |
 | | Use rport | `settings.network.rport` | |
-| | Asks the server to reply to the address and port it sees. Helps behind NAT. | `settings.network.rport.help` | |
+| | Helps behind NAT: the server replies to the address you are calling from. | `settings.network.rport.help` | |
 | | DNS | `settings.network.dns.header` | |
 | | Use DNS SRV records | `settings.network.dns.srv` | |
-| | Finds the server and port of an account through SRV records, then falls back to the domain itself. | `settings.network.dns.srv.help` | |
+| | Finds an account’s server automatically; if that fails, uses the domain itself. | `settings.network.dns.srv.help` | |
 | | Nameserver | `settings.network.dns.nameserver` | |
 | | Address of a DNS server. Empty uses the system's servers. | `settings.network.dns.nameserver.help` | |
 | | System | `settings.network.dns.nameserver.placeholder` | Placeholder. |
-| | Changes to the port range and DNS apply after a restart of the engine. | `settings.network.restartFooter` | |
-| | Network changes are waiting for a restart of the engine. Accounts register again. | `settings.network.restart.banner` | |
-| | Restart now | `settings.network.restart.now` | |
+| | Port range and DNS changes apply after a restart. | `settings.network.restartFooter` | |
+| | Network changes will apply after a restart. Accounts register again. | `settings.network.restart.banner` | |
+| | Restart Now | `settings.network.restart.now` | |
 | | End your calls first. | `settings.network.restart.busy` | |
 | | Audio codecs, in order of preference | `settings.codecs.header` | |
 | | Codec, Sample rate, Bitrate | `settings.codecs.column.codec`, `.sampleRate`, `.bitrate` | Table headers. |
@@ -1649,7 +1646,7 @@ Strings marked "(proposed)" are not in the mockups; they are needed by the spec 
 | | Opus | `settings.codecs.opus.header` | |
 | | Packet-loss correction (FEC) | `settings.codecs.opus.fec` | |
 | | Silence suppression (DTX) | `settings.codecs.opus.dtx` | |
-| | Packet-loss correction adds a little data ... only when bandwidth is tight. | `settings.codecs.opus.footer` | Full text in 8.5. |
+| | Packet-loss correction repairs lost packets for a little extra data; keep it on for Wi-Fi and mobile networks. Silence suppression saves bandwidth during pauses but can clip the start of a word; use it only on a slow connection. | `settings.codecs.opus.footer` | Full text in 8.5. |
 | | Drag rows or use the arrows to reorder. Unchecked codecs are never offered. At least one codec must stay enabled. | `settings.codecs.footer` | |
 | | Wideband codecs (Opus, G.722, G.722.1, Speex 16 and 32 kHz) work only if the PBX supports them. | `settings.codecs.footer.wideband` | Codec names (G.722.1, GSM, iLBC, Speex) are not translated. |
 | | Save recordings to | `settings.recording.folder` | |
@@ -1659,9 +1656,10 @@ Strings marked "(proposed)" are not in the mockups; they are needed by the spec 
 | | Mono | `settings.recording.layout.mono` | Segment. |
 | | Stereo | `settings.recording.layout.stereo` | Segment. |
 | | Both sides mixed into one channel. | `settings.recording.layout.mono.help` | Secondary text when Mono is selected. |
-| | You on the left channel, the caller on the right. | `settings.recording.layout.stereo.help` | Secondary text when Stereo is selected. |
-| | Recordings are saved as M4A (AAC), mono or stereo with you on the left channel and the caller on the right. The temporary WAV files are deleted after conversion. | `settings.recording.footer` | |
+| | You on the left channel, the other party on the right. | `settings.recording.layout.stereo.help` | Secondary text when Stereo is selected. |
+| | Recordings are saved as M4A files; the temporary WAV is deleted afterwards. | `settings.recording.footer` | |
 | | File name: %@ | `settings.recording.fileName` | %@ sample file name. |
+| | Name or number | `settings.recording.fileName.sample` | Remote-party part of the sample file name. |
 | | Show Recordings Folder | `settings.recording.showFolder` | |
 | | Open in Finder | `settings.recording.openFinder` | |
 | | Notice tone | `settings.recording.notice.header` | |
@@ -1672,7 +1670,7 @@ Strings marked "(proposed)" are not in the mockups; they are needed by the spec 
 | | Off, All calls, Contacts only | `settings.autoAnswer.off`, `.all`, `.contactsOnly` | Segments. |
 | | Delay before answering | `settings.autoAnswer.delay` | |
 | | Honour the server's answer-after request | `settings.autoAnswer.honourServer` | |
-| | Answers when the PBX sends Call-Info: answer-after=N (intercom, paging), even if the mode is Off. | `settings.autoAnswer.honourServer.help` | |
+| | Answers when the PBX asks it to (intercom, paging), even if auto-answer is off. | `settings.autoAnswer.honourServer.help` | |
 | | Do Not Disturb wins over auto-answer. Auto-answer never answers a second call while you are already on one. | `settings.autoAnswer.footer` | |
 | | Global hotkeys | `settings.hotkeys.header` | 26.1. |
 | | Use hotkeys in any app | `settings.hotkeys.enable` | |
@@ -1737,7 +1735,7 @@ Strings marked "(proposed)" are not in the mockups; they are needed by the spec 
 | | Password | `account.field.password` | |
 | | Stored in the Keychain. | `account.field.password.help` | |
 | | Domain | `account.field.domain` | |
-| | Empty uses the SIP server. | `account.field.domain.help` | |
+| | If empty, the SIP server is used. | `account.field.domain.help` | |
 | | Outgoing proxy | `account.field.proxy` | |
 | | Optional, e.g. sip:proxy.example.com;lr | `account.field.proxy.placeholder` | Placeholder. |
 | | Connection | `account.group.connection` | |
@@ -1749,10 +1747,10 @@ Strings marked "(proposed)" are not in the mockups; they are needed by the spec 
 | | Register with server | `account.field.register` | |
 | | Off keeps the account for outgoing calls only. | `account.field.register.help` | |
 | | Enabled | `account.field.enabled` | First switch in the editor. |
-| | Off stops registration and outgoing calls; the account stays in the pop-up, dimmed, and leaves the status bar. | `account.field.enabled.help` | |
+| | When off, the account does not register or call; it stays dimmed in the list and leaves the status bar. | `account.field.enabled.help` | |
 | | Default for outgoing calls | `account.field.defaultOutgoing` | |
 | | Publish my presence | `account.field.publishPresence` | |
-| | Lets contacts who watch you see Available / Away / DND. | `account.field.publishPresence.help` | |
+| | Lets contacts who watch you see Available, Away or Do Not Disturb. | `account.field.publishPresence.help` | |
 | | Delete Account… | `account.delete` | Destructive. |
 | | Test | `account.test` | |
 | | Registered | `account.status.registered` | Status beside buttons. |
@@ -1866,7 +1864,7 @@ Resolved on 2026-10-10 as routine UI decisions (none changes scope).
 17. **Contacts search keys.** Escape clears the field (second Escape leaves focus). Up/Down move the list selection while the field keeps focus; Return calls the selected contact.
 18. **Watch presence default.** Off for new contacts.
 19. **Dial letters for Russian.** Keys show Latin letters only in both locales (as on a phone keypad); no Cyrillic letters.
-20. **Copy.** Contacts empty: "No contacts yet" / "Add a contact to call it in one click." Call log empty: "No calls yet". Delete account: alert "Delete account “%@”?" body "Its password is removed from Keychain. Call history is kept." buttons Cancel / Delete. Account names need not be unique; the list disambiguates with the SIP address in the subtitle. Test success: "Registered successfully (%lld ms)".
+20. **Copy.** Contacts empty: "No contacts yet" / "Add a contact to call it in one click." Call log empty: "No calls yet". Delete account: alert "Delete account “%@”?" body "Its password is removed from the Keychain. Call history is kept." buttons Cancel / Delete. Account names need not be unique; the list disambiguates with the SIP address in the subtitle. Test success: "Registered successfully (%lld ms)".
 21. **Validation.** Local port 0 or 1024–65535; keep-alive 0 (off) or 5–600 s; registration expiry 60–3600 s; invalid values show a red outline and the Save button is disabled.
 22. **Recording folder missing.** Decide with the first user report.
 23. **Menu bar icon precedence.** While a call is active the timer wins; the missed badge returns after the call ends if there are still unseen missed calls. Opening the Call Log tab clears the badge.
@@ -1936,13 +1934,13 @@ Added as the eighth toolbar tab (screen 8). Layout: key table, hint, then two gr
 | Element | Type | Behaviour | Enabled / disabled |
 |---|---|---|---|
 | Key table | table, 12 fixed rows | Columns: Name, Number, Type, BLF, Key. Rows reorder by drag. Name and Number are edited in place (double-click a row or start typing). Empty rows show "Empty". | Enabled. |
-| Type | popup in the Type column | Eight types in two sections: Call, DTMF, Blind transfer, Attended transfer, Add to conference; a separator and the caption "Smart: call when idle, act on the call when in one"; Call / Blind transfer, Call / Attended transfer, Call / Conference. | Disabled on an empty row. |
+| Type | popup in the Type column | Eight types in two sections: Call, DTMF, Blind transfer, Attended transfer, Add to conference; a separator and the caption "Smart: call when idle; transfer or conference during a call."; Call / Blind transfer, Call / Attended transfer, Call / Conference. | Disabled on an empty row. |
 | BLF | checkbox in the BLF column | Watches the number's line state. | Disabled when the number is empty. |
 | Key | label | Shortcut: ⌘1 to ⌘9 for rows 1 to 9 following the list order; rows 10 to 12 show "—". | Read-only. |
 | Count | label | "%lld of 12 keys". | n/a |
 | Show panel | segmented control: Off, Right, Bottom | Default Off. Right widens the window to 560 pt, Bottom adds the 3-column strip. | Enabled. |
 | Pickup code | text field | Default `*8`. Used when a ringing key is clicked. | Enabled. |
-| Shortcuts note | label | "⌘1 – ⌘9 press keys 1–9 while MacroSIP is the frontmost app, also when the panel is hidden. Keys 10–12 are clicked only. Shortcuts follow the order of the list." | n/a |
+| Shortcuts note | label | "⌘1–⌘9 press keys 1–9 when MacroSIP is frontmost, even with the panel hidden, in list order. Keys 10–12 are click-only." | n/a |
 
 ### States
 
@@ -1984,17 +1982,17 @@ Added as the eighth toolbar tab (screen 8). Layout: key table, hint, then two gr
 | Blind transfer | `quickkeys.type.blindTransfer` | |
 | Attended transfer | `quickkeys.type.attendedTransfer` | |
 | Add to conference | `quickkeys.type.conference` | |
-| Smart: call when idle, act on the call when in one | `quickkeys.type.smart.caption` | Pop-up section caption. |
+| Smart: call when idle; transfer or conference during a call. | `quickkeys.type.smart.caption` | Pop-up section caption. |
 | Call / Blind transfer | `quickkeys.type.callBlind` | |
 | Call / Attended transfer | `quickkeys.type.callAttended` | |
 | Call / Conference | `quickkeys.type.callConference` | |
 | Panel | `quickkeys.panel.header` | Group header. |
 | Show panel | `quickkeys.panel.show` | |
 | Off / Right / Bottom | `quickkeys.panel.off`, `quickkeys.panel.right`, `quickkeys.panel.bottom` | |
-| Show panel Right widens the window to 560 pt; Bottom adds a 3-column strip. | `quickkeys.panel.footer` | Row sublabel. |
+| Right makes the window wider; Bottom adds a strip of keys below. | `quickkeys.panel.footer` | Row sublabel. |
 | Pickup code | `quickkeys.pickup.label` | |
 | Used when you click a ringing key. | `quickkeys.pickup.sub` | |
-| ⌘1 – ⌘9 press keys 1–9 while MacroSIP is the frontmost app, also when the panel is hidden. Keys 10–12 are clicked only. Shortcuts follow the order of the list. | `quickkeys.shortcuts.note` | Group footer. |
+| ⌘1–⌘9 press keys 1–9 when MacroSIP is frontmost, even with the panel hidden, in list order. Keys 10–12 are click-only. | `quickkeys.shortcuts.note` | Group footer. |
 
 ### Decided
 
@@ -2123,7 +2121,7 @@ Display name (derived, not stored separately): "First Last"; whichever of the tw
 | Contacts | `settings.general.contacts.header` | |
 | Sort by | `settings.general.sort` | |
 | First name / Last name | `settings.general.sort.first`, `settings.general.sort.last` | |
-| Names are always shown as "First Last". Sorting by last name also groups the sections by its first letter. | `settings.general.sort.footer` | |
+| Names always appear as “First Last”. Sorting by last name groups the list by the last name’s first letter. | `settings.general.sort.footer` | |
 
 ### Decided
 
@@ -2184,7 +2182,7 @@ Fields common to all types: Type popup (LDAP, URL (CSV or JSON), Google Contacts
 |---|---|---|
 | LDAP | Server (placeholder `ldap://ldap.example.com`; sub-label "ldaps:// or StartTLS when possible."), Base DN, Bind DN (sub-label "Empty for anonymous search."), Password (secure; "Stored in the Keychain."), Search filter (default `(\|(cn=*%s*)(telephoneNumber=*%s*))`; `%s` is the typed text), Results radio: Search only (results are not stored) / Import into Contacts (copied and refreshed daily), Test button with inline result "Connected · %lld entries". | ldaps:// and StartTLS are supported; plain ldap:// is allowed. Password in Keychain. |
 | URL (CSV or JSON) | URL, Refresh every (popup: Hour, 6 hours, Day, Week; default Hour), Results radio. Footer: "CSV with a header row, or a JSON array of objects. Columns named name, first name, last name, number, mobile, email are recognised." | Fetched on the chosen schedule. |
-| Google Contacts | "Sign in with Google" button; explanation "Opens Google in your browser once to allow read-only access to your contacts. MacroSIP keeps only the access token, in the Keychain; you can remove access in your Google Account at any time." Results radio. | Needs the OAuth client id from the owner's Google Cloud project (read-only contacts scope). |
+| Google Contacts | "Sign in with Google" button; explanation "Opens Google in your browser once to give read-only access to your contacts. Only an access token is kept, in the Keychain; you can revoke it in your Google Account." Results radio. | Needs the OAuth client id from the owner's Google Cloud project (read-only contacts scope). |
 | macOS Contacts | No fields except the Results radio (default Import into Contacts per the mockup row "This Mac · import into Contacts"). | The system Contacts-access prompt appears when Add is pressed, not at launch. If denied the source is added in the error state "Access denied" with a link to System Settings. |
 
 Imported entries are refreshed daily (URL: on its own schedule) and are marked as imported in the contact card (read-only source badge, proposed).
@@ -2238,11 +2236,10 @@ Imported entries are refreshed daily (URL: on its own schedule) and are marked a
 | Starts after 2 characters and a 300 ms pause in typing. | `directory.search.enable.sub` | |
 | Results per source | `directory.search.limit` | |
 | Look up names of incoming callers | `directory.lookup.enable` | |
-| Asks search-only sources for at most 1 second while the call rings. | `directory.lookup.sub` | |
+| Waits up to 1 second for search-only sources while the call rings. | `directory.lookup.sub` | |
 | Add Directory Source | `directory.add.title` | Sheet title (Edit Directory Source when editing: `directory.edit.title`). |
 | Type, Name | `directory.add.type`, `directory.add.name` | |
 | LDAP, URL (CSV or JSON), Google Contacts, macOS Contacts | `directory.type.ldap`, `.url`, `.google`, `.macos` | |
-| Types: LDAP, URL (CSV or JSON), Google Contacts, macOS Contacts. | `directory.add.types.footer` | |
 | Server, Base DN, Bind DN, Password, Search filter | `directory.ldap.server`, `.baseDN`, `.bindDN`, `.password`, `.filter` | |
 | ldaps:// or StartTLS when possible. | `directory.ldap.server.sub` | |
 | Empty for anonymous search. | `directory.ldap.bindDN.sub` | |
@@ -2259,7 +2256,7 @@ Imported entries are refreshed daily (URL: on its own schedule) and are marked a
 | Sign in with Google | `directory.google.signin` | |
 | Waiting for Google… | `directory.google.signingIn` | While the browser is open. |
 | Google sign-in is not configured in this build | `directory.error.googleClientID` | A build without an OAuth client id. |
-| Opens Google in your browser once to allow read-only access to your contacts. MacroSIP keeps only the access token, in the Keychain; you can remove access in your Google Account at any time. | `directory.google.footer` | |
+| Opens Google in your browser once to give read-only access to your contacts. Only an access token is kept, in the Keychain; you can revoke it in your Google Account. | `directory.google.footer` | |
 | MacroSIP looks up names and numbers in Contacts when you search from the number field. | `NSContactsUsageDescription` | Info.plist; system prompt text. |
 | Cancel, Add | `directory.add.cancel`, `directory.add.confirm` | Reuse the common Cancel; Add is new. |
 

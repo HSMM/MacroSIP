@@ -39,7 +39,7 @@ struct GeneralPane: View {
                 }
             }
             DoNotDisturbGroup()
-            FormGroup(footer: L.languageFooter) {
+            FormGroup {
                 FormRow(label: L.language, help: L.languageHelp) {
                     Picker("", selection: languageSelection) {
                         Text(L.languageSystem(systemLanguageName)).tag("system")

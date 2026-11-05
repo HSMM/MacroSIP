@@ -1580,11 +1580,11 @@ kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:
               <div class="gr"><span class="gl">Show icon in the Dock</span><span class="switch on"></span></div>
             </div></div>
             <div class="grp"><div class="gbox">
-              <div class="gr"><span class="gl">Do Not Disturb<small>Declines incoming calls with 486 Busy Here and publishes Do Not Disturb.</small></span><span class="popup">Off<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+              <div class="gr"><span class="gl">Do Not Disturb<small>Declines incoming calls and shows Do Not Disturb to contacts who watch you.</small></span><span class="popup">Off<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
             </div><div class="gf">Choices: Off, On, For 30 minutes, For 1 hour, Until tomorrow 9:00. While a timer runs the first item shows "Until 14:30 · 27 min left".</div></div>
             <div class="grp"><div class="gbox">
               <div class="gr"><span class="gl">Language<small>Takes effect after MacroSIP restarts.</small></span><span class="popup">System (English)<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
-            </div><div class="gf">Choices: System, English, Русский.</div></div>
+            </div></div>
             <div class="grp"><span class="gh">Updates</span><div class="gbox">
               <div class="gr"><span class="gl">Check for updates automatically<small>Once a day. MacroSIP asks before installing an update.</small></span><span class="switch on"></span></div>
               <div class="gr"><span class="gl">Include release candidates<small>Test builds of the next version, offered before it is final.</small></span><span class="switch"></span></div>
@@ -1593,11 +1593,11 @@ kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:
             <div class="grp disclosure"><span class="gh" style="display:flex;align-items:center;gap:4px;cursor:default"><svg class="i" style="width:11px;height:11px;transform:rotate(-90deg)"><use href="#i-chev-d"/></svg>Advanced</span></div>
             <div class="grp" style="opacity:.55"><span class="gh">Links <small class="muted" style="font-weight:400">· shown when Advanced is open</small></span><div class="gbox">
               <div class="gr"><span class="gl">Open <span class="mono" style="font-size:12px">sip:</span> and <span class="mono" style="font-size:12px">tel:</span> links with MacroSIP<small style="display:flex;align-items:center;gap:5px"><span class="dot warn" style="width:7px;height:7px"></span>Another app currently handles tel: links.</small></span><span class="btn">Make Default</span></div>
-              <div class="gr"><span class="gl">When a link is opened<small>Fills the number field so you can check it first.</small></span><span class="popup">Ask before calling<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+              <div class="gr"><span class="gl">When a link is opened<small>“Only fill the dial field” lets you check the number first.</small></span><span class="popup">Ask before calling<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
             </div></div>
             <div class="grp" style="opacity:.55"><span class="gh">Troubleshooting</span><div class="gbox">
-              <div class="gr"><span class="gl">Log file<small>~/Library/Logs/MacroSIP/MacroSIP.log, 3 files of 2 MB (8 MB in Debug mode).</small></span><span class="btn">Open Log Folder</span></div>
-              <div class="gr"><span class="gl">Debug mode<small>Writes much more detail to the log, including SIP messages, so the log grows faster. Turn it off after you send the archive.</small></span><span class="switch"></span></div>
+              <div class="gr"><span class="gl">Log file<small>Saved in ~/Library/Logs/MacroSIP. Three files of 2 MB (8 MB in debug mode).</small></span><span class="btn">Open Log Folder</span></div>
+              <div class="gr"><span class="gl">Debug mode<small>Adds SIP messages and more detail to the log, so it grows faster. Turn it off when you are done.</small></span><span class="switch"></span></div>
               <div class="gr"><span class="gl">Diagnostics<small>Versions, accounts and settings, without passwords. Paste it into a bug report.</small></span><span class="btn">Copy Diagnostics</span></div>
               <div class="gr"><span class="gl">Diagnostics archive<small>A ZIP with the log files, the diagnostics report and recent crash reports. It contains phone numbers and server addresses but no passwords. Send it only to someone you trust.</small></span><span class="btn">Create Archive…</span></div>
             </div></div>
@@ -1626,7 +1626,7 @@ kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:
             <div class="grp"><span class="gh">Devices</span><div class="gbox">
               <div class="gr"><span class="gl">Microphone</span><span class="gv"><span class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on y"></i><i></i><i></i><i></i></span><span class="popup">MacBook Pro Microphone<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></span></div>
               <div class="gr"><span class="gl">Speaker</span><span class="popup">External Headphones<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
-              <div class="gr"><span class="gl">Ringtone device<small>Ring through the speakers even when a headset is used for calls.</small></span><span class="popup">MacBook Pro Speakers<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+              <div class="gr"><span class="gl">Ringtone device<small>Plays the ringtone through the speakers even when calls use a headset.</small></span><span class="popup">MacBook Pro Speakers<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
               <div class="gr"><span class="gl">Switch to a headset when it is connected<small>Returns to the previous devices when it is removed.</small></span><span class="switch on"></span></div>
               <div class="gr"><span class="gl">Headset buttons<small>Connected: Jabra Evolve2 65</small></span><span class="switch on"></span></div>
             </div><div class="gf">"System default" follows macOS Sound settings. If a chosen device is unplugged, MacroSIP falls back to the system default and switches back when it returns.</div></div>
@@ -1636,19 +1636,19 @@ kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:
             </div><div class="gf">Built-in choices: Classic, Digital, Soft. "Custom file…" accepts WAV, AIFF, M4A, MP3.</div></div>
             <div class="grp"><span class="gh">Hold music</span><div class="gbox">
               <div class="gr"><span class="gl">Source</span><span class="popup">Built-in<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
-            </div><div class="gf">The caller hears this while on hold.</div></div>
+            </div><div class="gf">The other party hears this while the call is on hold.</div></div>
             <div class="grp"><span class="gh">Sound events</span><div class="gbox">
               <div class="gr"><span class="gl">Call connected and ended</span><span class="switch on"></span></div>
               <div class="gr"><span class="gl">Dial pad key presses</span><span class="switch"></span></div>
               <div class="gr"><span class="gl">New voicemail</span><span class="switch on"></span></div>
               <div class="gr"><span class="gl">Registration error and lost network</span><span class="switch"></span></div>
               <div class="gr"><span class="gl">New message</span><span class="switch"></span></div>
-            </div><div class="gf">Short beeps on the speaker; the other side never hears them.</div></div>
+            </div><div class="gf">Short beeps on the speaker; the other party does not hear them.</div></div>
             <div class="grp"><span class="gh">Audio test</span><div class="gbox">
-              <div class="gr"><span class="gl">Speaker and microphone<small>Test plays two notes on the speaker for 2 seconds; the meter shows the microphone.</small></span><span class="gv"><span class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i></span><span class="btn sm">Test</span></span></div>
+              <div class="gr"><span class="gl">Speaker and microphone<small>Plays two notes on the speaker for 2 seconds; the meter shows the microphone level.</small></span><span class="gv"><span class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i></span><span class="btn sm">Test</span></span></div>
             </div></div>
             <div class="grp"><span class="gh">Processing</span><div class="gbox">
-              <div class="gr"><span class="gl">Echo cancellation<small>Turn off only when using a headset with its own echo cancellation.</small></span><span class="switch on"></span></div>
+              <div class="gr"><span class="gl">Echo cancellation<small>Turn it off only if your headset cancels echo itself.</small></span><span class="switch on"></span></div>
               <div class="gr"><svg class="i" style="color:var(--m-label2)"><use href="#i-info"/></svg><span class="gl">Voice processing: System (noise suppression and gain control)<small>A device other than the system default uses the built-in echo canceller.</small></span></div>
             </div></div>
           </div>
@@ -1659,17 +1659,17 @@ kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:
               <div class="gr"><span class="gl">STUN server<small>Leave empty if you are not behind NAT.</small></span><div class="field" style="min-width:220px">stun.example.org:3478</div></div>
               <div class="gr"><span class="gl">Local SIP port<small>0 picks a free port automatically.</small></span><span class="gv"><div class="field tnum" style="min-width:70px;justify-content:flex-end">5060</div><span class="stepper"><i>▲</i><i>▼</i></span></span></div>
               <div class="gr"><span class="gl">Keep-alive interval<small>Keeps NAT bindings open between registrations.</small></span><span class="gv"><div class="field tnum" style="min-width:50px;justify-content:flex-end">15</div><span class="stepper"><i>▲</i><i>▼</i></span>seconds</span></div>
-              <div class="gr"><span class="gl">Use ICE<small>Finds a working media path through NAT. Uses the STUN server above.</small></span><span class="switch on"></span></div>
+              <div class="gr"><span class="gl">Use ICE<small>Helps audio get through NAT. Uses the STUN server above.</small></span><span class="switch on"></span></div>
             </div></div>
             <div class="grp"><span class="gh">RTP</span><div class="gbox">
-              <div class="gr"><span class="gl">Port range<small>Audio uses this range. Each call needs two ports; 1024–65535.</small></span><span class="gv"><span class="muted" style="font-size:12px">Start</span><div class="field tnum" style="min-width:56px;justify-content:flex-end">4000</div><span class="stepper"><i>▲</i><i>▼</i></span><span class="muted" style="font-size:12px;margin-left:6px">Ports</span><div class="field tnum" style="min-width:56px;justify-content:flex-end">1000</div><span class="stepper"><i>▲</i><i>▼</i></span></span></div>
-              <div class="gr"><span class="gl">Use rport<small>Asks the server to reply to the address and port it sees. Helps behind NAT.</small></span><span class="switch on"></span></div>
+              <div class="gr"><span class="gl">Port range<small>Ports for call audio, 1024–65535. Each call needs two.</small></span><span class="gv"><span class="muted" style="font-size:12px">Start</span><div class="field tnum" style="min-width:56px;justify-content:flex-end">4000</div><span class="stepper"><i>▲</i><i>▼</i></span><span class="muted" style="font-size:12px;margin-left:6px">Ports</span><div class="field tnum" style="min-width:56px;justify-content:flex-end">1000</div><span class="stepper"><i>▲</i><i>▼</i></span></span></div>
+              <div class="gr"><span class="gl">Use rport<small>Helps behind NAT: the server replies to the address you are calling from.</small></span><span class="switch on"></span></div>
             </div></div>
             <div class="grp"><span class="gh">DNS</span><div class="gbox">
-              <div class="gr"><span class="gl">Use DNS SRV records<small>Finds the server and port of an account through SRV records, then falls back to the domain itself.</small></span><span class="switch"></span></div>
+              <div class="gr"><span class="gl">Use DNS SRV records<small>Finds an account’s server automatically; if that fails, uses the domain itself.</small></span><span class="switch"></span></div>
               <div class="gr" style="opacity:.5"><span class="gl">Nameserver<small>Address of a DNS server. Empty uses the system's servers.</small></span><div class="field muted" style="min-width:220px">System</div></div>
             </div></div>
-            <div class="grp"><div class="gbox"><div class="gr" style="color:var(--m-label2);font-size:12px"><svg class="i"><use href="#i-info"/></svg><span class="gl">Changing the port re-registers all accounts. Calls in progress are not interrupted. Transport and SRTP are set per account in the account editor.<small>Changes to the port range and DNS apply after a restart of the engine.</small></span></div></div></div>
+            <div class="grp"><div class="gbox"><div class="gr" style="color:var(--m-label2);font-size:12px"><svg class="i"><use href="#i-info"/></svg><span class="gl">Changing the port re-registers all accounts; calls in progress are not interrupted. Transport and SRTP are set per account.<small>Port range and DNS changes apply after a restart.</small></span></div></div></div>
           </div>
 
           <!-- Codecs -->
@@ -1703,7 +1703,7 @@ kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:
             <div class="grp"><div class="gbox">
               <div class="gr"><span class="gl">Save recordings to</span><span class="gv"><span class="popup"><svg class="i" style="width:13px;height:13px;color:var(--m-blue)"><use href="#i-folder"/></svg>MacroSIP Recordings<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></span></div>
               <div class="gr"><span class="gl">Record all calls automatically</span><span class="switch"></span></div>
-            </div><div class="gf">Recordings are saved as M4A (AAC). The temporary WAV is deleted after conversion.<br>File name: <span class="mono">2026-10-10 14.52 Alesia Kazlouskaya (in).m4a</span></div></div>
+            </div><div class="gf">Recordings are saved as M4A files; the temporary WAV is deleted afterwards.<br>File name: <span class="mono">2026-10-10 14.52 Name or number (in).m4a</span></div></div>
             <div class="grp"><span class="gh">Notice tone</span><div class="gbox">
               <div class="gr"><span class="gl">Play a notice tone while recording</span><span class="switch on"></span></div>
               <div class="gr"><span class="gl">Every</span><span class="gv"><div class="field tnum" style="min-width:56px;justify-content:flex-end">15</div><span class="stepper"><i>▲</i><i>▼</i></span>seconds</span></div>
@@ -1716,12 +1716,12 @@ kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:
           <!-- Calls -->
           <div class="pane" data-pane-body="calls" hidden>
             <div class="grp"><span class="gh">Incoming calls</span><div class="gbox">
-              <div class="gr"><span class="gl">Reject calls from<small>A rejected call never rings. The caller gets 603 Decline and the call log shows “Rejected: rule”.</small></span><span class="popup" style="min-width:200px">Nobody<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+              <div class="gr"><span class="gl">Reject calls from<small>A rejected call never rings. The caller gets a refusal, and the call log shows “Rejected: rule”.</small></span><span class="popup" style="min-width:200px">Nobody<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
             </div><div class="gf">Choices: Nobody, Everyone, Numbers not in Contacts, Anonymous callers. Anonymous callers get 433 Anonymity Disallowed.</div></div>
             <div class="grp"><span class="gh">During a call</span><div class="gbox">
               <div class="gr"><span class="gl">When a call comes in during a call<small>Busy answers 486 Busy Here at once; only the call log shows the call.</small></span><span class="popup" style="min-width:200px">Call waiting (tone and window)<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
-              <div class="gr"><span class="gl">DTMF method<small>Automatic uses RFC 2833 and falls back to SIP INFO.</small></span><span class="popup" style="min-width:200px">Automatic<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
-              <div class="gr"><span class="gl">Bring the main window to the front on an incoming call<small>The incoming-call window still appears as well.</small></span><span class="switch"></span></div>
+              <div class="gr"><span class="gl">DTMF method<small>Automatic picks the method your server supports.</small></span><span class="popup" style="min-width:200px">Automatic<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
+              <div class="gr"><span class="gl">Bring the main window to the front on an incoming call<small>The incoming-call window appears either way.</small></span><span class="switch"></span></div>
             </div></div>
             <div class="grp"><span class="gh">Global hotkeys</span><div class="gbox">
               <div class="gr"><span class="gl">Use hotkeys in any app<small>Work while MacroSIP is in the background. No permission is needed.</small></span><span class="switch on"></span></div>
@@ -1762,7 +1762,7 @@ kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:
       </ul></div>
       <div data-pane-body="network" hidden><h3>Network</h3><ul>
         <li>Transport and SRTP are not here: each account sets its own in the account editor (screen 9). Echo cancellation is in Audio.</li>
-        <li><b>RTP</b> port range (start and count; at least 8 ports, nothing past 65535; an invalid value outlines the field red and reverts on blur) and <b>rport</b>; <b>DNS</b> SRV with an optional nameserver, enabled only while SRV is on. rport applies at once; the port range and DNS need an engine restart: an orange banner "Network changes are waiting for a restart of the engine. Accounts register again." with <b>Restart now</b> appears above the groups, disabled during a call ("End your calls first.").</li>
+        <li><b>RTP</b> port range (start and count; at least 8 ports, nothing past 65535; an invalid value outlines the field red and reverts on blur) and <b>rport</b>; <b>DNS</b> SRV with an optional nameserver, enabled only while SRV is on. rport applies at once; the port range and DNS need an engine restart: an orange banner "Network changes will apply after a restart. Accounts register again." with <b>Restart Now</b> appears above the groups, disabled during a call ("End your calls first.").</li>
       </ul></div>
       <div data-pane-body="codecs" hidden><h3>Codecs</h3><ul>
         <li>Order sets SDP preference. Bitrate column is informational.</li>
@@ -1810,7 +1810,7 @@ kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:
               <div class="gr"><span class="gl">Username</span><div class="field">alex</div></div>
               <div class="gr"><span class="gl">Auth username<small>Only if different from the username.</small></span><div class="field"><span class="ph">Optional</span></div></div>
               <div class="gr"><span class="gl">Password<small>Stored in the Keychain.</small></span><div class="field" style="letter-spacing:.18em">••••••••••</div></div>
-              <div class="gr"><span class="gl">Domain<small>Empty uses the SIP server.</small></span><div class="field"><span class="ph">pbx.example.com</span></div></div>
+              <div class="gr"><span class="gl">Domain<small>If empty, the SIP server is used.</small></span><div class="field"><span class="ph">pbx.example.com</span></div></div>
               <div class="gr"><span class="gl">Outgoing proxy</span><div class="field"><span class="ph">Optional, e.g. sip:proxy.example.com;lr</span></div></div>
             </div></div>
             <div class="grp"><span class="gh">Connection</span><div class="gbox">
@@ -1823,10 +1823,10 @@ kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:
               <div class="gr"><span class="gl">Voicemail indicator (MWI)<small>Shows the number of new messages the server reports.</small></span><span class="switch on"></span></div>
             </div></div>
             <div class="grp"><div class="gbox">
-              <div class="gr"><span class="gl">Enabled<small>Off stops registration and outgoing calls; the account stays in the pop-up, dimmed, and leaves the status bar.</small></span><span class="switch on"></span></div>
+              <div class="gr"><span class="gl">Enabled<small>When off, the account does not register or call; it stays dimmed in the list and leaves the status bar.</small></span><span class="switch on"></span></div>
               <div class="gr"><span class="gl">Register with server<small>Off keeps the account for outgoing calls only.</small></span><span class="switch on"></span></div>
               <div class="gr"><span class="gl">Default for outgoing calls</span><span class="switch on"></span></div>
-              <div class="gr"><span class="gl">Publish my presence<small>Lets contacts who watch you see Available / Away / DND.</small></span><span class="switch on"></span></div>
+              <div class="gr"><span class="gl">Publish my presence<small>Lets contacts who watch you see Available, Away or Do Not Disturb.</small></span><span class="switch on"></span></div>
             </div></div>
             <div style="display:flex;gap:8px;align-items:center">
               <span class="btn danger">Delete Account…</span>
@@ -2070,7 +2070,7 @@ kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:
               <div class="gf">Drag rows to reorder. Name and Number are edited in place; double-click a row or start typing. The BLF box watches the number's line state.</div>
             </div>
             <div class="grp"><span class="gh">Panel</span><div class="gbox">
-              <div class="gr"><span class="gl">Show panel<small>Right widens the window to 560 pt; Bottom adds a 3-column strip.</small></span><div class="seg"><span>Off</span><span class="on">Right</span><span>Bottom</span></div></div>
+              <div class="gr"><span class="gl">Show panel<small>Right makes the window wider; Bottom adds a strip of keys below.</small></span><div class="seg"><span>Off</span><span class="on">Right</span><span>Bottom</span></div></div>
               <div class="gr"><span class="gl">Pickup code<small>Used when you click a ringing key.</small></span><div class="field mono" style="min-width:90px;font-size:12.5px">*8</div></div>
             </div><div class="gf"><kbd>⌘1</kbd>–<kbd>⌘9</kbd> press keys 1–9 while MacroSIP is the frontmost app, also when the panel is hidden. Keys 10–12 are clicked only. Shortcuts follow the order of the list.</div></div>
           </div>
@@ -2086,7 +2086,7 @@ kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:
                 <div class="mi"><span class="chk-sp"></span><span class="gl14"><svg class="i"><use href="#i-transfer"/></svg></span>Attended transfer</div>
                 <div class="mi"><span class="chk-sp"></span><span class="gl14"><svg class="i"><use href="#i-people"/></svg></span>Add to conference</div>
                 <div class="msep"></div>
-                <div class="mhead">Smart: call when idle, act on the call when in one</div>
+                <div class="mhead">Smart: call when idle; transfer or conference during a call.</div>
                 <div class="mi hl"><span class="chk-sp"><svg class="i" style="width:12px;height:12px"><use href="#i-check"/></svg></span><span class="gl14"><svg class="i hs"><use href="#i-handset"/></svg></span>Call / Blind transfer</div>
                 <div class="mi"><span class="chk-sp"></span><span class="gl14"><svg class="i hs"><use href="#i-handset"/></svg></span>Call / Attended transfer</div>
                 <div class="mi"><span class="chk-sp"></span><span class="gl14"><svg class="i hs"><use href="#i-handset"/></svg></span>Call / Conference</div>
@@ -2334,7 +2334,7 @@ kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:
             <div class="grp"><span class="gh">Search</span><div class="gbox">
               <div class="gr"><span class="gl">Search directories from the number field<small>Starts after 2 characters and a 300 ms pause in typing.</small></span><span class="switch on"></span></div>
               <div class="gr"><span class="gl">Results per source</span><span class="gv"><div class="field tnum" style="min-width:44px;justify-content:flex-end">5</div><span class="stepper"><i>▲</i><i>▼</i></span></span></div>
-              <div class="gr"><span class="gl">Look up names of incoming callers<small>Asks search-only sources for at most 1 second while the call rings.</small></span><span class="switch on"></span></div>
+              <div class="gr"><span class="gl">Look up names of incoming callers<small>Waits up to 1 second for search-only sources while the call rings.</small></span><span class="switch on"></span></div>
             </div></div>
           </div>
         </div>
@@ -2348,7 +2348,7 @@ kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:
             <div class="grp"><div class="gbox">
               <div class="gr"><span class="gl">Type</span><span class="popup">LDAP<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
               <div class="gr"><span class="gl">Name</span><div class="field">Company LDAP</div></div>
-            </div><div class="gf">Types: LDAP, URL (CSV or JSON), Google Contacts, macOS Contacts.</div></div>
+            </div></div>
             <div class="grp"><span class="gh">LDAP</span><div class="gbox">
               <div class="gr"><span class="gl">Server<small>ldaps:// or StartTLS when possible.</small></span><div class="field" style="width:256px">ldap://ldap.example.com</div></div>
               <div class="gr"><span class="gl">Base DN</span><div class="field mono" style="width:256px;font-size:11px">ou=people,dc=example,dc=com</div></div>
@@ -2396,7 +2396,7 @@ kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:
               <div class="grp"><div class="gbox">
                 <div class="gr"><span class="gl">Type</span><span class="popup">Google Contacts<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
                 <div class="gr" style="justify-content:center;padding:12px"><span class="gbtn-google"><span class="g">G</span>Sign in with Google</span></div>
-              </div><div class="gf">Opens Google in your browser once to allow read-only access to your contacts. MacroSIP keeps only the access token, in the Keychain; you can remove access in your Google Account at any time.</div></div>
+              </div><div class="gf">Opens Google in your browser once to give read-only access to your contacts. Only an access token is kept, in the Keychain; you can revoke it in your Google Account.</div></div>
             </div>
           </div>
         </div>
@@ -2670,7 +2670,7 @@ kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:
               <div class="gr"><span class="gl">New voicemail</span><span class="switch on"></span></div>
               <div class="gr"><span class="gl">Registration error and lost network</span><span class="switch"></span></div>
               <div class="gr"><span class="gl">New message</span><span class="switch"></span></div>
-            </div><div class="gf">Short beeps on the speaker; the other side never hears them.</div></div>
+            </div><div class="gf">Short beeps on the speaker; the other party does not hear them.</div></div>
           </div>
         </div>
       </div>
