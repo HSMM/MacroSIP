@@ -1438,6 +1438,71 @@ enum DemoState {
         }
         guard let mock = model.engine as? MockEngine else { check("sounds: mock engine", false); return }
 
+        // ringtone: the melody picked in Settings › Audio and custom files reach the engine
+        await model.ringtoneTask?.value
+        var ring = await mock.ringtone
+        check("ringtone: Classic reaches the engine at start",
+              ring == .builtIn(.classic) && model.ringtoneApplied?.source == .builtIn(.classic) && model.ringtoneError == nil, "\(ring)")
+        model.updateSettings { $0.audio.ringtone = .builtIn(.digital) }
+        await model.ringtoneTask?.value
+        ring = await mock.ringtone
+        check("ringtone: Digital reaches the engine and is stored",
+              ring == .builtIn(.digital) && model.settingsStore.load().audio.ringtone == .builtIn(.digital), "\(ring)")
+        model.previewRingtone(volume: 0.5)
+        await until(2) { await !mock.ringtonePreviews.isEmpty }
+        var preview = await mock.ringtonePreviews.last
+        check("ringtone: Play previews the chosen melody at the slider's volume",
+              preview?.source == .builtIn(.digital) && preview?.volume == 0.5, "\(String(describing: preview))")
+        let ringDir = FileManager.default.temporaryDirectory.appendingPathComponent("macrosip-ringtone-\(UUID().uuidString)", isDirectory: true)
+        try? FileManager.default.createDirectory(at: ringDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: ringDir) }
+        let ringWAV = ringDir.appendingPathComponent("bell.wav")
+        try? MockEngine.sineWAV(seconds: 2).write(to: ringWAV)
+        let ringM4A = try? await RecordingConverter.convert(wav: ringWAV, to: ringDir.appendingPathComponent("bell.m4a"))
+        let converted = RingtoneFile.convertedURL(in: model.dataDirectory)
+        if let ringM4A {
+            model.updateSettings { $0.audio.ringtone = .file(ringM4A) }
+            await model.ringtoneTask?.value
+            ring = await mock.ringtone
+            check("ringtone: an M4A is converted into the data folder and the engine gets the WAV",
+                  ring == .file(converted) && AudioFileToWAV.isPlayableWAV(converted) && model.ringtoneError == nil,
+                  "\(ring) \(String(describing: model.ringtoneError))")
+            model.previewRingtone(volume: 1)
+            await until(2) { await mock.ringtonePreviews.count > 1 }
+            preview = await mock.ringtonePreviews.last
+            check("ringtone: Play previews the converted file", preview?.source == .file(converted), "\(String(describing: preview))")
+        } else {
+            check("ringtone: an M4A to test with", false)
+        }
+        model.updateSettings { $0.audio.ringtone = .file(ringDir.appendingPathComponent("missing.mp3")) }
+        await model.ringtoneTask?.value
+        ring = await mock.ringtone
+        check("ringtone: an unreadable file shows the reason and the engine keeps the previous ringtone",
+              model.ringtoneError != nil && ring == .file(converted) && FileManager.default.fileExists(atPath: converted.path),
+              "\(ring) \(String(describing: model.ringtoneError))")
+        model.updateSettings { $0.audio.ringtone = .file(ringWAV) }
+        await model.ringtoneTask?.value
+        ring = await mock.ringtone
+        check("ringtone: a 16-bit WAV goes as it is, the converted copy is removed, the error is cleared",
+              ring == .file(ringWAV) && !FileManager.default.fileExists(atPath: converted.path) && model.ringtoneError == nil, "\(ring)")
+        // The Classic / Digital / Soft pick that older builds kept in the defaults moves into the settings once.
+        model.updateSettings { $0.audio.ringtone = .builtIn(.classic) }
+        model.prefs.set("soft", forKey: "ringtoneSound")
+        model.migrateLegacyPrefs()
+        await model.ringtoneTask?.value
+        ring = await mock.ringtone
+        check("ringtone: the old Soft pick becomes the setting and reaches the engine, the old key is gone",
+              model.settingsStore.load().audio.ringtone == .builtIn(.soft) && ring == .builtIn(.soft)
+              && model.prefs.object(forKey: "ringtoneSound") == nil, "\(ring)")
+        model.updateSettings { $0.audio.ringtone = .file(ringWAV) }
+        model.prefs.set("digital", forKey: "ringtoneSound")
+        model.migrateLegacyPrefs()
+        check("ringtone: a custom file chosen later stays when the old pick is migrated",
+              model.settings.audio.ringtone == .file(ringWAV) && model.prefs.object(forKey: "ringtoneSound") == nil)
+        model.updateSettings { $0.audio.ringtone = .builtIn(.classic) }
+        await model.ringtoneTask?.value
+        check("ringtone: back to Classic", await mock.ringtone == .builtIn(.classic))
+
         // hold music
         check("hold music: built-in reaches the engine at start", await mock.holdMusic == .builtIn)
         model.updateSettings { $0.audio.holdMusic = .off }

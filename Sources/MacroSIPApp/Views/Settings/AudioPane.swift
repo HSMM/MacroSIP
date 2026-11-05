@@ -7,12 +7,9 @@ import MacroSIPCore
 struct AudioPane: View {
     @Environment(AppModel.self) private var model
     @Local private var level: Float = 0
-    @Local private var preview: NSSound?
     @Local private var draftVolume: Double?        // while the slider is dragged; saved when the drag ends
     @Local private var dragging = false
 
-    // The engine has one built-in ringtone today; the choice is stored for it.
-    private var builtIn: String { model.prefs.string(forKey: "ringtoneSound") ?? "classic" }
     private var volume: Float { model.settings.audio.ringtoneVolume }
 
     private func deviceBinding(_ keyPath: WritableKeyPath<AudioSettings, String?>) -> Binding<String> {
@@ -54,14 +51,14 @@ struct AudioPane: View {
                     Toggle("", isOn: model.binding(\.audio.headsetButtons)).labelsHidden().toggleStyle(.switch)
                 }
             }
-            FormGroup(header: L.audioRingtoneHeader, footer: L.audioRingtoneFooter) {
+            FormGroup(header: L.audioRingtoneHeader, footer: model.ringtoneError.map(L.audioRingtoneError) ?? L.audioRingtoneFooter) {
                 FormRow(label: L.audioSound) {
                     HStack(spacing: 10) {
                         Button { play() } label: { Label(L.audioPlay, systemImage: "play.fill") }.controlSize(.small)
                         Picker("", selection: soundSelection) {
-                            Text(L.ringtoneClassic).tag("classic")
-                            Text(L.ringtoneDigital).tag("digital")
-                            Text(L.ringtoneSoft).tag("soft")
+                            Text(L.ringtoneClassic).tag(BuiltInRingtone.classic.rawValue)
+                            Text(L.ringtoneDigital).tag(BuiltInRingtone.digital.rawValue)
+                            Text(L.ringtoneSoft).tag(BuiltInRingtone.soft.rawValue)
                             Divider()
                             if case let .file(url) = model.settings.audio.ringtone {
                                 Text(L.ringtoneCustomName(url.lastPathComponent)).tag("custom")
@@ -191,11 +188,14 @@ struct AudioPane: View {
         }
     }
 
+    /// Classic / Digital / Soft / Custom file…; a picked file is converted by the app when the engine cannot play it as it is.
     private var soundSelection: Binding<String> {
         Binding(
             get: {
-                if case .file = model.settings.audio.ringtone { return "custom" }
-                return builtIn
+                switch model.settings.audio.ringtone {
+                case let .builtIn(melody): return melody.rawValue
+                case .file: return "custom"
+                }
             },
             set: { v in
                 MainActor.assumeIsolated {
@@ -203,8 +203,8 @@ struct AudioPane: View {
                     case "choose": chooseFile()
                     case "custom": break
                     default:
-                        model.prefs.set(v, forKey: "ringtoneSound")
-                        model.updateSettings { $0.audio.ringtone = .builtIn }
+                        guard let melody = BuiltInRingtone(rawValue: v) else { return }
+                        model.updateSettings { $0.audio.ringtone = .builtIn(melody) }
                     }
                 }
             })
@@ -225,14 +225,8 @@ struct AudioPane: View {
         model.updateSettings { $0.audio.ringtoneVolume = Float(v) }
     }
 
+    /// One ring of the chosen sound through the engine, on the ringtone device, at the slider's value.
     private func play() {
-        preview?.stop()
-        if case let .file(url) = model.settings.audio.ringtone {
-            preview = NSSound(contentsOf: url, byReference: true)
-        } else {
-            preview = NSSound(named: ["classic": "Glass", "digital": "Ping", "soft": "Submarine"][builtIn] ?? "Glass")
-        }
-        preview?.volume = Float(draftVolume ?? Double(volume))
-        preview?.play()
+        model.previewRingtone(volume: Float(draftVolume ?? Double(volume)))
     }
 }

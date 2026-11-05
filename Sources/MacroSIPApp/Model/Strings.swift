@@ -306,6 +306,7 @@ enum L {
     static func ringtoneCustomName(_ name: String) -> String { loc("settings.audio.ringtone.customName", "Custom: \(name)") }
     static var audioVolume: String { loc("settings.audio.ringtoneVolume", "Volume") }
     static var audioRingtoneFooter: String { loc("settings.audio.ringtone.footer", "Built-in choices: Classic, Digital, Soft. “Custom file…” accepts WAV, AIFF, M4A, MP3.") }
+    static func audioRingtoneError(_ reason: String) -> String { loc("settings.audio.ringtone.error", "The ringtone file could not be used: \(reason)") }
     static var audioProcessingHeader: String { loc("settings.audio.processing.header", "Processing") }
     static var audioEcho: String { loc("settings.audio.echoCancellation", "Echo cancellation") }
     static var audioEchoHelp: String { loc("settings.audio.echoCancellation.help", "Turn off only when using a headset with its own echo cancellation.") }

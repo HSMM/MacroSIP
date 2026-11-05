@@ -109,7 +109,8 @@ public actor Engine {
     /// Tests: pretend these are the system default device names (nil = ask CoreAudio).
     var defaultDeviceNamesOverride: (input: String?, output: String?)?
 
-    var ringtoneSource: RingtoneSource = .tone(.ringtone)
+    /// What rings (`setRingtone`); kept across `stop`/`start`.
+    var ringtoneSource: RingtoneSource = .builtIn(.classic)
     var ringtone: TonePlayer?
     /// Separate device the ringtone was opened on (nil = conference bridge).
     var ringtoneDevice: Int?

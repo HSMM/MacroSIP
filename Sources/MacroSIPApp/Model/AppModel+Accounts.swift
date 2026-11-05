@@ -205,6 +205,7 @@ extension AppModel {
         }
         if new.codecOptions != old.codecOptions { applyCodecOptions() }
         if new.audio.holdMusic != old.audio.holdMusic, engineReady { Task { await applyHoldMusic() } }
+        if new.audio.ringtone != old.audio.ringtone, engineReady { applyRingtone() }
         if new.recording.noticeTone != old.recording.noticeTone
             || new.recording.noticeToneIntervalSeconds != old.recording.noticeToneIntervalSeconds, engineReady { applyRecordingNotice() }
         if new.audio.headsetButtons != old.audio.headsetButtons { setHeadsetButtonsEnabled(new.audio.headsetButtons) }
@@ -226,7 +227,7 @@ extension AppModel {
         let following = new.followNewDevices
         // A device picked by hand, or the follow switch turned off, ends the headset following.
         let revert = (picked || !following) && headsetFollow.cancel() == .revert
-        let routing = revert || picked || new.ringtoneDeviceName != old.ringtoneDeviceName || new.ringtone != old.ringtone
+        let routing = revert || picked || new.ringtoneDeviceName != old.ringtoneDeviceName
         if routing { Task { await applyAudioSelection() } }
         if new.ringtoneVolume != old.ringtoneVolume { applyRingtoneVolume() }
         if new.callSpeakerVolume != old.callSpeakerVolume || new.callMicrophoneVolume != old.callMicrophoneVolume { applyCallVolumes() }

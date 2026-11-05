@@ -206,6 +206,7 @@
 "settings.audio.ringtone.customName" = "Custom: %@";
 "settings.audio.ringtoneVolume" = "Volume";
 "settings.audio.ringtone.footer" = "Built-in choices: Classic, Digital, Soft. “Custom file…” accepts WAV, AIFF, M4A, MP3.";
+"settings.audio.ringtone.error" = "The ringtone file could not be used: %@";
 "settings.audio.processing.header" = "Processing";
 "settings.audio.echoCancellation" = "Echo cancellation";
 "settings.audio.echoCancellation.help" = "Turn off only when using a headset with its own echo cancellation.";

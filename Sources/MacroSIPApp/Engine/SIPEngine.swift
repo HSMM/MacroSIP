@@ -59,7 +59,11 @@ protocol SIPEngine: Actor {
     /// By device name as stored in `AudioSettings`; nil = system default.
     func setAudioDevices(inputName: String?, outputName: String?) throws
     func setRingtoneDevice(name: String?)
-    func setRingtoneFile(_ url: URL?)
+    /// A built-in melody, or a WAV the engine plays as it is (the app converts other files first: `RingtoneFile`);
+    /// any other file throws and the previous source stays. Works before `start`.
+    func setRingtone(_ source: RingtoneSource) throws
+    /// One ring of `source` on the ringtone device at `volume` (Settings › Audio "Play"); replaces a test tone.
+    func previewRingtone(_ source: RingtoneSource, volume: Float) throws
     /// 0...1.
     func setRingtoneVolume(_ volume: Float)
     func codecs() -> [CodecInfo]

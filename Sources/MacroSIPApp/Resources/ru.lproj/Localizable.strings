@@ -206,6 +206,7 @@
 "settings.audio.ringtone.customName" = "Свой файл: %@";
 "settings.audio.ringtoneVolume" = "Громкость";
 "settings.audio.ringtone.footer" = "Встроенные: «Классическая», «Цифровая», «Мягкая». «Свой файл…» принимает WAV, AIFF, M4A, MP3.";
+"settings.audio.ringtone.error" = "Не удалось использовать файл мелодии: %@";
 "settings.audio.processing.header" = "Обработка";
 "settings.audio.echoCancellation" = "Эхоподавление";
 "settings.audio.echoCancellation.help" = "Выключайте, только если у гарнитуры есть собственное эхоподавление.";

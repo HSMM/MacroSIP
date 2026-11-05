@@ -918,10 +918,10 @@ Group footer: "System default" follows macOS Sound settings. If a chosen device 
 
 | Row | Type | Behaviour |
 |---|---|---|
-| Sound | "Play" small button with a play glyph, and popup | Popup: Classic, Digital, Soft (built-in), a separator, and "Custom file…". The mockup shows "Custom: office-bell.m4a". "Play" previews the sound. |
+| Sound | "Play" small button with a play glyph, and popup | Popup: Classic, Digital, Soft (built-in), a separator, and "Custom file…". The mockup shows "Custom: office-bell.m4a". Applied at once; incoming calls ring with it. Classic: two tones, 2 s on, 4 s off. Digital: two short high beeps twice, every 2.5 s. Soft: three low notes falling slowly, every 5.5 s. A custom file that is not a 16-bit WAV is converted once by the app. "Play" plays one ring of the choice (a file: its first 5 s) on the ringtone device. |
 | Volume | slider with speaker glyph (160 pt wide) and the value ("100 %") | Ringtone volume, 0 to 100 %, default 100 %. Applied live; "Play" previews at this volume. |
 
-Group footer: "Built-in choices: Classic, Digital, Soft. "Custom file…" accepts WAV, AIFF, M4A, MP3."
+Group footer: "Built-in choices: Classic, Digital, Soft. "Custom file…" accepts WAV, AIFF, M4A, MP3." A file that cannot be read or converted keeps the previous ringtone; the footer then shows "The ringtone file could not be used: <reason>" and a banner says the same.
 
 **Hold music:**
 
@@ -1593,6 +1593,7 @@ Strings marked "(proposed)" are not in the mockups; they are needed by the spec 
 | | Back to %@ | `banner.audio.back` | |
 | | Back to the system default | `banner.audio.backDefault` | |
 | | Built-in choices: Classic, Digital, Soft. "Custom file…" accepts WAV, AIFF, M4A, MP3. | `settings.audio.ringtone.footer` | |
+| | The ringtone file could not be used: %@ | `settings.audio.ringtone.error` | Footer and banner; %@ reason. |
 | | Processing | `settings.audio.processing.header` | |
 | | Echo cancellation | `settings.audio.echoCancellation` | |
 | | Turn off only when using a headset with its own echo cancellation. | `settings.audio.echoCancellation.help` | |

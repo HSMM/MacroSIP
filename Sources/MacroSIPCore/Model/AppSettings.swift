@@ -1,8 +1,56 @@
 import Foundation
 
+/// The melodies the engine generates for a ringing call (`Tone`, Settings › Audio › Ringtone).
+public enum BuiltInRingtone: String, Codable, CaseIterable, Sendable {
+    /// 440 + 480 Hz, 2 s on, 4 s off (the only ringtone of earlier builds).
+    case classic
+    /// Two short high beeps twice, then a pause.
+    case digital
+    /// Three low, quiet notes falling slowly, then a long pause.
+    case soft
+}
+
+/// Settings › Audio › Ringtone: a built-in melody or an audio file the user picked (WAV, AIFF, M4A,
+/// MP3...). The engine gets a `RingtoneSource`: the melody, or the file as a WAV it plays as it is
+/// (`RingtoneFile` converts other formats once).
 public enum RingtoneChoice: Codable, Equatable, Sendable {
-    case builtIn
+    case builtIn(BuiltInRingtone)
     case file(URL)
+
+    public static let `default` = RingtoneChoice.builtIn(.classic)
+
+    // JSON: {"builtIn":{"melody":"digital"}} or {"file":{"_0":"file:///..."}}. Older builds had a
+    // built-in case without a melody ({"builtIn":{}}) and read the new shape as that one.
+    private enum CodingKeys: String, CodingKey { case builtIn, file }
+    private enum BuiltInKeys: String, CodingKey { case melody }
+    private enum FileKeys: String, CodingKey { case path = "_0" }
+
+    /// `{"builtIn":{}}` from older files and a melody this build does not know are Classic.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        if c.contains(.file) {
+            let f = try c.nestedContainer(keyedBy: FileKeys.self, forKey: .file)
+            self = .file(try f.decode(URL.self, forKey: .path))
+        } else if c.contains(.builtIn) {
+            let b = try? c.nestedContainer(keyedBy: BuiltInKeys.self, forKey: .builtIn)
+            let name = (try? b?.decodeIfPresent(String.self, forKey: .melody)) ?? nil
+            self = .builtIn(name.flatMap(BuiltInRingtone.init(rawValue:)) ?? .classic)
+        } else {
+            throw DecodingError.dataCorrupted(.init(codingPath: c.codingPath, debugDescription: "unknown ringtone choice"))
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        switch self {
+        case let .builtIn(melody):
+            var b = c.nestedContainer(keyedBy: BuiltInKeys.self, forKey: .builtIn)
+            try b.encode(melody, forKey: .melody)
+        case let .file(url):
+            var f = c.nestedContainer(keyedBy: FileKeys.self, forKey: .file)
+            try f.encode(url, forKey: .path)
+        }
+    }
 }
 
 /// What the far end hears while a call is on local hold (`Engine.setHoldMusic`).
@@ -76,7 +124,7 @@ public struct AudioSettings: Codable, Equatable, Sendable {
         inputDeviceName: String? = nil,
         outputDeviceName: String? = nil,
         ringtoneDeviceName: String? = nil,
-        ringtone: RingtoneChoice = .builtIn,
+        ringtone: RingtoneChoice = .default,
         ringtoneVolume: Float = 1,
         callSpeakerVolume: Float = 1,
         callMicrophoneVolume: Float = 1,
@@ -99,13 +147,13 @@ public struct AudioSettings: Codable, Equatable, Sendable {
     }
 
     /// Older settings.json files lack the volumes, `followNewDevices`, `holdMusic`, `soundEvents`
-    /// and `headsetButtons`; they decode as defaults.
+    /// and `headsetButtons`; they decode as defaults. A ringtone that cannot be read is Classic.
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         inputDeviceName = try c.decodeIfPresent(String.self, forKey: .inputDeviceName)
         outputDeviceName = try c.decodeIfPresent(String.self, forKey: .outputDeviceName)
         ringtoneDeviceName = try c.decodeIfPresent(String.self, forKey: .ringtoneDeviceName)
-        ringtone = try c.decodeIfPresent(RingtoneChoice.self, forKey: .ringtone) ?? .builtIn
+        ringtone = (try? c.decodeIfPresent(RingtoneChoice.self, forKey: .ringtone)) ?? .default
         ringtoneVolume = Self.clamp(try c.decodeIfPresent(Float.self, forKey: .ringtoneVolume) ?? 1, 0...1)
         callSpeakerVolume = Self.clamp(try c.decodeIfPresent(Float.self, forKey: .callSpeakerVolume) ?? 1, Self.callVolumeRange)
         callMicrophoneVolume = Self.clamp(try c.decodeIfPresent(Float.self, forKey: .callMicrophoneVolume) ?? 1, Self.callVolumeRange)

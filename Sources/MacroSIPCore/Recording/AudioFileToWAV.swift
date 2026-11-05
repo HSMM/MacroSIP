@@ -4,7 +4,7 @@ import Foundation
 /// Converts an audio file AVFoundation can read (M4A, MP3, AIFF, CAF, or a WAV in another
 /// sample format) into the WAV the engine's players need: 16-bit PCM, mono, 16 kHz (the
 /// conference bridge's clock rate). The reverse direction of `RecordingConverter`; used for
-/// hold music files (`Engine.setHoldMusic`).
+/// hold music files (`Engine.setHoldMusic`) and custom ringtones (`RingtoneFile`).
 public enum AudioFileToWAV {
     public enum ConversionError: Error, Equatable, CustomStringConvertible {
         case cannotRead(String)

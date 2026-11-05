@@ -109,7 +109,7 @@ extension Engine {
             if let playback = appliedSoundDevices?.playback, playback >= 0, Int(playback) == index { device = nil }
         }
         let tones = EventSounds.testTone()
-        testTone = try TonePlayer(name: "test tone", deviceID: device, sink: 0) { pool in
+        let player = try TonePlayer(name: "test tone", deviceID: device, sink: 0) { pool in
             var src: UnsafeMutablePointer<pjmedia_port>?
             try tones.withUnsafeBufferPointer { buf in
                 try PJ.check(cpjsua_tone_sequence_create(pool, buf.baseAddress, UInt32(buf.count), &src), "test tone")
@@ -117,6 +117,30 @@ extension Engine {
             guard let src else { throw EngineError.pjsip(status: -1, message: "test tone: no port") }
             return src
         }
+        keepTestTone(player, seconds: seconds)
+    }
+
+    /// A preview of a file plays this long (a melody plays one ring, `RingtoneSource.previewSeconds`).
+    public static let ringtonePreviewFileSeconds = 5.0
+
+    /// Settings › Audio › Ringtone "Play": `source` as it would ring, on the ringtone device when it
+    /// differs from the call output (else the call output) at `volume` (0...1, clamped); a melody for
+    /// one ring and half a second after it, a file for `ringtonePreviewFileSeconds`, then it stops by
+    /// itself. It shares the audio test's player: one replaces the other and `stopTestTone()` ends
+    /// either. A `.file` that is not a playable WAV throws `.invalidArgument`, like `setRingtone`.
+    public func previewRingtone(_ source: RingtoneSource, volume: Float) throws {
+        try requireStarted()
+        try Self.requirePlayable(source)
+        stopTestTone()
+        let gain = volume.isNaN ? 1 : min(1, max(0, volume))
+        let player = try TonePlayer(name: "ringtone preview", source: source.playerSource,
+                                    deviceID: separateRingtoneDevice(), volume: gain)
+        keepTestTone(player, seconds: source.previewSeconds)
+    }
+
+    /// Makes `player` the test tone and stops it after `seconds` (0.2...30).
+    private func keepTestTone(_ player: TonePlayer, seconds: Double) {
+        testTone = player
         let duration = min(max(seconds.isFinite ? seconds : 1, 0.2), 30)
         let generation = testToneGeneration
         testToneTask = Task { [weak self] in
@@ -143,14 +167,14 @@ extension Engine {
 
     // MARK: test hooks
 
-    /// The running test tone's bridge slot (nil on a separate device) and the level the bridge
-    /// last received from it; nil without a test tone (tests).
-    func testToneState() -> (slot: pjsua_conf_port_id?, level: Int)? {
-        guard isStarted, PJ.registerThread(), let testTone else { return nil }
-        guard testTone.slot != PJ.invalidID else { return (nil, 0) }
+    /// The running test tone's (or ringtone preview's) bridge slot (nil on a separate device), the
+    /// level the bridge last received from it and its gain; nil without one (tests).
+    func testToneState() -> (slot: pjsua_conf_port_id?, level: Int, volume: Float)? {
+        guard isStarted, PJ.registerThread(), let testTone, let volume = testTone.volume else { return nil }
+        guard testTone.slot != PJ.invalidID else { return (nil, 0, volume) }
         var tx: UInt32 = 0, rx: UInt32 = 0
-        guard pjsua_conf_get_signal_level(testTone.slot, &tx, &rx) == PJ.success else { return (testTone.slot, 0) }
-        return (testTone.slot, Int(rx))
+        guard pjsua_conf_get_signal_level(testTone.slot, &tx, &rx) == PJ.success else { return (testTone.slot, 0, volume) }
+        return (testTone.slot, Int(rx), volume)
     }
 
     /// Event sounds still playing (tests).

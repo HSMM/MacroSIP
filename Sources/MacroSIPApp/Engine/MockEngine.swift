@@ -45,6 +45,9 @@ actor MockEngine: SIPEngine {
     private var codecOrder = AppSettings.defaultCodecOrder
     private var codecEnabled = Set(AppSettings.defaultCodecOrder)
     /// What the app last asked for; the self-test reads these.
+    private(set) var ringtone: RingtoneSource = .builtIn(.classic)
+    /// Every `previewRingtone` call: the source and the volume.
+    private(set) var ringtonePreviews: [(source: RingtoneSource, volume: Float)] = []
     private(set) var holdMusic: HoldMusic = .builtIn
     private(set) var recordingNotice: (enabled: Bool, intervalSeconds: Int) = (false, RecordingSettings.defaultNoticeInterval)
     private var voicemail: [AccountID: VoicemailState] = [:]
@@ -506,8 +509,26 @@ actor MockEngine: SIPEngine {
         selectedOutput = outputName
     }
     func setRingtoneDevice(name: String?) {}
-    func setRingtoneFile(_ url: URL?) {}
     func setRingtoneVolume(_ volume: Float) { ringtoneVolume = volume }
+
+    /// Like the real engine: a file must be a WAV it plays as it is, anything else is refused and the previous source stays.
+    func setRingtone(_ source: RingtoneSource) throws {
+        try Self.requirePlayable(source)
+        ringtone = source
+        emit(.log(level: 4, "mock ringtone \(source)"))
+    }
+
+    func previewRingtone(_ source: RingtoneSource, volume: Float) throws {
+        guard started else { throw EngineError.notStarted }
+        try Self.requirePlayable(source)
+        ringtonePreviews.append((source, min(max(volume, 0), 1)))
+    }
+
+    private static func requirePlayable(_ source: RingtoneSource) throws {
+        if case let .file(url) = source, !AudioFileToWAV.isPlayableWAV(url) {
+            throw EngineError.invalidArgument("ringtone \(url.lastPathComponent) is not a 16-bit PCM WAV")
+        }
+    }
 
     /// The mock's devices: the headsets are USB / Bluetooth, "Loopback Audio" is a virtual device.
     func audioTransport(ofDeviceNamed name: String) -> AudioTransport {
