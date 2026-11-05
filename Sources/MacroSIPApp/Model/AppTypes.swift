@@ -1,7 +1,21 @@
 import Foundation
 import MacroSIPCore
 
-enum MainTab: Hashable { case dialpad, contacts, callLog }
+enum MainTab: Hashable { case dialpad, contacts, callLog, messages }
+
+/// What the Messages tab shows (SCREENS.md 14): the list, one conversation, or the new-message form.
+/// The tab remembers it while another tab is shown.
+enum MessagesPage: Equatable {
+    case list
+    case conversation(UUID)
+    case new
+}
+
+/// What "New Message" starts with: an address typed in the number field, or a recipient picked from Contacts.
+struct NewMessagePrefill: Equatable {
+    var number = ""
+    var name: String?
+}
 
 enum SettingsTab: String, Hashable, CaseIterable { case general, accounts, audio, network, codecs, recording, calls, quickKeys, directory }
 

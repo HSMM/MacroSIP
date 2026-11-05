@@ -40,6 +40,10 @@ protocol SIPEngine: Actor {
     /// The gain new calls start with.
     func setDefaultCallVolume(speaker: Float, microphone: Float)
 
+    // text messages (SIP MESSAGE, 26.3). The outcome arrives once as `.messageStatus(id, result)`; the app passes its own
+    // id so the status matches the stored message however early it comes. Throws when no request could be made.
+    func sendMessage(_ text: String, to dial: DialString, from account: AccountID, id: MessageID) throws -> MessageID
+
     // conference, recording, presence (milestone 5)
     func merge(_ ids: [CallID]) throws
     func split(_ id: CallID) throws

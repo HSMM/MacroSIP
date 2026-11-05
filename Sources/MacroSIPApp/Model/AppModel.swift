@@ -17,6 +17,7 @@ final class AppModel {
     @ObservationIgnored let contactStore: ContactStore
     @ObservationIgnored let callLogStore: CallLogStore
     @ObservationIgnored let settingsStore: SettingsStore
+    @ObservationIgnored let messageStore: MessageStore
     @ObservationIgnored let vault: PasswordVault
     @ObservationIgnored let prefs: UserDefaults
     @ObservationIgnored var eventTask: Task<Void, Never>?
@@ -59,6 +60,10 @@ final class AppModel {
     @ObservationIgnored var microSIPLoad: Task<Void, Never>?            // reads the files of the Import from MicroSIP sheet
     @ObservationIgnored var hotkeysInDemo = false                      // a demo check may register real hotkeys; no other demo does
     @ObservationIgnored var lastErrorSoundAt: Date?                    // the `.error` sound plays at most once per 10 s
+    @ObservationIgnored var lastMessageSoundAt: Date?                  // the `.message` sound plays at most once per 2 s
+    @ObservationIgnored var pendingSends: [MessageID: UUID] = [:]      // outgoing MESSAGEs waiting for their status -> stored message
+    @ObservationIgnored var messageDrafts: [UUID: String] = [:]        // unsent composer text per conversation (until sent or quit)
+    @ObservationIgnored var messagesWindowKeyOverride: Bool?           // demo checks: stands in for "the main window is key"
 
     // Data
     var accounts: [AccountConfig] = []
@@ -89,10 +94,16 @@ final class AppModel {
     var playerEntry: UUID?                                   // the call-log entry whose inline player is open
     var recordingLinks: [UUID: URL] = [:]                    // call-log entries whose recording file exists
     var voicemail: [AccountID: VoicemailState] = [:]         // message-summary indicator per account (`.voicemail` events)
+    var conversations: [Conversation] = []                   // newest activity first; change through AppModel+Messages
+    var conversationLast: [UUID: Message] = [:]              // the newest message of every conversation (the list previews)
+    var messageThread: [Message] = []                        // messages of the conversation shown on the Messages tab, oldest first
 
     // UI state
     var banner: Banner?
     var tab: MainTab = .dialpad
+    var messagesPage: MessagesPage = .list
+    var newMessagePrefill: NewMessagePrefill?           // read once by the new-message form
+    var focusComposer = 0                               // bumped to put the cursor into the composer (notification click)
     var dialText = ""
     var selectedAccountID: AccountID?
     var showKeypad = false
@@ -145,6 +156,7 @@ final class AppModel {
         accountStore = AccountStore(directory: dir)
         contactStore = ContactStore(directory: dir)
         callLogStore = CallLogStore(directory: dir, contacts: contactStore)
+        messageStore = MessageStore(directory: dir, contacts: contactStore)
         settingsStore = SettingsStore(directory: dir)
         isMockEngine = launch.mockEngine
         let startLevel = LogLevelPolicy.effectiveLevel(launchLevel: launch.logLevel, explicit: launch.logLevelIsExplicit,
@@ -152,8 +164,12 @@ final class AppModel {
         FileLog.shared?.setLevel(startLevel)
         engine = EngineFactory.make(useMock: launch.mockEngine, logLevel: startLevel)
         #if DEBUG
-        if launch.isDemo { DemoState.seed(stores: (accountStore, contactStore, callLogStore, settingsStore), vault: vault) }
+        if launch.isDemo {
+            DemoState.seed(stores: (accountStore, contactStore, callLogStore, settingsStore), vault: vault)
+            DemoState.seedMessages(messageStore, state: launch.demoState ?? "")
+        }
         #endif
+        try? messageStore.failInterruptedSends()      // a send whose answer the last run never saw can be retried
         var loaded = settingsStore.load()
         // A language this build no longer ships (saved by an earlier build) falls back to the system language.
         if let language = loaded.general.language, !GeneralSettings.languages.contains(language) {
@@ -267,6 +283,7 @@ final class AppModel {
             .map { AccountID(raw: $0) }.filter { id in list.contains { $0.id == id && MicroSIPImport.needsPassword($0) } })
         setContacts(contactStore.all())
         callLog = callLogStore.all()
+        reloadMessages()
         if let sel = selectedAccountID, account(sel)?.enabled != true { selectedAccountID = nil }
     }
 

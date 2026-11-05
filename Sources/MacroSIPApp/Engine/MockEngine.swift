@@ -4,6 +4,8 @@ import MacroSIPCore
 /// Simulated engine for UI development and `--mock-engine`.
 /// Registration: registering, then registered after 1 s. Outgoing call: calling, early, connected after 2 s.
 /// A password of "wrong" (or a domain containing "fail") makes registration fail with 403.
+/// Text messages: accepted after 0.6 s; a To user "404" fails with 404 Not Found, "timeout" with 408 Request Timeout,
+/// "offline" with a local failure (code 0).
 actor MockEngine: SIPEngine {
     nonisolated let events: AsyncStream<EngineEvent>
     private nonisolated let continuation: AsyncStream<EngineEvent>.Continuation
@@ -51,6 +53,9 @@ actor MockEngine: SIPEngine {
     /// Every `playTestTone` call: the device asked for and the length.
     private(set) var testTones: [(device: String?, seconds: Double)] = []
     private(set) var testTonePlaying = false
+    /// Every `sendMessage` call, in order (the self-test reads them).
+    private(set) var sentMessages: [(id: MessageID, text: String, user: String, account: AccountID)] = []
+    private var pendingMessages: Set<MessageID> = []
     private var testToneTask: Task<Void, Never>?
 
     init() {
@@ -81,6 +86,8 @@ actor MockEngine: SIPEngine {
         for task in presenceTasks.values { task.cancel() }
         presenceTasks = [:]
         for id in accounts.keys { set(id, .unregistered) }
+        for id in pendingMessages { emit(.messageStatus(id, .failed(code: 0, reason: Engine.messageInterruptedReason))) }
+        pendingMessages = []
         accounts = [:]
         voicemail = [:]
         stopTestTone()
@@ -282,6 +289,40 @@ actor MockEngine: SIPEngine {
     }
 
     func calls() -> [CallInfo] { order.compactMap { callTable[$0] } }
+
+    // MARK: text messages
+
+    func sendMessage(_ text: String, to dial: DialString, from account: AccountID, id: MessageID) throws -> MessageID {
+        guard started else { throw EngineError.notStarted }
+        guard accounts[account] != nil else { throw EngineError.unknownAccount(account) }
+        let size = text.utf8.count
+        guard size > 0 else { throw EngineError.invalidArgument("empty message") }
+        guard size <= Engine.maxMessageBytes else {
+            throw EngineError.invalidArgument("message of \(size) bytes (at most \(Engine.maxMessageBytes))")
+        }
+        sentMessages.append((id, text, dial.display, account))
+        pendingMessages.insert(id)
+        Task {
+            try? await Task.sleep(for: .milliseconds(600))
+            guard self.pendingMessages.remove(id) != nil else { return }
+            let result: MessageSendResult
+            switch dial.display {
+            case "404": result = .failed(code: 404, reason: "Not Found")
+            case "timeout": result = .failed(code: 408, reason: "Request Timeout")
+            case "offline": result = .failed(code: 0, reason: "Network is unreachable")
+            default: result = .accepted(code: 200)
+            }
+            self.emit(.messageStatus(id, result))
+        }
+        return id
+    }
+
+    /// A text message arrives on `account` (first account when nil) from `from` (a number or user).
+    func simulateIncomingMessage(account: AccountID? = nil, from: String, text: String, name: String? = nil) {
+        guard let acct = account ?? accounts.keys.first else { return }
+        let remote = RemoteParty(displayName: name, uri: "sip:\(from)@mock.example.org", number: from)
+        emit(.messageReceived(IncomingMessage(accountID: acct, remote: remote, text: text, receivedAt: Date())))
+    }
 
     // MARK: network
 

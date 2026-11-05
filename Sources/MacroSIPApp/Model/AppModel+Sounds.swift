@@ -51,6 +51,7 @@ extension AppModel {
         case .keyPress: wanted = s.keyPress
         case .voicemail: wanted = s.voicemail
         case .error: wanted = s.error
+        case .message: wanted = s.message
         }
         guard wanted, engineReady else { return }
         Task { [engine] in

@@ -27,6 +27,9 @@ final class DirectoryRuntime {
     var pending: [DirectorySource] = []
     /// Sources asked by the last search, and how many of them answered.
     var asked = 0
+    /// Who the results belong to: the number field, or the To field of a new message (screen 14.3). The other one shows none.
+    var owner: Owner = .numberField
+    enum Owner { case numberField, messageTo }
     /// The user closed the list with Escape; it stays closed until the text changes.
     var dismissed = false
     /// The number a click put into the field: it is not searched again.
@@ -141,8 +144,9 @@ extension AppModel {
 
     /// Called whenever the number field changes. Starts a search after the minimum length and a pause; a
     /// running search is cancelled.
-    func textChangedForDirectory(_ text: String) {
+    func textChangedForDirectory(_ text: String, owner: DirectoryRuntime.Owner = .numberField) {
         let d = directory
+        d.owner = owner
         d.searchTask?.cancel()
         d.dismissed = false
         let q = text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -240,7 +244,7 @@ extension AppModel {
     }
 
     /// A SIP display name that says nothing: empty, or just the number.
-    private func isWeak(_ name: String?, number: String) -> Bool {
+    func isWeak(_ name: String?, number: String) -> Bool {
         guard let name = name?.trimmingCharacters(in: .whitespaces), !name.isEmpty else { return true }
         return Contact.normalize(name) == Contact.normalize(number) && !name.contains(where: \.isLetter)
     }

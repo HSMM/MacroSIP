@@ -144,8 +144,10 @@ extension AppModel {
             Task { await devicesChanged() }
         case let .voicemail(id, waiting, new, old):
             handleVoicemail(id, waiting: waiting, new: new, old: old)
-        case .messageReceived, .messageStatus:
-            break   // handled in 26.3 by AppModel+Messages
+        case let .messageReceived(message):
+            handleMessageReceived(message)
+        case let .messageStatus(id, result):
+            handleMessageStatus(id, result)
         }
     }
 
