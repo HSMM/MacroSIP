@@ -38,16 +38,29 @@ struct MainWindowView: View {
                 NumberRow()
             }
             .zIndex(2)
-            SegmentedTabs(
-                items: [
-                    .init(value: MainTab.dialpad, title: L.tabsDialpad),
-                    .init(value: MainTab.contacts, title: L.tabsContacts),
-                    .init(value: MainTab.callLog, title: L.tabsCallLog, badge: model.missedUnseen),
-                    .init(value: MainTab.messages, title: L.tabsMessages, badge: model.messagesUnread, badgeLimit: 99),
-                ],
-                selection: $model.tab, fontSize: 12, widths: .byLabel)
-                .padding(.horizontal, 10)
-                .padding(.bottom, 8)
+            // Three tabs, equal widths, 12.5 pt; with Messages on there are four, sized by label at 12 pt (SCREENS.md 14).
+            Group {
+                if model.messagesEnabled {
+                    SegmentedTabs(
+                        items: [
+                            .init(value: MainTab.dialpad, title: L.tabsDialpad),
+                            .init(value: MainTab.contacts, title: L.tabsContacts),
+                            .init(value: MainTab.callLog, title: L.tabsCallLog, badge: model.missedUnseen),
+                            .init(value: MainTab.messages, title: L.tabsMessages, badge: model.messagesUnread, badgeLimit: 99),
+                        ],
+                        selection: $model.tab, fontSize: 12, widths: .byLabel)
+                } else {
+                    SegmentedTabs(
+                        items: [
+                            .init(value: MainTab.dialpad, title: L.tabsDialpad),
+                            .init(value: MainTab.contacts, title: L.tabsContacts),
+                            .init(value: MainTab.callLog, title: L.tabsCallLog, badge: model.missedUnseen),
+                        ],
+                        selection: $model.tab)
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.bottom, 8)
             Divider()
             tabBody
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -62,7 +75,7 @@ struct MainWindowView: View {
 
     @ViewBuilder
     private var tabBody: some View {
-        switch model.tab {
+        switch model.messagesEnabled || model.tab != .messages ? model.tab : .dialpad {      // Messages off: the dial pad
         case .dialpad:
             if !model.hasAccounts {
                 FirstLaunchView()

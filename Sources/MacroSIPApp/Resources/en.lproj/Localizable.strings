@@ -135,6 +135,9 @@
 "settings.general.language.help" = "Takes effect after MacroSIP restarts.";
 "settings.general.language.system" = "System (%@)";
 "settings.general.language.footer" = "Choices: System, English, Русский.";
+"settings.general.messages.header" = "Messages";
+"settings.general.messages.title" = "Text messages (SIP MESSAGE)";
+"settings.general.messages.footer" = "Shows the Messages tab, delivers incoming messages and adds Send Message to the Contacts and Call Log menus.";
 "settings.general.language.restart.title" = "Restart to change the language?";
 "settings.general.language.restart.body" = "The new language is used after MacroSIP restarts.";
 "settings.general.language.restart.now" = "Restart Now";

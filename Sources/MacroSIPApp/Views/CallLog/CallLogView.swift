@@ -155,8 +155,10 @@ struct CallLogView: View {
             Menu(L.logMenuCallFrom) {
                 ForEach(model.enabledAccounts) { a in Button(a.displayName) { model.callBack(e, account: a.id) } }
             }
-            Button(L.logMenuMessage) { model.sendMessage(to: e) }
-                .disabled(model.enabledAccounts.isEmpty)
+            if model.messagesEnabled {
+                Button(L.logMenuMessage) { model.sendMessage(to: e) }
+                    .disabled(model.enabledAccounts.isEmpty)
+            }
             Button(L.logMenuAddContact) {
                 ContactCardController.shared.show(ContactEditorRequest(contact: nil, prefillName: e.remoteDisplayName ?? "", prefillNumber: e.remoteNumber), model: model)
             }

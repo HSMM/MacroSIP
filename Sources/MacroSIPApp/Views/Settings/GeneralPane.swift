@@ -39,6 +39,11 @@ struct GeneralPane: View {
                 }
             }
             DoNotDisturbGroup()
+            FormGroup(header: L.messagesSwitchHeader, footer: L.messagesSwitchFooter) {
+                FormRow(label: L.messagesSwitchTitle) {
+                    Toggle("", isOn: model.binding(\.general.messagesEnabled)).labelsHidden().toggleStyle(.switch)
+                }
+            }
             FormGroup(footer: L.languageFooter) {
                 FormRow(label: L.language, help: L.languageHelp) {
                     Picker("", selection: languageSelection) {

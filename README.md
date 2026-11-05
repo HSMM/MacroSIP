@@ -83,6 +83,7 @@ Messages: the conversation list, and a conversation open:
 **Messages**
 
 - Send and receive text messages over SIP `MESSAGE` (`text/plain`, UTF-8, Cyrillic included); SMS forwarded by Asterisk `chan_dongle` arrive as ordinary messages.
+- Off by default: switch on "Text messages (SIP MESSAGE)" in Settings › General; until then there is no Messages tab and incoming messages are ignored.
 - A Messages tab with conversations kept between launches; unread counts on the tab and the Dock icon, macOS notifications, and an optional sound (Settings › Audio › Sound events: New message).
 - Each outgoing message shows its status: "Sent" means the SIP server or the peer accepted the message, not that a phone received it; "Not sent" shows the SIP reason, with Retry.
 - "Send Message" in the Contacts and Call Log menus; up to 2800 bytes per message.

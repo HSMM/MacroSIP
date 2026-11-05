@@ -25,6 +25,7 @@ enum DemoState {
         if state == "first-launch" || state == "editor-first-launch" { return }
         let (accounts, contacts, log, settingsStore) = stores
         if isDirectoryState(state) || state == "messages-new" { seedDirectory(settingsStore) }
+        enableMessages(settingsStore, state: state)
         var list = [
             AccountConfig(id: officeID, displayName: "Office", username: "1001", domain: "pbx.example.com",
                           transport: .tls, srtp: .mandatory, isDefaultOutgoing: true, voicemailNumber: "*97"),

@@ -139,6 +139,9 @@ public struct GeneralSettings: Codable, Equatable, Sendable {
     public var contactSort: ContactSortOrder
     /// Settings › General › Troubleshooting › Debug mode: log level 4 (file and PJSIP) until switched off.
     public var debugMode: Bool
+    /// Settings › General › Messages: text messages (SIP MESSAGE) are opt-in. Off hides the Messages tab and the Send Message
+    /// items, drops incoming messages and keeps messages.json as it is.
+    public var messagesEnabled: Bool
 
     public init(
         launchAtLogin: Bool = false,
@@ -152,7 +155,8 @@ public struct GeneralSettings: Codable, Equatable, Sendable {
         bringToFrontOnIncoming: Bool = false,
         presenceStatus: PresenceStatus = .available,
         contactSort: ContactSortOrder = .firstName,
-        debugMode: Bool = false
+        debugMode: Bool = false,
+        messagesEnabled: Bool = false
     ) {
         self.launchAtLogin = launchAtLogin
         self.language = language
@@ -166,9 +170,10 @@ public struct GeneralSettings: Codable, Equatable, Sendable {
         self.presenceStatus = presenceStatus
         self.contactSort = contactSort
         self.debugMode = debugMode
+        self.messagesEnabled = messagesEnabled
     }
 
-    /// Older settings.json files lack `presenceStatus`, `doNotDisturbUntil`, `bringToFrontOnIncoming` and `debugMode`; they decode as defaults.
+    /// Older settings.json files lack `presenceStatus`, `doNotDisturbUntil`, `bringToFrontOnIncoming`, `debugMode` and `messagesEnabled`; they decode as defaults.
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         launchAtLogin = try c.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? false
@@ -183,6 +188,7 @@ public struct GeneralSettings: Codable, Equatable, Sendable {
         presenceStatus = try c.decodeIfPresent(PresenceStatus.self, forKey: .presenceStatus) ?? .available
         contactSort = try c.decodeIfPresent(ContactSortOrder.self, forKey: .contactSort) ?? .firstName
         debugMode = (try? c.decodeIfPresent(Bool.self, forKey: .debugMode)) ?? false
+        messagesEnabled = (try? c.decodeIfPresent(Bool.self, forKey: .messagesEnabled)) ?? false
     }
 }
 

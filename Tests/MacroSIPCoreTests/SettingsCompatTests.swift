@@ -136,3 +136,24 @@ struct Calls261Tests {
         #expect(store.all().first?.recordingURL == nil)
     }
 }
+
+@Suite("Text messages are opt-in (#8)")
+struct MessagesSwitchTests {
+    @Test func offByDefaultAndForOldFiles() throws {
+        #expect(!AppSettings().general.messagesEnabled)
+        #expect(!GeneralSettings().messagesEnabled)
+        let old = try JSONDecoder().decode(GeneralSettings.self, from: Data(#"{"doNotDisturb":true}"#.utf8))
+        #expect(old.doNotDisturb && !old.messagesEnabled)
+        let file = try JSONDecoder().decode(AppSettings.self, from: Data(#"{"callLogLimit":50}"#.utf8))
+        #expect(!file.general.messagesEnabled)
+        let wrongType = try JSONDecoder().decode(GeneralSettings.self, from: Data(#"{"messagesEnabled":"yes"}"#.utf8))
+        #expect(!wrongType.messagesEnabled)
+    }
+
+    @Test func switchRoundTrips() throws {
+        var s = AppSettings()
+        s.general.messagesEnabled = true
+        let back = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(s))
+        #expect(back.general.messagesEnabled && back == s)
+    }
+}

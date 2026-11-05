@@ -1582,6 +1582,9 @@ kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:
             <div class="grp"><div class="gbox">
               <div class="gr"><span class="gl">Do Not Disturb<small>Declines incoming calls with 486 Busy Here and publishes Do Not Disturb.</small></span><span class="popup">Off<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
             </div><div class="gf">Choices: Off, On, For 30 minutes, For 1 hour, Until tomorrow 9:00. While a timer runs the first item shows "Until 14:30 · 27 min left".</div></div>
+            <div class="grp"><span class="gh">Messages</span><div class="gbox">
+              <div class="gr"><span class="gl">Text messages (SIP MESSAGE)</span><span class="switch"></span></div>
+            </div><div class="gf">Shows the Messages tab, delivers incoming messages and adds Send Message to the Contacts and Call Log menus.</div></div>
             <div class="grp"><div class="gbox">
               <div class="gr"><span class="gl">Language<small>Takes effect after MacroSIP restarts.</small></span><span class="popup">System (English)<span class="chev"><svg class="i"><use href="#i-chev"/></svg></span></span></div>
             </div><div class="gf">Choices: System, English, Русский.</div></div>
@@ -1742,8 +1745,9 @@ kbd{font:11px var(--font-mono);border:1px solid var(--line);border-bottom-width:
       <div><h3>Intent</h3><p>Standard macOS settings window: toolbar tabs, grouped forms, changes apply immediately (no Save button), window title follows the selected tab.</p></div>
       <div data-pane-body="general"><h3>General</h3><ul>
         <li>"Make Default" registers MacroSIP for <span class="mono">sip:</span>, <span class="mono">sips:</span> and <span class="mono">tel:</span> through Launch Services; the line under it says which app currently owns the scheme.</li>
+        <li>Messages (#8) is opt-in and off by default, as drawn: the Messages tab, the Send Message menu items, message notifications and the "New message" sound row (Audio) appear only while the switch is on. Changes apply at once, without a restart.</li>
         <li>Language switches the app's own language (macOS per-app language) and asks to restart.</li>
-        <li>Order: toggles, Do Not Disturb, Language, Updates, then <b>Advanced</b>, a disclosure group closed by default (dimmed here) with Links and Troubleshooting. The call settings are in the Calls tab and "Sort contacts by" in Directory (screen 13), so the pane fits a 13-inch screen with Advanced closed.</li>
+        <li>Order: toggles, Do Not Disturb, Messages, Language, Updates, then <b>Advanced</b>, a disclosure group closed by default (dimmed here) with Links and Troubleshooting. The call settings are in the Calls tab and "Sort contacts by" in Directory (screen 13), so the pane fits a 13-inch screen with Advanced closed.</li>
       </ul></div>
       <div data-pane-body="accounts" hidden><h3>Accounts</h3><ul>
         <li>Not in the brief: the account editor needs a home. This pane lists accounts with live status; +, −, Edit… and double-click open the editor sheet (screen 9).</li>

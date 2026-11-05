@@ -135,6 +135,9 @@
 "settings.general.language.help" = "Изменение вступит в силу после перезапуска MacroSIP.";
 "settings.general.language.system" = "Системный (%@)";
 "settings.general.language.footer" = "Варианты: системный, English, Русский.";
+"settings.general.messages.header" = "Сообщения";
+"settings.general.messages.title" = "Текстовые сообщения (SIP MESSAGE)";
+"settings.general.messages.footer" = "Показывает вкладку «Сообщения», принимает входящие сообщения и добавляет «Написать сообщение» в меню контактов и журнала звонков.";
 "settings.general.language.restart.title" = "Перезапустить для смены языка?";
 "settings.general.language.restart.body" = "Новый язык будет применён после перезапуска MacroSIP.";
 "settings.general.language.restart.now" = "Перезапустить";

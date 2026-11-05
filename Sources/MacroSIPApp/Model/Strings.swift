@@ -220,6 +220,11 @@ enum L {
     static var language: String { loc("settings.general.language", "Language") }
     static var languageHelp: String { loc("settings.general.language.help", "Takes effect after MacroSIP restarts.") }
     static func languageSystem(_ resolved: String) -> String { loc("settings.general.language.system", "System (\(resolved))") }
+    static var messagesSwitchHeader: String { loc("settings.general.messages.header", "Messages") }
+    static var messagesSwitchTitle: String { loc("settings.general.messages.title", "Text messages (SIP MESSAGE)") }
+    static var messagesSwitchFooter: String {
+        loc("settings.general.messages.footer", "Shows the Messages tab, delivers incoming messages and adds Send Message to the Contacts and Call Log menus.")
+    }
     static var languageFooter: String { loc("settings.general.language.footer", "Choices: System, English, Русский.") }
     static var languageRestartTitle: String { loc("settings.general.language.restart.title", "Restart to change the language?") }
     static var languageRestartBody: String { loc("settings.general.language.restart.body", "The new language is used after MacroSIP restarts.") }

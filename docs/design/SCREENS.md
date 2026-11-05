@@ -86,7 +86,7 @@ Status dot mapping for the account pop-up, status bar and Accounts table:
 
 | Element | Type | Behaviour |
 |---|---|---|
-| Tabs | segmented control, 4 segments: Dialpad, Contacts, Call Log, Messages (screen 14). Labels 12 pt; each segment is as wide as its label and badge plus an equal share of the remaining width (see 14, Tab control). | Selects the tab body. Keeps state when switched. |
+| Tabs | segmented control, 3 segments (Dialpad, Contacts, Call Log; equal widths, 12.5 pt), or 4 with Settings › General › Messages on: Dialpad, Contacts, Call Log, Messages (screen 14). Four-segment labels 12 pt; each segment is as wide as its label and badge plus an equal share of the remaining width (see 14, Tab control). | Selects the tab body. Keeps state when switched. |
 | Call Log badge | red count pill inside the third segment | Shows the number of unseen missed calls. Hidden when zero. Cleared when the Call Log tab is opened. |
 | Messages badge | red count pill inside the fourth segment | Unread messages over all conversations (screen 14). Hidden when zero. Not cleared by opening the tab; it falls as conversations are read. |
 
@@ -783,7 +783,7 @@ Settings is opened from the menu (Command-comma) or the "Settings…" link on th
 
 ### 8.1 General
 
-Layout: toggles, Do Not Disturb, Language, Updates, then a collapsed "Advanced" group. Everything about calls is in the Calls tab (8.7); "Sort contacts by" is in the Directory tab (screen 13). The pane fits a 13-inch screen with Advanced closed; opened, it scrolls.
+Layout: toggles, Do Not Disturb, Messages, Language, Updates, then a collapsed "Advanced" group. Everything about calls is in the Calls tab (8.7); "Sort contacts by" is in the Directory tab (screen 13). The pane fits a 13-inch screen with Advanced closed; opened, it scrolls.
 
 **Group 1, toggles:**
 
@@ -798,6 +798,14 @@ Layout: toggles, Do Not Disturb, Language, Updates, then a collapsed "Advanced" 
 | Row | Type | Behaviour |
 |---|---|---|
 | Do Not Disturb (secondary label: "Declines incoming calls with 486 Busy Here and publishes Do Not Disturb.", or "Until 14:30 · 27 min left" while timed) | popup | Off, On, For 30 minutes, For 1 hour, Until tomorrow 9:00; while a timer runs its first item is the running end ("Until 14:30 · 27 min left", "Until Tue 9:00 · …" on another day) and cannot be re-picked. Same as the menu bar submenu. "Until tomorrow 9:00" is the coming 9:00: 9:00 on the next calendar day, or 9:00 today when it is chosen between 0:00 and 9:00. |
+
+**Group Messages (header "Messages"; 26.3.1, #8):**
+
+| Row | Type | Behaviour |
+|---|---|---|
+| Text messages (SIP MESSAGE) | toggle, off by default | `AppSettings.general.messagesEnabled`. Off: no Messages tab (the three segments are as they were before screen 14: equal widths, 12.5 pt), no Send Message items, no notifications, no Dock badge contribution, no "New message" row in Audio › Sound events; an incoming MESSAGE is dropped (logged, not stored). On: all of it appears at once, no restart. Off again: hidden, `messages.json` untouched. |
+
+Group footer: "Shows the Messages tab, delivers incoming messages and adds Send Message to the Contacts and Call Log menus."
 
 **Group 2, language:**
 
@@ -2294,6 +2302,8 @@ Where the app differs from the tables above:
 
 Screen 14. Text messages (SIP `MESSAGE`, `text/plain; charset=utf-8`) in a fourth main-window tab. The window stays 340 by 520 pt (common frame). The tab shows the conversation list; a click opens a conversation in place of the list, with a back button. Out of scope: group chat, attachments, typing indicators, end-to-end encryption, SMS concatenation.
 
+**Enabled by:** Settings › General › Messages › "Text messages (SIP MESSAGE)" (8.1), off by default. Everything on this screen exists only while it is on: the fourth tab (with it off the tab control has three segments, equal widths, 12.5 pt, and a selected Messages tab falls back to Dialpad), the Send Message items, notifications, the Dock badge share, the Sound events row (14.5) and the delivery of incoming messages. An incoming message while off is dropped with one log line ("messages: off, dropped a message from <number>") and not stored; switching off leaves `messages.json` as it is, and switching on shows the stored conversations again at once.
+
 A conversation is one remote party on one account (glossary: account, remote party). Every message in it is sent and received through that account.
 
 ### Tab control
@@ -2421,7 +2431,7 @@ The body of 14.2 with a To row in place of the header's contact part.
 
 ### 14.5 Settings › Audio › Sound events
 
-One more toggle row, last in the existing Sound events group (8.3): "New message" (`settings.audio.soundEvents.message`), off by default. When on: two short high beeps on the speaker when a message arrives, also for the open conversation; never during Do Not Disturb; at most once every 2 seconds; never sent to a call or a recording. The group footer stays. Drawn in the mockup (14.5) and added to the screen 8 Audio pane.
+One more toggle row, last in the existing Sound events group (8.3), shown only while Messages is on: "New message" (`settings.audio.soundEvents.message`), off by default. When on: two short high beeps on the speaker when a message arrives, also for the open conversation; never during Do Not Disturb; at most once every 2 seconds; never sent to a call or a recording. The group footer stays. Drawn in the mockup (14.5) and added to the screen 8 Audio pane.
 
 ### Entry points elsewhere
 

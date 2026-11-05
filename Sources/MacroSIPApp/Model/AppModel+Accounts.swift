@@ -197,6 +197,7 @@ extension AppModel {
         settings = new
         do { try settingsStore.save(new) } catch { report(error) }
         if new.general.showDockIcon != old.general.showDockIcon { applyActivationPolicy() }
+        if !new.general.messagesEnabled, tab == .messages { tab = .dialpad }      // the tab is gone; messages.json stays as it is
         if new.general.launchAtLogin != old.general.launchAtLogin { applyLaunchAtLogin() }
         if new.codecOrder != old.codecOrder || new.enabledCodecs != old.enabledCodecs { applyCodecs() }
         if new.network != old.network { scheduleNetworkApply() }

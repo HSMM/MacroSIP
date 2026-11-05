@@ -35,8 +35,13 @@ extension AppModel {
     /// Messages of one conversation, oldest first.
     func messages(in conversation: UUID) -> [Message] { messageStore.messages(in: conversation) }
 
+    /// Settings › General › Messages (opt-in, off by default): the tab, the Send Message items, incoming messages, notifications
+    /// and the Dock badge all follow it.
+    var messagesEnabled: Bool { settings.general.messagesEnabled }
+
     /// Unread incoming messages over all conversations: the tab badge and, with the unseen missed calls, the Dock badge.
-    var messagesUnread: Int { conversations.reduce(0) { $0 + $1.unread } }
+    /// Nothing counts while messages are off.
+    var messagesUnread: Int { messagesEnabled ? conversations.reduce(0) { $0 + $1.unread } : 0 }
 
     func conversation(_ id: UUID) -> Conversation? { conversations.first { $0.id == id } }
 
@@ -93,7 +98,7 @@ extension AppModel {
     }
 
     func openConversation(_ id: UUID, focus: Bool = false) {
-        guard conversation(id) != nil else { return }
+        guard messagesEnabled, conversation(id) != nil else { return }
         tab = .messages
         messagesPage = .conversation(id)
         setThread(messageStore.messages(in: id))
@@ -104,6 +109,7 @@ extension AppModel {
 
     /// The form of 14.3. `prefill` is the recipient (the number field's text, or a contact).
     func newMessage(to prefill: NewMessagePrefill? = nil) {
+        guard messagesEnabled else { return }
         tab = .messages
         newMessagePrefill = prefill
         messagesPage = .new
@@ -121,7 +127,7 @@ extension AppModel {
     /// is used for this message only; the account row's choice for calls stays.
     func composeMessage(to number: String, name: String?, account explicit: AccountID? = nil) {
         let target = number.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !target.isEmpty else { return }
+        guard messagesEnabled, !target.isEmpty else { return }
         let chosen = explicit.flatMap { self.account($0) }.flatMap { $0.enabled ? $0 : nil } ?? effectiveAccount
         guard let acct = chosen else { showBanner(L.bannerNoAccount); return }
         let address = DialString.parse(target, account: acct)?.uri ?? target
@@ -275,6 +281,11 @@ extension AppModel {
     // MARK: - Receiving
 
     func handleMessageReceived(_ incoming: IncomingMessage) {
+        guard messagesEnabled else {
+            let from = incoming.remote.number.isEmpty ? incoming.remote.uri : incoming.remote.number
+            AppLog.app.info("messages: off, dropped a message from \(from)")
+            return
+        }
         guard account(incoming.accountID) != nil else {
             AppLog.app.info("message for an unknown account ignored")
             return

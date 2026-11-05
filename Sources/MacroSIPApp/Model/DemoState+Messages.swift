@@ -14,6 +14,15 @@ import AppKit
 extension DemoState {
     static func isMessagesState(_ state: String) -> Bool { state.hasPrefix("messages") }
 
+    /// The messages demo states show the tab, so they switch the setting on in the throw-away settings file;
+    /// `messages-selftest` and `selftest` start with it off, as a new install does.
+    static func enableMessages(_ store: SettingsStore, state: String) {
+        guard isMessagesState(state), state != "messages-selftest" else { return }
+        var settings = store.load()
+        settings.general.messagesEnabled = true
+        try? store.save(settings)
+    }
+
     /// The six conversations of the mockup (14.1), oldest activity first because a new conversation starts "now".
     static func seedMessages(_ store: MessageStore, state: String) {
         guard state == "selftest" || (isMessagesState(state) && state != "messages-empty" && state != "messages-many") else { return }
@@ -136,9 +145,34 @@ extension DemoState {
         await until(3) { model.engineReady && model.registration[officeID] != nil }
         model.messagesWindowKeyOverride = false
         model.selectedAccountID = nil
+        model.updateSettings { $0.general.doNotDisturb = false; $0.audio.soundEvents.message = false }
+
+        // Off by default (#8): no badge, incoming messages dropped, nothing stored, nothing notified
+        let notificationsOff = notifications.posted.count
+        check("messages are off by default", !AppSettings().general.messagesEnabled && !model.messagesEnabled)
+        check("old settings.json without the key decodes as off",
+              (try? JSONDecoder().decode(GeneralSettings.self, from: Data("{}".utf8)))?.messagesEnabled == false)
+        let storedOff = model.messageStore.allMessages().count
+        check("off: the seeded messages stay in the store but count for nothing", storedOff > 0 && model.messagesUnread == 0, "\(storedOff) \(model.messagesUnread)")
+        await mock.clearPlayedSounds()
+        await mock.simulateIncomingMessage(account: officeID, from: "101", text: "dropped while off")
+        await wait(0.6)
+        check("off: an incoming message is dropped, not stored, no conversation change",
+              model.messageStore.allMessages().count == storedOff && model.conversations.count == 6
+              && !model.messageStore.allMessages().contains { $0.text == "dropped while off" })
+        let soundsOff = await mock.playedSounds
+        check("off: no notification, no sound", notifications.posted.count == notificationsOff && soundsOff.isEmpty)
+        model.composeMessage(to: "101", name: nil)
+        model.newMessage()
+        check("off: Send Message and New Message do nothing", model.tab != .messages && model.messagesPage == .list)
+
+        // On: everything at once
+        model.updateSettings { $0.general.messagesEnabled = true }
+        check("on: the setting is stored", model.settingsStore.load().general.messagesEnabled && model.messagesEnabled)
+        check("on: the stored conversations and their unread count are back at once", model.conversations.count == 6 && model.messagesUnread == 2,
+              "\(model.conversations.count) \(model.messagesUnread)")
         model.tab = .messages
         model.showMessagesList()
-        model.updateSettings { $0.general.doNotDisturb = false; $0.audio.soundEvents.message = false }
         check("message sound is off by default", !AppSettings().audio.soundEvents.message)
         check("six conversations, newest activity first",
               model.conversations.count == 6 && model.name(for: model.conversations[0]) == DemoPeople.alesia,
@@ -426,9 +460,23 @@ extension DemoState {
         multi.text = "line one\nline two"
         check("a preview is one line", MessageFormat.preview(multi) == L.messagesRowYou("line one line two"))
 
+        // Off again: hidden, nothing deleted
+        let storedOn = model.messageStore.allMessages().count
+        model.tab = .messages
+        model.updateSettings { $0.general.messagesEnabled = false }
+        check("off again: the tab falls back to the dial pad", model.tab == .dialpad, "\(model.tab)")
+        check("off again: no badge and messages.json untouched", model.messagesUnread == 0
+              && model.messageStore.allMessages().count == storedOn && storedOn > storedOff)
+        await mock.simulateIncomingMessage(account: officeID, from: "101", text: "dropped again")
+        await wait(0.6)
+        check("off again: incoming messages are dropped", model.messageStore.allMessages().count == storedOn)
+        model.updateSettings { $0.general.messagesEnabled = true }
+        check("on again: the conversations are still there", !model.conversations.isEmpty && model.messagesUnread == model.conversations.reduce(0) { $0 + $1.unread })
+        model.updateSettings { $0.general.messagesEnabled = false }
+
         // Put things back
         model.messagesWindowKeyOverride = nil
-        model.updateSettings { $0.audio.soundEvents = savedSound; $0.general.doNotDisturb = savedDND }
+        model.updateSettings { $0.audio.soundEvents = savedSound; $0.general.doNotDisturb = savedDND; $0.general.messagesEnabled = false }
         model.tab = .dialpad
         notifications.clearPosted()
     }

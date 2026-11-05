@@ -114,8 +114,10 @@ struct AudioPane: View {
                 soundToggle(L.audioSoundVoicemail, \.voicemail)
                 FormDivider()
                 soundToggle(L.audioSoundError, \.error)
-                FormDivider()
-                soundToggle(L.audioSoundMessage, \.message)
+                if model.messagesEnabled {
+                    FormDivider()
+                    soundToggle(L.audioSoundMessage, \.message)
+                }
             }
             FormGroup(header: L.audioTestHeader) {
                 FormRow(label: L.audioTestRow, help: L.audioTestHelp) {
