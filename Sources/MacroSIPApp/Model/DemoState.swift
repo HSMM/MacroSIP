@@ -340,6 +340,7 @@ enum DemoState {
         }
         if let prefix = model.launch.snapshotPrefix {
             try? await Task.sleep(for: .seconds(model.launch.snapshotDelay))
+            await activateForSnapshot(model)
             snapshot(prefix: prefix)
             if state == "account-popup" || state == "many-accounts" { snapshotAccountPopup(prefix: prefix, model: model) }
             if state == "many-accounts" {       // the filter of the pop-up, checked on the real menu
@@ -520,6 +521,20 @@ enum DemoState {
         if let data = rep.representation(using: .png, properties: [:]) {
             try? data.write(to: URL(fileURLWithPath: "\(prefix)-popover.png"))
         }
+    }
+
+    /// Frames are drawn with the title bar, traffic lights and controls of an active window: the app comes to the front
+    /// and the window a user would be working in (Settings when it is open, otherwise the main window) becomes key.
+    @MainActor
+    static func activateForSnapshot(_ model: AppModel) async {
+        for _ in 0..<10 {       // macOS may refuse the first requests while another app holds the focus
+            NSApp.activate(ignoringOtherApps: true)
+            let settings = NSApp.windows.first { $0.isVisible && $0.styleMask.contains(.titled) && $0 !== model.mainWindow && $0.frame.width > 300 }
+            (settings ?? model.mainWindow)?.makeKeyAndOrderFront(nil)
+            try? await Task.sleep(for: .seconds(0.5))
+            if NSApp.isActive, NSApp.keyWindow != nil { break }
+        }
+        try? await Task.sleep(for: .seconds(0.4))
     }
 
     /// Renders every visible window (and attached sheet) of the app into PNG files, in-process.
@@ -1724,7 +1739,7 @@ enum DemoPeople {
     private static let russian = Locale.preferredLanguages.first?.hasPrefix("ru") == true
     private static func pick(_ latin: String, _ cyrillic: String) -> String { russian ? cyrillic : latin }
 
-    static var alesiaNote: String { pick("Prefers calls after 10:00. Assistant: \(volha) (103).", "Лучше звонить после 10:00. Помощник: \(volha) (103).") }
+    static var alesiaNote: String { pick("Prefers calls after 10:00. Secretary: \(volha) (103).", "Лучше звонить после 10:00. Секретарь: \(volha) (103).") }
     static var alesia: String { pick("Alesia Kazlouskaya", "Алеся Козловская") }
     static var andrei: String { pick("Andrei Kavaliou", "Андрей Ковалёв") }
     static var volha: String { pick("Volha Marozava", "Ольга Морозова") }
