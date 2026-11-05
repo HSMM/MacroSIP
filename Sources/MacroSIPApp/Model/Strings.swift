@@ -37,6 +37,7 @@ enum L {
     static var tabsDialpad: String { loc("tabs.dialpad", "Dialpad") }
     static var tabsContacts: String { loc("tabs.contacts", "Contacts") }
     static var tabsCallLog: String { loc("tabs.callLog", "Call Log") }
+    static var tabsMessages: String { loc("tabs.messages", "Messages") }
     static var numberPlaceholder: String { loc("main.numberField.placeholder", "Name or number") }
     static var accountPickerHelp: String { loc("main.accountPicker.help", "Outgoing account") }
     static var accountPopupHeader: String { loc("account.popup.header", "Accounts") }
@@ -96,6 +97,7 @@ enum L {
     static var contactsMenuCopy: String { loc("contacts.menu.copyNumber", "Copy Number") }
     static var contactsMenuEdit: String { loc("contacts.menu.edit", "Edit…") }
     static var contactsMenuDelete: String { loc("contacts.menu.delete", "Delete") }
+    static var contactsMenuMessage: String { loc("contacts.menu.message", "Send Message") }
     static func contactsDeleteConfirm(_ name: String) -> String {
         loc("contacts.delete.confirm", "Delete \(name)?")
     }
@@ -120,6 +122,7 @@ enum L {
     static var logMenuAddContact: String { loc("calllog.menu.addContact", "Add to Contacts") }
     static var logMenuCopy: String { loc("calllog.menu.copyNumber", "Copy Number") }
     static var logMenuDelete: String { loc("calllog.menu.delete", "Delete Entry") }
+    static var logMenuMessage: String { loc("calllog.menu.message", "Send Message") }
     static var logClearTitle: String { loc("calllog.clear.title", "Clear the call log?") }
     static func logClearBody(_ n: Int) -> String { loc("calllog.clear.body", "All \(n) entries are removed.") }
     static var logClearConfirm: String { loc("calllog.clear.confirm", "Clear") }
@@ -478,6 +481,42 @@ enum L {
         loc("account.field.verifyCertificate.help", "Turn off only for a server with a self-signed certificate.")
     }
 
+    // MARK: messages (SIP MESSAGE, screen 14)
+    static var messagesNew: String { loc("messages.new", "New Message") }
+    static var messagesEmptyTitle: String { loc("messages.empty.title", "No messages") }
+    static var messagesEmptyBody: String { loc("messages.empty.body", "Messages you receive appear here. Click New Message to write one.") }
+    static func messagesRowYou(_ text: String) -> String { loc("messages.row.you", "You: \(text)") }
+    static func messagesRowUnread(_ n: Int) -> String { loc("messages.row.unread", "\(n) unread") }
+    static var messagesDayToday: String { loc("messages.day.today", "Today") }
+    static var messagesDayYesterday: String { loc("messages.day.yesterday", "Yesterday") }
+    static var messagesBackHelp: String { loc("messages.back.help", "All conversations") }
+    static var messagesCallHelp: String { loc("messages.call.help", "Call") }
+    static var messagesComposerPlaceholder: String { loc("messages.composer.placeholder", "Message") }
+    static var messagesSendHelp: String { loc("messages.send.help", "Send") }
+    static func messagesComposerAccountOff(_ account: String) -> String { loc("messages.composer.accountOff", "\(account) is switched off") }
+    static var messagesComposerAccountRemoved: String { loc("messages.composer.accountRemoved", "The account of this conversation was removed") }
+    static var messagesComposerTooLong: String { loc("messages.composer.tooLong", "Too long to send") }
+    static var messagesStatusSending: String { loc("messages.status.sending", "Sending…") }
+    static var messagesStatusSent: String { loc("messages.status.sent", "Sent") }
+    static var messagesStatusSentHelp: String {
+        loc("messages.status.sent.help", "Accepted by the server. This does not confirm that the message reached the recipient's phone.")
+    }
+    static var messagesStatusFailed: String { loc("messages.status.failed", "Not sent") }
+    static func messagesStatusFailedReason(_ reason: String) -> String { loc("messages.status.failedReason", "Not sent · \(reason)") }
+    static var messagesErrorInterrupted: String { loc("messages.error.interrupted", "Interrupted") }
+    static var messagesErrorLocal: String { loc("messages.error.local", "No connection") }
+    static var messagesRetry: String { loc("messages.retry", "Retry") }
+    static var messagesMenuCall: String { loc("messages.menu.call", "Call") }
+    static var messagesMenuAddContact: String { loc("messages.menu.addContact", "Add to Contacts") }
+    static var messagesMenuCopyNumber: String { loc("messages.menu.copyNumber", "Copy Number") }
+    static var messagesMenuDeleteConversation: String { loc("messages.menu.deleteConversation", "Delete Conversation…") }
+    static var messagesMenuCopyText: String { loc("messages.menu.copyText", "Copy Text") }
+    static var messagesMenuDeleteMessage: String { loc("messages.menu.deleteMessage", "Delete Message") }
+    static func messagesDeleteTitle(_ name: String) -> String { loc("messages.delete.title", "Delete the conversation with \(name)?") }
+    static func messagesDeleteBody(_ n: Int) -> String { loc("messages.delete.body", "\(n) messages are removed from this Mac.") }
+    static var messagesNewTo: String { loc("messages.new.to", "To:") }
+    static func messagesNewFrom(_ account: String) -> String { loc("messages.new.from", "From \(account), the account chosen above") }
+
     /// A number for display: at most one decimal, in the app's language ("0,5" in Russian).
     static func number(_ value: Double) -> String {
         let language = stringsBundle.preferredLocalizations.first ?? "en"
@@ -817,6 +856,7 @@ enum L {
     static var audioSoundKeyPress: String { loc("settings.audio.soundEvents.keyPress", "Dial pad key presses") }
     static var audioSoundVoicemail: String { loc("settings.audio.soundEvents.voicemail", "New voicemail") }
     static var audioSoundError: String { loc("settings.audio.soundEvents.error", "Registration error and lost network") }
+    static var audioSoundMessage: String { loc("settings.audio.soundEvents.message", "New message") }
     static var audioSoundEventsFooter: String { loc("settings.audio.soundEvents.footer", "Short beeps on the speaker; the other side never hears them.") }
     static var audioTestHeader: String { loc("settings.audio.audioTest.header", "Audio test") }
     static var audioTestRow: String { loc("settings.audio.audioTest.row", "Speaker and microphone") }

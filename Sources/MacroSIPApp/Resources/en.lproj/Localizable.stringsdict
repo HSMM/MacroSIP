@@ -210,5 +210,37 @@
 			<string>%lld contacts</string>
 		</dict>
 	</dict>
+	<key>messages.row.unread</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld unread</string>
+			<key>other</key>
+			<string>%lld unread</string>
+		</dict>
+	</dict>
+	<key>messages.delete.body</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld message is removed from this Mac.</string>
+			<key>other</key>
+			<string>%lld messages are removed from this Mac.</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

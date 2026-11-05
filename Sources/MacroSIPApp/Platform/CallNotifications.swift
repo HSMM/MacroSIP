@@ -2,7 +2,8 @@ import Foundation
 import UserNotifications
 import MacroSIPCore
 
-/// Incoming-call notification with Answer / Decline actions (SCREENS.md 6.3).
+/// Incoming-call notification with Answer / Decline actions (SCREENS.md 6.3). It is also the notification center's
+/// delegate, so message notifications (`MessageNotifications`) pass through here.
 @MainActor
 final class CallNotifications: NSObject, UNUserNotificationCenterDelegate {
     static let shared = CallNotifications()
@@ -24,7 +25,8 @@ final class CallNotifications: NSObject, UNUserNotificationCenterDelegate {
         let answer = UNNotificationAction(identifier: answerID, title: L.incomingAnswer, options: [])
         let decline = UNNotificationAction(identifier: declineID, title: L.incomingDecline, options: [.destructive])
         center.setNotificationCategories([
-            UNNotificationCategory(identifier: categoryID, actions: [answer, decline], intentIdentifiers: [], options: [])
+            UNNotificationCategory(identifier: categoryID, actions: [answer, decline], intentIdentifiers: [], options: []),
+            MessageNotifications.category,
         ])
         // The completion handler runs on a UserNotifications queue, not on the main actor.
         center.requestAuthorization(options: [.alert, .sound]) { @Sendable _, _ in }
@@ -65,6 +67,11 @@ final class CallNotifications: NSObject, UNUserNotificationCenterDelegate {
     ) async {
         let action = response.actionIdentifier
         let info = response.notification.request.content.userInfo
+        if response.notification.request.content.categoryIdentifier == MessageNotifications.categoryID {
+            guard let conversation = MessageNotifications.conversation(in: info) else { return }
+            await MainActor.run { AppModel.shared.openConversationFromNotification(conversation) }
+            return
+        }
         guard let raw = info["raw"] as? Int, let serial = info["serial"] as? Int else { return }
         await MainActor.run {
             let model = AppModel.shared

@@ -33,7 +33,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.startQuickKeys()
 
         observeContinuously { [model] in
-            let n = model.missedUnseen
+            let n = model.missedUnseen + model.messagesUnread       // unseen missed calls plus unread messages
             NSApp.dockTile.badgeLabel = n > 0 ? "\(n)" : nil
         }
         observeContinuously { [weak self] in self?.statusItem?.refresh() }
