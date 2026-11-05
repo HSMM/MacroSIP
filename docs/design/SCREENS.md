@@ -2362,7 +2362,7 @@ A conversation is one remote party on one account (glossary: account, remote par
 | Status (outgoing) | appended to the time line after " · " | **Sending…** (`messages.status.sending`, with a 9 pt spinner): under every message waiting for the answer. **Sent** (`messages.status.sent`): only under the last outgoing message, when it was accepted (2xx). Tooltip `messages.status.sent.help`. **Not sent** (`messages.status.failedReason`, red) with the reason, then " · " and **Retry** (`messages.retry`, accent-colour link): under every failed message, never hidden. | n/a |
 | Failed glyph | red exclamation in a circle, 16 pt, left of a failed bubble | Click opens the bubble menu. Accessibility label `messages.status.failed`. | Enabled. |
 | Composer field | multi-line text field, 13 pt, rounded 15 pt, min 30 pt high; grows to 5 lines, then scrolls | Placeholder "Message" (`messages.composer.placeholder`). Focused when the conversation opens. Keeps a draft per conversation until sent or the app quits. | Disabled while the account is switched off or removed; the placeholder then reads `messages.composer.accountOff` or `messages.composer.accountRemoved`. |
-| Send | 26 pt round button, accent fill, white arrow up (`arrow.up`) | Sends the field text (leading and trailing white space trimmed) through the conversation's account, appends the bubble with Sending…, clears the field. Tooltip `messages.send.help`. | Disabled (grey fill) when the trimmed text is empty, when it is over 4,000 UTF-8 bytes (a red line "Too long to send", `messages.composer.tooLong`, appears above the field), or when the composer is disabled. |
+| Send | 26 pt round button, accent fill, white arrow up (`arrow.up`) | Sends the field text (leading and trailing white space trimmed) through the conversation's account, appends the bubble with Sending…, clears the field. Tooltip `messages.send.help`. | Disabled (grey fill) when the trimmed text is empty, when it is over the engine's limit (2,800 UTF-8 bytes in 26.3: PJSIP's 4,000-byte packet limit minus room for the headers) (a red line "Too long to send", `messages.composer.tooLong`, appears above the field), or when the composer is disabled. |
 
 **Meaning of Sent.** A 2xx answer means the SIP server or the peer accepted the message. It never means delivery to a phone. The tooltip on "Sent" says: "Accepted by the server. This does not confirm that the message reached the recipient's phone." (`messages.status.sent.help`). No checkmarks or "Delivered" wording anywhere.
 
@@ -2442,7 +2442,7 @@ One more toggle row, last in the existing Sound events group (8.3): "New message
 | Account switched off | Row unchanged (chip shown). In 14.2 the composer and Call are disabled; placeholder `messages.composer.accountOff`. Incoming messages are not received while the account is off. |
 | Account removed | Conversations stay, without a chip. Composer and Call disabled; placeholder `messages.composer.accountRemoved`. |
 | No account enabled | New Message disabled; existing conversations can be read and deleted. |
-| Text over 4,000 bytes | Red "Too long to send" above the field; Send disabled. |
+| Text over the limit (2,800 bytes) | Red "Too long to send" above the field; Send disabled. |
 | App started with messages still sending | They show as Not sent · Interrupted with Retry. |
 | During a call | The summary bar of screen 4 sits above the tool row or header, as on the other tabs; the body shrinks by its height. |
 | Do Not Disturb | No notification, no sound; badges count. |
@@ -2485,5 +2485,5 @@ Open points of the brief, decided while drawing; the owner may change any of the
 - **D14.11 Notification.** No Reply action and no notification sound in 26.3; the "New message" sound event is the only sound. No notification for the conversation open in the key window.
 - **D14.12 Sound event.** Drawn as one more row of the existing group (14.5) and added to the screen 8 Audio pane.
 - **D14.13 Entry points.** "Send Message" in the Contacts and Call Log context menus; New Message copies the number field into To.
-- **D14.14 Length.** Over 4,000 UTF-8 bytes the composer shows "Too long to send" and Send is disabled; no byte counter.
+- **D14.14 Length.** Over the engine's limit (2,800 UTF-8 bytes in 26.3) the composer shows "Too long to send" and Send is disabled; no byte counter.
 - **D14.15 Key name.** The tab title uses `tabs.messages`, next to the other `tabs.*` keys; everything else uses `messages.*`.
