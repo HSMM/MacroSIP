@@ -12,6 +12,7 @@ import SwiftUI
 ///                 | settings-audio | settings-codecs | timed-dnd | call-log-playback | busy-mode | quick-keys | quick-keys-bottom | contact-card | contact-card-new
 ///                 | settings-diagnostics | settings-diagnostics-on | diagnostics-selftest | settings-hotkeys | settings-hotkeys-on | import-microsip | import-microsip-done | hotkeys-selftest | import-selftest
 ///                 | directory | directory-done | directory-incoming | directory-sheet | directory-import | settings-directory
+///                 | messages | messages-conversation | messages-failed | messages-new | messages-empty | messages-selftest
 /// Data goes to a throw-away directory (see LaunchOptions); the Keychain is never touched.
 enum DemoState {
     static let officeID = AccountID(raw: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!)
@@ -23,7 +24,7 @@ enum DemoState {
         let state = LaunchOptions.current.demoState ?? ""
         if state == "first-launch" || state == "editor-first-launch" { return }
         let (accounts, contacts, log, settingsStore) = stores
-        if isDirectoryState(state) { seedDirectory(settingsStore) }
+        if isDirectoryState(state) || state == "messages-new" { seedDirectory(settingsStore) }
         var list = [
             AccountConfig(id: officeID, displayName: "Office", username: "1001", domain: "pbx.example.com",
                           transport: .tls, srtp: .mandatory, isDefaultOutgoing: true, voicemailNumber: "*97"),
@@ -231,6 +232,8 @@ enum DemoState {
             model.openSettings(tab: .calls)
         case "quick-keys", "quick-keys-bottom":     // the panel (right / bottom) with eight keys, one ringing; Settings › Quick keys opens too
             await quickKeysDemo(model, bottom: state == "quick-keys-bottom")
+        case let s where isMessagesState(s):
+            await runMessages(model, state: s)
         case let s where isDirectoryState(s) && s != "settings-directory":
             await runDirectory(model, state: s)
         case "settings-diagnostics-on":     // Troubleshooting with Debug mode switched on (README screenshots)
@@ -357,7 +360,7 @@ enum DemoState {
             if state == "timed-dnd" || state == "voicemail", let menu = StatusItemController.current?.debugMenuTitles() {
                 try? menu.joined(separator: "\n").write(toFile: "\(prefix)-menu.txt", atomically: true, encoding: .utf8)
             }
-            if state != "selftest", state != "directory-selftest", state != "hotkeys-selftest", state != "import-selftest", state != "diagnostics-selftest" { quitLater() }     // the snapshot was the point; those two quit themselves
+            if state != "selftest", state != "directory-selftest", state != "hotkeys-selftest", state != "import-selftest", state != "diagnostics-selftest", state != "messages-selftest" { quitLater() }     // the snapshot was the point; those two quit themselves
         }
     }
 
@@ -1313,6 +1316,7 @@ enum DemoState {
         await networkChecks(model) { check($0, $1, $2) }
         await hotkeyChecks(model) { check($0, $1, $2) }
         await importChecks(model) { check($0, $1, $2) }
+        await messagesChecks(model) { check($0, $1, $2) }
 
         let text = out.joined(separator: "\n") + "\nfailures=\(failures)\n"
         if let prefix = model.launch.snapshotPrefix { try? text.write(toFile: "\(prefix)-selftest.txt", atomically: true, encoding: .utf8) }
