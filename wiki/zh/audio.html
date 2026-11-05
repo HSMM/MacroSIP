@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>音频 · MacroSIP 文档</title>
+<title>设置 · MacroSIP 文档</title>
 <meta name="description" content="MacroSIP 文档">
 <link rel="stylesheet" href="../wiki.css">
 <link rel="alternate" hreflang="en" href="../en/audio.html">
@@ -13,11 +13,12 @@
 <body>
 <header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/audio.html" hreflang="en">English</a><a href="../ru/audio.html" hreflang="ru">Русский</a><a href="../zh/audio.html" hreflang="zh-Hans" aria-current=true>中文</a></div></header>
 <div class="layout">
-<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html">通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="messages.html">消息</a></li><li><a href="directory.html">目录</a></li><li><a href="quick-keys.html">快捷键</a></li><li><a href="audio.html" aria-current=page>音频</a></li><li><a href="settings.html">设置</a></li><li><a href="menu-bar.html">菜单栏</a></li><li><a href="troubleshooting.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="architecture.html">架构</a></li><li><a href="building.html">构建</a></li><li><a href="testing.html">测试</a></li><li><a href="releasing.html">发布</a></li><li><a href="contributing.html">参与贡献</a></li></ul></div></details></nav>
+<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html">通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="messages.html">消息</a></li><li><a href="asterisk-and-freepbx-sms.html">目录</a></li><li><a href="directory.html">快捷键</a></li><li><a href="quick-keys.html">音频</a></li><li><a href="audio.html" aria-current=page>设置</a></li><li><a href="settings.html">菜单栏</a></li><li><a href="menu-bar.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="troubleshooting.html">架构</a></li><li><a href="architecture.html">构建</a></li><li><a href="building.html">测试</a></li><li><a href="testing.html">发布</a></li><li><a href="releasing.html">参与贡献</a></li></ul><h2>用户指南</h2><ul><li><a href="contributing.html">Asterisk 与 FreePBX 短信</a></li></ul></div></details></nav>
 <main>
-<h1 dir="auto">音频</h1>
-<p dir="auto">本页的所有内容都位于设置 › 音频 (Audio)、设置 › 编解码器 (Codecs) 和设置 › 网络 (Network) 中。更改立即生效；少数网络值需要重新启动引擎，并会有相应提示。</p>
-<h2 dir="auto">设备</h2>
+<h1 dir="auto">设置</h1>
+<p dir="auto">通过 ⌘, 从 MacroSIP 菜单、账户弹出菜单或菜单栏图标打开设置 (Settings)。它是一个标准的 macOS 设置窗口，带有工具栏标签页；更改立即生效，没有“存储”按钮。标签页按顺序为：<strong>通用 (General)、账户 (Accounts)、音频 (Audio)、网络 (Network)、编解码器 (Codecs)、录音 (Recording)、通话 (Calls)、快捷键 (Quick keys)、目录 (Directory)</strong>。</p>
+<p dir="auto"><a target="_blank" rel="noopener noreferrer nofollow" href="https://raw.githubusercontent.com/HSMM/MacroSIP/main/docs/screenshots/light/settings-recording.png?v=1"><img src="https://raw.githubusercontent.com/HSMM/MacroSIP/main/docs/screenshots/light/settings-recording.png?v=1" alt="录音面板" style="max-width: 100%;"></a></p>
+<h2 dir="auto">通用</h2>
 <markdown-accessiblity-table><div class="tablewrap"><table role="table">
 <thead>
 <tr>
@@ -27,235 +28,187 @@
 </thead>
 <tbody>
 <tr>
-<td><strong>麦克风</strong> (Microphone)</td>
-<td>包含所有输入设备和<strong>系统默认</strong> (System default) 的弹出式菜单；旁边的实时电平表（绿色分段，最顶端接近削波时为黄色）显示选中的是正确的麦克风。</td>
+<td><strong>登录时启动</strong> (Launch at login)</td>
+<td>将 MacroSIP 注册为登录项。</td>
 </tr>
 <tr>
-<td><strong>扬声器</strong> (Speaker)</td>
-<td>包含所有输出设备和<strong>系统默认</strong>的弹出式菜单。测试音在下方的“音频测试”组中。</td>
+<td><strong>关闭窗口后继续在菜单栏中运行</strong> (Keep running in the menu bar when the window is closed)</td>
+<td>关闭：关闭窗口即退出应用。</td>
 </tr>
 <tr>
-<td><strong>铃声设备</strong> (Ringtone device)</td>
-<td>仅用于铃声的输出：“即使通话使用耳机，也通过扬声器播放铃声。”</td>
+<td><strong>在 Dock 中显示图标</strong> (Show icon in the Dock)</td>
+<td>隐藏或显示 Dock 图标；菜单栏图标保留。</td>
 </tr>
 <tr>
-<td><strong>连接耳机时自动切换</strong> (Switch to a headset when it is connected)</td>
-<td>默认开启。“使用新连接的耳机进行通话，直到它被拔出。”</td>
+<td><strong>勿扰模式</strong> (Do Not Disturb)</td>
+<td>关闭 / 开启 / 30 分钟 / 1 小时 / 直到明天 9:00。“拒接来电，并向关注您的联系人显示勿扰状态。”计时运行时显示“直到 14:30 · 剩余 27 分钟”。</td>
 </tr>
 <tr>
-<td><strong>耳机按键</strong> (Headset buttons)</td>
-<td>默认开启。通过 USB 耳机的通话控制键接听、挂断、保持、静音和重拨；辅助文本显示“已连接：Jabra Evolve2 65”或“没有带通话控制键的耳机”。详见下文。</td>
+<td><strong>消息 › 文字消息 (SIP MESSAGE)</strong> (Messages › Text messages (SIP MESSAGE))</td>
+<td>开关，默认关闭。“显示“消息”标签页，接收来信，并在“联系人”和“通话记录”菜单中添加“发送消息”。”关闭时没有“消息”标签页、没有“发送消息”菜单项、没有通知和提示音，收到的消息会被丢弃。见 <a href="messages.html">消息</a>。</td>
+</tr>
+<tr>
+<td><strong>语言</strong> (Language)</td>
+<td>系统 / English / Русский。“在 MacroSIP 重新启动后生效。”</td>
+</tr>
+<tr>
+<td><strong>更新</strong> (Updates)</td>
+<td><strong>自动检查更新</strong> (Check for updates automatically)（“启动时以及每天一次。MacroSIP 在安装更新前会先询问。”）、<strong>包含候选发布版</strong> (Include release candidates)、<strong>立即检查</strong> (Check Now)、“上次检查于…”或“尚未检查”。见 <a href="installation.html">安装</a>。</td>
+</tr>
+<tr>
+<td><strong>高级 › 链接</strong> (Advanced › Links)</td>
+<td>“用 MacroSIP 打开 sip: 和 tel: 链接”，附<strong>设为默认</strong> (Make Default)（警告会指出另一个处理 tel: 链接的应用）。<strong>打开链接时</strong> (When a link is opened)：呼叫前询问（填入号码栏）/ 立即呼叫 / 仅填入拨号栏（“选“仅填入拨号栏”可让您先核对号码。”）。</td>
+</tr>
+<tr>
+<td><strong>高级 › 故障排除</strong> (Advanced › Troubleshooting)</td>
+<td><strong>打开日志文件夹</strong> (Open Log Folder)（“保存在 ~/Library/Logs/MacroSIP。三个文件，每个 2 MB（调试模式下 8 MB）。”）和<strong>拷贝诊断信息</strong> (Copy Diagnostics)（“版本、账户和设置，不含密码。可粘贴到问题报告中。”）。</td>
+</tr>
+<tr>
+<td><strong>Debug mode</strong></td>
+<td>开关，默认关闭。“向日志添加 SIP 消息和更多细节，因此增长更快。用完后请关闭。”日志文件每个增长到 8 MB。开启后会跨启动保持，直到关闭为止；如果启动时使用了 <code class="notranslate">--log-level</code>，以该级别为准，此开关将被禁用。见 <a href="menu-bar.html">故障排除</a>。</td>
+</tr>
+<tr>
+<td><strong>Create Archive…</strong></td>
+<td>“一个 ZIP，包含日志文件、诊断报告和最近的崩溃报告。其中有电话号码和服务器地址，但没有密码。请只发给您信任的人。”见 <a href="menu-bar.html">故障排除</a>。</td>
 </tr>
 </tbody>
 </table></div></markdown-accessiblity-table>
-<p dir="auto">“系统默认”跟随 macOS 的“声音”设置。如果所选设备被拔出，MacroSIP 回退到系统默认，并在设备回来时切换回去。设备列表实时更新。</p>
-<h3 dir="auto">耳机自动切换</h3>
-<p dir="auto">当一个同时具有输入和输出的设备出现时（USB 或蓝牙耳机、AirPods），它会成为通话的麦克风和扬声器，并有横幅显示“已切换到 AirPods Pro”四秒。移除后，之前选择的设备恢复（“返回 MacBook Pro 扬声器”或“返回系统默认”）。手动选取麦克风或扬声器，或关闭该开关，都会结束这种跟随。铃声设备从不改变，启动时已存在的设备不会被跟随。</p>
-<h3 dir="auto">耳机按键</h3>
-<p dir="auto">开启<strong>耳机按键</strong>后，提供 HID 电话控制的 USB 耳机可以控制通话；该行显示已连接的设备名称（“已连接：Jabra Evolve2 65”）或“没有带通话控制键的耳机”。关闭该开关会释放设备。</p>
+<p dir="auto">“高级”组默认折叠。</p>
+<h2 dir="auto">账户</h2>
+<p dir="auto">一个表格，包含状态圆点、<strong>名称</strong> (Name)（默认外拨账户上有蓝色的<strong>默认</strong> (Default) 标记）、<strong>地址</strong> (Address)、<strong>传输</strong> (Transport) 和<strong>状态</strong> (Status)（已注册、正在注册…、简短错误如 403、已停用、需要密码 (Needs password)、仅外拨、正在重新连接…）。拖移可重新排序；此顺序用于账户弹出菜单和状态栏。按钮 <strong>+</strong>、<strong>−</strong>（需确认）和<strong>编辑…</strong> (Edit…)；连按可编辑。页脚右侧的 <strong>Import from MicroSIP…</strong> 导入 MicroSIP 的账户和联系人（见 <a href="accounts.html">账户</a>）。账户达到八个或更多时出现<strong>过滤账户</strong> (Filter accounts) 字段。“Office · 上次错误”组显示上次 REGISTER 失败并提供<strong>重试</strong> (Retry)。编辑器的字段在 <a href="accounts.html">账户</a> 中介绍；其“高级”组包含语音信箱行<strong>语音信箱号码</strong> (Voicemail number)（“从菜单栏和状态栏拨打。”）和<strong>语音信箱指示 (MWI)</strong> (Voicemail indicator (MWI))（“显示服务器报告的新留言数量。”）。</p>
+<h2 dir="auto">音频</h2>
 <markdown-accessiblity-table><div class="tablewrap"><table role="table">
 <thead>
 <tr>
-<th>耳机上的控制键</th>
-<th>作用</th>
+<th>组</th>
+<th>行</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>摘挂机键（接听 / 结束）</td>
-<td>接听正在响铃的来电（活动通话转入保持）；结束活动通话。普通的摘挂机键在有来电响铃时接听，否则挂断当前通话。</td>
+<td><strong>设备</strong> (Devices)</td>
+<td><strong>麦克风</strong> (Microphone)（电平表，含“系统默认”的弹出式菜单）、<strong>扬声器</strong> (Speaker)（弹出式菜单）、<strong>铃声设备</strong> (Ringtone device)（“即使通话使用耳机，也通过扬声器播放铃声。”）、<strong>连接耳机时自动切换</strong> (Switch to a headset when it is connected)、<strong>耳机按键</strong> (Headset buttons)（“已连接：Jabra Evolve2 65”或“没有带通话控制键的耳机”）。</td>
 </tr>
 <tr>
-<td>闪断键 (Flash)</td>
-<td>接听等待中的来电，或切换到保持中的通话。</td>
+<td><strong>铃声</strong> (Ringtone)</td>
+<td><strong>声音</strong> (Sound)（经典 / 数字 / 柔和 / 自定文件…，附<strong>播放</strong> (Play)；预听播放真正的选择，音量为所设音量；无法读取的文件保留之前的选择并显示“无法使用铃声文件：…”）、<strong>音量</strong> (Volume) 0–100 %。“自定文件…”接受 WAV、AIFF、M4A 和 MP3。详见 <a href="quick-keys.html">音频</a>。</td>
 </tr>
 <tr>
-<td>保持键</td>
-<td>保持或恢复当前通话。</td>
+<td><strong>保持音乐</strong> (Hold music)</td>
+<td><strong>来源</strong> (Source)：内置 / 自定文件… / 关闭。“对方在通话保持期间会听到此内容。”</td>
 </tr>
 <tr>
-<td>静音键</td>
-<td>切换您的麦克风，与通话面板中的<strong>静音</strong> (Mute) 相同。</td>
+<td><strong>声音事件</strong> (Sound events)</td>
+<td><strong>通话接通与结束</strong> (Call connected and ended)、<strong>拨号键盘按键</strong> (Dial pad key presses)、<strong>新语音留言</strong> (New voicemail)、<strong>注册错误与网络断开</strong> (Registration error and lost network)，消息开启时还有<strong>新消息</strong> (New message)；全部关闭。“扬声器上的短促蜂鸣声；对方听不到。”</td>
 </tr>
 <tr>
-<td>重拨键</td>
-<td>没有通话进行时呼叫上一个外拨号码。</td>
+<td><strong>音频测试</strong> (Audio test)</td>
+<td><strong>扬声器与麦克风</strong> (Speaker and microphone)：<strong>测试</strong> (Test) 和麦克风电平表。“在扬声器上播放两个音 2 秒；电平表显示麦克风电平。”</td>
+</tr>
+<tr>
+<td><strong>处理</strong> (Processing)</td>
+<td><strong>回声消除</strong> (Echo cancellation)：“仅当您的耳机自身消除回声时才关闭。”</td>
 </tr>
 </tbody>
 </table></div></markdown-accessiblity-table>
-<p dir="auto">如果耳机有指示灯，它们会跟随通话：通话已接听或正在拨出时为摘机，有来电响铃时为响铃，麦克风关闭时为静音。长按一次不能同时完成接听和挂断。</p>
-<p dir="auto">限制：按键通过免提配置文件 (HFP) 而非 HID 工作的蓝牙耳机由 macOS 自行处理，不受支持；它们从不出现在此行中。键盘的媒体键和 3.5 mm 接口的耳机没有电话控制，会被忽略。只在消费者控制设备内提供控制键的耳机可能被 macOS 拒绝；此时日志显示“headset buttons: cannot open …”（见 <a href="troubleshooting.html">故障排除</a>）。</p>
-<h2 dir="auto">铃声</h2>
-<p dir="auto">设置 › 音频 › 铃声中的<strong>声音</strong> (Sound) 决定来电时响什么：</p>
-<ul dir="auto">
-<li><strong>经典</strong> (Classic)、<strong>数字</strong> (Digital) 和 <strong>柔和</strong> (Soft) 是三段不同的内置旋律。</li>
-<li><strong>自定文件…</strong> (Custom file…) 接受 WAV、AIFF、M4A 或 MP3 文件（“自定文件…”接受 WAV、AIFF、M4A 和 MP3。）；弹出式菜单随后显示“自定：office-bell.m4a”。MacroSIP 只转换一次文件并重复使用结果，因此长文件不会拖慢下一次通话。</li>
-<li><strong>播放</strong> (Play) 在铃声设备上以下方所设音量预听真正的选择。</li>
-<li>无法读取的文件会保留之前的选择，该组会说明原因：“无法使用铃声文件：…”。</li>
-</ul>
-<p dir="auto"><strong>音量</strong> (Volume) 是 0 到 100 % 的滑块，实时应用，预听时也使用。铃声从<strong>铃声设备</strong>（见上文“设备”）播出。呼叫等待在听筒中使用短促提示音而非铃声；见 <a href="calls.html">通话</a>。如果响的铃声不是您选的那一个，见 <a href="troubleshooting.html">故障排除</a>。</p>
-<h2 dir="auto">保持音乐</h2>
-<p dir="auto">设置 › 音频 › 保持音乐中的<strong>来源</strong> (Source) 是您保持通话时对方听到的内容：<strong>内置</strong> (Built-in)（一段循环播放的短旋律，默认）、<strong>自定文件…</strong>（WAV、AIFF、M4A、MP3 以及 macOS 能读取的任何其他格式；弹出式菜单随后显示“自定：office-hold.m4a”）或<strong>关闭</strong> (Off)（静音）。“对方在通话保持期间会听到此内容。”更改立即生效，对已处于保持状态的通话也是如此。无法读取的文件会保留之前的来源；组页脚和横幅显示“无法使用此文件：…”。音乐只送往保持中的通话：您自己听不到，也不会写入录音。另见 <a href="calls.html">通话</a>；如果对方听到的是别的内容，见 <a href="troubleshooting.html">故障排除</a>。</p>
-<h2 dir="auto">声音事件</h2>
-<p dir="auto">设置 › 音频 › 声音事件 (Sound events) 中的四个开关（消息开启时还有第五个，<strong>新消息</strong>），全部默认关闭。“扬声器上的短促蜂鸣声；对方听不到。”蜂鸣声在为通话选择的扬声器上播放，绝不会进入通话或录音。</p>
+<p dir="auto">详见 <a href="quick-keys.html">音频</a>。</p>
+<h2 dir="auto">网络</h2>
 <markdown-accessiblity-table><div class="tablewrap"><table role="table">
 <thead>
 <tr>
-<th>开关</th>
-<th>播放时机</th>
+<th>组</th>
+<th>行</th>
+<th>默认</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><strong>通话接通与结束</strong> (Call connected and ended)</td>
-<td>通话接通时两声上升的蜂鸣（从保持恢复时不播放）；通话结束时两声下降的蜂鸣。仅针对已建立的通话：未接或被拒接的来电和失败的外拨尝试不发声。</td>
+<td><strong>连接</strong> (Connection)</td>
+<td><strong>STUN 服务器</strong> (STUN server)（“如果您不在 NAT 后，请留空。”）、<strong>本地 SIP 端口</strong> (Local SIP port)（“0 表示自动选取一个空闲端口。”）、以秒为单位的<strong>保活间隔</strong> (Keep-alive interval)（“在两次注册之间保持 NAT 绑定开放。”）、<strong>使用 ICE</strong> (Use ICE)（“帮助音频穿过 NAT。使用上方的 STUN 服务器。”）。</td>
+<td>空、5060、15、开</td>
 </tr>
 <tr>
-<td><strong>拨号键盘按键</strong> (Dial pad key presses)</td>
-<td>没有活动通话时，在拨号键盘上按下的键的 DTMF 音（“+”没有音）。通话期间，键盘改为向对方发送 DTMF。</td>
+<td><strong>RTP</strong></td>
+<td>带<strong>起始</strong> (Start) 和<strong>端口数</strong> (Ports) 的<strong>端口范围</strong> (Port range)（“通话音频的端口，1024–65535。每路通话需要两个。”）、<strong>使用 rport</strong> (Use rport)（“在 NAT 后有帮助：服务器回复到您发起呼叫的地址。”）。</td>
+<td>4000 / 1000、开</td>
 </tr>
 <tr>
-<td><strong>新语音留言</strong> (New voicemail)</td>
-<td>某账户的语音信箱指示报告的新留言比之前多时的三声蜂鸣（见 <a href="incoming-calls.html">来电</a>）。</td>
-</tr>
-<tr>
-<td><strong>注册错误与网络断开</strong> (Registration error and lost network)</td>
-<td>注册失败或网络路径消失时的两声低音蜂鸣，每 10 秒最多一次。</td>
-</tr>
-<tr>
-<td><strong>新消息</strong> (New message)</td>
-<td>收到文字消息时的两声短促高音蜂鸣；勿扰模式下不播放，每 2 秒最多一次。此行仅在消息开启时才有（<a href="messages.html">消息</a>）。</td>
+<td><strong>DNS</strong></td>
+<td><strong>使用 DNS SRV 记录</strong> (Use DNS SRV records)（“自动查找账户的服务器；失败时使用域本身。”）、<strong>域名服务器</strong> (Nameserver)（“DNS 服务器地址。留空则使用系统的服务器。”），仅在 SRV 开启时可用。</td>
+<td>关、空</td>
 </tr>
 </tbody>
 </table></div></markdown-accessiblity-table>
-<h2 dir="auto">音频测试</h2>
-<p dir="auto">设置 › 音频 › 音频测试 (Audio test) 只有一行，<strong>扬声器与麦克风</strong> (Speaker and microphone)：“在扬声器上播放两个音 2 秒；电平表显示麦克风电平。”<strong>测试</strong> (Test) 在“设备”中选择的扬声器上播放两个音（660 和 880 Hz）（<strong>系统默认</strong>即通话输出）；再按一次重新开始。如果所选扬声器已被拔出，测试音改在系统默认设备上播放。按钮旁的电平表是实时麦克风电平，与“麦克风”行中的相同。测试音绝不会进入通话或录音。</p>
-<h2 dir="auto">回声消除与语音处理</h2>
-<p dir="auto"><strong>回声消除</strong> (Echo cancellation) 默认开启：“仅当您的耳机自身消除回声时才关闭。”</p>
-<p dir="auto">使用默认输入和输出设备时，音频经过系统的语音处理单元，它增加了噪声抑制和自动增益控制；没有相应的开关。手动选择非默认设备时，改用引擎内置的回声消除器。</p>
+<p dir="auto">“更改端口会重新注册所有账户；进行中的通话不会中断。传输和 SRTP 按账户设置。”页脚“端口范围和 DNS 的更改在重新启动后生效。”针对端口范围和 DNS；横幅“网络更改将在重新启动后生效。账户将重新注册。”提供<strong>立即重新启动</strong> (Restart now)（通话期间禁用：“请先结束通话。”）。</p>
+<p dir="auto">服务器使用私有地址（10.x、172.16–31.x、192.168.x 或 100.64–127.x，在局域网内或通过 VPN）的账户，无论上面填了什么，都不使用 STUN 服务器：Mac 报出自己的地址，服务器不必再去更正。见 <a href="accounts.html">账户</a>。有效值：本地端口 0 或 1024–65535，保活 0（关闭）或 5–600 秒。</p>
 <h2 dir="auto">编解码器</h2>
-<p dir="auto">设置 › 编解码器按优先顺序列出编解码器；此顺序即 SDP 中提供的顺序。拖移行或使用<strong>上移</strong> (Move up) / <strong>下移</strong> (Move down)；未勾选的编解码器绝不会被提供；至少要保留一个启用。<strong>恢复默认</strong> (Restore Defaults) 恢复顺序并只开启 Opus、G.722 和 PCMU。</p>
+<p dir="auto">“音频编解码器，按优先顺序”：一个表格，包含复选框、<strong>编解码器</strong> (Codec)、<strong>采样率</strong> (Sample rate)、<strong>比特率</strong> (Bitrate) 和拖移手柄；<strong>上移</strong> (Move up)、<strong>下移</strong> (Move down)、<strong>恢复默认</strong> (Restore Defaults)。未勾选的编解码器绝不会被提供；至少要保留一个启用（“拖移行或使用箭头重新排序。未勾选的编解码器绝不会被提供。至少要保留一个编解码器启用。”）。<strong>Opus</strong> 组增加<strong>丢包修复 (FEC)</strong> (Packet-loss correction (FEC))（开）和<strong>静音抑制 (DTX)</strong> (Silence suppression (DTX))（关）。编解码器列表在 <a href="quick-keys.html">音频</a> 中。</p>
+<h2 dir="auto">录音</h2>
 <markdown-accessiblity-table><div class="tablewrap"><table role="table">
 <thead>
 <tr>
-<th>编解码器</th>
-<th>默认</th>
-<th>采样率</th>
-<th>比特率</th>
+<th>行</th>
+<th>含义</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Opus</td>
-<td>开</td>
-<td>48 kHz</td>
-<td>6–510 kbit/s</td>
+<td><strong>录音保存位置</strong> (Save recordings to)</td>
+<td>文件夹弹出式菜单，默认为 ~/Music 中的“MacroSIP Recordings”；<strong>选取文件夹…</strong> (Choose Folder…)。文件夹丢失时显示“未找到文件夹”。</td>
 </tr>
 <tr>
-<td>G.722</td>
-<td>开</td>
-<td>16 kHz</td>
-<td>64 kbit/s</td>
+<td><strong>自动录制所有通话</strong> (Record all calls automatically)</td>
+<td>默认关闭；无论如何通话面板中的“录音”按钮都可用。</td>
 </tr>
 <tr>
-<td>PCMU (G.711 µ-law)</td>
-<td>开</td>
-<td>8 kHz</td>
-<td>64 kbit/s</td>
+<td><strong>声道</strong> (Channels)</td>
+<td><strong>单声道</strong> (Mono)（“双方混合到一个声道。”）或<strong>立体声</strong> (Stereo)（“您在左声道，对方在右声道。”；自 26.2 起两个声道保持同步，见 <a href="calls.html">通话</a>）。</td>
 </tr>
 <tr>
-<td>PCMA (G.711 A-law)</td>
-<td>关</td>
-<td>8 kHz</td>
-<td>64 kbit/s</td>
+<td><strong>提示音 › 录音时播放提示音</strong> (Notice tone › Play a notice tone while recording)</td>
+<td>默认关闭。双方都能听到并写入录音的短促蜂鸣声，录音开始一秒后播放，之后<strong>每</strong> (Every) 5–60 <strong>秒</strong> (seconds)（15）播放一次。“每 15 秒一次的短促蜂鸣声提醒双方通话正在被录音。”</td>
 </tr>
 <tr>
-<td>G.722.1 (Siren 7)、G.722.1C (Siren 14)</td>
-<td>关</td>
-<td>16 / 32 kHz</td>
-<td>16–32 / 24–48 kbit/s</td>
-</tr>
-<tr>
-<td>GSM</td>
-<td>关</td>
-<td>8 kHz</td>
-<td>13 kbit/s</td>
-</tr>
-<tr>
-<td>iLBC</td>
-<td>关</td>
-<td>8 kHz</td>
-<td>13–15 kbit/s</td>
-</tr>
-<tr>
-<td>Speex 8 / 16 / 32 kHz</td>
-<td>关</td>
-<td>8 / 16 / 32 kHz</td>
-<td>2–44 kbit/s</td>
+<td><strong>显示录音文件夹</strong> (Show Recordings Folder)</td>
+<td><strong>在访达中打开</strong> (Open in Finder)。</td>
 </tr>
 </tbody>
 </table></div></markdown-accessiblity-table>
-<p dir="auto">“宽带编解码器（Opus、G.722、G.722.1、Speex 16 和 32 kHz）仅在 PBX 支持时才能工作。”没有 G.729。如果您的 PBX 只提供 G.711 A-law，请开启 PCMA。</p>
-<h3 dir="auto">Opus 开关</h3>
-<ul dir="auto">
-<li><strong>丢包修复 (FEC)</strong> (Packet-loss correction (FEC))，开：“用少量额外数据修复丢失的数据包；在 Wi-Fi 和移动网络上请保持开启。”</li>
-<li><strong>静音抑制 (DTX)</strong> (Silence suppression (DTX))，关：“在停顿期间节省带宽，但可能截掉词首；仅在连接较慢时使用。”</li>
-</ul>
-<p dir="auto">Opus 未勾选时两者都被禁用；它们立即应用到新的和重新协商的流。</p>
-<h2 dir="auto">影响音频的网络设置</h2>
+<p dir="auto">页脚：“录音保存为 M4A 文件；临时 WAV 之后会被删除。”以及“文件名：2026-10-10 14.52 姓名或号码 (in).m4a”。</p>
+<h2 dir="auto">通话</h2>
 <markdown-accessiblity-table><div class="tablewrap"><table role="table">
 <thead>
 <tr>
-<th>设置（设置 › 网络）</th>
-<th>默认</th>
-<th>对音频的意义</th>
+<th>组</th>
+<th>行</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><strong>STUN 服务器</strong> (STUN server)</td>
-<td>空</td>
-<td>让引擎在 NAT 后得知自己的公网地址。“如果您不在 NAT 后，请留空。”</td>
+<td><strong>来电</strong> (Incoming calls)</td>
+<td><strong>拒接来自以下来电者的来电</strong> (Reject calls from)：无 / 所有人 / 不在联系人中的号码 / 匿名来电者。“被拒接的来电绝不会响铃。来电者会收到拒绝，通话记录显示‘已拒接：规则’。”</td>
 </tr>
 <tr>
-<td><strong>使用 ICE</strong> (Use ICE)</td>
-<td>开</td>
-<td>“帮助音频穿过 NAT。使用上方的 STUN 服务器。”</td>
+<td><strong>通话期间</strong> (During a call)</td>
+<td><strong>通话期间有来电时</strong> (When a call comes in during a call)：呼叫等待（提示音和窗口）/ 仅窗口 / 忙线（单通话模式）。<strong>DTMF 方式</strong> (DTMF method)：自动 / RFC 2833 / SIP INFO / 带内（“自动会选取您的服务器支持的方式。”）。<strong>来电时将主窗口置于最前</strong> (Bring the main window to the front on an incoming call)（“无论如何来电窗口都会出现。”）。</td>
 </tr>
 <tr>
-<td><strong>使用 rport</strong> (Use rport)</td>
-<td>开</td>
-<td>“在 NAT 后有帮助：服务器回复到您发起呼叫的地址。”</td>
+<td><strong>全局热键</strong> (Global hotkeys)</td>
+<td><strong>Use hotkeys in any app</strong>（默认关闭），之后是 <strong>Answer</strong>、<strong>Hang up</strong> 和 <strong>Mute</strong> 的按键框。建议组合为 ⌃⌥A、⌃⌥H 和 ⌃⌥M。见 <a href="calls.html">通话</a>。</td>
 </tr>
 <tr>
-<td><strong>保活间隔</strong> (Keep-alive interval)</td>
-<td>15 秒</td>
-<td>“在两次注册之间保持 NAT 绑定开放。”</td>
-</tr>
-<tr>
-<td><strong>端口范围</strong> (Port range)（RTP）</td>
-<td>起始 4000，1000 个端口</td>
-<td>“通话音频的端口，1024–65535。每路通话需要两个。”请在防火墙上开放或转发此范围。在面板提供的引擎重新启动后生效。</td>
-</tr>
-<tr>
-<td><strong>本地 SIP 端口</strong> (Local SIP port)</td>
-<td>5060</td>
-<td>0 表示选取一个空闲端口。更改它会重新注册所有账户。</td>
+<td><strong>自动接听</strong> (Auto-answer)</td>
+<td><strong>自动接听来电</strong> (Answer incoming calls automatically)：关闭 / 所有来电 / 仅联系人。以秒为单位的<strong>接听前延迟</strong> (Delay before answering)（5）。<strong>遵从服务器的 answer-after 请求</strong> (Honour the server's answer-after request)（“当 PBX 要求时接听（对讲、广播），即使自动接听已关闭。”）。</td>
 </tr>
 </tbody>
 </table></div></markdown-accessiblity-table>
-<p dir="auto">传输（UDP/TCP/TLS）和 SRTP 按账户设置；见 <a href="accounts.html">账户</a>。服务器使用私有 IP 地址的账户完全不使用 STUN（见 <a href="accounts.html">账户</a>）。</p>
-<h2 dir="auto">单向音频的故障排除</h2>
-<p dir="auto">单向音频几乎总是意味着 SIP 信令正常，但 RTP 数据包无法穿过 NAT 或防火墙返回。</p>
-<ol dir="auto">
-<li>**检查麦克风权限。**如果通话面板显示“麦克风访问已关闭”，请在系统设置 › 隐私与安全性 › 麦克风中允许 MacroSIP。更新后会再次请求权限（<a href="installation.html">安装</a>）。</li>
-<li>**检查设备。**说话时观察设置 › 音频中的电平表；如果“系统默认”指向了错误的设备，请明确选取设备。</li>
-<li><strong>在 NAT 后：设置 STUN 服务器</strong>（您的服务商提供的，或公共服务器如 <code class="notranslate">stun.example.org:3478</code>），并保持<strong>使用 ICE</strong>开启，这样媒体会发送到远端能够到达的地址。</li>
-<li><strong>保持 rport 开启</strong>，以便服务器回复到它实际看到的地址和端口。</li>
-<li>**防火墙：**允许本地 SIP 端口和 RTP 端口范围（默认 4000–4999）上的 UDP。</li>
-<li>**VPN 或多个网络接口：**网络变化时引擎会重新注册并对通话重新 INVITE；如果音频仍然中断，请降低保活间隔。</li>
-</ol>
-<p dir="auto">红色质量信号格和“连接不佳”横幅指向丢包或抖动而非 NAT（<a href="calls.html">通话</a>）。日志文件（<a href="troubleshooting.html">故障排除</a>）显示每路通话协商的地址和端口。</p>
+<p dir="auto">页脚：“勿扰模式优先于自动接听。您已在通话时，自动接听绝不会接听第二路来电。”见 <a href="incoming-calls.html">来电</a>。</p>
+<h2 dir="auto">快捷键</h2>
+<p dir="auto">一个 12 行的表格（<strong>名称</strong> (Name)、<strong>号码</strong> (Number)、<strong>类型</strong> (Type)、<strong>BLF</strong>、<strong>按键</strong> (Key)），“12 个键中的 5 个”，然后是<strong>面板 › 显示面板</strong> (Panel › Show panel)（关闭 / 右侧 / 底部）和<strong>代接代码</strong> (Pickup code)（<code class="notranslate">*8</code>）。见 <a href="directory.html">快捷键</a>。</p>
+<h2 dir="auto">目录</h2>
+<p dir="auto"><strong>联系人 › 排序方式</strong> (Contacts › Sort by)（名字 / 姓氏）；来源列表包含<strong>来源</strong> (Source)、<strong>状态</strong> (Status)、<strong>开</strong> (On)，按钮 <strong>+</strong>、<strong>−</strong>、<strong>编辑…</strong> (Edit…) 和<strong>立即导入</strong> (Import now)；<strong>搜索</strong> (Search) 组包含<strong>从号码栏搜索目录</strong> (Search directories from the number field)、<strong>最少字符数</strong> (Minimum characters)（2）、<strong>每个来源的结果数</strong> (Results per source)（5）和<strong>查询来电者姓名</strong> (Look up names of incoming callers)。见 <a href="asterisk-and-freepbx-sms.html">目录</a>。</p>
+<h2 dir="auto">设置的存储位置</h2>
+<p dir="auto"><code class="notranslate">~/Library/Application Support/MacroSIP/settings.json</code>（以及 <code class="notranslate">accounts.json</code>、<code class="notranslate">contacts.json</code>、<code class="notranslate">calllog.json</code>）；密码在登录钥匙串中。见 <a href="menu-bar.html">故障排除</a>。</p>
 <p dir="auto">其他页面：<a href="index.html">首页</a> · <a href="../en/index.html">Home</a> (English)</p>
 <footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
 </main>

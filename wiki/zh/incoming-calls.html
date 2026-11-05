@@ -13,7 +13,7 @@
 <body>
 <header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/incoming-calls.html" hreflang="en">English</a><a href="../ru/incoming-calls.html" hreflang="ru">Русский</a><a href="../zh/incoming-calls.html" hreflang="zh-Hans" aria-current=true>中文</a></div></header>
 <div class="layout">
-<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html">通话</a></li><li><a href="incoming-calls.html" aria-current=page>来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="messages.html">消息</a></li><li><a href="directory.html">目录</a></li><li><a href="quick-keys.html">快捷键</a></li><li><a href="audio.html">音频</a></li><li><a href="settings.html">设置</a></li><li><a href="menu-bar.html">菜单栏</a></li><li><a href="troubleshooting.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="architecture.html">架构</a></li><li><a href="building.html">构建</a></li><li><a href="testing.html">测试</a></li><li><a href="releasing.html">发布</a></li><li><a href="contributing.html">参与贡献</a></li></ul></div></details></nav>
+<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html">通话</a></li><li><a href="incoming-calls.html" aria-current=page>来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="messages.html">消息</a></li><li><a href="asterisk-and-freepbx-sms.html">目录</a></li><li><a href="directory.html">快捷键</a></li><li><a href="quick-keys.html">音频</a></li><li><a href="audio.html">设置</a></li><li><a href="settings.html">菜单栏</a></li><li><a href="menu-bar.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="troubleshooting.html">架构</a></li><li><a href="architecture.html">构建</a></li><li><a href="building.html">测试</a></li><li><a href="testing.html">发布</a></li><li><a href="releasing.html">参与贡献</a></li></ul><h2>用户指南</h2><ul><li><a href="contributing.html">Asterisk 与 FreePBX 短信</a></li></ul></div></details></nav>
 <main>
 <h1 dir="auto">来电</h1>
 <p dir="auto"><a target="_blank" rel="noopener noreferrer nofollow" href="https://raw.githubusercontent.com/HSMM/MacroSIP/main/docs/screenshots/light/incoming-auto-answer.png?v=1"><img src="https://raw.githubusercontent.com/HSMM/MacroSIP/main/docs/screenshots/light/incoming-auto-answer.png?v=1" alt="带自动接听的来电" style="max-width: 100%;"></a></p>
@@ -37,7 +37,7 @@
 </tbody>
 </table></div></markdown-accessiblity-table>
 <h3 dir="auto">浮动窗口</h3>
-<p dir="auto">一个小型的始终置顶面板（在每个空间中都显示），包含来电者头像、“Office 上的来电”、姓名和号码，以及两个按钮：<strong>拒接</strong>（红色）和<strong>接听</strong>（绿色）。它从不获取键盘焦点，因此您在其他地方的输入不会被打断。它可以拖移，并记住位置。铃声通过在 <a href="audio.html">音频</a> 中选择的铃声设备播放。</p>
+<p dir="auto">一个小型的始终置顶面板（在每个空间中都显示），包含来电者头像、“Office 上的来电”、姓名和号码，以及两个按钮：<strong>拒接</strong>（红色）和<strong>接听</strong>（绿色）。它从不获取键盘焦点，因此您在其他地方的输入不会被打断。它可以拖移，并记住位置。铃声通过在 <a href="quick-keys.html">音频</a> 中选择的铃声设备播放。</p>
 <h3 dir="auto">通知</h3>
 <p dir="auto">一条提醒样式的通知（“来电 · Office”、姓名、号码），带有<strong>接听</strong>和<strong>拒接</strong>操作。它会一直停留直到被处理，在通知中心和锁定屏幕上同样可用，并在通话结束时消失。</p>
 <h3 dir="auto">按键</h3>
@@ -160,14 +160,14 @@
 </tbody>
 </table></div></markdown-accessiblity-table>
 <h2 dir="auto">来电者姓名</h2>
-<p dir="auto">显示的姓名来自 SIP 显示名称，或匹配的联系人（其任一号码），或在来电响铃期间最多查询一秒的目录来源（见 <a href="directory.html">目录</a>）。</p>
+<p dir="auto">显示的姓名来自 SIP 显示名称，或匹配的联系人（其任一号码），或在来电响铃期间最多查询一秒的目录来源（见 <a href="asterisk-and-freepbx-sms.html">目录</a>）。</p>
 <h2 dir="auto">语音信箱</h2>
 <p dir="auto">每个账户都可以跟踪服务器的语音信箱指示 (MWI)：账户编辑器“高级”组中的<strong>语音信箱指示 (MWI)</strong> (Voicemail indicator (MWI))，默认开启（<a href="accounts.html">账户</a>）。“显示服务器报告的新留言数量。”服务器未经订阅直接推送的指示也会显示。</p>
 <ul dir="auto">
 <li>**状态栏。**只要有任何账户报告有留言等待，主窗口底部的状态栏就会显示一个信封标记，标出所有账户的新留言总数（工具提示“语音信箱：2 条新留言”）。点按它拨打第一个有留言等待的账户的语音信箱号码。没有留言时标记隐藏；菜单栏图标和 Dock 标记不用于语音信箱。</li>
-<li><strong>菜单栏。菜单为每个设置了语音信箱号码的已启用账户提供一个语音信箱：2 条新留言</strong> (Voicemail: 2 new) 项（多个账户都设置了号码时显示为“语音信箱 · Office：2 条新留言”）；它拨打该账户的语音信箱号码，没有留言时灰显（<a href="menu-bar.html">菜单栏</a>）。</li>
+<li><strong>菜单栏。菜单为每个设置了语音信箱号码的已启用账户提供一个语音信箱：2 条新留言</strong> (Voicemail: 2 new) 项（多个账户都设置了号码时显示为“语音信箱 · Office：2 条新留言”）；它拨打该账户的语音信箱号码，没有留言时灰显（<a href="settings.html">菜单栏</a>）。</li>
 <li><strong>语音信箱号码。两者都需要在账户编辑器中设置该账户的语音信箱号码</strong> (Voicemail number)（例如 <code class="notranslate">*97</code>）；没有它，标记无法拨号，账户也没有菜单项。</li>
-<li><strong>声音。设置 › 音频 › 声音事件中的新语音留言</strong> (New voicemail) 在新留言数量增加时播放三声蜂鸣（<a href="audio.html">音频</a>）。</li>
+<li><strong>声音。设置 › 音频 › 声音事件中的新语音留言</strong> (New voicemail) 在新留言数量增加时播放三声蜂鸣（<a href="quick-keys.html">音频</a>）。</li>
 </ul>
 <p dir="auto">其他页面：<a href="index.html">首页</a> · <a href="../en/index.html">Home</a> (English)</p>
 <footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>

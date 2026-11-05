@@ -13,7 +13,7 @@
 <body>
 <header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/installation.html" hreflang="en">English</a><a href="../ru/installation.html" hreflang="ru">Русский</a><a href="../zh/installation.html" hreflang="zh-Hans" aria-current=true>中文</a></div></header>
 <div class="layout">
-<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html" aria-current=page>安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html">通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="messages.html">消息</a></li><li><a href="directory.html">目录</a></li><li><a href="quick-keys.html">快捷键</a></li><li><a href="audio.html">音频</a></li><li><a href="settings.html">设置</a></li><li><a href="menu-bar.html">菜单栏</a></li><li><a href="troubleshooting.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="architecture.html">架构</a></li><li><a href="building.html">构建</a></li><li><a href="testing.html">测试</a></li><li><a href="releasing.html">发布</a></li><li><a href="contributing.html">参与贡献</a></li></ul></div></details></nav>
+<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html" aria-current=page>安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html">通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="messages.html">消息</a></li><li><a href="asterisk-and-freepbx-sms.html">目录</a></li><li><a href="directory.html">快捷键</a></li><li><a href="quick-keys.html">音频</a></li><li><a href="audio.html">设置</a></li><li><a href="settings.html">菜单栏</a></li><li><a href="menu-bar.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="troubleshooting.html">架构</a></li><li><a href="architecture.html">构建</a></li><li><a href="building.html">测试</a></li><li><a href="testing.html">发布</a></li><li><a href="releasing.html">参与贡献</a></li></ul><h2>用户指南</h2><ul><li><a href="contributing.html">Asterisk 与 FreePBX 短信</a></li></ul></div></details></nav>
 <main>
 <h1 dir="auto">安装</h1>
 <h2 dir="auto">系统要求</h2>
@@ -22,7 +22,7 @@
 <li>搭载 Apple 芯片或 Intel 处理器的 Mac。应用和 DMG 均为通用 (Universal) 版本，同一个下载包在两种架构上都能原生运行。</li>
 <li>一个 SIP 账户：电话服务商或 PBX 管理员提供的服务器地址、用户名和密码。联系人和通话记录无需账户即可使用。</li>
 </ul>
-<p dir="auto">Homebrew cask 和 DMG 自 26.0.0 版本起均可使用；从源代码构建的方法见 <a href="building.html">构建</a>。</p>
+<p dir="auto">Homebrew cask 和 DMG 自 26.0.0 版本起均可使用；从源代码构建的方法见 <a href="architecture.html">构建</a>。</p>
 <h2 dir="auto">使用 Homebrew</h2>
 <div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">brew tap hsmm/tap
 brew install --cask hsmm/tap/macrosip</pre></div>
@@ -88,7 +88,7 @@ brew install --cask hsmm/tap/macrosip</pre></div>
 <h2 dir="auto">登录时启动</h2>
 <p dir="auto">设置 › 通用 › <strong>登录时启动</strong> (Launch at login) 将 MacroSIP 注册为登录项。首次运行时不会就此弹出提示。如果 macOS 需要您批准，该行会显示“请在系统设置 › 通用 › 登录项中允许 MacroSIP。”并提供<strong>打开登录项…</strong> (Open Login Items…) 按钮。</p>
 <h2 dir="auto">日志文件的位置</h2>
-<p dir="auto">MacroSIP 将日志写入 <code class="notranslate">~/Library/Logs/MacroSIP/MacroSIP.log</code>，每个文件 2 MB，保留 3 个文件。设置 › 通用中有<strong>打开日志文件夹</strong> (Open Log Folder)（在访达中显示日志）和<strong>拷贝诊断信息</strong> (Copy Diagnostics)（版本、账户和设置，不含密码，可直接粘贴到问题报告中）。两者都位于“通用”面板底部折叠的<strong>高级</strong> (Advanced) 组中，标题为“故障排除”。使用方法见 <a href="troubleshooting.html">故障排除</a>。</p>
+<p dir="auto">MacroSIP 将日志写入 <code class="notranslate">~/Library/Logs/MacroSIP/MacroSIP.log</code>，每个文件 2 MB，保留 3 个文件。设置 › 通用中有<strong>打开日志文件夹</strong> (Open Log Folder)（在访达中显示日志）和<strong>拷贝诊断信息</strong> (Copy Diagnostics)（版本、账户和设置，不含密码，可直接粘贴到问题报告中）。两者都位于“通用”面板底部折叠的<strong>高级</strong> (Advanced) 组中，标题为“故障排除”。使用方法见 <a href="menu-bar.html">故障排除</a>。</p>
 <h2 dir="auto">卸载</h2>
 <p dir="auto">将 MacroSIP 拖出“应用程序”（或执行 <code class="notranslate">brew uninstall --cask macrosip</code>）。您的数据保留在 <code class="notranslate">~/Library/Application Support/MacroSIP/</code>（账户、联系人、通话记录、设置，均为 JSON）和登录钥匙串中（密码，服务名 <code class="notranslate">com.hsmm.macrosip</code>）；录音保留在 <code class="notranslate">~/Music/MacroSIP Recordings</code>，除非您选择了其他文件夹。若要彻底清除，请手动删除这些内容。</p>
 <p dir="auto">其他页面：<a href="index.html">首页</a> · <a href="../en/index.html">Home</a> (English)</p>

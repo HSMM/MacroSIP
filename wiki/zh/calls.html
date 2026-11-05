@@ -13,7 +13,7 @@
 <body>
 <header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/calls.html" hreflang="en">English</a><a href="../ru/calls.html" hreflang="ru">Русский</a><a href="../zh/calls.html" hreflang="zh-Hans" aria-current=true>中文</a></div></header>
 <div class="layout">
-<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html" aria-current=page>通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="messages.html">消息</a></li><li><a href="directory.html">目录</a></li><li><a href="quick-keys.html">快捷键</a></li><li><a href="audio.html">音频</a></li><li><a href="settings.html">设置</a></li><li><a href="menu-bar.html">菜单栏</a></li><li><a href="troubleshooting.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="architecture.html">架构</a></li><li><a href="building.html">构建</a></li><li><a href="testing.html">测试</a></li><li><a href="releasing.html">发布</a></li><li><a href="contributing.html">参与贡献</a></li></ul></div></details></nav>
+<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html" aria-current=page>通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="messages.html">消息</a></li><li><a href="asterisk-and-freepbx-sms.html">目录</a></li><li><a href="directory.html">快捷键</a></li><li><a href="quick-keys.html">音频</a></li><li><a href="audio.html">设置</a></li><li><a href="settings.html">菜单栏</a></li><li><a href="menu-bar.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="troubleshooting.html">架构</a></li><li><a href="architecture.html">构建</a></li><li><a href="building.html">测试</a></li><li><a href="testing.html">发布</a></li><li><a href="releasing.html">参与贡献</a></li></ul><h2>用户指南</h2><ul><li><a href="contributing.html">Asterisk 与 FreePBX 短信</a></li></ul></div></details></nav>
 <main>
 <h1 dir="auto">通话</h1>
 <p dir="auto">MacroSIP 最多可同时处理四路通话。恰好有一路通话处于<strong>活动</strong> (active) 状态（您能听到并说话）；其余通话处于保持状态。主窗口始终保持 340 × 520 pt：通话期间，“拨号键盘”标签页变为通话面板，其他标签页则显示一行摘要栏，包含来电者姓名、计时器和一个结束按钮。</p>
@@ -29,7 +29,7 @@
 <tbody>
 <tr>
 <td>号码栏</td>
-<td>输入号码或姓名，或粘贴 <code class="notranslate">sip:</code>/<code class="notranslate">tel:</code> URI；空格和连字符都可以。按 Return 或绿色的<strong>呼叫</strong> (Call) 按钮发起通话。输入字母会打开匹配联系人的建议列表（也包括目录结果，见 <a href="directory.html">目录</a>）。</td>
+<td>输入号码或姓名，或粘贴 <code class="notranslate">sip:</code>/<code class="notranslate">tel:</code> URI；空格和连字符都可以。按 Return 或绿色的<strong>呼叫</strong> (Call) 按钮发起通话。输入字母会打开匹配联系人的建议列表（也包括目录结果，见 <a href="asterisk-and-freepbx-sms.html">目录</a>）。</td>
 </tr>
 <tr>
 <td>拨号键盘 (Dial pad)</td>
@@ -88,7 +88,7 @@
 </table></div></markdown-accessiblity-table>
 <p dir="auto"><strong>结束通话</strong> (End Call，⌘D) 结束活动通话；有多路通话时显示为“结束与 Alesia Kazlouskaya 的通话”。</p>
 <h2 dir="auto">保持</h2>
-<p dir="auto">保持中的通话保留其 SIP 会话和计时器；您的麦克风和扬声器与它断开。对方听到的内容在设置 › 音频 › 保持音乐 › <strong>来源</strong> (Source) 中设置：<strong>内置</strong> (Built-in)（一段循环播放的短旋律，默认）、<strong>自定文件…</strong> (Custom file…)（“自定：office-hold.m4a”）或<strong>关闭</strong> (Off)（静音）。“对方在保持期间会听到此内容。”更改会应用到已处于保持状态的通话；音乐只有被保持的一方能听到，且不会被录音。有些 PBX 会用自己的保持音乐替换它（<a href="troubleshooting.html">故障排除</a>）。详见 <a href="audio.html">音频</a>。</p>
+<p dir="auto">保持中的通话保留其 SIP 会话和计时器；您的麦克风和扬声器与它断开。对方听到的内容在设置 › 音频 › 保持音乐 › <strong>来源</strong> (Source) 中设置：<strong>内置</strong> (Built-in)（一段循环播放的短旋律，默认）、<strong>自定文件…</strong> (Custom file…)（“自定：office-hold.m4a”）或<strong>关闭</strong> (Off)（静音）。“对方在保持期间会听到此内容。”更改会应用到已处于保持状态的通话；音乐只有被保持的一方能听到，且不会被录音。有些 PBX 会用自己的保持音乐替换它（<a href="menu-bar.html">故障排除</a>）。详见 <a href="quick-keys.html">音频</a>。</p>
 <h2 dir="auto">键盘与 DTMF</h2>
 <p dir="auto">键盘回显已发送的数字；主窗口为关键窗口时，键盘上的数字键也会发送 DTMF。方式在设置 › 通话 › <strong>DTMF 方式</strong> (DTMF method) 中设置：<strong>自动</strong> (Automatic) 使用 RFC 2833 并回退到 SIP INFO；<strong>RFC 2833</strong>、<strong>SIP INFO</strong> 和<strong>带内</strong> (In-band) 为后续数字强制使用一种方式。</p>
 <h2 dir="auto">盲转接与协商转接</h2>
@@ -104,7 +104,7 @@
 <h3 dir="auto">通话期间的第二路来电</h3>
 <p dir="auto">设置 › 通话 › <strong>通话期间有来电时</strong> (When a call comes in during a call)：<strong>呼叫等待（提示音和窗口）</strong> (Call waiting (tone and window)) 显示来电窗口并在听筒中播放短促提示音；<strong>仅窗口</strong> (Window only) 以正常铃声显示窗口；<strong>忙线（单通话模式）</strong> (Busy (single-call mode)) 立即以 486 Busy Here 应答第二位来电者，不会响铃，通话记录注明“已拒接：正在通话中”。窗口的按钮在 <a href="incoming-calls.html">来电</a> 中介绍。</p>
 <h2 dir="auto">音量</h2>
-<p dir="auto">扬声器图标打开<strong>通话音量</strong> (Call volume)：<strong>扬声器</strong> (Speaker)（您听到的）和<strong>麦克风</strong> (Microphone)（对方听到的），各为 0–200 %，默认 100 %，实时应用并为下一次通话记住；<strong>重置</strong> (Reset) 将两者恢复为 100 %。⌘↑ / ⌘↓ 以 10 % 为步长调整扬声器，并短暂显示“扬声器音量：110 %”。铃声音量在 <a href="audio.html">音频</a> 中。</p>
+<p dir="auto">扬声器图标打开<strong>通话音量</strong> (Call volume)：<strong>扬声器</strong> (Speaker)（您听到的）和<strong>麦克风</strong> (Microphone)（对方听到的），各为 0–200 %，默认 100 %，实时应用并为下一次通话记住；<strong>重置</strong> (Reset) 将两者恢复为 100 %。⌘↑ / ⌘↓ 以 10 % 为步长调整扬声器，并短暂显示“扬声器音量：110 %”。铃声音量在 <a href="quick-keys.html">音频</a> 中。</p>
 <h2 dir="auto">质量指示器与连接不佳提示</h2>
 <p dir="auto">质量信号格每两秒从 RTCP 统计中得出：四格绿色表示良好，两到三格橙色表示一般，一格红色表示差。悬停可查看“丢包 0.5 % · 抖动 12 ms · RTT 48 ms · MOS 4.3”。质量差持续六秒后，黄色横幅会指出最差的指标，例如“连接不佳：12 % 丢包”或“连接不佳：抖动过高 (90 ms)”，并在第一个较好的采样出现时消失。如果网络变化后 60 秒内媒体仍未恢复，通话结束并在记录中注明“连接已断开”。</p>
 <h2 dir="auto">录音</h2>
@@ -117,7 +117,7 @@
 <li>文件为 M4A (AAC)，命名如 <code class="notranslate">2026-10-10 14.52 姓名或号码 (in).m4a</code>，保存在 <code class="notranslate">~/Music/MacroSIP Recordings</code> 或您选择的文件夹中。转换失败时保留 WAV 并以横幅提示。</li>
 <li>带录音的通话记录条目显示播放按钮和内嵌播放器；右键菜单增加<strong>播放录音</strong> (Play recording) 和<strong>在访达中显示</strong> (Show in Finder)（<a href="contacts-and-call-log.html">联系人与通话记录</a>）。</li>
 </ul>
-<p dir="auto">耳机按键（通过 USB 耳机接听、挂断、保持、静音和重拨）在 <a href="audio.html">音频</a> 中介绍。视频通话计划在后续版本中实现。</p>
+<p dir="auto">耳机按键（通过 USB 耳机接听、挂断、保持、静音和重拨）在 <a href="quick-keys.html">音频</a> 中介绍。视频通话计划在后续版本中实现。</p>
 <h2 dir="auto">全局热键</h2>
 <p dir="auto">全局热键可以在其他应用位于最前面时应答、挂断或静音通话，无需切换到 MacroSIP。它们默认关闭。在 Settings › Calls › <strong>Global hotkeys</strong> 中打开 <strong>Use hotkeys in any app</strong>；首次开启时，三个字段会填入建议的组合：</p>
 <markdown-accessiblity-table><div class="tablewrap"><table role="table">

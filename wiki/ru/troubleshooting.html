@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Решение проблем · Документация MacroSIP</title>
+<title>Устройство · Документация MacroSIP</title>
 <meta name="description" content="Документация MacroSIP">
 <link rel="stylesheet" href="../wiki.css">
 <link rel="alternate" hreflang="en" href="../en/troubleshooting.html">
@@ -13,171 +13,108 @@
 <body>
 <header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/troubleshooting.html" hreflang="en">English</a><a href="../ru/troubleshooting.html" hreflang="ru" aria-current=true>Русский</a><a href="../zh/troubleshooting.html" hreflang="zh-Hans">中文</a></div></header>
 <div class="layout">
-<nav aria-label="Содержание"><details><summary>Содержание</summary><div class="links"><ul><li><a href="index.html">Главная</a></li></ul><h2>Руководство пользователя</h2><ul><li><a href="installation.html">Установка</a></li><li><a href="accounts.html">Аккаунты</a></li><li><a href="calls.html">Звонки</a></li><li><a href="incoming-calls.html">Входящие звонки</a></li><li><a href="contacts-and-call-log.html">Контакты и журнал</a></li><li><a href="messages.html">Сообщения</a></li><li><a href="directory.html">Справочник</a></li><li><a href="quick-keys.html">Быстрые клавиши</a></li><li><a href="audio.html">Звук</a></li><li><a href="settings.html">Настройки</a></li><li><a href="menu-bar.html">Строка меню</a></li><li><a href="troubleshooting.html" aria-current=page>Решение проблем</a></li></ul><h2>Для разработчиков</h2><ul><li><a href="architecture.html">Устройство</a></li><li><a href="building.html">Сборка</a></li><li><a href="testing.html">Тесты</a></li><li><a href="releasing.html">Релизы</a></li><li><a href="contributing.html">Участие</a></li></ul></div></details></nav>
+<nav aria-label="Содержание"><details><summary>Содержание</summary><div class="links"><ul><li><a href="index.html">Главная</a></li></ul><h2>Руководство пользователя</h2><ul><li><a href="installation.html">Установка</a></li><li><a href="accounts.html">Аккаунты</a></li><li><a href="calls.html">Звонки</a></li><li><a href="incoming-calls.html">Входящие звонки</a></li><li><a href="contacts-and-call-log.html">Контакты и журнал</a></li><li><a href="messages.html">Сообщения</a></li><li><a href="asterisk-and-freepbx-sms.html">Справочник</a></li><li><a href="directory.html">Быстрые клавиши</a></li><li><a href="quick-keys.html">Звук</a></li><li><a href="audio.html">Настройки</a></li><li><a href="settings.html">Строка меню</a></li><li><a href="menu-bar.html">Решение проблем</a></li></ul><h2>Для разработчиков</h2><ul><li><a href="troubleshooting.html" aria-current=page>Устройство</a></li><li><a href="architecture.html">Сборка</a></li><li><a href="building.html">Тесты</a></li><li><a href="testing.html">Релизы</a></li><li><a href="releasing.html">Участие</a></li></ul><h2>Руководство пользователя</h2><ul><li><a href="contributing.html">Asterisk и FreePBX SMS</a></li></ul></div></details></nav>
 <main>
-<h1 dir="auto">Решение проблем</h1>
-<h2 dir="auto">Первый запуск заблокирован</h2>
-<p dir="auto">«Не удаётся открыть MacroSIP, так как не удалось проверить разработчика»: приложение подписано ad hoc, без нотаризации. Щёлкните MacroSIP в папке «Программы» правой кнопкой и выберите <strong>Открыть</strong> либо один раз выполните <code class="notranslate">xattr -dr com.apple.quarantine /Applications/MacroSIP.app</code>. Подробности на странице <a href="installation.html">Установка</a>. Обновления, установленные самим приложением, открываются без этого диалога.</p>
-<h2 dir="auto">Меня никто не слышит: доступ к микрофону</h2>
-<p dir="auto">Панель звонка показывает «Доступ к микрофону выключен» с кнопкой <strong>Открыть Системные настройки</strong>. Разрешите MacroSIP в Системных настройках › Конфиденциальность и безопасность › Микрофон. Из-за подписи ad hoc macOS спрашивает снова после каждого обновления; разрешите ещё раз при первом звонке после обновления. Затем проверьте индикатор уровня в Настройках › Звук, пока говорите.</p>
-<h2 dir="auto">Аккаунт показывает «403» или «401»</h2>
+<h1 dir="auto">Устройство</h1>
+<p dir="auto">MacroSIP — один пакет SwiftPM (<code class="notranslate">Package.swift</code>, Swift 6, macOS 14+) без проекта Xcode. Код на Swift никогда не подключает заголовки PJSIP: всё идёт через C-таргет <code class="notranslate">CPJSUA</code>, а UI вообще не импортирует <code class="notranslate">CPJSUA</code>. Первоисточники для этой страницы — <code class="notranslate">docs/ENGINE.md</code>, <code class="notranslate">docs/DIRECTORY.md</code>, <code class="notranslate">docs/DEVELOPMENT.md</code> и ADR в <code class="notranslate">docs/adr/</code>.</p>
+<pre class="notranslate"><code class="notranslate">+----------------------------------------------------------------------+
+|  MacroSIPApp  (SwiftUI + AppKit)                                     |
+|  AppModel and its extensions · Views · Platform · Mock engine, demos |
++----------------------------------------------------------------------+
+|  MacroSIPCore  (Swift, no UI imports)                                |
+|  Engine actor · Models · Storage · Recording · Directory service     |
++-----------------------------------+----------------------------------+
+|  CPJSUA  (C shim, umbrella header) |  CLDAP  (C shim over libldap)   |
++-----------------------------------+----------------------------------+
+|  PJSIP 2.17 + OpenSSL 3.5 + Opus   |  libldap from the macOS SDK     |
+|  static, universal archives        |                                 |
++-----------------------------------+----------------------------------+
+   macrosip-cli -&gt; MacroSIPCore      pjsip-smoke -&gt; CPJSUA
+   Tests/MacroSIPCoreTests -&gt; MacroSIPCore
+</code></pre>
+<h2 dir="auto">Таргеты</h2>
 <markdown-accessiblity-table><div class="tablewrap"><table role="table">
 <thead>
 <tr>
-<th>Статус</th>
-<th>Значение</th>
-<th>Что делать</th>
+<th>Таргет</th>
+<th>Путь</th>
+<th>Содержимое</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>401 Unauthorized, 403 Forbidden</td>
-<td>Сервер отклонил учётные данные. В Настройках › Аккаунты показано «Сервер отклонил REGISTER в 14:52. Проверьте имя пользователя и пароль.»</td>
-<td>Проверьте <strong>Имя пользователя</strong>, <strong>Пароль</strong> и, если ваша АТС использует отдельное имя для аутентификации, <strong>Имя для входа</strong> в группе «Дополнительно». Нажмите <strong>Проверить</strong> в редакторе: «Регистрация прошла успешно (120 мс)» подтверждает, что всё исправлено.</td>
+<td><code class="notranslate">CPJSUA</code></td>
+<td><code class="notranslate">Sources/CPJSUA</code></td>
+<td>Зонтичный заголовок <code class="notranslate">CPJSUA.h</code> (определяет <code class="notranslate">PJ_AUTOCONF=1</code>, подключает <code class="notranslate">pjsua.h</code>) и <code class="notranslate">shim.c</code> с помощниками, которые нельзя выразить на Swift (регистрация потоков, уничтожение рекордера с ожиданием, порты тонов и усиления, DTMF, помощники для смены IP и DNS-серверов). Линкует архивы PJSIP, OpenSSL и Opus.</td>
 </tr>
 <tr>
-<td>«Нет ответа» (при проверке) или «Офис · повтор через 8 с»</td>
-<td>Сервер не отвечает.</td>
-<td>Проверьте имя сервера и порт, <strong>Транспорт</strong> (UDP, TCP или TLS; АТС должна слушать выбранный) и межсетевые экраны. Движок повторяет попытки с растущим интервалом.</td>
+<td><code class="notranslate">CLDAP</code></td>
+<td><code class="notranslate">Sources/CLDAP</code></td>
+<td>Обёртка с непрозрачным дескриптором над системным клиентом OpenLDAP (<code class="notranslate">libldap</code>), чтобы Swift никогда не импортировал <code class="notranslate">&lt;ldap.h&gt;</code>.</td>
 </tr>
 <tr>
-<td>Бесконечная «Регистрация…»</td>
-<td>Пакеты уходят, но ответа нет.</td>
-<td>То же, что выше; попробуйте другой транспорт или укажите <strong>STUN-сервер</strong>.</td>
+<td><code class="notranslate">MacroSIPCore</code></td>
+<td><code class="notranslate">Sources/MacroSIPCore</code></td>
+<td>Движок (<code class="notranslate">Engine/</code>), модели (<code class="notranslate">Model/</code>), JSON-хранилища и связка ключей (<code class="notranslate">Storage/</code>), преобразование записей (<code class="notranslate">Recording/</code>), слой справочника (<code class="notranslate">Directory/</code>), <code class="notranslate">Product.swift</code>.</td>
+</tr>
+<tr>
+<td><code class="notranslate">MacroSIPApp</code></td>
+<td><code class="notranslate">Sources/MacroSIPApp</code></td>
+<td>Приложение: <code class="notranslate">Model/</code> (AppModel), <code class="notranslate">Views/</code>, <code class="notranslate">Platform/</code>, <code class="notranslate">Engine/</code> (фабрика, имитация движка, имитация справочника) и <code class="notranslate">Resources/</code> с <code class="notranslate">en.lproj</code> и <code class="notranslate">ru.lproj</code>. Зависит от Sparkle 2.7.3 (ADR 0013).</td>
+</tr>
+<tr>
+<td><code class="notranslate">macrosip-cli</code></td>
+<td><code class="notranslate">Sources/macrosip-cli</code></td>
+<td>Телефон командной строки поверх <code class="notranslate">MacroSIPCore</code>: интерактивный режим для отладки с АТС и <code class="notranslate">--selftest</code>, которым управляет <code class="notranslate">scripts/selftest-call.sh</code>. Содержит <code class="notranslate">SIPStub</code> — небольшой UDP-регистратор для самопроверки.</td>
+</tr>
+<tr>
+<td><code class="notranslate">pjsip-smoke</code></td>
+<td><code class="notranslate">Sources/pjsip-smoke</code></td>
+<td>Доказывает, что Swift линкуется со статической сборкой: создаёт pjsua, печатает версию, кодеки и аудиоустройства, завершается с кодом 0.</td>
+</tr>
+<tr>
+<td><code class="notranslate">MacroSIPCoreTests</code></td>
+<td><code class="notranslate">Tests/MacroSIPCoreTests</code></td>
+<td>Наборы Swift Testing для Core (см. <a href="building.html">Тесты</a>).</td>
 </tr>
 </tbody>
 </table></div></markdown-accessiblity-table>
-<p dir="auto">Все статусы описаны на странице <a href="accounts.html">Аккаунты</a>.</p>
-<h2 dir="auto">Ошибки сертификата TLS</h2>
-<p dir="auto">При <strong>Транспорт: TLS</strong> движок проверяет сертификат сервера по системным корневым сертификатам. Сертификат, который не соответствует хосту, просрочен или самоподписан, окончательно срывает регистрацию (без повторов) с причиной TLS в статусе и журнале. Исправьте сертификат на сервере или, для самоподписанного сертификата, которому вы доверяете, выключите <strong>Проверять сертификат сервера</strong> в группе «Дополнительно» редактора («Отключайте, только если у сервера самоподписанный сертификат.»).</p>
-<h2 dir="auto">Нет звука или звук в одну сторону</h2>
-<p dir="auto">Обычно виноват NAT или межсетевой экран между вами и АТС. Укажите <strong>STUN-сервер</strong>, оставьте включёнными <strong>Использовать ICE</strong> и <strong>Использовать rport</strong>, разрешите UDP на локальном порту SIP и в диапазоне портов RTP и проверьте устройства в Настройках › Звук. Полный список шагов — на странице <a href="audio.html">Звук</a>.</p>
-<h2 dir="auto">Звонки обрываются при смене сети</h2>
-<p dir="auto">Движок сразу регистрируется заново при смене сети или пробуждении и отправляет re-INVITE, чтобы звонки пережили смену IP-адреса; панель звонка тем временем показывает «Восстановление связи… 12 с», а строка состояния — «Офис · повтор через 8 с». Если медиа не восстанавливаются за 60 с, звонок завершается с пометкой «Связь потеряна» в журнале. Если обрывы продолжаются, уменьшите <strong>Интервал keep-alive</strong> в Настройках › Сеть.</p>
-<h2 dir="auto">Кнопки гарнитуры не работают</h2>
-<p dir="auto">MacroSIP читает телефонные органы управления HID у USB-гарнитур (трубка, flash, удержание, микрофон, повтор). Проверьте, что <strong>Кнопки гарнитуры</strong> в Настройках › Звук включены и что строка называет ваше устройство («Подключено: Jabra Evolve2 65»); «Нет гарнитуры с кнопками управления звонком» означает, что ни одно подключённое устройство не показывает телефонных органов управления. В файле журнала есть строка «headset buttons: &lt;имя&gt; connected, …», когда устройство подхвачено, и «headset buttons: cannot open …», когда macOS не дала его открыть; это может быть связано с разрешением «Мониторинг ввода» (Системные настройки › Конфиденциальность и безопасность). Bluetooth-гарнитуры, чьи кнопки работают через профиль hands-free, обрабатывает сама macOS; они не поддерживаются. Автопереключение на гарнитуру на той же вкладке — отдельная возможность, кнопки ей не нужны.</p>
-<h2 dir="auto">Собеседник не слышит музыку на удержании</h2>
-<p dir="auto">Проверьте <strong>Источник</strong> в Настройках › Звук › Музыка на удержании: <strong>Выкл.</strong> отправляет тишину. Многие АТС подменяют то, что телефон передаёт на удержании, собственной музыкой ожидания, и собеседник слышит музыку сервера, а не MacroSIP; это настройка сервера. Файл, который движок не смог прочитать, оставляет прежний источник, а подпись группы называет причину («Файл не удалось использовать: …»). Сами вы музыку на удержании не слышите никогда.</p>
-<h2 dir="auto">Звонит не та мелодия, которую я выбрал</h2>
-<ol dir="auto">
-<li>Откройте Настройки › Звук › Мелодия звонка и нажмите <strong>Прослушать</strong>. Прослушивание играет реальный выбор с выбранной громкостью, так что вы слышите то, с чем будет звонить входящий звонок. <strong>Классическая</strong>, <strong>Цифровая</strong> и <strong>Мягкая</strong> — три разные мелодии.</li>
-<li>Если в списке ваш файл («Свой файл: office-bell.m4a»), а звучит прежний звук, посмотрите под группой: там может быть «Не удалось использовать файл мелодии: …». Файл, который не удалось прочитать (повреждён, защищён или в формате, который macOS не открывает), оставляет прежний выбор. Используйте файл WAV, AIFF, M4A или MP3.</li>
-<li>Нет звука совсем: проверьте <strong>Громкость</strong> (0 — тишина) и <strong>Устройство для мелодии</strong>; это вывод только для звонка, и он может указывать на гарнитуру или другой динамик.</li>
-<li>До 26.3 выбранная мелодия работала только при прослушивании, а входящие всегда звонили стандартной. Обновитесь до 26.3.0 или новее (<a href="installation.html">Установка</a>).</li>
-</ol>
-<p dir="auto">См. <a href="audio.html">Звук</a>.</p>
-<h2 dir="auto">Сообщение «Отправлено», а телефон его не получил</h2>
-<p dir="auto"><strong>Отправлено</strong> означает лишь, что SIP-сервер (или собеседник) принял сообщение. Это не значит, что телефон его получил: доставка на мобильный зависит от сервера и того, что за ним (для SMS через Asterisk <code class="notranslate">chan_dongle</code> — модем, SIM-карта и оператор). Проверьте журнал сервера. Сообщение, которое не приняли, показывает <strong>Не отправлено</strong> с причиной и кнопкой <strong>Повторить</strong>. См. <a href="messages.html">Сообщения</a>.</p>
-<p dir="auto">Если вкладки «Сообщения» нет совсем, сообщения выключены: включите <strong>Текстовые сообщения (SIP MESSAGE)</strong> в Настройках › Основные.</p>
-<h2 dir="auto">Имена звонящих неверные или отсутствуют</h2>
-<p dir="auto">Имя берётся из отображаемого имени SIP, затем из контакта, совпавшего по любому из его номеров, затем из источника справочника, который опрашивается не дольше одной секунды. Добавьте номер в контакт или добавьте источник справочника (<a href="directory.html">Справочник</a>).</p>
-<h2 dir="auto">Ошибки справочника и LDAP</h2>
-<markdown-accessiblity-table><div class="tablewrap"><table role="table">
-<thead>
-<tr>
-<th>Текст</th>
-<th>Значение</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>«Нет соединения с ldap.example.com»</td>
-<td>Хост недоступен или неверный порт.</td>
-</tr>
-<tr>
-<td>«Время ожидания истекло»</td>
-<td>Нет ответа за 3 с (30 с для импорта).</td>
-</tr>
-<tr>
-<td>«Неверный bind DN или пароль»</td>
-<td>Простая привязка отклонена. Оставьте <strong>Bind DN</strong> пустым для анонимного поиска.</td>
-</tr>
-<tr>
-<td>«Сервер должен быть вида ldap://host или ldaps://host»</td>
-<td>В поле «Сервер» нет схемы.</td>
-</tr>
-<tr>
-<td>«Введите адрес http, https или file», «HTTP 404»</td>
-<td>Источник URL недоступен или адрес неверен.</td>
-</tr>
-<tr>
-<td>«В заголовке нет столбца с номером», «Файл не текстовый»</td>
-<td>CSV без распознаваемого столбца с номером или не текстовый файл.</td>
-</tr>
-<tr>
-<td>«Файл не является корректным JSON», «В JSON нет массива контактов»</td>
-<td>Источник JSON повреждён.</td>
-</tr>
-<tr>
-<td>«Доступ запрещён», «Доступ к Контактам ещё не запрашивался»</td>
-<td>Разрешение на Контакты macOS; разрешите MacroSIP в Системных настройках › Конфиденциальность и безопасность › Контакты.</td>
-</tr>
-<tr>
-<td>«Нужен вход»</td>
-<td>Контакты Google без действующего токена (вход ещё не выполнен или доступ отозван). Выберите источник в Настройках › Справочник и нажмите <strong>Войти…</strong>; браузер откроет страницу согласия Google.</td>
-</tr>
-<tr>
-<td>«Вход в Google в этой сборке не настроен»</td>
-<td>В сборке нет client id Google, поэтому войти в Контакты Google нельзя; остальные типы источников работают. Установите сборку, настроенную для входа в Google.</td>
-</tr>
-</tbody>
-</table></div></markdown-accessiblity-table>
-<p dir="auto">Сообщение библиотеки, которое MacroSIP не может перевести (диагностика LDAP), показывается как есть. Источник с ошибкой пропускается 60 с, затем опрашивается снова.</p>
-<h2 dir="auto">Файл журнала и диагностика</h2>
-<p dir="auto">MacroSIP пишет <code class="notranslate">~/Library/Logs/MacroSIP/MacroSIP.log</code> (по 2 МБ на файл, хранятся 3 файла). Настройки › Основные › Дополнительно › <strong>Файл журнала</strong> › <strong>Открыть папку</strong> показывает его в Finder; <strong>Диагностика</strong> › <strong>Скопировать</strong> копирует в буфер обмена версии, macOS, аккаунты без паролей и настройки («Диагностика скопирована в буфер обмена.»). Для более подробной трассировки SIP запустите приложение командой <code class="notranslate">open /Applications/MacroSIP.app --args --log-level 5</code> (0–6). Приложение также пишет в системный журнал под подсистемой <code class="notranslate">com.hsmm.macrosip</code>.</p>
-<h2 dir="auto">Режим отладки и архив для диагностики</h2>
-<p dir="auto">Режим отладки пишет в журнал гораздо больше подробностей, в том числе SIP-сообщения. Включайте его, когда проблема требует более тщательного разбора, и затем отправьте разработчикам архив:</p>
-<ol dir="auto">
-<li>Откройте Настройки › Основные › Дополнительно › Устранение неполадок и включите <strong>Режим отладки</strong>. Он действует сразу, без перезапуска, и остаётся включённым между запусками, пока его не выключите. Файлы журнала тогда растут до 8 МБ, хранятся 3 файла. Если MacroSIP запущен с <code class="notranslate">--log-level</code> или <code class="notranslate">MACROSIP_LOG_LEVEL</code>, этот уровень важнее: переключатель неактивен и показывает уровень, с которым запущено приложение.</li>
-<li>Повторите проблему: совершите звонок или попытайтесь зарегистрироваться, если регистрация не проходит.</li>
-<li>Нажмите <strong>Создать архив…</strong> в той же группе и выберите, куда сохранить ZIP. Имя по умолчанию — <code class="notranslate">MacroSIP-diagnostics-YYYYMMDD-HHmm.zip</code>, на рабочем столе. После сохранения MacroSIP показывает архив в Finder и баннер «Архив диагностики сохранён: …».</li>
-<li>Отправьте ZIP вместе с отчётом о проблеме, как описано ниже, в разделе «Как сообщить о проблеме». Отправляйте его только тому, кому доверяете.</li>
-<li>Выключите <strong>Режим отладки</strong>. Пока этого не сделано, журнал продолжает расти.</li>
-</ol>
-<p dir="auto">Архив содержит:</p>
-<ul dir="auto">
-<li><code class="notranslate">logs/</code> — все файлы журнала, включая архивные;</li>
-<li><code class="notranslate">diagnostics.txt</code> — отчёт диагностики (версии, аккаунты, настройки и уровень журнала);</li>
-<li><code class="notranslate">crash-reports/</code> — отчёты о сбоях MacroSIP за последние 30 дней, не более 5, включены без изменений.</li>
-</ul>
-<p dir="auto">Номера телефонов и адреса серверов в архиве остаются. Пароли и значения для аутентификации в копиях удаляются (заменяются на <code class="notranslate">&lt;redacted&gt;</code>): digest-ответ, nonce, cnonce и opaque, учётные данные Basic и Bearer, пароли в адресах URL. Файлы журнала на вашем Mac не меняются.</p>
-<h2 dir="auto">Где хранятся настройки и контакты</h2>
-<markdown-accessiblity-table><div class="tablewrap"><table role="table">
-<thead>
-<tr>
-<th>Что</th>
-<th>Где</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Аккаунты (без паролей), контакты, журнал звонков, настройки, быстрые клавиши</td>
-<td><code class="notranslate">~/Library/Application Support/MacroSIP/</code> в файлах <code class="notranslate">accounts.json</code>, <code class="notranslate">contacts.json</code>, <code class="notranslate">calllog.json</code>, <code class="notranslate">settings.json</code>; фото в <code class="notranslate">photos/</code>. Запись атомарная; повреждённый файл откладывается как <code class="notranslate">&lt;name&gt;.broken-&lt;date&gt;.json</code> или <code class="notranslate">contacts.damaged-&lt;date&gt;.json</code>, и приложение запускается с тем, что удалось прочитать.</td>
-</tr>
-<tr>
-<td>Пароли (SIP-аккаунты, LDAP bind)</td>
-<td>Связка ключей входа, служба <code class="notranslate">com.hsmm.macrosip</code>, по записи на идентификатор аккаунта. Удаление аккаунта удаляет его запись.</td>
-</tr>
-<tr>
-<td>Записи разговоров</td>
-<td><code class="notranslate">~/Music/MacroSIP Recordings</code> или папка, выбранная в Настройках › Запись.</td>
-</tr>
-<tr>
-<td>Журнал</td>
-<td><code class="notranslate">~/Library/Logs/MacroSIP/</code>.</td>
-</tr>
-</tbody>
-</table></div></markdown-accessiblity-table>
-<p dir="auto">Чтобы переехать на другой Mac, скопируйте папку Application Support и введите пароли заново.</p>
-<h2 dir="auto">Как сообщить о проблеме</h2>
-<p dir="auto">Создайте issue на <a href="https://github.com/HSMM/MacroSIP/issues">github.com/HSMM/MacroSIP/issues</a> и укажите:</p>
-<ol dir="auto">
-<li>Версию MacroSIP (MacroSIP › О программе) и версию macOS.</li>
-<li>Результат команды <strong>Скопировать</strong> из строки «Диагностика» (паролей в нём нет).</li>
-<li>Что вы делали, чего ожидали, что произошло и в какое время, чтобы можно было найти нужные строки в <code class="notranslate">MacroSIP.log</code>. При сбоях звонков или регистрации приложите журнал, удалив из него всё личное.</li>
-<li>Тип АТС или оператора (Asterisk, FreePBX, 3CX, …), если знаете.</li>
-</ol>
-<p dir="auto">Пожелания по новым возможностям отправляйте туда же; план — в <a href="https://github.com/HSMM/MacroSIP/blob/main/docs/ROADMAP.md">roadmap</a>.</p>
+<h2 dir="auto">Движок (MacroSIPCore)</h2>
+<p dir="auto"><strong>Один актор.</strong> <code class="notranslate">Engine</code> — Swift-<code class="notranslate">actor</code> на последовательной очереди <code class="notranslate">DispatchQueue("macrosip.engine")</code>; каждый вызов <code class="notranslate">pjsua_*</code> выполняется внутри него. PJSIP требует регистрации вызывающих потоков, а GCD может выполнять очередь на разных потоках пула, поэтому каждая точка входа вызывает <code class="notranslate">cpjsua_thread_register()</code> (thread-local <code class="notranslate">pj_thread_desc</code>, повторный вызов ничего не делает). <code class="notranslate">pjsua_config.thread_cnt = 1</code>; рабочий поток PJSIP опрашивает события.</p>
+<p dir="auto"><strong>Обратные вызовы и поток событий.</strong> Обратные вызовы pjsua — это указатели на C-функции без контекста, поэтому это глобальные функции Swift, которые достигают движка через <code class="notranslate">EngineBridge.shared</code> (класс под замком). Обратный вызов копирует минимум данных в <code class="notranslate">EngineEvent</code>, отдаёт его в <code class="notranslate">Engine.events</code> (<code class="notranslate">AsyncStream</code> с одним потребителем) и сразу возвращается; работа, которую должен сделать движок, планируется как <code class="notranslate">Task</code> на акторе и идемпотентна. Приложение перебирает поток на главном акторе.</p>
+<p dir="auto"><strong>Снимки звонков.</strong> <code class="notranslate">CallInfo</code> — неизменяемое значение: id, аккаунт, направление, состояние, собеседник, время начала, флаги mute/hold/recording/conference, кодек, <code class="notranslate">isSecure</code>, <code class="notranslate">isReconnecting</code>. <code class="notranslate">CallID</code> — это <code class="notranslate">(slot, serial)</code>: pjsua переиспользует слоты, серийные номера никогда не повторяются, устаревший id бросает <code class="notranslate">.noSuchCall</code>. UI обновляет или добавляет строки по <code class="notranslate">.incomingCall</code> и <code class="notranslate">.callChanged</code> и удаляет по <code class="notranslate">.callEnded</code>. Коммутация медиа — одна сверка желаемого состояния (<code class="notranslate">reconcileMedia()</code>) по всем живым звонкам и записям.</p>
+<p dir="auto"><strong>Аккаунты.</strong> <code class="notranslate">AccountMapping</code> превращает <code class="notranslate">AccountConfig</code> в <code class="notranslate">pjsua_acc_config</code> (транспорт, SRTP, регистратор, прокси, имя для входа, интервал регистрации, публикация статуса, окно портов RTP). Паролей в <code class="notranslate">AccountConfig</code> нет; они берутся из связки ключей. Выключенный аккаунт в pjsua не добавляется вовсе; выключенный <code class="notranslate">registerWithServer</code> означает «только исходящие». Для TLS два слушателя: основной проверяет сервер по системным корневым сертификатам macOS, экспортированным в <code class="notranslate">ca-roots.pem</code> (<code class="notranslate">TLSRoots.swift</code>); второй обслуживает аккаунты с выключенной проверкой.</p>
+<p dir="auto"><strong>Переподключение и повтор с нарастающей паузой</strong> (<code class="notranslate">Engine+Network.swift</code>). <code class="notranslate">NWPathMonitor</code> сводит каждый путь к его основному маршруту; смена маршрута, возвращение в сеть или пробуждение запускают один «раунд»: <code class="notranslate">pjsua_handle_ip_change</code> регистрирует аккаунты заново, а установленные звонки получают re-INVITE и переживают смену IP. Временные сбои REGISTER становятся <code class="notranslate">.reconnecting(attempt:nextRetryIn:lastError:)</code> с задержками 2, 4, 8, 16, 32, затем 60 с; окончательные (401, 403, ошибки сертификата TLS) — <code class="notranslate">.failed</code>. Сторож медиа проверяет молчащий звонок внутридиалоговым OPTIONS и завершает его как «связь потеряна» при 408 или 481.</p>
+<p dir="auto"><strong>Модель качества</strong> (<code class="notranslate">Engine+Quality.swift</code>, <code class="notranslate">CallQualityModel.swift</code>). <code class="notranslate">quality(of:)</code> читает статистику RTCP потока за окно с предыдущей выборки (приложение опрашивает каждые 2 с) и вычисляет упрощённый MOS по ITU-T G.107 из кодека, потерь, джиттера и RTT: хорошо от 3,8, средне от 3,0, иначе плохо.</p>
+<p dir="auto"><strong>Статусы.</strong> <code class="notranslate">subscribePresence(uri:)</code> добавляет buddy pjsua с ключом-токеном; тела NOTIFY отображаются в <code class="notranslate">PresenceStatus</code> (<code class="notranslate">available</code>, <code class="notranslate">away</code>, <code class="notranslate">dnd</code>, <code class="notranslate">ringing</code>, <code class="notranslate">offline</code>), включая пометки Asterisk «on the phone» и «Ringing». <code class="notranslate">PresenceRegistry</code> — таблица наблюдателей со счётчиком ссылок: контакты и быстрые клавиши делят одну подписку движка на цель; последний владелец отписывает её.</p>
+<p dir="auto"><strong>Автоответ</strong> — чистая функция <code class="notranslate">AutoAnswerPolicy.decide(...)</code>: «Не беспокоить» главнее, никогда при наличии другого звонка, <code class="notranslate">Call-Info: answer-after=N</code> учитывается только от собственного сервера аккаунта, затем режим <code class="notranslate">all</code> / <code class="notranslate">contactsOnly</code> / <code class="notranslate">off</code> с настроенной задержкой.</p>
+<p dir="auto"><strong>Набранные строки.</strong> <code class="notranslate">DialString.parse(raw, account:)</code> выдаёт полный URI: <code class="notranslate">sip:</code>/<code class="notranslate">sips:</code> как есть, цифры <code class="notranslate">tel:</code> в <code class="notranslate">sip:&lt;digits&gt;@&lt;domain&gt;</code>, простые номера без пробелов, скобок и дефисов, всё с <code class="notranslate">@</code> получает префикс <code class="notranslate">sip:</code>; для аккаунтов TCP/TLS добавляется параметр транспорта.</p>
+<p dir="auto"><strong>Параметры звонков и правила отклонения.</strong> Один <code class="notranslate">CallOptions</code> на весь движок (задаётся при <code class="notranslate">start</code>, меняется на лету через <code class="notranslate">setCallOptions</code>): <code class="notranslate">incomingWhileOnCall</code> (сигнал ожидания, только окно или 486 занято), <code class="notranslate">dtmfMethod</code> (автоматически, RFC 2833, SIP INFO, in-band), <code class="notranslate">doNotDisturb</code> (сразу 486) и <code class="notranslate">denyIncoming</code> (<code class="notranslate">everyone</code> отправляет 603, <code class="notranslate">notInContacts</code> сверяется с <code class="notranslate">knownNumbers</code>, <code class="notranslate">anonymous</code> отвечает 433). Правила вычисляются внутри <code class="notranslate">on_incoming_call</code> на потоке PJSIP, до автоматического 180, поэтому ничего не звонит и решение не зависит от отзывчивости приложения. Приложение видит только <code class="notranslate">.callEnded</code> и пишет пометку в журнал звонков.</p>
+<h2 dir="auto">Приложение (MacroSIPApp)</h2>
+<p dir="auto"><code class="notranslate">AppModel</code> (<code class="notranslate">@MainActor @Observable</code>, <code class="notranslate">Model/AppModel.swift</code>) — единственный источник истины для UI: он владеет движком (<code class="notranslate">any SIPEngine</code>), хранилищами, хранилищем связки ключей и наблюдаемым состоянием. Его расширения делят поведение по областям: <code class="notranslate">+Engine</code> (запуск, обработка событий, применение кодеков и сети), <code class="notranslate">+Accounts</code>, <code class="notranslate">+Calls</code>, <code class="notranslate">+LiveCalls</code>, <code class="notranslate">+AutoAnswer</code>, <code class="notranslate">+DND</code>, <code class="notranslate">+Presence</code>, <code class="notranslate">+Quality</code>, <code class="notranslate">+QuickKeys</code>, <code class="notranslate">+Directory</code>, <code class="notranslate">+Presentation</code>. <code class="notranslate">RecordingCoordinator</code> преобразует готовые WAV в M4A. Вызовы движка — это <code class="notranslate">Task { try await engine.x }</code>, ошибки показываются временным баннером.</p>
+<p dir="auto"><code class="notranslate">SIPEngine</code> (<code class="notranslate">Engine/SIPEngine.swift</code>) — протокол, которому отвечают и настоящий <code class="notranslate">Engine</code>, и <code class="notranslate">MockEngine</code>; <code class="notranslate">EngineFactory.make(useMock:)</code> выбирает один из них. <code class="notranslate">LaunchOptions.swift</code> разбирает <code class="notranslate">--mock-engine</code>, <code class="notranslate">--demo-state</code>, <code class="notranslate">--data-dir</code>, <code class="notranslate">--snapshot</code>, <code class="notranslate">--snapshot-after</code>, <code class="notranslate">--appearance</code> и <code class="notranslate">--log-level</code>; <code class="notranslate">DemoState.swift</code> заполняет образцы данных и переводит имитацию в именованные состояния (см. <a href="building.html">Тесты</a>).</p>
+<p dir="auto"><code class="notranslate">Views/</code> следует <code class="notranslate">docs/design/SCREENS.md</code>, по папке на экран (<code class="notranslate">Main/</code>, <code class="notranslate">Dialpad/</code>, <code class="notranslate">Call/</code>, <code class="notranslate">Contacts/</code>, <code class="notranslate">CallLog/</code>, <code class="notranslate">Incoming/</code>, <code class="notranslate">QuickKeys/</code>, <code class="notranslate">Directory/</code>, <code class="notranslate">Settings/</code> с файлом на вкладку, <code class="notranslate">FirstLaunch/</code>) плюс общие <code class="notranslate">Components/</code> (<code class="notranslate">Theme</code>, компоненты форм, обёртка <code class="notranslate">@Local</code>). В <code class="notranslate">Platform/</code> лежат части AppKit и системные: <code class="notranslate">AppDelegate</code>, <code class="notranslate">StatusItemController</code> (строка меню), <code class="notranslate">IncomingCallPanelController</code> (плавающее окно), <code class="notranslate">CallNotifications</code>, <code class="notranslate">AudioTransport</code>, <code class="notranslate">RecordingPlayer</code>, <code class="notranslate">QuickKeysMenu</code>, <code class="notranslate">Updater</code> (Sparkle), <code class="notranslate">AppLog</code> и <code class="notranslate">AppInfo</code>.</p>
+<h2 dir="auto">Хранение</h2>
+<p dir="auto">Всё, кроме паролей, — JSON в <code class="notranslate">~/Library/Application Support/MacroSIP/</code> (ADR 0004): <code class="notranslate">accounts.json</code>, <code class="notranslate">contacts.json</code>, <code class="notranslate">calllog.json</code>, <code class="notranslate">settings.json</code>, <code class="notranslate">quickkeys.json</code>. <code class="notranslate">JSONStore&lt;T&gt;</code> пишет атомарно; повреждённый файл переименовывается в <code class="notranslate">.broken-&lt;timestamp&gt;.json</code>, и используется значение по умолчанию. Фото контактов — файлы JPEG в <code class="notranslate">photos/&lt;id&gt;.jpg</code>. Пароли живут в связке ключей под службой <code class="notranslate">com.hsmm.macrosip</code>, account = UUID аккаунта (<code class="notranslate">Storage/Keychain.swift</code>); секреты справочника идут через <code class="notranslate">DirectoryCredentials</code> (пароль LDAP bind; токен Google под <code class="notranslate">com.hsmm.macrosip.google</code>). Записи по умолчанию в <code class="notranslate">~/Music/MacroSIP Recordings</code>, файл журнала — <code class="notranslate">~/Library/Logs/MacroSIP/MacroSIP.log</code>.</p>
+<h2 dir="auto">Локализация</h2>
+<p dir="auto">ADR 0011: классические <code class="notranslate">Localizable.strings</code> и <code class="notranslate">Localizable.stringsdict</code> в <code class="notranslate">Sources/MacroSIPApp/Resources/{en,ru}.lproj</code>, потому что каталогам <code class="notranslate">.xcstrings</code> нужен <code class="notranslate">xcstringstool</code> из Xcode. Все обращения идут через <code class="notranslate">L</code> в <code class="notranslate">Model/Strings.swift</code>; <code class="notranslate">make-app.sh</code> копирует папки <code class="notranslate">.lproj</code> в <code class="notranslate">Contents/Resources</code>, а <code class="notranslate">scripts/check-strings.sh</code> следит за согласованностью кода и обоих языков. Запросы на доступ к микрофону и Контактам лежат в <code class="notranslate">packaging/InfoPlist/&lt;lang&gt;.lproj/InfoPlist.strings</code>.</p>
+<h2 dir="auto">Слой справочника</h2>
+<p dir="auto"><code class="notranslate">DirectoryService</code> (актор в <code class="notranslate">MacroSIPCore/Directory/</code>) держит по одному <code class="notranslate">DirectoryProvider</code> на источник: <code class="notranslate">MacContactsProvider</code> (фреймворк Contacts), <code class="notranslate">LDAPDirectoryProvider</code> (libldap через <code class="notranslate">CLDAP</code>), <code class="notranslate">URLDirectoryProvider</code> (лента CSV или JSON) и заглушка <code class="notranslate">GoogleDirectoryProvider</code>, которая всегда сообщает «Нужен вход». Поиск опрашивает все включённые источники одновременно и возвращается, когда все ответили или через 3 с; определение звонящего опрашивает источники только для поиска не дольше 1 с; у запроса LDAP предел 3 с (30 с для импорта). Состояния идут через <code class="notranslate">AsyncStream&lt;DirectoryEvent&gt;</code>. В приложении <code class="notranslate">AppModel+Directory.swift</code> выполняет поиск, определение, импорт и расписание, <code class="notranslate">Engine/LiveDirectory.swift</code> оборачивает сервис, <code class="notranslate">MockDirectory.swift</code> обслуживает демонстрационные запуски, а <code class="notranslate">Model/DirectoryMerge.swift</code> сливает импорт в Контакты по номеру: карточка, созданная источником, следует за справочником, карточка пользователя получает только то, чего ей не хватает.</p>
+<h2 dir="auto">Записи о решениях</h2>
+<p dir="auto"><a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0001-platform-and-ui-stack.md">0001 platform and UI stack</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0002-pjsip-build.md">0002 PJSIP build</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0003-product-scope.md">0003 product scope</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0004-storage.md">0004 storage</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0005-accounts-and-calls.md">0005 accounts and calls</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0006-quality-and-testing.md">0006 quality and testing</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0007-license-and-distribution.md">0007 license and distribution</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0008-development-workflow.md">0008 development workflow</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0009-ui-decisions.md">0009 UI decisions</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0010-versioning.md">0010 versioning</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0011-localization-files.md">0011 localization files</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0012-universal-build.md">0012 universal build</a> ·<br>
+<a href="https://github.com/HSMM/MacroSIP/blob/main/docs/adr/0013-in-app-updates-sparkle.md">0013 in-app updates</a></p>
+<p dir="auto">См. также <a href="architecture.html">Сборка</a>, <a href="building.html">Тесты</a>, <a href="testing.html">Релизы</a>, <a href="releasing.html">Участие</a>.</p>
 <p dir="auto">Другие страницы: <a href="index.html">Главная</a> · <a href="../en/index.html">Home</a> (English)</p>
 <footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
 </main>

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asterisk and FreePBX: SMS through chan_dongle · MacroSIP documentation</title>
+<meta name="description" content="MacroSIP documentation">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/asterisk-and-freepbx-sms.html">
+<link rel="alternate" hreflang="ru" href="../ru/asterisk-and-freepbx-sms.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/asterisk-and-freepbx-sms.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/asterisk-and-freepbx-sms.html" hreflang="en" aria-current=true>English</a><a href="../ru/asterisk-and-freepbx-sms.html" hreflang="ru">Русский</a><a href="../zh/asterisk-and-freepbx-sms.html" hreflang="zh-Hans">中文</a></div></header>
+<div class="layout">
+<nav aria-label="Contents"><details><summary>Contents</summary><div class="links"><ul><li><a href="index.html">Home</a></li></ul><h2>User guide</h2><ul><li><a href="installation.html">Installation</a></li><li><a href="accounts.html">Accounts</a></li><li><a href="calls.html">Calls</a></li><li><a href="incoming-calls.html">Incoming calls</a></li><li><a href="contacts-and-call-log.html">Contacts and call log</a></li><li><a href="messages.html">Messages</a></li><li><a href="asterisk-and-freepbx-sms.html" aria-current=page>Asterisk and FreePBX SMS</a></li><li><a href="directory.html">Directory</a></li><li><a href="quick-keys.html">Quick keys</a></li><li><a href="audio.html">Audio</a></li><li><a href="settings.html">Settings</a></li><li><a href="menu-bar.html">Menu bar</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul><h2>For developers</h2><ul><li><a href="architecture.html">Architecture</a></li><li><a href="building.html">Building</a></li><li><a href="testing.html">Testing</a></li><li><a href="releasing.html">Releasing</a></li><li><a href="contributing.html">Contributing</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">Asterisk and FreePBX: SMS through chan_dongle</h1>
+<p dir="auto"><strong>Warning.</strong> This recipe follows the Asterisk and chan_dongle documentation and has not yet been tried on a live PBX. Treat it as a starting point and watch the Asterisk console (<code class="notranslate">asterisk -rvvv</code>) while you test.</p>
+<h2 dir="auto">How it works</h2>
+<ol dir="auto">
+<li>chan_dongle starts a dialplan channel for an incoming SMS in the context named by <code class="notranslate">context=</code> in <code class="notranslate">dongle.conf</code>, extension <code class="notranslate">sms</code>. The sender number is in <code class="notranslate">CALLERID(num)</code>, the text in <code class="notranslate">${SMS}</code>.</li>
+<li>The dialplan turns it into a SIP MESSAGE with <code class="notranslate">MessageSend</code> to the PJSIP endpoint (the extension number).</li>
+<li>Asterisk sends the MESSAGE to the Contact that the extension registered, the same path an INVITE takes. So it reaches MacroSIP while MacroSIP is registered as that extension.</li>
+<li>A reply from MacroSIP arrives at the PBX as a MESSAGE and lands in the endpoint's <code class="notranslate">message_context</code>. There the dialplan either forwards it to another extension or sends it out through the modem with <code class="notranslate">DongleSendSMS</code>.</li>
+</ol>
+<h2 dir="auto">FreePBX</h2>
+<p dir="auto">FreePBX has no GUI for this. Put the dialplan into <code class="notranslate">/etc/asterisk/extensions_custom.conf</code> and the endpoint option into <code class="notranslate">/etc/asterisk/pjsip.endpoint_custom_post.conf</code>, then run <code class="notranslate">fwconsole reload</code>.</p>
+<h2 dir="auto">Configuration</h2>
+<pre class="notranslate"><code class="notranslate">; extensions_custom.conf
+; incoming SMS from the modem -&gt; extension 1001
+[from-dongle-sms]            ; the same name as context= in dongle.conf
+exten =&gt; sms,1,NoOp(SMS from ${CALLERID(num)}: ${SMS})
+ same =&gt; n,Set(MESSAGE(body)=${SMS})
+ same =&gt; n,MessageSend(pjsip:1001,${CALLERID(num)})
+ same =&gt; n,Hangup()
+
+; messages from MacroSIP: to other extensions, or out through the modem
+[messages]
+exten =&gt; _XXXX,1,MessageSend(pjsip:${EXTEN},${MESSAGE(from)})
+ same =&gt; n,Hangup()
+exten =&gt; _+X.,1,DongleSendSMS(dongle0,${EXTEN},${MESSAGE(body)})
+ same =&gt; n,Hangup()
+</code></pre>
+<pre class="notranslate"><code class="notranslate">; pjsip.endpoint_custom_post.conf
+[1001](+)
+message_context=messages
+</code></pre>
+<p dir="auto">Replace <code class="notranslate">1001</code>, <code class="notranslate">dongle0</code> and the number pattern with your own.</p>
+<h2 dir="auto">What to expect in MacroSIP</h2>
+<ul dir="auto">
+<li>The SMS appears as a message from the phone number. Messages must be on in Settings › General › Messages.</li>
+<li>A reply goes back through the same account.</li>
+<li><strong>Sent</strong> means the PBX accepted the message; the modem and the carrier decide the rest.</li>
+<li>Without <code class="notranslate">message_context</code>, a message sent from MacroSIP lands in the extension's normal context and is usually refused. MacroSIP then shows <strong>Not sent</strong> with the SIP code.</li>
+</ul>
+<h2 dir="auto">Known limits</h2>
+<ul dir="auto">
+<li>If the extension is registered from two devices, which one receives the MESSAGE depends on the Asterisk version and the AOR settings. Test it.</li>
+<li>Messages are plain text only.</li>
+<li>Long SMS are not joined.</li>
+</ul>
+<p dir="auto">See also <a href="messages.html">Messages</a> and <a href="troubleshooting.html">Troubleshooting</a>.</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

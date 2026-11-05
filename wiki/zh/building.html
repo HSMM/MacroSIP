@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>构建 · MacroSIP 文档</title>
+<title>测试 · MacroSIP 文档</title>
 <meta name="description" content="MacroSIP 文档">
 <link rel="stylesheet" href="../wiki.css">
 <link rel="alternate" hreflang="en" href="../en/building.html">
@@ -13,193 +13,174 @@
 <body>
 <header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/building.html" hreflang="en">English</a><a href="../ru/building.html" hreflang="ru">Русский</a><a href="../zh/building.html" hreflang="zh-Hans" aria-current=true>中文</a></div></header>
 <div class="layout">
-<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html">通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="messages.html">消息</a></li><li><a href="directory.html">目录</a></li><li><a href="quick-keys.html">快捷键</a></li><li><a href="audio.html">音频</a></li><li><a href="settings.html">设置</a></li><li><a href="menu-bar.html">菜单栏</a></li><li><a href="troubleshooting.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="architecture.html">架构</a></li><li><a href="building.html" aria-current=page>构建</a></li><li><a href="testing.html">测试</a></li><li><a href="releasing.html">发布</a></li><li><a href="contributing.html">参与贡献</a></li></ul></div></details></nav>
+<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html">通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="messages.html">消息</a></li><li><a href="asterisk-and-freepbx-sms.html">目录</a></li><li><a href="directory.html">快捷键</a></li><li><a href="quick-keys.html">音频</a></li><li><a href="audio.html">设置</a></li><li><a href="settings.html">菜单栏</a></li><li><a href="menu-bar.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="troubleshooting.html">架构</a></li><li><a href="architecture.html">构建</a></li><li><a href="building.html" aria-current=page>测试</a></li><li><a href="testing.html">发布</a></li><li><a href="releasing.html">参与贡献</a></li></ul><h2>用户指南</h2><ul><li><a href="contributing.html">Asterisk 与 FreePBX 短信</a></li></ul></div></details></nav>
 <main>
-<h1 dir="auto">构建</h1>
-<p dir="auto">MacroSIP 仅用 SwiftPM 和 Xcode 命令行工具即可构建。没有 Xcode 项目，也不涉及 Homebrew：OpenSSL 和 Opus 与 PJSIP 一起从固定版本的源代码 tarball 编译。详情见 <code class="notranslate">scripts/README-build.md</code>、<code class="notranslate">scripts/build-pjsip.sh</code>、<code class="notranslate">scripts/make-app.sh</code> 和 ADR 0012。</p>
-<h2 dir="auto">要求</h2>
-<ul dir="auto">
-<li><strong>Apple 芯片</strong> Mac 上的 macOS 14 或更新版本。构建主机必须是 arm64：通用构建的 x86_64 部分在同一台机器上交叉编译，<code class="notranslate">build-pjsip.sh</code> 在 Intel 主机上会停止。</li>
-<li>Xcode 命令行工具（<code class="notranslate">xcode-select --install</code>）。不需要完整的 Xcode；如果已安装，它可以直接打开 <code class="notranslate">Package.swift</code>。</li>
-<li>首次运行时需要访问 github.com 和 downloads.xiph.org 的网络（之后 tarball 会被缓存）。</li>
-<li>可选：Rosetta 2（<code class="notranslate">softwareupdate --install-rosetta --agree-to-license</code>），用于在 Apple 芯片上运行 x86_64 切片。</li>
-</ul>
-<h2 dir="auto">第 1 步：<code class="notranslate">scripts/build-pjsip.sh</code></h2>
-<pre lang="sh" class="notranslate"><code class="notranslate">scripts/build-pjsip.sh            # 首次运行在 8 核 M 系列 Mac 上约 5 分钟，之后只需数秒
-scripts/build-pjsip.sh --clean    # 删除除下载外的所有输出并重新构建
-JOBS=4 scripts/build-pjsip.sh     # 限制并行度
-KEEP_BUILD=1 scripts/build-pjsip.sh   # 保留 third_party/build 下的源代码树
-</code></pre>
-<p dir="auto">该脚本以 <code class="notranslate">-mmacosx-version-min=14.0</code> 为 arm64（原生）和 x86_64（<code class="notranslate">--host=x86_64-apple-darwin</code>）构建：</p>
+<h1 dir="auto">测试</h1>
+<p dir="auto">三个层面检验 MacroSIP：<code class="notranslate">MacroSIPCore</code> 的 Swift Testing 测试套件、针对 <code class="notranslate">pjsua</code> 的端到端环回通话，以及使用模拟引擎的应用演示启动。三者都在每次推送和拉取请求时在 CI 中运行。只有在 <code class="notranslate">swift build</code> 干净通过、测试通过、<code class="notranslate">scripts/selftest-call.sh</code> 通过并且验证了一次真实通话之后，一个里程碑才算完成（ADR 0006，<code class="notranslate">docs/DEVELOPMENT.md</code>）。</p>
+<h2 dir="auto">单元与引擎测试：<code class="notranslate">scripts/test.sh</code></h2>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">scripts/test.sh                                  <span class="pl-c"><span class="pl-c">#</span> 所有测试套件</span>
+scripts/test.sh --filter DialStringTests         <span class="pl-c"><span class="pl-c">#</span> 额外参数传给 swift test</span></pre></div>
+<p dir="auto">切勿直接运行 <code class="notranslate">swift test</code>：命令行工具附带 Testing 框架，但 SwiftPM 自己找不到它的宏插件。<code class="notranslate">test.sh</code> 显式传入插件路径（<code class="notranslate">-Xswiftc -plugin-path -Xswiftc .../usr/lib/swift/host/plugins/testing</code>）。没有 Xcode 就没有 XCTest，因此每个测试套件都使用 <code class="notranslate">import Testing</code>。</p>
+<p dir="auto"><code class="notranslate">Tests/MacroSIPCoreTests</code> 中的测试套件包含约 210 个测试：</p>
 <markdown-accessiblity-table><div class="tablewrap"><table role="table">
 <thead>
 <tr>
-<th>组件</th>
-<th>版本</th>
+<th>文件</th>
+<th>覆盖内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="notranslate">DialStringTests</code></td>
+<td>解析表（<code class="notranslate">sip:</code>、<code class="notranslate">tel:</code>、普通号码、<code class="notranslate">user@host</code>）</td>
+</tr>
+<tr>
+<td><code class="notranslate">JSONStoreTests</code>、<code class="notranslate">StoreTests</code>、<code class="notranslate">SettingsCompatTests</code></td>
+<td>原子写入、损坏文件恢复、存储往返、旧版 <code class="notranslate">settings.json</code> 和通话记录文件以默认值解码、通话/定时勿扰/录音</td>
+</tr>
+<tr>
+<td><code class="notranslate">KeychainTests</code></td>
+<td>使用测试服务名的封装</td>
+</tr>
+<tr>
+<td><code class="notranslate">ContactTests</code></td>
+<td>号码规范化、匹配、排序、照片、旧字段</td>
+</tr>
+<tr>
+<td><code class="notranslate">AutoAnswerPolicyTests</code></td>
+<td>规则顺序（勿扰、另一路通话、<code class="notranslate">answer-after</code>、模式）</td>
+</tr>
+<tr>
+<td><code class="notranslate">QuickKeyTests</code></td>
+<td>键模型、代接 URI、在线状态注册表</td>
+</tr>
+<tr>
+<td><code class="notranslate">RecordingConverterTests</code></td>
+<td>WAV 转 M4A、立体声分离对、头部修复</td>
+</tr>
+<tr>
+<td><code class="notranslate">EngineTests</code></td>
+<td>启动/停止、账户、环回通话（一个引擎呼叫自己）、保持、静音、DTMF、转接、TLS 监听器</td>
+</tr>
+<tr>
+<td><code class="notranslate">EngineMilestone5Tests</code></td>
+<td>会议、单声道和立体声录音、针对 PIDF 存根的在线状态映射、<code class="notranslate">answer-after</code> 信任</td>
+</tr>
+<tr>
+<td><code class="notranslate">EngineAudioTests</code></td>
+<td>MOS 表、每路通话和铃声的音量、Opus FEC/DTX、语音处理策略、设备事件去抖</td>
+</tr>
+<tr>
+<td><code class="notranslate">EngineCallOptionsTests</code></td>
+<td>单通话模式、呼叫等待提示音、DTMF 方式、勿扰模式</td>
+</tr>
+<tr>
+<td><code class="notranslate">EngineNetworkTests</code></td>
+<td>注册退避、网络回合、re-INVITE 结果、媒体看门狗、睡眠与唤醒，使用 <code class="notranslate">NetworkStub</code>（一个 UDP 注册服务器/被叫方）</td>
+</tr>
+<tr>
+<td><code class="notranslate">Engine262Tests</code></td>
+<td>RTP 端口窗口、rport、使用进程内 DNS 存根的 DNS SRV、拒接规则、附加编解码器</td>
+</tr>
+<tr>
+<td><code class="notranslate">DirectoryParsingTests</code>、<code class="notranslate">DirectoryServiceTests</code>、<code class="notranslate">DirectoryLDAPTests</code></td>
+<td>CSV/JSON 源与号码匹配、使用存根提供者的服务、针对进程内 <code class="notranslate">NWListener</code> 服务器的 LDAP</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">引擎测试使用空音频、绑定到环回地址，并使用 <code class="notranslate">Engine(monitorNetwork: false)</code>，因此不依赖主机的网络；<code class="notranslate">makeEngine()</code> 会停止失败测试遗留的引擎，所以一次失败不会级联。<code class="notranslate">TestSupport.swift</code> 提供临时目录。</p>
+<h2 dir="auto">端到端通话：<code class="notranslate">scripts/selftest-call.sh</code></h2>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">scripts/selftest-call.sh                          <span class="pl-c"><span class="pl-c">#</span> 原生</span>
+SELFTEST_ARCH=x86_64 scripts/selftest-call.sh     <span class="pl-c"><span class="pl-c">#</span> Rosetta 2 下的 x86_64 切片</span>
+SELFTEST_LOG=/tmp/selftest.log SELFTEST_LOG_LEVEL=5 scripts/selftest-call.sh</pre></div>
+<p dir="auto">该脚本从 <code class="notranslate">third_party/pjsip/bin/pjsua</code> 在端口 5080 和 5081 上启动两部 <code class="notranslate">pjsua</code> 电话（空音频、自动接听、循环的 600 Hz 音、5088 和 5089 上的 telnet CLI），构建 <code class="notranslate">macrosip-cli</code> 并运行 <code class="notranslate">macrosip-cli --selftest</code>。自测（<code class="notranslate">Sources/macrosip-cli/SelfTest*.swift</code>）针对一个独立的 PJSIP 实现检查：双向 RTP、保持与恢复（也包括连续操作）、DTMF、单声道录音（可听到音调的 WAV，然后是 M4A）、中间一秒静音的立体声分离录音、通过 pjsua CLI 驱动的在线状态（在线、离开、忙）、带合并和拆分的两路会议以及在两路之间移动的录音、来电（接听、以 486 拒绝）、两部电话之间的盲转接和协商转接、通过 SIP INFO 的 DTMF 以及针对 <code class="notranslate">SIPStub</code>（<code class="notranslate">macrosip-cli</code> 内部一个发出摘要认证挑战的 UDP 注册服务器；每个已授权的 INVITE 必须超过 1300 字节且没有传输切换错误）注册的账户、通话期间和已注册账户下的模拟网络变化、通话质量（必须为 <code class="notranslate">good</code>）、单通话模式、勿扰模式、拒接规则以及仅 GSM 的通话。使用 <code class="notranslate">SELFTEST_ARCH=x86_64</code> 时，CLI 以通用方式构建，CLI 和两部电话都通过 <code class="notranslate">arch -x86_64</code> 运行；<code class="notranslate">pjsua</code> 在 Rosetta 下需要多几秒才能就绪，因此脚本会轮询其 CLI 最多约 15 秒。<code class="notranslate">SELFTEST_CLI=&lt;path&gt;</code> 使用预构建的 CLI。</p>
+<h2 dir="auto">演示启动与模拟引擎</h2>
+<p dir="auto"><strong>debug</strong> 应用（<code class="notranslate">scripts/make-app.sh debug</code>）接受 <code class="notranslate">Sources/MacroSIPApp/Model/LaunchOptions.swift</code> 中的启动选项；release 应用忽略它们。</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
 <th>选项</th>
+<th>效果</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>OpenSSL</td>
-<td>3.5.9 (LTS)</td>
-<td><code class="notranslate">no-shared no-module no-tests</code>，仅 <code class="notranslate">build_libs</code> 和 <code class="notranslate">install_dev</code>；<code class="notranslate">darwin64-arm64-cc</code> / <code class="notranslate">darwin64-x86_64-cc</code></td>
+<td><code class="notranslate">--mock-engine</code></td>
+<td>用 <code class="notranslate">MockEngine</code> 代替 PJSIP：注册在 1 秒后成功（密码 <code class="notranslate">wrong</code> 或包含 <code class="notranslate">fail</code> 的域给出 403），外拨在 2 秒后接通</td>
 </tr>
 <tr>
-<td>Opus</td>
-<td>1.6.1</td>
-<td><code class="notranslate">--disable-shared --enable-static --disable-doc --disable-extra-programs</code></td>
+<td><code class="notranslate">--demo-state &lt;name&gt;</code></td>
+<td>植入示例账户、联系人和记录条目，隐含 <code class="notranslate">--mock-engine</code> 和一个一次性数据目录；绝不触碰钥匙串</td>
 </tr>
 <tr>
-<td>pjproject</td>
-<td>2.17</td>
-<td>在 configure 之前安装 <code class="notranslate">third_party/pjsip/config_site.h</code>；<code class="notranslate">--disable-shared --disable-pjsua2 --disable-video --disable-darwin-ssl --disable-speex-aec</code>，不含 L16、AMR、SILK、bcg729 (G.729) 或 Lyra；<code class="notranslate">--with-ssl</code> 和 <code class="notranslate">--with-opus</code> 指向 <code class="notranslate">third_party/deps/&lt;arch&gt;</code></td>
+<td><code class="notranslate">--data-dir &lt;path&gt;</code></td>
+<td>JSON 存储放在 <code class="notranslate">&lt;path&gt;</code> 而非 Application Support</td>
+</tr>
+<tr>
+<td><code class="notranslate">--snapshot &lt;prefix&gt;</code></td>
+<td>在 <code class="notranslate">--snapshot-after</code> 秒（默认 6）后为每个窗口写出 <code class="notranslate">&lt;prefix&gt;-&lt;window&gt;.png</code>，然后退出；无需显示器</td>
+</tr>
+<tr>
+<td><code class="notranslate">--appearance light|dark</code></td>
+<td>强制主题</td>
+</tr>
+<tr>
+<td><code class="notranslate">-AppleLanguages "(ru)"</code></td>
+<td>标准的 macOS 参数；以俄语运行应用</td>
+</tr>
+<tr>
+<td><code class="notranslate">--log-level 0-6</code></td>
+<td>PJSIP 详细程度（所有构建）</td>
 </tr>
 </tbody>
 </table></div></markdown-accessiblity-table>
-<p dir="auto">每个 tarball 都根据脚本顶部固定的 SHA-256 进行验证。<code class="notranslate">--disable-darwin-ssl</code> 很重要：否则 configure 会优先选择已弃用的 SecureTransport 而非 OpenSSL。脚本检查 configure 日志（找到 OpenSSL 和 Opus，G.722.1、GSM、iLBC 和 Speex 编解码器未被禁用），检查每个归档和 <code class="notranslate">pjsua</code> 的架构与 <code class="notranslate">minos</code>，并在 <code class="notranslate">pjsua</code> 链接了 <code class="notranslate">/opt/homebrew</code> 中的任何内容时失败。</p>
-<p dir="auto"><code class="notranslate">config_site.h</code> 开启 IPv6、SRTP（SDES，无 DTLS）、WebRTC 回声消除器、TLS、授权头缓存、<code class="notranslate">PJSUA_MAX_CALLS</code> 8，以及编解码器 Opus、G.711、G.722、G.722.1、GSM、iLBC 和 Speex（G.722.1、GSM、iLBC 和 Speex 在引擎中保持禁用，直到用户启用；添加编解码器见 <a href="contributing.html">参与贡献</a>）。视频关闭。</p>
-<p dir="auto">各架构的结果用 <code class="notranslate">lipo</code> 合并。在架构间不同的头文件（<code class="notranslate">pj/compat/m_auto.h</code>、<code class="notranslate">os_auto.h</code>，configure 在其中写入机器名）合并为一个带 <code class="notranslate">#if defined(__aarch64__)</code> / <code class="notranslate">#elif defined(__x86_64__)</code> 分支的文件。库名去掉主机三元组后缀（<code class="notranslate">libpj-aarch64-apple-darwin27.2.0.a</code> 变为 <code class="notranslate">libpj.a</code>），因此两个切片的名称相同，链接标志在 macOS 更新后依然有效。</p>
-<p dir="auto"><code class="notranslate">third_party/</code> 下的输出布局（除 <code class="notranslate">pjsip/config_site.h</code> 外全部被 git 忽略）：</p>
+<p dir="auto">按领域划分的演示状态（完整列表在 <code class="notranslate">Model/DemoState.swift</code> 的头部）：</p>
+<ul dir="auto">
+<li>主窗口与通话：<code class="notranslate">first-launch</code>、<code class="notranslate">dialpad</code>、<code class="notranslate">contacts</code>、<code class="notranslate">calllog</code>、<code class="notranslate">connected</code>、<code class="notranslate">calls</code>、<code class="notranslate">conference</code>、<code class="notranslate">recording</code>、<code class="notranslate">recording-long</code>、<code class="notranslate">incoming</code>、<code class="notranslate">incoming-hidden</code>、<code class="notranslate">autoAnswer</code>、<code class="notranslate">suggest</code>、<code class="notranslate">keypad</code>、<code class="notranslate">transfer-banner</code>、<code class="notranslate">account-popup</code>、<code class="notranslate">account-popup-live</code>、<code class="notranslate">many-accounts</code>。</li>
+<li>音频与网络：<code class="notranslate">quality-good</code>、<code class="notranslate">quality-fair</code>、<code class="notranslate">quality-poor</code>、<code class="notranslate">quality-poor-calls</code>、<code class="notranslate">call-volume</code>（同时写出 <code class="notranslate">&lt;prefix&gt;-popover.png</code>）、<code class="notranslate">headset</code>、<code class="notranslate">headset-back</code>、<code class="notranslate">network-offline</code>、<code class="notranslate">reconnecting</code>。</li>
+<li>通话与勿扰：<code class="notranslate">timed-dnd</code>（将菜单栏项写入 <code class="notranslate">&lt;prefix&gt;-menu.txt</code>）、<code class="notranslate">call-log-playback</code>、<code class="notranslate">busy-mode</code>。</li>
+<li>设置：<code class="notranslate">settings-accounts</code>、<code class="notranslate">account-editor</code>、<code class="notranslate">account-editor-basic</code>、<code class="notranslate">account-editor-open</code>、<code class="notranslate">editor-first-launch</code>、<code class="notranslate">settings-general</code>、<code class="notranslate">settings-general-advanced</code>、<code class="notranslate">settings-audio</code>、<code class="notranslate">settings-codecs</code>、<code class="notranslate">settings-network</code>、<code class="notranslate">settings-recording</code>、<code class="notranslate">settings-autoanswer</code>、<code class="notranslate">settings-calls</code>、<code class="notranslate">settings-directory</code>、<code class="notranslate">many-accounts-settings</code>、<code class="notranslate">deny-incoming</code>。</li>
+<li>快捷键：<code class="notranslate">quick-keys</code>、<code class="notranslate">quick-keys-bottom</code>（写出 <code class="notranslate">-main.png</code> 和 <code class="notranslate">-settings.png</code>）。</li>
+<li>联系人名片：<code class="notranslate">contact-card</code>、<code class="notranslate">contact-card-new</code>（写出 <code class="notranslate">-card.png</code>）。</li>
+<li>目录（<code class="notranslate">MockDirectory</code>）：<code class="notranslate">directory</code>、<code class="notranslate">directory-done</code>、<code class="notranslate">directory-incoming</code>、<code class="notranslate">directory-sheet</code>、<code class="notranslate">directory-sheet-url</code>、<code class="notranslate">directory-sheet-google</code>、<code class="notranslate">directory-sheet-macos</code>、<code class="notranslate">directory-import</code>、<code class="notranslate">directory-selftest</code>。</li>
+<li>消息（模拟引擎 0.6 秒后应答）：<code class="notranslate">messages</code>、<code class="notranslate">messages-conversation</code>、<code class="notranslate">messages-failed</code>、<code class="notranslate">messages-new</code>、<code class="notranslate">messages-empty</code>、<code class="notranslate">messages-many</code>、<code class="notranslate">messages-selftest</code>。每个状态都会在演示设置中开启消息；<code class="notranslate">messages-selftest</code> 只运行 <code class="notranslate">selftest</code> 也包含的消息检查（关闭：丢弃、无标签页；开启：保存；再次关闭：隐藏）。</li>
+<li>维护：<code class="notranslate">selftest</code>、<code class="notranslate">quit</code>（检查关闭不会挂起）。</li>
+</ul>
+<p dir="auto"><strong>演示自测。</strong><code class="notranslate">--demo-state selftest</code> 像视图那样通过模拟引擎驱动模型，并为每项检查记录一行 <code class="notranslate">PASS</code> 或 <code class="notranslate">FAIL</code>：注册状态（一个账户已注册，一个以 403 失败）、呼叫中和已接通状态、从联系人解析出的来电者姓名、静音、保持与恢复、两路通话的保持切换、协商转接、录音回放、账户测试、状态摘要等。结果输出到 stdout，使用 <code class="notranslate">--snapshot</code> 时输出到 <code class="notranslate">&lt;prefix&gt;-selftest.txt</code>，然后应用退出。<code class="notranslate">--demo-state directory-selftest</code> 只运行目录部分：号码栏中的建议、来电者查询、导入与合并。</p>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">timeout 60 dist/MacroSIP.app/Contents/MacOS/MacroSIP --demo-state selftest
+timeout 60 dist/MacroSIP.app/Contents/MacOS/MacroSIP --demo-state directory-selftest</pre></div>
+<h2 dir="auto">字符串：<code class="notranslate">scripts/check-strings.sh</code></h2>
+<p dir="auto">检查 <code class="notranslate">Model/Strings.swift</code> 中使用的每个键都存在于 <code class="notranslate">en.lproj</code> 和 <code class="notranslate">ru.lproj</code>（<code class="notranslate">Localizable.strings</code> 或 <code class="notranslate">Localizable.stringsdict</code>）中，没有文件包含代码未使用的键，没有键同时出现在两个文件中，复数类别完整（英语为 <code class="notranslate">one</code>/<code class="notranslate">other</code>，俄语为 <code class="notranslate">one</code>/<code class="notranslate">few</code>/<code class="notranslate">many</code>/<code class="notranslate">other</code>），并且俄语值没有使用英语值所没有的占位符。每次更改字符串后都要运行它。</p>
+<h2 dir="auto">截图</h2>
+<p dir="auto"><code class="notranslate">docs/screenshots/{light,dark}</code> 和 <code class="notranslate">docs/screenshots/ru/{light,dark}</code> 中的图像来自带 <code class="notranslate">--snapshot</code> 的演示启动；没有单独的截图脚本。俄语深色变体的典型截图：</p>
+<div class="highlight highlight-source-shell" dir="auto"><pre class="notranslate">timeout 30 dist/MacroSIP.app/Contents/MacOS/MacroSIP --demo-state contacts \
+  --appearance dark -AppleLanguages <span class="pl-s"><span class="pl-pds">"</span>(ru)<span class="pl-pds">"</span></span> --snapshot /tmp/shots/contacts --snapshot-after 3</pre></div>
+<p dir="auto">有来电响铃或打开了表单的状态永不自行退出，因此需要 <code class="notranslate">timeout</code>。俄语文本大约长 25 %，所以添加字符串后请检查状态栏、通话面板按钮和账户弹出菜单。模拟中的 Google 通讯录在 4 秒后应答；用 <code class="notranslate">--snapshot-after 3</code> 捕捉“正在搜索…”行。</p>
+<h2 dir="auto">CI</h2>
+<p dir="auto"><code class="notranslate">.github/workflows/ci.yml</code> 在对 <code class="notranslate">main</code> 的推送和拉取请求时运行，每个 ref 同时只有一个进行中的运行。</p>
 <markdown-accessiblity-table><div class="tablewrap"><table role="table">
 <thead>
 <tr>
-<th>路径</th>
-<th>内容</th>
+<th>作业</th>
+<th>运行器</th>
+<th>步骤</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code class="notranslate">downloads/</code></td>
-<td>已验证的 tarball，<code class="notranslate">--clean</code> 时保留</td>
+<td><code class="notranslate">build</code></td>
+<td><code class="notranslate">macos-15</code>（arm64）</td>
+<td>恢复 <code class="notranslate">third_party/pjsip</code> 和 <code class="notranslate">third_party/deps</code> 的缓存（键：<code class="notranslate">build-pjsip.sh</code> 和 <code class="notranslate">config_site.h</code> 的哈希）、<code class="notranslate">build-pjsip.sh</code>、<code class="notranslate">swift build</code>、<code class="notranslate">test.sh</code>、原生以及在 Rosetta 2（按需安装）下以 <code class="notranslate">SELFTEST_ARCH=x86_64</code> 运行 <code class="notranslate">selftest-call.sh</code>、<code class="notranslate">make-app.sh release</code>、对二进制文件执行 <code class="notranslate">lipo -info</code>；将应用（14 天）和通用 PJSIP 构建（3 天）作为产物上传，失败时上传构建日志</td>
 </tr>
 <tr>
-<td><code class="notranslate">deps/&lt;arch&gt;/{include,lib}</code></td>
-<td>单一架构的 OpenSSL 和 Opus</td>
-</tr>
-<tr>
-<td><code class="notranslate">deps/universal/lib</code></td>
-<td><code class="notranslate">libssl.a</code>、<code class="notranslate">libcrypto.a</code>、<code class="notranslate">libopus.a</code>，由 <code class="notranslate">Package.swift</code> 链接</td>
-</tr>
-<tr>
-<td><code class="notranslate">pjsip/arch/&lt;arch&gt;/</code></td>
-<td>单一架构的 PJSIP 头文件、库和 <code class="notranslate">pjsua</code></td>
-</tr>
-<tr>
-<td><code class="notranslate">pjsip/include/</code>、<code class="notranslate">pjsip/lib/</code></td>
-<td>合并后的头文件和通用归档</td>
-</tr>
-<tr>
-<td><code class="notranslate">pjsip/bin/pjsua</code></td>
-<td>通用 <code class="notranslate">pjsua</code> CLI，自测中的第二部电话</td>
-</tr>
-<tr>
-<td><code class="notranslate">pjsip/LINKFLAGS</code>、<code class="notranslate">pjsip/CFLAGS</code></td>
-<td>使用者需要的标志；<code class="notranslate">Package.swift</code> 中的 <code class="notranslate">pjsipLibraries</code> 与 <code class="notranslate">LINKFLAGS</code> 保持一致</td>
-</tr>
-<tr>
-<td><code class="notranslate">build/</code>、<code class="notranslate">build-logs/&lt;arch&gt;/</code></td>
-<td>源代码树（除非 <code class="notranslate">KEEP_BUILD=1</code> 否则删除）和完整的 configure/make 日志</td>
+<td><code class="notranslate">intel</code></td>
+<td><code class="notranslate">macos-15-intel</code>（x86_64），在 <code class="notranslate">build</code> 之后</td>
+<td>下载通用库和应用（Intel 主机无法运行 <code class="notranslate">build-pjsip.sh</code>），验证签名，用 <code class="notranslate">--data-dir</code> 和 <code class="notranslate">MACROSIP_LOG_DIR</code> 启动应用 15 秒，然后原生运行 <code class="notranslate">swift build</code>、<code class="notranslate">test.sh</code> 和 <code class="notranslate">selftest-call.sh</code></td>
 </tr>
 </tbody>
 </table></div></markdown-accessiblity-table>
-<p dir="auto">**缓存。**每个组件写入一个包含其配方的印记（版本、校验和、标志、<code class="notranslate">config_site.h</code> 的 SHA-256、构建所依据的印记）。一次运行跳过印记匹配的所有组件，并从新解压的源代码树重新构建其余组件。编辑 <code class="notranslate">config_site.h</code> 后重新运行脚本：PJSIP 为两个架构重新构建（2 到 5 分钟），而 OpenSSL 和 Opus 保持不变。CI 以脚本和 <code class="notranslate">config_site.h</code> 为键缓存 <code class="notranslate">third_party/pjsip</code> 和 <code class="notranslate">third_party/deps</code>，因此缓存命中时该步骤为空操作。要升级某个组件，请在脚本中更改其版本和校验和并重新运行。</p>
-<h2 dir="auto">第 2 步：<code class="notranslate">swift build</code></h2>
-<pre lang="sh" class="notranslate"><code class="notranslate">swift build                         # debug，原生架构
-swift build -c release              # release，原生架构
-swift build --arch arm64 --arch x86_64 -c release   # 通用（make-app.sh release 运行的命令）
-.build/release/pjsip-smoke          # 打印 PJSIP 版本、编解码器和音频设备；以 0 退出
-</code></pre>
-<p dir="auto"><code class="notranslate">Package.swift</code> 用绝对的 <code class="notranslate">-L</code>/<code class="notranslate">-l</code> 标志（<code class="notranslate">Context.packageDirectory</code>）链接归档，因 libwebrtc 包含 C++ 而添加 <code class="notranslate">-lc++</code>，并通过 <code class="notranslate">swiftSettings: pjsipSwiftSettings</code>（<code class="notranslate">-Xcc -I</code>）为每个导入 <code class="notranslate">CPJSUA</code> 的 Swift 目标提供头文件路径。应用目标为 Sparkle 获得 rpath <code class="notranslate">@executable_path/../Frameworks</code>。通用构建将产物放在 <code class="notranslate">.build/out/Products/&lt;Config&gt;</code> 而非 <code class="notranslate">.build/&lt;config&gt;</code>；用 <code class="notranslate">swift build ... --show-bin-path</code> 查询。SwiftPM 不跟踪预构建的归档，因此在 PJSIP 重新构建后，如果更改似乎未生效，请运行 <code class="notranslate">rm -rf .build</code>。</p>
-<h2 dir="auto">第 3 步：<code class="notranslate">scripts/make-app.sh</code></h2>
-<pre lang="sh" class="notranslate"><code class="notranslate">scripts/make-app.sh                 # release：通用 dist/MacroSIP.app（默认）
-scripts/make-app.sh debug           # debug：仅原生架构，更快；唯一接受演示选项的构建
-ARCHS=arm64 scripts/make-app.sh     # 单架构 release
-</code></pre>
-<p dir="auto">该脚本运行 <code class="notranslate">swift build --product MacroSIPApp</code>（release 为通用，debug 为原生），用 <code class="notranslate">lipo</code> 检查切片，并组装 <code class="notranslate">dist/MacroSIP.app</code>：二进制文件、放入 <code class="notranslate">Contents/Frameworks</code> 的 <code class="notranslate">Sparkle.framework</code>、放入 <code class="notranslate">Contents/Resources</code> 的 <code class="notranslate">en.lproj</code> 和 <code class="notranslate">ru.lproj</code> 字符串及 <code class="notranslate">InfoPlist.strings</code>、<code class="notranslate">packaging/AppIcon.icns</code>，以及生成的 <code class="notranslate">Info.plist</code>，其中包含 bundle id <code class="notranslate">com.hsmm.macrosip</code>、<code class="notranslate">sip</code>/<code class="notranslate">sips</code>/<code class="notranslate">tel</code> URL scheme、Sparkle 键（<code class="notranslate">SUFeedURL</code>、<code class="notranslate">SUPublicEDKey</code>、每日检查）和版本。<code class="notranslate">CFBundleShortVersionString</code> 是最近的 git 标签（<code class="notranslate">git describe --tags --abbrev=0</code>；在任何标签之前为 <code class="notranslate">Product.version</code>），<code class="notranslate">CFBundleVersion</code> 是提交计数。它去除除 <code class="notranslate">/usr/lib/swift</code> 和 <code class="notranslate">@executable_path/../Frameworks</code> 之外的所有 rpath，并在二进制文件需要其他 <code class="notranslate">@rpath</code> 库时失败。</p>
-<p dir="auto">签名为临时签名（<code class="notranslate">-</code>）加强化运行时，按 Sparkle 文档从内到外进行：XPC 服务、<code class="notranslate">Autoupdate</code>、<code class="notranslate">Updater.app</code>、框架，然后是带 <code class="notranslate">packaging/Entitlements.plist</code> 的应用；<code class="notranslate">codesign --verify --deep --strict</code> 必须通过。entitlements 授予麦克风和通讯录访问权限并禁用库验证，临时签名需要后者才能加载内嵌的框架（ADR 0013）。</p>
-<p dir="auto"><strong>debug</strong> 应用接受 <code class="notranslate">--mock-engine</code>、<code class="notranslate">--demo-state</code>、<code class="notranslate">--data-dir</code>、<code class="notranslate">--snapshot</code> 和 <code class="notranslate">--appearance</code>（见 <a href="testing.html">测试</a>）；<strong>release</strong> 应用忽略它们，并在真实数据上启动真实应用，包括钥匙串提示。所有构建都接受 <code class="notranslate">--log-level 0-6</code>（或 <code class="notranslate">MACROSIP_LOG_LEVEL</code>）来设置 PJSIP 的详细程度。</p>
-<h2 dir="auto">其他脚本</h2>
-<markdown-accessiblity-table><div class="tablewrap"><table role="table">
-<thead>
-<tr>
-<th>脚本</th>
-<th>作用</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code class="notranslate">scripts/make-dmg.sh [debug|release]</code></td>
-<td>运行 <code class="notranslate">make-app.sh</code>，将应用与一个“应用程序”符号链接一起暂存，写出 <code class="notranslate">dist/MacroSIP-&lt;version&gt;.dmg</code>（HFS+，UDZO，卷名“MacroSIP”），并打印其 SHA-256</td>
-</tr>
-<tr>
-<td><code class="notranslate">swift scripts/make-icon.swift</code></td>
-<td>用 CoreGraphics 绘制图标（权威来源 <code class="notranslate">packaging/AppIcon.svg</code>：一个拨号键盘，其按下的键在绿色渐变上勾勒出一个 M）到 iconset，并运行 <code class="notranslate">iconutil</code> 生成 <code class="notranslate">packaging/AppIcon.icns</code>；更改图稿后重新运行</td>
-</tr>
-<tr>
-<td><code class="notranslate">scripts/make-appcast.sh</code>、<code class="notranslate">scripts/publish-appcast.sh</code>、<code class="notranslate">scripts/update-cask.sh</code></td>
-<td>发布工具，见 <a href="releasing.html">发布</a></td>
-</tr>
-<tr>
-<td><code class="notranslate">scripts/test.sh</code>、<code class="notranslate">scripts/selftest-call.sh</code>、<code class="notranslate">scripts/check-strings.sh</code></td>
-<td>见 <a href="testing.html">测试</a></td>
-</tr>
-</tbody>
-</table></div></markdown-accessiblity-table>
-<h2 dir="auto">通用构建（ADR 0012）</h2>
-<p dir="auto">一个应用和一个 DMG 同时服务 Apple 芯片和 Intel。应用的 release 构建是通用的，debug 构建是原生的。Opus 和 OpenSSL 作为静态归档从 <code class="notranslate">third_party/deps/universal/lib</code> 链接，绝不以 <code class="notranslate">.linkedLibrary</code> 或从 Homebrew 链接，因此应用在系统之外没有 dylib 依赖（Homebrew 的归档只有 arm64 且针对主机 macOS 构建）。在 Apple 芯片上用 Rosetta 2 以 <code class="notranslate">SELFTEST_ARCH=x86_64 scripts/selftest-call.sh</code> 测试 Intel 切片。Intel 支持将在 Apple 的工具链或 GitHub 的 Intel 运行器终止时结束。</p>
-<h2 dir="auto">常见问题</h2>
-<markdown-accessiblity-table><div class="tablewrap"><table role="table">
-<thead>
-<tr>
-<th>症状</th>
-<th>原因与修复</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code class="notranslate">Apple Silicon (arm64) host required</code></td>
-<td><code class="notranslate">build-pjsip.sh</code> 交叉编译 x86_64，只能在 arm64 上运行。在 Intel Mac 上请从 CI 产物获取通用库（Intel CI 作业正是这样做的）。</td>
-</tr>
-<tr>
-<td><code class="notranslate">SHA-256 mismatch for ...</code></td>
-<td>下载损坏或被重新发布；删除 <code class="notranslate">third_party/downloads/</code> 下的文件以重新获取，如果上游更改了 tarball，请核查固定的校验和</td>
-</tr>
-<tr>
-<td><code class="notranslate">configure did not enable OpenSSL</code> / <code class="notranslate">Opus</code></td>
-<td>configure 没有看到 <code class="notranslate">third_party/deps/&lt;arch&gt;</code>；阅读 <code class="notranslate">third_party/build-logs/&lt;arch&gt;/pjsip-configure.log</code></td>
-</tr>
-<tr>
-<td><code class="notranslate">plugin for module SwiftUIMacros not found</code></td>
-<td><code class="notranslate">@State</code> 需要 Xcode 的宏插件；请使用 <code class="notranslate">Views/Components/Local.swift</code> 中的 <code class="notranslate">@Local</code> 包装器</td>
-</tr>
-<tr>
-<td><code class="notranslate">swift test</code> 找不到 Testing 宏</td>
-<td>运行 <code class="notranslate">scripts/test.sh</code>，它会传入插件路径</td>
-</tr>
-<tr>
-<td>重新构建后应用仍运行旧的 PJSIP 代码</td>
-<td>SwiftPM 没有看到归档变化：<code class="notranslate">rm -rf .build</code></td>
-</tr>
-<tr>
-<td><code class="notranslate">make-app.sh</code> 中 <code class="notranslate">Sparkle.framework not found</code></td>
-<td>先运行 <code class="notranslate">swift package resolve</code> 或 <code class="notranslate">swift build</code></td>
-</tr>
-<tr>
-<td>二进制文件需要 Sparkle 之外的 <code class="notranslate">@rpath</code> 库</td>
-<td>有新依赖被动态链接；ADR 0012 要求静态归档</td>
-</tr>
-<tr>
-<td><code class="notranslate">PJSUA_INVALID_ID</code> 在 Swift 中无法编译</td>
-<td>它是 C 枚举常量：使用 <code class="notranslate">PJSUA_INVALID_ID.rawValue</code></td>
-</tr>
-<tr>
-<td>Rosetta 下的 x86_64 <code class="notranslate">pjsua</code> 没有立即应答</td>
-<td>Rosetta 启动需要几秒钟；<code class="notranslate">selftest-call.sh</code> 会轮询最多约 15 秒</td>
-</tr>
-</tbody>
-</table></div></markdown-accessiblity-table>
-<p dir="auto">另见 <a href="architecture.html">架构</a>，安装已构建的 DMG 见 <a href="installation.html">安装</a>，运行时问题见 <a href="troubleshooting.html">故障排除</a>。</p>
+<p dir="auto"><code class="notranslate">release.yml</code> 在构建 DMG 之前重复 arm64 的步骤（见 <a href="testing.html">发布</a>）。</p>
+<p dir="auto">另见 <a href="architecture.html">构建</a> 和 <a href="releasing.html">参与贡献</a>。</p>
 <p dir="auto">其他页面：<a href="index.html">首页</a> · <a href="../en/index.html">Home</a> (English)</p>
 <footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
 </main>
