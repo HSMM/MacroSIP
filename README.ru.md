@@ -9,7 +9,7 @@
 ![macOS 14+](https://img.shields.io/badge/macOS-14%2B-lightgrey)
 ![Universal: Apple Silicon and Intel](https://img.shields.io/badge/arch-universal-lightgrey)
 ![PJSIP 2.17](https://img.shields.io/badge/PJSIP-2.17-green)
-![Release 26.2.0](https://img.shields.io/badge/release-26.2.0-brightgreen)
+![Release 26.3.0](https://img.shields.io/badge/release-26.3.0-brightgreen)
 
 SIP-софтфон для macOS на Apple Silicon и Intel в духе MicroSIP. Нативный интерфейс на
 Swift и SwiftUI, движок [PJSIP](https://github.com/pjsip/pjproject) 2.17, без
@@ -19,7 +19,7 @@ Electron и Qt. Одно небольшое окно, значок в строк
 
 Руководство: https://hsmm.github.io/MacroSIP/wiki/ru/index.html
 
-Статус: выпущена версия `26.2.0` (4 ноября 2026). Что дальше: [docs/ROADMAP.md](docs/ROADMAP.md).
+Статус: выпущена версия `26.3.0` (5 ноября 2026). Что дальше: [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Скриншоты
 
@@ -27,40 +27,47 @@ Electron и Qt. Одно небольшое окно, значок в строк
 тёмные кадры на двух языках лежат в [docs/screenshots](docs/screenshots)).
 
 <p align="center">
-  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/dialpad-calls.png?v=2"><img src="docs/screenshots/ru/light/dialpad-calls.png?v=2" width="260" alt="Два звонка, один на удержании"></picture>
-  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/contacts-presence.png?v=2"><img src="docs/screenshots/ru/light/contacts-presence.png?v=2" width="260" alt="Контакты со статусами"></picture>
-  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/call-recording.png?v=2"><img src="docs/screenshots/ru/light/call-recording.png?v=2" width="260" alt="Активный звонок с записью"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/dialpad-calls.png?v=3"><img src="docs/screenshots/ru/light/dialpad-calls.png?v=3" width="260" alt="Два звонка, один на удержании"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/contacts-presence.png?v=3"><img src="docs/screenshots/ru/light/contacts-presence.png?v=3" width="260" alt="Контакты со статусами"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/call-recording.png?v=3"><img src="docs/screenshots/ru/light/call-recording.png?v=3" width="260" alt="Активный звонок с записью"></picture>
 </p>
 
 <p align="center">
-  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/conference.png?v=2"><img src="docs/screenshots/ru/light/conference.png?v=2" width="260" alt="Конференция из двух участников"></picture>
-  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/directory-search.png?v=2"><img src="docs/screenshots/ru/light/directory-search.png?v=2" width="260" alt="Подсказки из контактов и справочника"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/conference.png?v=3"><img src="docs/screenshots/ru/light/conference.png?v=3" width="260" alt="Конференция из двух участников"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/directory-search.png?v=3"><img src="docs/screenshots/ru/light/directory-search.png?v=3" width="260" alt="Подсказки из контактов и справочника"></picture>
 </p>
 
 Меню аккаунтов: выбор исходящего аккаунта, включение и выключение аккаунтов. Слева светлая тема, справа тёмная:
 
 <p align="center">
-  <img src="docs/screenshots/ru/light/account-popup.png?v=2" width="260" alt="Меню аккаунтов, светлая тема">
-  <img src="docs/screenshots/ru/dark/account-popup.png?v=2" width="260" alt="Меню аккаунтов, тёмная тема">
+  <img src="docs/screenshots/ru/light/account-popup.png?v=3" width="260" alt="Меню аккаунтов, светлая тема">
+  <img src="docs/screenshots/ru/dark/account-popup.png?v=3" width="260" alt="Меню аккаунтов, тёмная тема">
 </p>
 
 Настройки: глобальные горячие клавиши (Звонки) и группа «Устранение неполадок» с режимом отладки (Основные › Дополнительно):
 
 <p align="center">
-  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/settings-hotkeys.png?v=2"><img src="docs/screenshots/ru/light/settings-hotkeys.png?v=2" width="400" alt="Настройки, Звонки: глобальные горячие клавиши"></picture>
-  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/settings-diagnostics.png?v=2"><img src="docs/screenshots/ru/light/settings-diagnostics.png?v=2" width="400" alt="Настройки, Основные: устранение неполадок и режим отладки"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/settings-hotkeys.png?v=3"><img src="docs/screenshots/ru/light/settings-hotkeys.png?v=3" width="400" alt="Настройки, Звонки: глобальные горячие клавиши"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/settings-diagnostics.png?v=3"><img src="docs/screenshots/ru/light/settings-diagnostics.png?v=3" width="400" alt="Настройки, Основные: устранение неполадок и режим отладки"></picture>
 </p>
 
 <p align="center">
-  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/settings-recording.png?v=2"><img src="docs/screenshots/ru/light/settings-recording.png?v=2" width="400" alt="Настройки, Запись"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/settings-recording.png?v=3"><img src="docs/screenshots/ru/light/settings-recording.png?v=3" width="400" alt="Настройки, Запись"></picture>
 </p>
 
 Импорт из MicroSIP с предварительным просмотром и окно входящего звонка с автоответом:
 
 <table align="center"><tr>
-<td valign="middle"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/import-microsip.png?v=2"><img src="docs/screenshots/ru/light/import-microsip.png?v=2" width="300" alt="Импорт из MicroSIP, предпросмотр"></picture></td>
-<td valign="middle"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/incoming-auto-answer.png?v=2"><img src="docs/screenshots/ru/light/incoming-auto-answer.png?v=2" width="300" alt="Входящий звонок с обратным отсчётом автоответа"></picture></td>
+<td valign="middle"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/import-microsip.png?v=3"><img src="docs/screenshots/ru/light/import-microsip.png?v=3" width="300" alt="Импорт из MicroSIP, предпросмотр"></picture></td>
+<td valign="middle"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/incoming-auto-answer.png?v=3"><img src="docs/screenshots/ru/light/incoming-auto-answer.png?v=3" width="300" alt="Входящий звонок с обратным отсчётом автоответа"></picture></td>
 </tr></table>
+
+Сообщения: список переписок и открытая переписка:
+
+<p align="center">
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/messages-list.png?v=3"><img src="docs/screenshots/ru/light/messages-list.png?v=3" width="260" alt="Вкладка «Сообщения»"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/ru/dark/messages-conversation.png?v=3"><img src="docs/screenshots/ru/light/messages-conversation.png?v=3" width="260" alt="Переписка"></picture>
+</p>
 
 ## Возможности
 
@@ -72,6 +79,14 @@ Electron и Qt. Одно небольшое окно, значок в строк
 - Автоответ: выключен, на все звонки или только от контактов, с задержкой; с вашей АТС задержку задаёт заголовок `Call-Info: answer-after`.
 - Отклонение входящих от никого, от всех, от номеров не из контактов или от анонимных абонентов; «Не беспокоить», в том числе на 30 минут, на час или до 9:00 завтра.
 - Журнал звонков с воспроизведением записей; ссылки `sip:`, `sips:` и `tel:` открываются в приложении.
+
+**Сообщения**
+
+- Отправка и приём текстовых сообщений по SIP `MESSAGE` (`text/plain`, UTF-8, кириллица включена); SMS, которые пересылает Asterisk через `chan_dongle`, приходят как обычные сообщения.
+- Вкладка «Сообщения» с переписками, которые сохраняются между запусками; счётчик непрочитанных на вкладке и на значке в Dock, уведомления macOS и необязательный звук (Настройки › Звук › События звука: «Новое сообщение»).
+- У каждого исходящего сообщения виден статус: «Отправлено» означает, что SIP-сервер или собеседник принял сообщение, но не то, что телефон его получил; «Не отправлено» показывает причину SIP и кнопку «Повторить».
+- «Написать сообщение» в меню контактов и журнала звонков; до 2800 байт на сообщение.
+- Не входит: групповой чат, вложения, индикаторы набора, сквозное шифрование.
 
 **Аккаунты и сеть**
 
@@ -167,6 +182,7 @@ brew install --cask hsmm/tap/macrosip
   /Applications/MacroSIP.app/Contents/MacOS/MacroSIP --log-level 5
   log show --last 10m --predicate 'subsystem == "com.hsmm.macrosip"' --info
   ```
+- Сообщение отмечено «Отправлено», но телефон его не получил: «Отправлено» означает только то, что сервер принял сообщение. Доставка на мобильный зависит от сервера (chan_dongle, модема, оператора связи); проверьте журнал Asterisk.
 
 Ошибки и пожелания: https://github.com/HSMM/MacroSIP/issues
 

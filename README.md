@@ -9,7 +9,7 @@
 ![macOS 14+](https://img.shields.io/badge/macOS-14%2B-lightgrey)
 ![Universal: Apple Silicon and Intel](https://img.shields.io/badge/arch-universal-lightgrey)
 ![PJSIP 2.17](https://img.shields.io/badge/PJSIP-2.17-green)
-![Release 26.2.0](https://img.shields.io/badge/release-26.2.0-brightgreen)
+![Release 26.3.0](https://img.shields.io/badge/release-26.3.0-brightgreen)
 
 A MicroSIP-style SIP softphone for macOS on Apple Silicon and Intel. Native Swift and
 SwiftUI interface, [PJSIP](https://github.com/pjsip/pjproject) 2.17 engine,
@@ -19,7 +19,7 @@ presence, quick keys, global hotkeys, English and Russian interface.
 
 Guide: https://hsmm.github.io/MacroSIP/wiki/
 
-Status: `26.2.0` released 2026-11-04. What comes next: [docs/ROADMAP.md](docs/ROADMAP.md).
+Status: `26.3.0` released 2026-11-05. What comes next: [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Screenshots
 
@@ -27,40 +27,47 @@ The app follows the macOS appearance; every picture below switches with it (ligh
 frames are in [docs/screenshots](docs/screenshots), English and Russian).
 
 <p align="center">
-  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/dialpad-calls.png?v=2"><img src="docs/screenshots/light/dialpad-calls.png?v=2" width="260" alt="Two calls, one on hold"></picture>
-  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/contacts-presence.png?v=2"><img src="docs/screenshots/light/contacts-presence.png?v=2" width="260" alt="Contacts with presence"></picture>
-  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/call-recording.png?v=2"><img src="docs/screenshots/light/call-recording.png?v=2" width="260" alt="Active call with recording"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/dialpad-calls.png?v=3"><img src="docs/screenshots/light/dialpad-calls.png?v=3" width="260" alt="Two calls, one on hold"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/contacts-presence.png?v=3"><img src="docs/screenshots/light/contacts-presence.png?v=3" width="260" alt="Contacts with presence"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/call-recording.png?v=3"><img src="docs/screenshots/light/call-recording.png?v=3" width="260" alt="Active call with recording"></picture>
 </p>
 
 <p align="center">
-  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/conference.png?v=2"><img src="docs/screenshots/light/conference.png?v=2" width="260" alt="Conference of two participants"></picture>
-  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/directory-search.png?v=2"><img src="docs/screenshots/light/directory-search.png?v=2" width="260" alt="Suggestions from Contacts and the directory"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/conference.png?v=3"><img src="docs/screenshots/light/conference.png?v=3" width="260" alt="Conference of two participants"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/directory-search.png?v=3"><img src="docs/screenshots/light/directory-search.png?v=3" width="260" alt="Suggestions from Contacts and the directory"></picture>
 </p>
 
 Account pop-up: pick the outgoing account, switch accounts on and off. Light theme on the left, dark theme on the right:
 
 <p align="center">
-  <img src="docs/screenshots/light/account-popup.png?v=2" width="260" alt="Account pop-up, light theme">
-  <img src="docs/screenshots/dark/account-popup.png?v=2" width="260" alt="Account pop-up, dark theme">
+  <img src="docs/screenshots/light/account-popup.png?v=3" width="260" alt="Account pop-up, light theme">
+  <img src="docs/screenshots/dark/account-popup.png?v=3" width="260" alt="Account pop-up, dark theme">
 </p>
 
 Settings: global hotkeys (Calls) and the Troubleshooting group with Debug mode (General › Advanced):
 
 <p align="center">
-  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/settings-hotkeys.png?v=2"><img src="docs/screenshots/light/settings-hotkeys.png?v=2" width="400" alt="Settings, Calls: global hotkeys"></picture>
-  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/settings-diagnostics.png?v=2"><img src="docs/screenshots/light/settings-diagnostics.png?v=2" width="400" alt="Settings, General: Troubleshooting with Debug mode"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/settings-hotkeys.png?v=3"><img src="docs/screenshots/light/settings-hotkeys.png?v=3" width="400" alt="Settings, Calls: global hotkeys"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/settings-diagnostics.png?v=3"><img src="docs/screenshots/light/settings-diagnostics.png?v=3" width="400" alt="Settings, General: Troubleshooting with Debug mode"></picture>
 </p>
 
 <p align="center">
-  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/settings-recording.png?v=2"><img src="docs/screenshots/light/settings-recording.png?v=2" width="400" alt="Settings, Recording"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/settings-recording.png?v=3"><img src="docs/screenshots/light/settings-recording.png?v=3" width="400" alt="Settings, Recording"></picture>
 </p>
 
 Import from MicroSIP with a preview, and the incoming call window with auto-answer:
 
 <table align="center"><tr>
-<td valign="middle"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/import-microsip.png?v=2"><img src="docs/screenshots/light/import-microsip.png?v=2" width="300" alt="Import from MicroSIP, preview"></picture></td>
-<td valign="middle"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/incoming-auto-answer.png?v=2"><img src="docs/screenshots/light/incoming-auto-answer.png?v=2" width="300" alt="Incoming call with the auto-answer countdown"></picture></td>
+<td valign="middle"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/import-microsip.png?v=3"><img src="docs/screenshots/light/import-microsip.png?v=3" width="300" alt="Import from MicroSIP, preview"></picture></td>
+<td valign="middle"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/incoming-auto-answer.png?v=3"><img src="docs/screenshots/light/incoming-auto-answer.png?v=3" width="300" alt="Incoming call with the auto-answer countdown"></picture></td>
 </tr></table>
+
+Messages: the conversation list, and a conversation open:
+
+<p align="center">
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/messages-list.png?v=3"><img src="docs/screenshots/light/messages-list.png?v=3" width="260" alt="Messages tab"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/messages-conversation.png?v=3"><img src="docs/screenshots/light/messages-conversation.png?v=3" width="260" alt="Conversation"></picture>
+</p>
 
 ## Features
 
@@ -72,6 +79,14 @@ Import from MicroSIP with a preview, and the incoming call window with auto-answ
 - Auto-answer: off, all calls or contacts only, after a delay; with your own PBX the `Call-Info: answer-after` header sets the delay.
 - Reject incoming calls from nobody, everyone, numbers not in Contacts, or anonymous callers; Do Not Disturb, also for 30 minutes, 1 hour or until 9:00 tomorrow.
 - Call log with playback of recordings; `sip:`, `sips:` and `tel:` links open in the app.
+
+**Messages**
+
+- Send and receive text messages over SIP `MESSAGE` (`text/plain`, UTF-8, Cyrillic included); SMS forwarded by Asterisk `chan_dongle` arrive as ordinary messages.
+- A Messages tab with conversations kept between launches; unread counts on the tab and the Dock icon, macOS notifications, and an optional sound (Settings › Audio › Sound events: New message).
+- Each outgoing message shows its status: "Sent" means the SIP server or the peer accepted the message, not that a phone received it; "Not sent" shows the SIP reason, with Retry.
+- "Send Message" in the Contacts and Call Log menus; up to 2800 bytes per message.
+- Not included: group chat, attachments, typing indicators, end-to-end encryption.
 
 **Accounts and network**
 
@@ -166,6 +181,7 @@ update; allow it once more.
   /Applications/MacroSIP.app/Contents/MacOS/MacroSIP --log-level 5
   log show --last 10m --predicate 'subsystem == "com.hsmm.macrosip"' --info
   ```
+- A message shows Sent but the phone did not get it: "Sent" only means the server accepted the message. Delivery to a mobile depends on the server (chan_dongle, the modem, the carrier); check the Asterisk log.
 
 Bugs and feature requests: https://github.com/HSMM/MacroSIP/issues
 
