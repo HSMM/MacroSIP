@@ -199,8 +199,8 @@ struct MessageComposerBar: View {
     @Local private var contentHeight: CGFloat = ComposerTextView.lineHeight
     @Local private var focused = false
 
-    /// The text view in its frame: a pill for one line, a 15 pt rounded rectangle once the field has grown, with the
-    /// accent border and tint ring while it has the focus.
+    /// The text view in its frame: a pill for one line, a 15 pt rounded rectangle once the field has grown (one shape type,
+    /// so growing never rebuilds the text view), with the accent border and tint ring while it has the focus.
     @ViewBuilder
     private var field: some View {
         let text = ComposerTextView(text: $text, height: $contentHeight, isFocused: $focused, placeholder: placeholder, enabled: enabled,
@@ -208,7 +208,7 @@ struct MessageComposerBar: View {
             .focusEffectDisabled()
             .frame(height: fieldHeight)
             .padding(.horizontal, 11).padding(.vertical, 7)
-        if fieldHeight + 14 <= 31 { framed(text, Capsule()) } else { framed(text, RoundedRectangle(cornerRadius: 15)) }
+        framed(text, RoundedRectangle(cornerRadius: min(15, (fieldHeight + 14) / 2)))
     }
 
     private func framed<S: InsettableShape>(_ content: some View, _ shape: S) -> some View {

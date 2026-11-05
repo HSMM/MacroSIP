@@ -326,7 +326,67 @@ extension DemoState {
         }
         model.showMessagesList()
         check("an address matches a conversation of the same number and account",
-              model.conversation(account: officeID, number: "+375 (29) 555-01-42") != nil && model.conversation(account: homeID, number: "101") == nil)
+              model.conversation(account: officeID, address: "+375 (29) 555-01-42") != nil && model.conversation(account: homeID, address: "101") == nil)
+
+        // Peers: formats, hosts, the unread count, the account of a message, the call target
+        model.messagesWindowKeyOverride = false
+        notifications.clearPosted()
+        let alesiaConv = model.conversation(account: officeID, address: "+375295550142")
+        let before = model.conversations.count
+        let unreadBefore = alesiaConv?.unread ?? 0
+        await mock.simulateIncomingMessage(account: officeID, from: "375295550142", text: "no plus", host: "pbx.example.com")
+        await until(2) { (alesiaConv.flatMap { model.conversation($0.id) }?.unread ?? 0) == unreadBefore + 1 }
+        check("the same number without its plus joins the existing conversation",
+              model.conversations.count == before && alesiaConv.flatMap { model.conversation($0.id) }?.unread == unreadBefore + 1,
+              "\(before) -> \(model.conversations.count)")
+        await mock.simulateIncomingMessage(account: officeID, from: "alice", text: "from a", host: "a.example.com")
+        await mock.simulateIncomingMessage(account: officeID, from: "alice", text: "from b", host: "b.example.com")
+        await mock.simulateIncomingMessage(account: officeID, from: "alice", text: "from a again", host: "A.example.com")
+        await until(2) { model.conversations.count == before + 2 }
+        await wait(0.5)
+        let aliceA = model.conversation(account: officeID, address: "sip:alice@a.example.com")
+        let aliceB = model.conversation(account: officeID, address: "sip:alice@b.example.com")
+        check("one user at two hosts is two conversations, a host in another case is the first",
+              aliceA != nil && aliceB != nil && aliceA?.id != aliceB?.id && aliceA.map { model.messages(in: $0.id).count } == 2
+              && aliceB.map { model.messages(in: $0.id).count } == 1, "\(model.conversations.count)")
+        check("the host is shown with the user", aliceA?.shownNumber == "alice@a.example.com")
+        if let alice = aliceA {
+            model.call(alice)
+            await until(2) { !model.liveCalls.isEmpty }
+            check("Call dials the conversation's URI, not the user on the account's domain",
+                  model.liveCalls.last?.remote.uri.lowercased().hasPrefix("sip:alice@a.example.com") == true, model.liveCalls.last?.remote.uri ?? "no call")
+            model.endCurrentCall()
+            await until(2) { model.calls.isEmpty }
+            let incomingTwice = model.messages(in: alice.id).filter { $0.direction == .incoming }
+            if let one = incomingTwice.first { model.deleteMessage(one.id) }
+            check("deleting an incoming message lowers the unread count", model.conversation(alice.id)?.unread == 1, "\(String(describing: model.conversation(alice.id)?.unread))")
+        }
+        let beforeSends = model.conversations.count
+        let bob1 = model.sendNew(text: "one", to: "bob@pbx.example.com", name: nil, account: officeID)
+        let bob2 = model.sendNew(text: "two", to: "bob@partner.org", name: nil, account: officeID)
+        let bob3 = model.sendNew(text: "three", to: "sip:bob@pbx.example.com", name: nil, account: officeID)
+        check("a new message to another host is another conversation, to the same peer the same one",
+              bob1 != nil && bob2 != nil && bob1 != bob2 && bob1 == bob3 && model.conversations.count == beforeSends + 2)
+        await until(3) { model.conversationLast.values.filter { $0.state == .sending }.isEmpty }
+        let bobs = await mock.sentMessages.suffix(3)
+        check("each is sent to its own address", bobs.map(\.user) == ["bob", "bob", "bob"])
+        for id in [bob1, bob2].compactMap({ $0 }) { model.deleteConversation(id) }
+        for id in [aliceA?.id, aliceB?.id].compactMap({ $0 }) { model.deleteConversation(id) }
+        model.selectedAccountID = officeID
+        model.composeMessage(to: "5550101", name: nil, account: homeID)
+        check("Send Message from a call-log entry keeps the account row alone",
+              model.selectedAccountID == officeID && model.messagesPage == .new && model.newMessagePrefill?.account == homeID)
+        model.newMessagePrefill = nil
+        model.showMessagesList()
+        model.selectedAccountID = nil
+        var tooLong = Message(conversationID: UUID(), direction: .outgoing, text: "x", at: Date(), state: .failed)
+        tooLong.failureCode = 0; tooLong.failureReason = "Message too long (PJSIP_EMSGTOOLONG)"
+        check("a local failure that is not about the connection shows the engine's text",
+              MessageFormat.failure(tooLong).reason == "Message too long (PJSIP_EMSGTOOLONG)" && MessageFormat.failure(tooLong).tooltip == nil)
+        model.messagesWindowKeyOverride = nil
+        model.screenLocked = true
+        check("a locked screen is nobody reading", !model.mainWindowIsKey)
+        model.screenLocked = false
 
         // Formatting
         let cal = Calendar(identifier: .gregorian)

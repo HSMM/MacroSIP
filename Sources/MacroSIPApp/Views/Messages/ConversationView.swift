@@ -50,8 +50,8 @@ struct ConversationHeader: View {
             VStack(alignment: .leading, spacing: 0) {
                 Text(name).font(.system(size: 13, weight: .semibold)).lineLimit(1)
                 HStack(spacing: 5) {
-                    if name != c.remoteNumber { Text(c.remoteNumber).monospacedDigit().lineLimit(1) }
-                    if name != c.remoteNumber, hasChip { Text("·") }
+                    if name != c.shownNumber { Text(c.shownNumber).monospacedDigit().lineLimit(1) }
+                    if name != c.shownNumber, hasChip { Text("·") }
                     if hasChip { AccountChip(name: model.accountName(c.accountID)) }
                 }
                 .font(.system(size: 11)).foregroundStyle(Theme.label2)
@@ -95,11 +95,11 @@ struct MessageThreadView: View {
     let conversation: Conversation
 
     var body: some View {
-        let rows = MessageFormat.thread(model.messageThread)
+        let rows = model.threadRows
         GeometryReader { geo in
             ScrollViewReader { proxy in
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 0) {
+                    LazyVStack(alignment: .leading, spacing: 0) {
                         ForEach(rows) { row in
                             switch row.kind {
                             case let .day(title):

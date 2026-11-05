@@ -8,22 +8,28 @@ import MacroSIPCore
 extension AppModel {
     // MARK: - Loading
 
-    /// Reads the conversations (and the open one's messages) back from the store after any change.
+    /// Reads the conversations (and the open one's messages) back from the store after any change. The store keeps the
+    /// file in memory, so this does not touch the disk.
     func reloadMessages() {
-        let all = messageStore.allMessages()
-        var last: [UUID: Message] = [:]
-        for m in all { last[m.conversationID] = m }
+        let last = messageStore.lastMessages()
         // Newest activity first: by the time of the last message (a retried message moves to the end, and so does the row).
         conversations = messageStore.conversations().sorted {
             (last[$0.id]?.at ?? $0.lastActivityAt) > (last[$1.id]?.at ?? $1.lastActivityAt)
         }
         conversationLast = last
         if case let .conversation(id) = messagesPage {
-            if conversations.contains(where: { $0.id == id }) { messageThread = all.filter { $0.conversationID == id } }
-            else { messagesPage = .list; messageThread = [] }
-        } else {
-            messageThread = []
+            if conversations.contains(where: { $0.id == id }) { setThread(messageStore.messages(in: id)) }
+            else { messagesPage = .list; setThread([]) }
+        } else if !messageThread.isEmpty {
+            setThread([])
         }
+    }
+
+    /// The open conversation's messages and the rows built from them (once per change, not once per redraw).
+    private func setThread(_ messages: [Message]) {
+        guard messages != messageThread else { return }
+        messageThread = messages
+        threadRows = MessageFormat.thread(messages)
     }
 
     /// Messages of one conversation, oldest first.
@@ -34,11 +40,12 @@ extension AppModel {
 
     func conversation(_ id: UUID) -> Conversation? { conversations.first { $0.id == id } }
 
-    /// The conversation of this account and number (same number after `Contact.normalize`).
-    func conversation(account: AccountID, number: String) -> Conversation? {
-        let key = Contact.normalize(number)
-        guard !key.isEmpty else { return nil }
-        return conversations.first { $0.accountID == account && Contact.normalize($0.remoteNumber) == key }
+    /// The conversation with `address` (a number in any format, a URI or `user@host`) on this account: numbers meet by
+    /// their digits, a host counts where it tells peers apart (`ConversationAddress`).
+    func conversation(account: AccountID, address: String) -> Conversation? {
+        let key = ConversationAddress(address, accountDomain: self.account(account)?.domain ?? "")
+        guard !key.user.isEmpty else { return nil }
+        return conversations.first { $0.matches(account: account, address: key) }
     }
 
     // MARK: - Names and accounts
@@ -55,7 +62,7 @@ extension AppModel {
         if !isWeak(conversation.remoteDisplayName, number: conversation.remoteNumber), let n = conversation.remoteDisplayName {
             return n
         }
-        return directoryName(forNumber: conversation.remoteNumber) ?? conversation.remoteNumber
+        return directoryName(forNumber: conversation.remoteNumber) ?? conversation.shownNumber
     }
 
     /// The account of a conversation is gone, or switched off: nothing can be sent or called through it.
@@ -80,7 +87,7 @@ extension AppModel {
 
     func showMessagesList() {
         messagesPage = .list
-        messageThread = []
+        setThread([])
         directory.owner = .numberField
         clearDirectoryResults()
     }
@@ -89,7 +96,7 @@ extension AppModel {
         guard conversation(id) != nil else { return }
         tab = .messages
         messagesPage = .conversation(id)
-        messageThread = messageStore.messages(in: id)
+        setThread(messageStore.messages(in: id))
         directory.owner = .numberField
         updateMessageReadState()
         if focus { focusComposer &+= 1 }
@@ -100,7 +107,7 @@ extension AppModel {
         tab = .messages
         newMessagePrefill = prefill
         messagesPage = .new
-        messageThread = []
+        setThread([])
     }
 
     /// New Message button: the number field's text goes into To.
@@ -110,15 +117,16 @@ extension AppModel {
     }
 
     /// "Send Message" in the Contacts and Call Log menus: the conversation with this number on the outgoing account when
-    /// it exists, otherwise the new-message form with the recipient filled in.
+    /// it exists, otherwise the new-message form with the recipient filled in. `account` (a call-log entry's account)
+    /// is used for this message only; the account row's choice for calls stays.
     func composeMessage(to number: String, name: String?, account explicit: AccountID? = nil) {
         let target = number.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !target.isEmpty else { return }
-        if let explicit, account(explicit)?.enabled == true { selectedAccountID = explicit }
-        guard let acct = effectiveAccount else { showBanner(L.bannerNoAccount); return }
-        let key = DialString.parse(target, account: acct)?.display ?? target
-        if let existing = conversation(account: acct.id, number: key) { openConversation(existing.id, focus: true) }
-        else { newMessage(to: NewMessagePrefill(number: target, name: name)) }
+        let chosen = explicit.flatMap { self.account($0) }.flatMap { $0.enabled ? $0 : nil } ?? effectiveAccount
+        guard let acct = chosen else { showBanner(L.bannerNoAccount); return }
+        let address = DialString.parse(target, account: acct)?.uri ?? target
+        if let existing = conversation(account: acct.id, address: address) { openConversation(existing.id, focus: true) }
+        else { newMessage(to: NewMessagePrefill(number: target, name: name, account: explicit.flatMap { $0 == acct.id ? $0 : nil })) }
     }
 
     func sendMessage(to contact: Contact) {
@@ -139,10 +147,12 @@ extension AppModel {
 
     // MARK: - Read state
 
-    /// Whether the main window counts as key for reading: really key in the active app (a demo check can pretend).
+    /// Whether the user can be reading the main window: it is key in the active app, not covered, and the screen is not locked
+    /// (a demo check can pretend).
     var mainWindowIsKey: Bool {
         if let o = messagesWindowKeyOverride { return o }
-        return NSApp.isActive && mainWindow?.isKeyWindow == true
+        guard NSApp.isActive, !screenLocked, let w = mainWindow else { return false }
+        return w.isKeyWindow && w.occlusionState.contains(.visible)
     }
 
     /// The conversation shown on the Messages tab in the key main window is read: its count and the badges drop and its
@@ -192,22 +202,23 @@ extension AppModel {
         return true
     }
 
-    /// 14.3: the first message of a new conversation. The conversation is created with the message.
+    /// 14.3: the first message of a conversation with `rawAddress` through `account` (the account row's choice when nil).
+    /// The conversation and the message are stored in one write; an address that already has a conversation sends into it.
     @discardableResult
-    func sendNew(text: String, to rawAddress: String, name: String?) -> UUID? {
+    func sendNew(text: String, to rawAddress: String, name: String?, account: AccountID? = nil) -> UUID? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard canSend(trimmed), let acct = effectiveAccount, let dial = DialString.parse(rawAddress, account: acct) else { return nil }
-        let conv: Conversation
-        if let existing = conversation(account: acct.id, number: dial.display) { conv = existing }
-        else {
-            do { conv = try messageStore.conversation(account: acct.id, remoteNumber: dial.display, remoteURI: dial.uri, displayName: name) }
-            catch { report(error); return nil }
-        }
-        let message = Message(conversationID: conv.id, direction: .outgoing, text: trimmed, at: Date(), state: .sending)
-        do { try messageStore.append(message) } catch { report(error); return nil }
+        guard canSend(trimmed), let acct = account.flatMap({ self.account($0) }) ?? effectiveAccount, acct.enabled,
+              let dial = DialString.parse(rawAddress, account: acct) else { return nil }
+        let stored: (Conversation, Message)
+        do {
+            stored = try messageStore.conversation(account: acct.id, remoteNumber: dial.display, remoteURI: dial.uri, displayName: name,
+                                                   accountDomain: acct.domain) {
+                Message(conversationID: $0, direction: .outgoing, text: trimmed, at: Date(), state: .sending)
+            }
+        } catch { report(error); return nil }
         reloadMessages()
-        transmit(message, in: conv, through: acct)
-        return conv.id
+        transmit(stored.1, in: stored.0, through: acct)
+        return stored.0.id
     }
 
     /// Hands the message to the engine. The status comes back as `.messageStatus` under a fresh id; a request that could
@@ -235,10 +246,7 @@ extension AppModel {
         guard message.state == .failed, let conv = conversation(message.conversationID),
               let acct = account(conv.accountID), acct.enabled else { return }
         let again = Message(conversationID: conv.id, direction: .outgoing, text: message.text, at: Date(), state: .sending)
-        do {
-            try messageStore.remove(message: message.id)
-            try messageStore.append(again)
-        } catch { report(error); return }
+        do { try messageStore.replace(message: message.id, with: again) } catch { report(error); return }
         reloadMessages()
         transmit(again, in: conv, through: acct)
     }
@@ -276,7 +284,8 @@ extension AppModel {
         let displayName = isWeak(remote.displayName, number: number) ? nil : remote.displayName
         let conv: Conversation
         do {
-            conv = try messageStore.conversation(account: incoming.accountID, remoteNumber: number, remoteURI: remote.uri, displayName: displayName)
+            conv = try messageStore.conversation(account: incoming.accountID, remoteNumber: number, remoteURI: remote.uri,
+                                                 displayName: displayName, accountDomain: account(incoming.accountID)?.domain ?? "")
             try messageStore.append(Message(conversationID: conv.id, direction: .incoming, text: incoming.text,
                                             at: incoming.receivedAt, state: .sent))
         } catch { report(error); return }
@@ -329,12 +338,13 @@ extension AppModel {
     /// Call through the conversation's own account.
     func call(_ conversation: Conversation) {
         guard accountState(of: conversation) == .ready else { return }
-        placeCall(to: conversation.remoteNumber, account: conversation.accountID)
+        // The URI the peer was last seen at: right for `sip:` users and for hosts other than the account's own.
+        placeCall(to: conversation.remoteURI.isEmpty ? conversation.remoteNumber : conversation.remoteURI, account: conversation.accountID)
     }
 
     func addToContacts(_ conversation: Conversation) {
         ContactCardController.shared.show(
-            ContactEditorRequest(contact: nil, prefillName: conversation.remoteDisplayName ?? "", prefillNumber: conversation.remoteNumber),
+            ContactEditorRequest(contact: nil, prefillName: conversation.remoteDisplayName ?? "", prefillNumber: conversation.shownNumber),
             model: self)
     }
 }

@@ -53,6 +53,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 MainActor.assumeIsolated { if !isPanel { model.refreshIncomingPresentation() } }
             }
         }
+        // A conversation counts as read only while somebody can see it: not behind other windows, not on a locked screen.
+        nc.addObserver(forName: NSWindow.didChangeOcclusionStateNotification, object: nil, queue: .main) { [model] note in
+            let window = (note.object as? NSWindow).map(ObjectIdentifier.init)
+            MainActor.assumeIsolated { if window != nil, window == model.mainWindow.map(ObjectIdentifier.init) { model.updateMessageReadState() } }
+        }
+        let distributed = DistributedNotificationCenter.default()
+        distributed.addObserver(forName: Notification.Name("com.apple.screenIsLocked"), object: nil, queue: .main) { [model] _ in
+            MainActor.assumeIsolated { model.screenLocked = true }
+        }
+        distributed.addObserver(forName: Notification.Name("com.apple.screenIsUnlocked"), object: nil, queue: .main) { [model] _ in
+            MainActor.assumeIsolated { model.screenLocked = false; model.updateMessageReadState() }
+        }
         // A recorder that lost the keyboard stops listening, so the hotkeys do not stay off behind another app.
         for name in [NSApplication.didResignActiveNotification, NSWindow.didResignKeyNotification] {
             nc.addObserver(forName: name, object: nil, queue: .main) { [model] _ in

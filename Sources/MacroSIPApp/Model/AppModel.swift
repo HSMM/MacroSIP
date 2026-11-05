@@ -63,6 +63,7 @@ final class AppModel {
     @ObservationIgnored var lastMessageSoundAt: Date?                  // the `.message` sound plays at most once per 2 s
     @ObservationIgnored var pendingSends: [MessageID: UUID] = [:]      // outgoing MESSAGEs waiting for their status -> stored message
     @ObservationIgnored var messageDrafts: [UUID: String] = [:]        // unsent composer text per conversation (until sent or quit)
+    @ObservationIgnored var screenLocked = false                       // the screen is locked: nobody is reading (AppDelegate observes it)
     @ObservationIgnored var messagesWindowKeyOverride: Bool?           // demo checks: stands in for "the main window is key"
 
     // Data
@@ -96,6 +97,7 @@ final class AppModel {
     var voicemail: [AccountID: VoicemailState] = [:]         // message-summary indicator per account (`.voicemail` events)
     var conversations: [Conversation] = []                   // newest activity first; change through AppModel+Messages
     var conversationLast: [UUID: Message] = [:]              // the newest message of every conversation (the list previews)
+    var threadRows: [MessageFormat.Row] = []                 // `MessageFormat.thread(messageThread)`, rebuilt when the thread changes
     var messageThread: [Message] = []                        // messages of the conversation shown on the Messages tab, oldest first
 
     // UI state

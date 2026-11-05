@@ -159,7 +159,7 @@ struct ConversationRow: View {
         .contextMenu {
             Button(L.messagesMenuCall) { model.call(c) }.disabled(model.accountState(of: c) != .ready)
             if model.contact(for: c) == nil { Button(L.messagesMenuAddContact) { model.addToContacts(c) } }
-            Button(L.messagesMenuCopyNumber) { model.copyToPasteboard(c.remoteNumber) }
+            Button(L.messagesMenuCopyNumber) { model.copyToPasteboard(c.shownNumber) }
             Divider()
             Button(L.messagesMenuDeleteConversation, role: .destructive, action: delete)
                 .keyboardShortcut(.delete, modifiers: .command)

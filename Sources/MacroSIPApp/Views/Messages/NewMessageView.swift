@@ -11,6 +11,8 @@ struct NewMessageView: View {
     @Local private var composerFocus = 0
     @Local private var started = false
     @Local private var caretToEnd = false
+    @Local private var accountOverride: AccountID?           // an account chosen outside the account row (a call-log entry's)
+    @Local private var rowChoiceAtStart: AccountID?
     @FocusState private var toFocused: Bool
     @FocusState private var tokenFocused: Bool
 
@@ -23,8 +25,15 @@ struct NewMessageView: View {
         return model.suggestions(for: toText)
     }
 
+    /// The account the message goes through: the account row's choice, unless the form was opened for another account and
+    /// the row has not been changed since.
+    private var composeAccount: AccountConfig? {
+        if let id = accountOverride, model.selectedAccountID == rowChoiceAtStart, let a = model.account(id), a.enabled { return a }
+        return model.effectiveAccount
+    }
+
     var body: some View {
-        let account = model.effectiveAccount
+        let account = composeAccount
         let local = self.local
         let mine = model.directory.owner == .messageTo && picked == nil
         let sections = mine ? model.directorySections(excluding: local) : []
@@ -53,8 +62,10 @@ struct NewMessageView: View {
         .onAppear {
             guard !started else { return }
             started = true
+            rowChoiceAtStart = model.selectedAccountID
             if let prefill = model.newMessagePrefill {
                 model.newMessagePrefill = nil
+                accountOverride = prefill.account
                 if let name = prefill.name, !name.isEmpty { picked = prefill } else { toText = prefill.number }
             }
             if picked != nil { composerFocus &+= 1 }
@@ -192,8 +203,8 @@ struct NewMessageView: View {
     /// The address already has a conversation on the outgoing account: show it, with the typed text in its composer.
     @discardableResult
     private func switchToExisting() -> Bool {
-        guard let account = model.effectiveAccount, let dial = DialString.parse(address, account: account),
-              let existing = model.conversation(account: account.id, number: dial.display) else { return false }
+        guard let account = composeAccount, let dial = DialString.parse(address, account: account),
+              let existing = model.conversation(account: account.id, address: dial.uri) else { return false }
         if !text.isEmpty { model.messageDrafts[existing.id] = text }
         model.openConversation(existing.id, focus: true)
         return true
@@ -202,7 +213,7 @@ struct NewMessageView: View {
     private func send() {
         guard !address.isEmpty else { return }
         // An address that already has a conversation on this account sends into it (`sendNew` reuses it).
-        if let id = model.sendNew(text: text, to: address, name: picked?.name) { model.openConversation(id, focus: true) }
+        if let id = model.sendNew(text: text, to: address, name: picked?.name, account: composeAccount?.id) { model.openConversation(id, focus: true) }
     }
 
     private func escape() { model.showMessagesList() }

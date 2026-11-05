@@ -15,6 +15,9 @@ enum MessagesPage: Equatable {
 struct NewMessagePrefill: Equatable {
     var number = ""
     var name: String?
+    /// The account the message goes through instead of the account row's choice (from a call-log entry); the account
+    /// row, once the user changes it, wins again.
+    var account: AccountID?
 }
 
 enum SettingsTab: String, Hashable, CaseIterable { case general, accounts, audio, network, codecs, recording, calls, quickKeys, directory }

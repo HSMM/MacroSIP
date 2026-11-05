@@ -38,14 +38,29 @@ enum MessageFormat {
         return message.direction == .outgoing ? L.messagesRowYou(flat) : flat
     }
 
-    /// Text after "Not sent · ": the answer as received ("404 Not Found"), "Interrupted", or "No connection" (the engine's
-    /// own text is the tooltip).
+    /// Text after "Not sent · ": the answer as received ("404 Not Found"), "Interrupted", "No connection" for a transport or
+    /// name-resolution failure (the engine's own text is the tooltip), and otherwise the engine's text itself ("Message too
+    /// long (PJSIP_EMSGTOOLONG)").
     static func failure(_ message: Message) -> (reason: String, tooltip: String?) {
         let code = message.failureCode ?? 0
         let phrase = (message.failureReason ?? "").trimmingCharacters(in: .whitespaces)
         if (300...699).contains(code) { return (phrase.isEmpty ? "\(code)" : "\(code) \(phrase)", nil) }
         if phrase == Engine.messageInterruptedReason { return (L.messagesErrorInterrupted, nil) }
-        return (L.messagesErrorLocal, phrase.isEmpty ? nil : phrase)
+        if phrase.isEmpty { return (L.messagesErrorLocal, nil) }
+        return isConnectionProblem(phrase) ? (L.messagesErrorLocal, phrase) : (phrase, nil)
+    }
+
+    /// The texts pjsua gives when the request could not be sent or the host not found (strerror of the socket, DNS and
+    /// transport errors; a 502/503 the engine turned into code 0).
+    private static let connectionTexts = [
+        "unreachable", "refused", "host is down", "no route", "timed out", "timeout", "connection", "network", "resolve",
+        "dns", "name or service", "no such host", "broken pipe", "reset", "socket", "transport", "permission denied",
+        "bad gateway", "service unavailable", "offline",
+    ]
+
+    static func isConnectionProblem(_ text: String) -> Bool {
+        let lower = text.lowercased()
+        return connectionTexts.contains { lower.contains($0) }
     }
 
     /// One line of the thread: a day separator, or a bubble with what goes under it.

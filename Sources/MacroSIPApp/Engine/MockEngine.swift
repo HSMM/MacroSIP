@@ -317,10 +317,10 @@ actor MockEngine: SIPEngine {
         return id
     }
 
-    /// A text message arrives on `account` (first account when nil) from `from` (a number or user).
-    func simulateIncomingMessage(account: AccountID? = nil, from: String, text: String, name: String? = nil) {
+    /// A text message arrives on `account` (first account when nil) from `from` (a number or user) at `host` (the account's domain when nil).
+    func simulateIncomingMessage(account: AccountID? = nil, from: String, text: String, name: String? = nil, host: String? = nil) {
         guard let acct = account ?? accounts.keys.first else { return }
-        let remote = RemoteParty(displayName: name, uri: "sip:\(from)@mock.example.org", number: from)
+        let remote = RemoteParty(displayName: name, uri: "sip:\(from)@\(host ?? accounts[acct]?.domain ?? "mock.example.org")", number: from)
         emit(.messageReceived(IncomingMessage(accountID: acct, remote: remote, text: text, receivedAt: Date())))
     }
 
