@@ -73,7 +73,7 @@ App:
 
 ## 26.3 (in development)
 
-- Noise suppression with RNNoise on the microphone and on the incoming audio, a toggle and a level in Settings › Audio; today Apple's voice processing covers only the default devices.
+- Text messages over SIP `MESSAGE` ([#5](https://github.com/HSMM/MacroSIP/issues/5)): send and receive `text/plain` (UTF-8, Cyrillic included), a Messages tab with conversations kept between launches, unread counts and macOS notifications, delivery status per message (a 2xx means the SIP server or peer accepted the message, not that a phone received it) and retry; SMS forwarded by Asterisk `chan_dongle` arrive as ordinary messages. Not in the first version: group chat, attachments, typing indicators, end-to-end encryption, SMS concatenation.
 
 ## Later
 
