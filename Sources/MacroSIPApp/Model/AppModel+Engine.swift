@@ -32,11 +32,20 @@ extension AppModel {
         #endif
     }
 
-    /// Before 26.1 the ringtone volume was kept in the app's defaults (the engine ignored it); it now lives in the settings.
+    /// Ringtone settings the app once kept in its defaults move into settings.json, once: the volume (before 26.1)
+    /// and the Classic / Digital / Soft pick (`ringtoneSound`, which never reached the engine). A custom file chosen
+    /// after the melody stays the ringtone.
     func migrateLegacyPrefs() {
-        guard let old = prefs.object(forKey: "ringtoneVolume") as? Double else { return }
-        prefs.removeObject(forKey: "ringtoneVolume")
-        updateSettings { $0.audio.ringtoneVolume = Float(min(max(old, 0), 1)) }
+        if let old = prefs.object(forKey: "ringtoneVolume") as? Double {
+            prefs.removeObject(forKey: "ringtoneVolume")
+            updateSettings { $0.audio.ringtoneVolume = Float(min(max(old, 0), 1)) }
+        }
+        if let name = prefs.string(forKey: "ringtoneSound") {
+            prefs.removeObject(forKey: "ringtoneSound")
+            if case .builtIn = settings.audio.ringtone, let melody = BuiltInRingtone(rawValue: name) {
+                updateSettings { $0.audio.ringtone = .builtIn(melody) }
+            }
+        }
     }
 
     private func startEventLoop() {
@@ -73,6 +82,7 @@ extension AppModel {
         await applyAudioSelection()
         applyVolumes()
         await applyHoldMusic()
+        applyRingtone()
         applyRecordingNotice()
         await refreshVoicemail()
         resetPresence()
@@ -264,7 +274,6 @@ extension AppModel {
         do {
             try await engine.setAudioDevices(inputName: headset ?? a.inputDeviceName, outputName: headset ?? a.outputDeviceName)
             await engine.setRingtoneDevice(name: a.ringtoneDeviceName)
-            if case let .file(url) = a.ringtone { await engine.setRingtoneFile(url) } else { await engine.setRingtoneFile(nil) }
         } catch { report(error) }
     }
 

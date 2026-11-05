@@ -225,7 +225,7 @@ extension EngineTests {
         defer { try? FileManager.default.removeItem(at: dir) }
         let tone = dir.appendingPathComponent("ring.wav")
         try RecordingConverterTests.sineWAV(seconds: 1, frequency: 500).write(to: tone)
-        await engine.setRingtoneFile(tone)                  // continuous, unlike the 2 s on / 4 s off tone
+        try await engine.setRingtone(.file(tone))           // continuous, unlike the 2 s on / 4 s off tone
         let account = AccountConfig(displayName: "L", username: "loop", domain: "127.0.0.1", enabled: false)
         try await engine.addAccount(account, password: "")
         let port = await engine.localPort(of: .udp)
@@ -262,7 +262,7 @@ extension EngineTests {
         let (out2, inc2) = try await ring()
         #expect(await waitUntil { await engine.ringtoneState() != nil })
         #expect(abs((await engine.ringtoneState()?.volume ?? -1) - 0.6) < 0.001)
-        await engine.setRingtoneFile(nil)                   // restarts the ringtone (generated tone)
+        try await engine.setRingtone(.builtIn(.classic))    // restarts the ringtone (generated tone)
         #expect(await waitUntil { await engine.ringtoneState() != nil })
         #expect(abs((await engine.ringtoneState()?.volume ?? -1) - 0.6) < 0.001)
         try await engine.hangup(out2)

@@ -100,12 +100,12 @@ extension Engine {
         guard ringtone == nil else { return }
         ringtoneDevice = separateRingtoneDevice()
         do {
-            ringtone = try TonePlayer(name: "ringtone", source: ringtoneSource,
+            ringtone = try TonePlayer(name: "ringtone", source: ringtoneSource.playerSource,
                                       deviceID: ringtoneDevice, volume: ringtoneVolume)
         } catch {
             PJ.warn(error, "ringtone")
             // A missing/broken WAV or device must not leave the call silent.
-            ringtone = try? TonePlayer(name: "ringtone", source: .tone(.ringtone), deviceID: nil,
+            ringtone = try? TonePlayer(name: "ringtone", source: .tone(ringtoneSource.fallbackTone), deviceID: nil,
                                        volume: ringtoneVolume)
         }
     }
@@ -202,10 +202,31 @@ extension Engine {
         restartRingtoneIfPlaying()
     }
 
-    /// nil = the generated tone. Hook for the bundled ringtone WAV.
-    public func setRingtoneFile(_ url: URL?) {
-        ringtoneSource = url.map { .wavFile($0) } ?? .tone(.ringtone)
+    /// What rings for an incoming call: a built-in melody (default `.builtIn(.classic)`) or a WAV
+    /// in a loop. A `.file` must be a WAV pjmedia plays as it is (`AudioFileToWAV.isPlayableWAV`:
+    /// 16-bit PCM, one or two channels, any rate); other formats are converted by the caller
+    /// (`RingtoneFile.prepare`). Anything else throws `.invalidArgument` and the previous source
+    /// stays. Works before `start` and is kept across `stop`/`start`; a ringtone that is playing
+    /// starts again with the new source.
+    public func setRingtone(_ source: RingtoneSource) throws {
+        try Self.requirePlayable(source)
+        ringtoneSource = source
+        emit(.log(level: 4, "engine: ringtone \(Self.ringtoneDescription(source))"))
         restartRingtoneIfPlaying()
+    }
+
+    /// A file source must be a WAV `cpjsua_wav_loop_create` opens as it is.
+    static func requirePlayable(_ source: RingtoneSource) throws {
+        if case let .file(url) = source, !AudioFileToWAV.isPlayableWAV(url) {
+            throw EngineError.invalidArgument("ringtone \(url.lastPathComponent) is not a 16-bit PCM WAV")
+        }
+    }
+
+    static func ringtoneDescription(_ source: RingtoneSource) -> String {
+        switch source {
+        case let .builtIn(melody): return "built-in \(melody.rawValue)"
+        case let .file(url): return "file \(url.lastPathComponent)"
+        }
     }
 
     /// Microphone level 0...1 as seen by the conference bridge (slot 0). The sound device

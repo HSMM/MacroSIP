@@ -128,6 +128,23 @@ extension Engine {
         guard pjsua_conf_get_signal_level(ringtone.slot, &tx, &rx) == PJ.success else { return (volume, nil) }
         return (volume, Int(rx))
     }
+
+    /// Records what the ringing ringtone sends into the bridge for `seconds` into a 16-bit mono WAV
+    /// (tests; conference path only, the recorder is its one extra listener).
+    func recordRingtone(to wav: URL, seconds: Double) async throws {
+        guard isStarted, PJ.registerThread(), let ringtone, ringtone.slot != PJ.invalidID else {
+            throw EngineError.invalidArgument("no ringtone on the conference bridge")
+        }
+        var recorder: pjsua_recorder_id = PJ.invalidID
+        var slot: pjsua_conf_port_id = PJ.invalidID
+        try PJ.check(wav.path.withCString { cpjsua_recorder_create($0, &recorder, &slot) }, "ringtone recorder")
+        let status = pjsua_conf_connect(ringtone.slot, slot)
+        if status == PJ.success { try? await Task.sleep(for: .seconds(seconds)) }
+        PJ.registerThread()
+        var finalised: Int32 = 0
+        PJ.warn(cpjsua_recorder_destroy_wait(recorder, 1000, &finalised), "destroy ringtone recorder")
+        try PJ.check(status, "ringtone -> recorder")
+    }
 }
 
 // MARK: - Codec options

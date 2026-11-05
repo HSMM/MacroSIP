@@ -46,6 +46,39 @@ struct SettingsCompatTests {
         #expect(wild.ringtoneVolume == 1 && wild.callSpeakerVolume == 0 && wild.callMicrophoneVolume == 1.5)
     }
 
+    /// Older files have one built-in ringtone (`{"builtIn":{}}`): it is Classic. The melody is stored inside
+    /// `builtIn`, so older builds still read `builtIn` (and `file` keeps its old shape); an unknown melody is
+    /// Classic and a broken value leaves the rest of the audio settings alone.
+    @Test func ringtoneChoiceDecodesOldAndNewShapes() throws {
+        func audio(_ ringtone: String) throws -> AudioSettings {
+            try JSONDecoder().decode(AudioSettings.self, from: Data(#"{"inputDeviceName":"Mic","ringtone":\#(ringtone)}"#.utf8))
+        }
+        #expect(try audio(#"{"builtIn":{}}"#).ringtone == .builtIn(.classic))
+        #expect(try audio(#"{"builtIn":{"melody":"soft"}}"#).ringtone == .builtIn(.soft))
+        #expect(try audio(#"{"builtIn":{"melody":"chimes"}}"#).ringtone == .builtIn(.classic))
+        #expect(try audio(#"{"file":{"_0":"file:\/\/\/tmp\/r.m4a"}}"#).ringtone == .file(URL(fileURLWithPath: "/tmp/r.m4a")))
+        let broken = try audio(#"{"file":{"_0":42}}"#)
+        #expect(broken.ringtone == .builtIn(.classic) && broken.inputDeviceName == "Mic")
+        #expect(try audio(#""classic""#).ringtone == .builtIn(.classic))
+        #expect(try JSONDecoder().decode(AudioSettings.self, from: Data("{}".utf8)).ringtone == .builtIn(.classic))
+        #expect(AudioSettings().ringtone == .builtIn(.classic) && RingtoneChoice.default == .builtIn(.classic))
+
+        for choice in [RingtoneChoice.builtIn(.digital), .builtIn(.classic), .file(URL(fileURLWithPath: "/tmp/r.aiff"))] {
+            var s = AppSettings()
+            s.audio.ringtone = choice
+            let data = try JSONEncoder().encode(s)
+            #expect(try JSONDecoder().decode(AppSettings.self, from: data).audio.ringtone == choice)
+        }
+        let digital = try JSONEncoder().encode(RingtoneChoice.builtIn(.digital))
+        #expect(String(decoding: digital, as: UTF8.self) == #"{"builtIn":{"melody":"digital"}}"#)
+
+        // What a build from before the melodies makes of the new shapes.
+        enum OldChoice: Codable, Equatable { case builtIn, file(URL) }
+        #expect(try JSONDecoder().decode(OldChoice.self, from: digital) == .builtIn)
+        let file = try JSONEncoder().encode(RingtoneChoice.file(URL(fileURLWithPath: "/tmp/r.aiff")))
+        #expect(try JSONDecoder().decode(OldChoice.self, from: file) == .file(URL(fileURLWithPath: "/tmp/r.aiff")))
+    }
+
     @Test func codecOptionsDefaultsAndRoundTrip() throws {
         let old = try JSONDecoder().decode(AppSettings.self, from: Data(#"{"callLogLimit":50}"#.utf8))
         #expect(old.codecOptions.opusFEC && !old.codecOptions.opusDTX && old.callLogLimit == 50)

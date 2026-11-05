@@ -20,6 +20,7 @@ final class AppModel {
     @ObservationIgnored let messageStore: MessageStore
     @ObservationIgnored let vault: PasswordVault
     @ObservationIgnored let prefs: UserDefaults
+    @ObservationIgnored let dataDirectory: URL                  // settings.json and the other stores; `--data-dir` in demo launches
     @ObservationIgnored var eventTask: Task<Void, Never>?
     @ObservationIgnored var engineAccounts: Set<AccountID> = []
     @ObservationIgnored var bannerTask: Task<Void, Never>?
@@ -135,11 +136,15 @@ final class AppModel {
     var archiveInProgress = false           // Settings › General › Create Archive… is running
     @ObservationIgnored var fileLogOverride: FileLog?                  // a demo check writes to its own log folder
     var holdMusicError: String?             // why the engine refused the hold music file (Settings › Audio)
+    var ringtoneError: String?              // why the custom ringtone file could not be used (Settings › Audio)
+    @ObservationIgnored var ringtoneTask: Task<Void, Never>?                // applies `audio.ringtone`, one change after the other
+    @ObservationIgnored var ringtoneApplied: (choice: RingtoneChoice, source: RingtoneSource)?    // what the engine last accepted, and for which choice
 
     private init() {
         let launch = LaunchOptions.current
         self.launch = launch
         let dir = launch.dataDirectory ?? JSONStore<[Contact]>.appSupportDirectory()
+        dataDirectory = dir
         if let d = launch.dataDirectory {
             // Demo launches always start from scratch (only inside the temporary directory).
             if launch.isDemo, d.path.hasPrefix(FileManager.default.temporaryDirectory.path) {

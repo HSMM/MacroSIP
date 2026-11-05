@@ -1,10 +1,69 @@
 import AppKit
 import MacroSIPCore
 
-/// Hold music, the recording notice tone, the voicemail indicator (MWI), the audio test and the
-/// short UI sounds (docs/ENGINE.md "Hold music", "Recording notice tone", "Voicemail indicator",
-/// "Audio test", "Sound events"). The engine plays what it is asked; the settings decide here.
+/// The ringtone, hold music, the recording notice tone, the voicemail indicator (MWI), the audio test and
+/// the short UI sounds (docs/ENGINE.md "Ringtone and ringback", "Hold music", "Recording notice tone",
+/// "Voicemail indicator", "Audio test", "Sound events"). The engine plays what it is asked; the settings
+/// decide here.
 extension AppModel {
+    // MARK: - Ringtone
+
+    /// `audio.ringtone` reaches the engine, at start and on every change, one change after the other (each with the
+    /// choice current when it runs). A melody goes as it is; a custom file as the WAV the engine plays: the file itself
+    /// when it is a 16-bit PCM WAV, else a copy converted once into the data folder (`RingtoneFile`, off the main actor).
+    /// A file that cannot be read or converted keeps the engine's previous ringtone and shows the reason under the
+    /// Ringtone group (and in a banner).
+    @discardableResult
+    func applyRingtone() -> Task<Void, Never> {
+        let previous = ringtoneTask
+        let task = Task { @MainActor [weak self] in
+            await previous?.value
+            guard let self else { return }
+            let choice = settings.audio.ringtone
+            let dir = dataDirectory
+            do {
+                let source: RingtoneSource
+                switch choice {
+                case let .builtIn(melody):
+                    source = .builtIn(melody)
+                case let .file(url):
+                    source = .file(try await Task.detached(priority: .utility) { try RingtoneFile.prepare(url, in: dir) }.value)
+                }
+                try await engine.setRingtone(source)
+                ringtoneApplied = (choice, source)
+                ringtoneError = nil
+                if source != .file(RingtoneFile.convertedURL(in: dir)) { RingtoneFile.removeConverted(in: dir) }
+            } catch {
+                let reason = describe(error)
+                ringtoneError = reason
+                AppLog.app.error("ringtone: \(reason)")
+                showBanner(L.audioRingtoneError(reason))
+            }
+        }
+        ringtoneTask = task
+        return task
+    }
+
+    /// Settings › Audio › Ringtone "Play": one ring of the chosen melody, or of the custom file as the engine plays it,
+    /// on the ringtone device at `volume` (the slider's value). Waits for a change still being applied; a file that
+    /// could not be used plays nothing (its reason is shown under the group).
+    func previewRingtone(volume: Float) {
+        let pending = ringtoneTask
+        run {
+            await pending?.value
+            let choice = self.settings.audio.ringtone
+            let source: RingtoneSource
+            if let melody = RingtoneSource(choice) {
+                source = melody
+            } else if let applied = self.ringtoneApplied, applied.choice == choice {
+                source = applied.source
+            } else {
+                return
+            }
+            try await self.engine.previewRingtone(source, volume: volume)
+        }
+    }
+
     // MARK: - Hold music and notice tone
 
     /// `audio.holdMusic` reaches the engine; a file the engine cannot read keeps the previous source and

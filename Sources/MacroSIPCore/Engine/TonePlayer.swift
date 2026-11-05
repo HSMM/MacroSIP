@@ -1,31 +1,125 @@
 internal import CPJSUA
 import Foundation
 
-/// What plays while an incoming call rings.
+/// What rings for an incoming call (`Engine.setRingtone`).
 public enum RingtoneSource: Equatable, Sendable {
-    /// Generated with pjmedia_tonegen (used until a bundled WAV exists).
-    case tone(Tone)
-    /// A WAV file played in a loop with pjmedia_wav_player_port.
-    case wavFile(URL)
+    /// One of the generated melodies (`BuiltInRingtone.tone`).
+    case builtIn(BuiltInRingtone)
+    /// A WAV the engine plays as it is (16-bit PCM, one or two channels, any rate:
+    /// `AudioFileToWAV.isPlayableWAV`), in a loop. Other formats go through `RingtoneFile` first.
+    case file(URL)
+
+    /// The source of a built-in choice; nil for a file, which needs `RingtoneFile.prepare` first.
+    public init?(_ choice: RingtoneChoice) {
+        guard case let .builtIn(melody) = choice else { return nil }
+        self = .builtIn(melody)
+    }
 }
 
-public struct Tone: Equatable, Sendable {
-    public var freq1: Int
-    public var freq2: Int
-    public var onMs: Int
-    public var offMs: Int
+/// A generated tone pattern played in a loop: up to `maxSteps` steps (the tone generator's queue),
+/// each one or two frequencies for `onMs`, then `offMs` of silence.
+public struct Tone: Hashable, Sendable {
+    public struct Step: Hashable, Sendable {
+        public var freq1: Int
+        public var freq2: Int
+        public var onMs: Int
+        public var offMs: Int
+        /// Peak amplitude; 0 = the generator's default (`Tone.defaultVolume`).
+        public var volume: Int
 
-    public init(freq1: Int, freq2: Int, onMs: Int, offMs: Int) {
-        self.freq1 = freq1
-        self.freq2 = freq2
-        self.onMs = onMs
-        self.offMs = offMs
+        public init(freq1: Int, freq2: Int = 0, onMs: Int, offMs: Int, volume: Int = 0) {
+            self.freq1 = freq1
+            self.freq2 = freq2
+            self.onMs = onMs
+            self.offMs = offMs
+            self.volume = volume
+        }
     }
 
-    /// Ringtone: 440+480 Hz, 2 s on / 4 s off.
+    public var steps: [Step]
+
+    public init(steps: [Step]) { self.steps = steps }
+
+    /// One step: a single cadence such as the classic ringtone or the ringback.
+    public init(freq1: Int, freq2: Int, onMs: Int, offMs: Int) {
+        self.init(steps: [Step(freq1: freq1, freq2: freq2, onMs: onMs, offMs: offMs)])
+    }
+
+    /// The generator's queue (`PJMEDIA_TONEGEN_MAX_DIGITS`).
+    public static let maxSteps = 32
+    /// What a step with volume 0 plays at (`PJMEDIA_TONEGEN_VOLUME`, about -8.5 dBFS).
+    public static let defaultVolume = 12288
+
+    /// Length of one loop in milliseconds.
+    public var loopMs: Int { steps.reduce(0) { $0 + $1.onMs + $1.offMs } }
+    /// From the start of a loop to the end of its last sound (the loop without its final pause).
+    public var soundingMs: Int { loopMs - (steps.last?.offMs ?? 0) }
+
+    /// Classic ringtone: 440+480 Hz, 2 s on / 4 s off (6 s loop).
     public static let ringtone = Tone(freq1: 440, freq2: 480, onMs: 2000, offMs: 4000)
+    /// Digital ringtone: "beep-beep" twice on two high notes (1320 and 1760 Hz, about E6 and A6,
+    /// 100 ms each), then 1.8 s of silence (2.5 s loop), at about -12 dBFS.
+    public static let ringtoneDigital = Tone(steps: [
+        Step(freq1: 1320, onMs: 100, offMs: 40, volume: 8000),
+        Step(freq1: 1760, onMs: 100, offMs: 200, volume: 8000),
+        Step(freq1: 1320, onMs: 100, offMs: 40, volume: 8000),
+        Step(freq1: 1760, onMs: 100, offMs: 1820, volume: 8000),
+    ])
+    /// Soft ringtone: three low notes falling slowly (G4 392 Hz, E4 330 Hz, C4 262 Hz; 0.5,
+    /// 0.5 and 0.9 s), then 3.3 s of silence (5.5 s loop), at about -15 dBFS.
+    public static let ringtoneSoft = Tone(steps: [
+        Step(freq1: 392, onMs: 500, offMs: 150, volume: 6000),
+        Step(freq1: 330, onMs: 500, offMs: 150, volume: 6000),
+        Step(freq1: 262, onMs: 900, offMs: 3300, volume: 6000),
+    ])
     /// Ringback while the far end rings without early media: 425 Hz, 1 s on / 4 s off.
     public static let ringback = Tone(freq1: 425, freq2: 0, onMs: 1000, offMs: 4000)
+
+    /// The steps as the tone generator takes them.
+    var descriptors: [pjmedia_tone_desc] {
+        steps.map {
+            pjmedia_tone_desc(freq1: Int16(clamping: $0.freq1), freq2: Int16(clamping: $0.freq2),
+                              on_msec: Int16(clamping: $0.onMs), off_msec: Int16(clamping: $0.offMs),
+                              volume: Int16(clamping: $0.volume), flags: 0)
+        }
+    }
+}
+
+extension BuiltInRingtone {
+    /// The pattern the engine generates for this melody.
+    public var tone: Tone {
+        switch self {
+        case .classic: return .ringtone
+        case .digital: return .ringtoneDigital
+        case .soft: return .ringtoneSoft
+        }
+    }
+}
+
+extension RingtoneSource {
+    /// What the ringtone player is made from.
+    var playerSource: TonePlayer.Source {
+        switch self {
+        case let .builtIn(melody): return .tone(melody.tone)
+        case let .file(url): return .wavFile(url)
+        }
+    }
+
+    /// Played on the call output when the source or the separate device cannot be opened: the
+    /// chosen melody, Classic for a file.
+    var fallbackTone: Tone {
+        if case let .builtIn(melody) = self { return melody.tone }
+        return .ringtone
+    }
+
+    /// Length of a preview (`Engine.previewRingtone`): one ring of a melody and half a second
+    /// after it; a file plays for `Engine.ringtonePreviewFileSeconds`.
+    var previewSeconds: Double {
+        switch self {
+        case let .builtIn(melody): return Double(melody.tone.soundingMs + 500) / 1000
+        case .file: return Engine.ringtonePreviewFileSeconds
+        }
+    }
 }
 
 /// One audio source played either into a conference bridge slot (by default 0, the speaker)
@@ -34,6 +128,14 @@ public struct Tone: Equatable, Sendable {
 /// while it plays on either path. Engine-actor confined: create, use and stop only from the Engine.
 /// Used for the ringtone, ringback, the call-waiting tone (slot 0) and in-band DTMF (a call's slot).
 final class TonePlayer {
+    /// A generated pattern or a WAV file, looped.
+    enum Source: Equatable {
+        case tone(Tone)
+        /// Played with `cpjsua_wav_loop_create` (16-bit PCM).
+        case wavFile(URL)
+    }
+
+
     /// Owned by `port` once the gain port exists (released when the bridge lets go of it).
     private var pool: UnsafeMutablePointer<pj_pool_t>?
     /// The gain port (owns the tone generator / WAV player).
@@ -47,14 +149,16 @@ final class TonePlayer {
     private var requestedSinks: Set<pjsua_conf_port_id> = []
     private var soundPort: OpaquePointer?
 
-    convenience init(name: String, source: RingtoneSource, deviceID: Int?, volume: Float = 1) throws {
+    convenience init(name: String, source: Source, deviceID: Int?, volume: Float = 1) throws {
         try self.init(name: name, deviceID: deviceID, volume: volume) { pool in
             var src: UnsafeMutablePointer<pjmedia_port>?
             switch source {
             case let .tone(t):
-                try PJ.check(cpjsua_tonegen_create(pool, UInt32(t.freq1), UInt32(t.freq2),
-                                                   UInt32(t.onMs), UInt32(t.offMs), &src),
-                             "\(name): tone generator")
+                let tones = t.descriptors
+                try tones.withUnsafeBufferPointer { buf in
+                    try PJ.check(cpjsua_tone_sequence_create(pool, buf.baseAddress, UInt32(buf.count), &src),
+                                 "\(name): tone generator")
+                }
             case let .wavFile(url):
                 try PJ.check(url.path.withCString { cpjsua_wav_loop_create(pool, $0, &src) },
                              "\(name): WAV player \(url.lastPathComponent)")
