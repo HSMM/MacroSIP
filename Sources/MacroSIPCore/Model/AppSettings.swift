@@ -27,12 +27,16 @@ public struct SoundEventSettings: Codable, Equatable, Sendable {
     public var voicemail: Bool
     /// `.error` when a call or registration fails.
     public var error: Bool
+    /// `.message` when a text message arrives.
+    public var message: Bool
 
-    public init(callEvents: Bool = false, keyPress: Bool = false, voicemail: Bool = false, error: Bool = false) {
+    public init(callEvents: Bool = false, keyPress: Bool = false, voicemail: Bool = false, error: Bool = false,
+                message: Bool = false) {
         self.callEvents = callEvents
         self.keyPress = keyPress
         self.voicemail = voicemail
         self.error = error
+        self.message = message
     }
 
     /// Missing keys decode as off.
@@ -42,6 +46,7 @@ public struct SoundEventSettings: Codable, Equatable, Sendable {
         keyPress = (try? c.decodeIfPresent(Bool.self, forKey: .keyPress)) ?? false
         voicemail = (try? c.decodeIfPresent(Bool.self, forKey: .voicemail)) ?? false
         error = (try? c.decodeIfPresent(Bool.self, forKey: .error)) ?? false
+        message = (try? c.decodeIfPresent(Bool.self, forKey: .message)) ?? false
     }
 }
 

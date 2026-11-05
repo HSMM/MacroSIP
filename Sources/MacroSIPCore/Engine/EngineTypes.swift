@@ -255,6 +255,8 @@ public enum SoundEvent: Equatable, Sendable {
     case voicemail
     /// Two low beeps.
     case error
+    /// Two short high beeps (a text message arrived).
+    case message
 }
 
 public enum EngineError: Error, Equatable, Sendable, CustomStringConvertible {

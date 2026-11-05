@@ -20,6 +20,7 @@ enum EventSounds {
         case .callEnded: return [tone(660, on: 80, off: 40), tone(440, on: 160, off: 0)]
         case .voicemail: return [tone(880, on: 70, off: 30), tone(880, on: 70, off: 30), tone(1175, on: 120, off: 0)]
         case .error: return [tone(330, on: 120, off: 60), tone(330, on: 120, off: 0)]
+        case .message: return [tone(1175, on: 70, off: 60), tone(1175, on: 70, off: 0)]
         case .keyPress: return nil
         }
     }

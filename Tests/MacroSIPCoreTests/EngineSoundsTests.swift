@@ -235,7 +235,7 @@ extension EngineTests {
         let (lb, consumer) = try await startLoopback(CallOptions())
         defer { consumer.cancel() }
         let engine = lb.engine
-        for e in [SoundEvent.callConnected, .callEnded, .voicemail, .error, .keyPress("5")] {
+        for e in [SoundEvent.callConnected, .callEnded, .voicemail, .error, .message, .keyPress("5")] {
             #expect(EventSounds.duration(of: e) <= 400, "\(e)")
         }
 
@@ -306,6 +306,9 @@ struct EngineSoundValueTests {
     @Test func settingsDecodeDefaultsAndRoundTrip() throws {
         let old = try JSONDecoder().decode(AppSettings.self, from: Data(#"{"callLogLimit":50}"#.utf8))
         #expect(old.audio.holdMusic == .builtIn && old.audio.soundEvents == SoundEventSettings())
+        #expect(!old.audio.soundEvents.message)
+        let before26_3 = try JSONDecoder().decode(SoundEventSettings.self, from: Data(#"{"callEvents":true,"voicemail":true}"#.utf8))
+        #expect(before26_3.callEvents && before26_3.voicemail && !before26_3.message)
         #expect(!old.recording.noticeTone && old.recording.noticeToneIntervalSeconds == 15)
         let odd = try JSONDecoder().decode(RecordingSettings.self,
                                            from: Data(#"{"noticeTone":true,"noticeToneIntervalSeconds":3}"#.utf8))
@@ -319,7 +322,7 @@ struct EngineSoundValueTests {
 
         var s = AppSettings()
         s.audio.holdMusic = .file(URL(fileURLWithPath: "/tmp/music.mp3"))
-        s.audio.soundEvents = SoundEventSettings(callEvents: true, keyPress: false, voicemail: true, error: true)
+        s.audio.soundEvents = SoundEventSettings(callEvents: true, keyPress: false, voicemail: true, error: true, message: true)
         s.recording.noticeTone = true
         s.recording.noticeToneIntervalSeconds = 30
         var back = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(s))
