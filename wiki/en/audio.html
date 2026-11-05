@@ -13,7 +13,7 @@
 <body>
 <header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/audio.html" hreflang="en" aria-current=true>English</a><a href="../ru/audio.html" hreflang="ru">Русский</a><a href="../zh/audio.html" hreflang="zh-Hans">中文</a></div></header>
 <div class="layout">
-<nav aria-label="Contents"><details><summary>Contents</summary><div class="links"><ul><li><a href="index.html">Home</a></li></ul><h2>User guide</h2><ul><li><a href="installation.html">Installation</a></li><li><a href="accounts.html">Accounts</a></li><li><a href="calls.html">Calls</a></li><li><a href="incoming-calls.html">Incoming calls</a></li><li><a href="contacts-and-call-log.html">Contacts and call log</a></li><li><a href="directory.html">Directory</a></li><li><a href="quick-keys.html">Quick keys</a></li><li><a href="audio.html" aria-current=page>Audio</a></li><li><a href="settings.html">Settings</a></li><li><a href="menu-bar.html">Menu bar</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul><h2>For developers</h2><ul><li><a href="architecture.html">Architecture</a></li><li><a href="building.html">Building</a></li><li><a href="testing.html">Testing</a></li><li><a href="releasing.html">Releasing</a></li><li><a href="contributing.html">Contributing</a></li></ul></div></details></nav>
+<nav aria-label="Contents"><details><summary>Contents</summary><div class="links"><ul><li><a href="index.html">Home</a></li></ul><h2>User guide</h2><ul><li><a href="installation.html">Installation</a></li><li><a href="accounts.html">Accounts</a></li><li><a href="calls.html">Calls</a></li><li><a href="incoming-calls.html">Incoming calls</a></li><li><a href="contacts-and-call-log.html">Contacts and call log</a></li><li><a href="messages.html">Messages</a></li><li><a href="directory.html">Directory</a></li><li><a href="quick-keys.html">Quick keys</a></li><li><a href="audio.html" aria-current=page>Audio</a></li><li><a href="settings.html">Settings</a></li><li><a href="menu-bar.html">Menu bar</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul><h2>For developers</h2><ul><li><a href="architecture.html">Architecture</a></li><li><a href="building.html">Building</a></li><li><a href="testing.html">Testing</a></li><li><a href="releasing.html">Releasing</a></li><li><a href="contributing.html">Contributing</a></li></ul></div></details></nav>
 <main>
 <h1 dir="auto">Audio</h1>
 <p dir="auto">Everything on this page lives in Settings › Audio, Settings › Codecs and Settings › Network. Changes apply immediately; a few network values need an engine restart and say so.</p>
@@ -36,7 +36,7 @@
 </tr>
 <tr>
 <td><strong>Ringtone device</strong></td>
-<td>Output for the ringtone only: "Ring through the speakers even when a headset is used for calls."</td>
+<td>Output for the ringtone only: "Plays the ringtone through the speakers even when calls use a headset."</td>
 </tr>
 <tr>
 <td><strong>Switch to a headset when it is connected</strong></td>
@@ -86,11 +86,18 @@
 <p dir="auto">The headset's indicator lights follow the call when the device has them: off-hook while a call is answered or being placed, ring while one rings, mute while the microphone is off. A long first press cannot answer and hang up in one go.</p>
 <p dir="auto">Limitations: Bluetooth headsets whose buttons speak the hands-free profile (HFP) rather than HID are handled by macOS itself and are not supported; they never appear in this row. The media keys of a keyboard and a headset on the 3.5 mm jack have no telephony controls and are ignored. A headset that offers its controls only inside a consumer-control device may be refused by macOS; the log then reads "headset buttons: cannot open …" (see <a href="troubleshooting.html">Troubleshooting</a>).</p>
 <h2 dir="auto">Ringtone</h2>
-<p dir="auto"><strong>Sound</strong>: <strong>Classic</strong>, <strong>Digital</strong>, <strong>Soft</strong> (built in) or <strong>Custom file…</strong> (WAV, AIFF, M4A, MP3); the popup then shows "Custom: office-bell.m4a". <strong>Play</strong> previews it. <strong>Volume</strong> is a slider from 0 to 100 %, applied live and used by the preview. Call waiting uses a short tone in the earpiece instead of the ringtone; see <a href="calls.html">Calls</a>.</p>
+<p dir="auto"><strong>Sound</strong> in Settings › Audio › Ringtone chooses what rings for an incoming call:</p>
+<ul dir="auto">
+<li><strong>Classic</strong>, <strong>Digital</strong> and <strong>Soft</strong> are three different built-in melodies.</li>
+<li><strong>Custom file…</strong> takes a WAV, AIFF, M4A or MP3 file ("“Custom file…” accepts WAV, AIFF, M4A and MP3."); the popup then shows "Custom: office-bell.m4a". MacroSIP converts the file once and reuses the result, so a long file does not slow the next call.</li>
+<li><strong>Play</strong> previews the real choice, at the volume set below, on the ringtone device.</li>
+<li>A file that cannot be read keeps the previous choice, and the group says why: "The ringtone file could not be used: …".</li>
+</ul>
+<p dir="auto"><strong>Volume</strong> is a slider from 0 to 100 %, applied live and used by the preview. The ring itself comes out of the <strong>Ringtone device</strong> (see Devices above). Call waiting uses a short tone in the earpiece instead of the ringtone; see <a href="calls.html">Calls</a>. If the ringtone you hear is not the one you chose, see <a href="troubleshooting.html">Troubleshooting</a>.</p>
 <h2 dir="auto">Hold music</h2>
-<p dir="auto"><strong>Source</strong> in Settings › Audio › Hold music is what the caller hears while you hold the call: <strong>Built-in</strong> (a short looping melody, the default), <strong>Custom file…</strong> (WAV, AIFF, M4A, MP3 and anything else macOS can read; the popup then shows "Custom: office-hold.m4a") or <strong>Off</strong> (silence). "The caller hears this while on hold." A change applies at once, also to calls already on hold. A file that cannot be read keeps the previous source; the group footer and a banner say "The file could not be used: …". The music goes to the held call only: you do not hear it, and it is not written into recordings. See also <a href="calls.html">Calls</a> and, if the caller hears something else, <a href="troubleshooting.html">Troubleshooting</a>.</p>
+<p dir="auto"><strong>Source</strong> in Settings › Audio › Hold music is what the caller hears while you hold the call: <strong>Built-in</strong> (a short looping melody, the default), <strong>Custom file…</strong> (WAV, AIFF, M4A, MP3 and anything else macOS can read; the popup then shows "Custom: office-hold.m4a") or <strong>Off</strong> (silence). "The other party hears this while the call is on hold." A change applies at once, also to calls already on hold. A file that cannot be read keeps the previous source; the group footer and a banner say "The file could not be used: …". The music goes to the held call only: you do not hear it, and it is not written into recordings. See also <a href="calls.html">Calls</a> and, if the caller hears something else, <a href="troubleshooting.html">Troubleshooting</a>.</p>
 <h2 dir="auto">Sound events</h2>
-<p dir="auto">Four switches in Settings › Audio › Sound events, all off by default. "Short beeps on the speaker; the other side never hears them." The beeps play on the speaker chosen for calls and never reach a call or a recording.</p>
+<p dir="auto">Four switches (a fifth, <strong>New message</strong>, appears while Messages is on) in Settings › Audio › Sound events, all off by default. "Short beeps on the speaker; the other party does not hear them." The beeps play on the speaker chosen for calls and never reach a call or a recording.</p>
 <markdown-accessiblity-table><div class="tablewrap"><table role="table">
 <thead>
 <tr>
@@ -115,12 +122,16 @@
 <td><strong>Registration error and lost network</strong></td>
 <td>Two low beeps when a registration fails or the network path goes away, at most once every 10 seconds.</td>
 </tr>
+<tr>
+<td><strong>New message</strong></td>
+<td>Two short high beeps when a text message arrives; not during Do Not Disturb, at most once every 2 seconds. The row exists only while messages are switched on (<a href="messages.html">Messages</a>).</td>
+</tr>
 </tbody>
 </table></div></markdown-accessiblity-table>
 <h2 dir="auto">Audio test</h2>
-<p dir="auto">Settings › Audio › Audio test has one row, <strong>Speaker and microphone</strong>: "Test plays two notes on the speaker for 2 seconds; the meter shows the microphone." <strong>Test</strong> plays two notes (660 and 880 Hz) on the speaker chosen in Devices (<strong>System default</strong> is the call output); a second press restarts it. If the chosen speaker has been unplugged, the tone plays on the system default instead. The meter beside the button is the live microphone level, the same as in the Microphone row. The tone never reaches a call or a recording.</p>
+<p dir="auto">Settings › Audio › Audio test has one row, <strong>Speaker and microphone</strong>: "Plays two notes on the speaker for 2 seconds; the meter shows the microphone level." <strong>Test</strong> plays two notes (660 and 880 Hz) on the speaker chosen in Devices (<strong>System default</strong> is the call output); a second press restarts it. If the chosen speaker has been unplugged, the tone plays on the system default instead. The meter beside the button is the live microphone level, the same as in the Microphone row. The tone never reaches a call or a recording.</p>
 <h2 dir="auto">Echo cancellation and voice processing</h2>
-<p dir="auto"><strong>Echo cancellation</strong> is on by default: "Turn off only when using a headset with its own echo cancellation."</p>
+<p dir="auto"><strong>Echo cancellation</strong> is on by default: "Turn it off only if your headset cancels echo itself."</p>
 <p dir="auto">With the default input and output devices the audio runs through the system.s voice-processing unit, which adds noise suppression and automatic gain control; there is no switch for it. When you choose a non-default device by hand the engine.s built-in echo canceller is used instead.</p>
 <h2 dir="auto">Codecs</h2>
 <p dir="auto">Settings › Codecs lists the codecs in order of preference; the order is what is offered in SDP. Drag rows or use <strong>Move up</strong> / <strong>Move down</strong>; unchecked codecs are never offered; at least one must stay enabled. <strong>Restore Defaults</strong> restores the order and turns on Opus, G.722 and PCMU only.</p>
@@ -187,8 +198,8 @@
 <p dir="auto">"Wideband codecs (Opus, G.722, G.722.1, Speex 16 and 32 kHz) work only if the PBX supports them." There is no G.729. If your PBX offers only G.711 A-law, turn PCMA on.</p>
 <h3 dir="auto">Opus switches</h3>
 <ul dir="auto">
-<li><strong>Packet-loss correction (FEC)</strong>, on: "adds a little data so lost packets can be repaired; keep it on for Wi-Fi and mobile networks."</li>
-<li><strong>Silence suppression (DTX)</strong>, off: "sends nothing during pauses to save bandwidth, but can clip the start of a word; turn it on only when bandwidth is tight."</li>
+<li><strong>Packet-loss correction (FEC)</strong>, on: "repairs lost packets for a little extra data; keep it on for Wi-Fi and mobile networks."</li>
+<li><strong>Silence suppression (DTX)</strong>, off: "saves bandwidth during pauses but can clip the start of a word; use it only on a slow connection."</li>
 </ul>
 <p dir="auto">Both are disabled while Opus is unchecked and apply at once to new and renegotiated streams.</p>
 <h2 dir="auto">Network settings that affect audio</h2>
@@ -209,12 +220,12 @@
 <tr>
 <td><strong>Use ICE</strong></td>
 <td>on</td>
-<td>"Finds a working media path through NAT. Uses the STUN server above."</td>
+<td>"Helps audio get through NAT. Uses the STUN server above."</td>
 </tr>
 <tr>
 <td><strong>Use rport</strong></td>
 <td>on</td>
-<td>"Asks the server to reply to the address and port it sees. Helps behind NAT."</td>
+<td>"Helps behind NAT: the server replies to the address you are calling from."</td>
 </tr>
 <tr>
 <td><strong>Keep-alive interval</strong></td>
@@ -224,7 +235,7 @@
 <tr>
 <td><strong>Port range</strong> (RTP)</td>
 <td>start 4000, 1000 ports</td>
-<td>"Audio uses this range. Each call needs two ports; 1024–65535." Open or forward this range on a firewall. Applies after the engine restart offered in the pane.</td>
+<td>"Ports for call audio, 1024–65535. Each call needs two." Open or forward this range on a firewall. Applies after the engine restart offered in the pane.</td>
 </tr>
 <tr>
 <td><strong>Local SIP port</strong></td>
@@ -233,7 +244,7 @@
 </tr>
 </tbody>
 </table></div></markdown-accessiblity-table>
-<p dir="auto">Transport (UDP/TCP/TLS) and SRTP are per account; see <a href="accounts.html">Accounts</a>.</p>
+<p dir="auto">Transport (UDP/TCP/TLS) and SRTP are per account; see <a href="accounts.html">Accounts</a>. A server addressed by a private IP address does not use STUN at all (see <a href="accounts.html">Accounts</a>).</p>
 <h2 dir="auto">Troubleshooting one-way audio</h2>
 <p dir="auto">One-way audio almost always means RTP packets do not find their way back through a NAT or firewall while SIP signalling works.</p>
 <ol dir="auto">

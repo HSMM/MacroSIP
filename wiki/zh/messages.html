@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>消息 · MacroSIP 文档</title>
+<meta name="description" content="MacroSIP 文档">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/messages.html">
+<link rel="alternate" hreflang="ru" href="../ru/messages.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/messages.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/messages.html" hreflang="en">English</a><a href="../ru/messages.html" hreflang="ru">Русский</a><a href="../zh/messages.html" hreflang="zh-Hans" aria-current=true>中文</a></div></header>
+<div class="layout">
+<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html">通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="messages.html" aria-current=page>消息</a></li><li><a href="directory.html">目录</a></li><li><a href="quick-keys.html">快捷键</a></li><li><a href="audio.html">音频</a></li><li><a href="settings.html">设置</a></li><li><a href="menu-bar.html">菜单栏</a></li><li><a href="troubleshooting.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="architecture.html">架构</a></li><li><a href="building.html">构建</a></li><li><a href="testing.html">测试</a></li><li><a href="releasing.html">发布</a></li><li><a href="contributing.html">参与贡献</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">消息</h1>
+<p dir="auto">MacroSIP 可以通过 SIP（SIP <code class="notranslate">MESSAGE</code> 方法）收发文字消息。消息是纯文本（UTF-8，因此俄文及任何其他语言都可使用），经由您的某个账户发往 SIP 服务器或直接发给对方。Asterisk 服务器通过 <code class="notranslate">chan_dongle</code> 转发的短信会作为普通消息到达，您的回复也沿同一路径返回。</p>
+<p dir="auto">消息功能<strong>默认关闭</strong>。在开启之前没有“消息”标签页和“发送消息”菜单项，收到的消息会被忽略。</p>
+<h2 dir="auto">开启消息</h2>
+<p dir="auto">打开设置 › 通用 (⌘,)，在<strong>消息</strong> (Messages) 组中打开<strong>文字消息 (SIP MESSAGE)</strong> (Text messages (SIP MESSAGE))。页脚说明了它的作用：“显示“消息”标签页，接收来信，并在“联系人”和“通话记录”菜单中添加“发送消息”。”见 <a href="settings.html">设置</a>。</p>
+<p dir="auto">开关关闭时：</p>
+<ul dir="auto">
+<li>主窗口只有三个标签页（拨号盘、联系人、通话记录），没有“消息”标签页；</li>
+<li>没有<strong>发送消息</strong> (Send Message) 菜单项，没有通知、没有消息的 Dock 标记，也没有消息提示音；</li>
+<li>收到的消息会被丢弃，不会保存。</li>
+</ul>
+<p dir="auto">关闭不会删除任何内容：会话仍保留在 Mac 上，重新开启后立即恢复显示。</p>
+<h2 dir="auto">“消息”标签页</h2>
+<p dir="auto">主窗口的第四个标签页列出您的会话，最近有动静的在最上面。一个会话是某个账户上的一位对方，因此同一个号码通过两个账户联系就是两个会话；名称旁边会显示账户名。</p>
+<p dir="auto">每一行显示名称（联系人，否则是消息自带的名称，否则是号码）、账户、最后一条消息的开头（若是您发的则以“您：”开头）、时间和蓝色的未读计数。标签页上的红色计数是所有会话未读消息的总和，随着阅读而减少。</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>操作</th>
+<th>方法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>打开会话</td>
+<td>点按它，或选中后按 Return。</td>
+</tr>
+<tr>
+<td>返回列表</td>
+<td>返回箭头，或 Escape。输入到一半的草稿会保留。</td>
+</tr>
+<tr>
+<td>呼叫对方</td>
+<td>会话标题中的绿色听筒，或行菜单中的<strong>呼叫</strong> (Call)。</td>
+</tr>
+<tr>
+<td>将号码加入联系人</td>
+<td>行菜单中的<strong>添加到联系人</strong> (Add to Contacts)（仅适用于还不是联系人的号码）。</td>
+</tr>
+<tr>
+<td>拷贝号码</td>
+<td>行菜单中的<strong>拷贝号码</strong> (Copy Number)。</td>
+</tr>
+<tr>
+<td>删除会话</td>
+<td>行菜单中的<strong>删除会话…</strong> (Delete Conversation…)，或 ⌘⌫；MacroSIP 会先询问。消息只从这台 Mac 上移除。</td>
+</tr>
+<tr>
+<td>拷贝或删除单条消息</td>
+<td>在气泡上右键：<strong>拷贝文本</strong> (Copy Text)、<strong>删除消息</strong> (Delete Message)。删除无需确认。</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">会话中，您的消息在右侧、使用强调色，对方的消息在左侧、为灰色。Return 发送，Shift-Return 或 Option-Return 换行。会话在主窗口中打开且该窗口位于最前时，视为已读。</p>
+<p dir="auto">还没有消息时，标签页显示“没有消息”和“收到的消息会显示在这里。点按“新建消息”来写一条。”</p>
+<h2 dir="auto">新建消息</h2>
+<p dir="auto">点按列表上方的<strong>新建消息</strong> (New Message)（没有任何已启用账户时不可用）。</p>
+<ol dir="auto">
+<li>在<strong>收件人：</strong> (To:) 中输入号码、SIP 用户（如 <code class="notranslate">102</code>）、<code class="notranslate">sip:</code> 或 <code class="notranslate">tel:</code> 地址，或名称。联系人和目录中的建议会像号码栏一样出现（<a href="directory.html">目录</a>）；用鼠标或方向键加 Return 选择。如果号码栏中已有号码，会被填入收件人。</li>
+<li>查看下方一行：“发件账户：…，即上方所选账户”。消息经由主窗口账户行中选定的账户发出；请在那里更改。</li>
+<li>输入文字，按 Return 或圆形发送按钮。</li>
+</ol>
+<p dir="auto">如果该账户上已有与该号码的会话，MacroSIP 会打开它并保留您已输入的文字。</p>
+<h2 dir="auto">状态</h2>
+<p dir="auto">每条发出的消息下方会显示它的结果。</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>显示</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>正在发送…</strong> (Sending…)</td>
+<td>等待回应。</td>
+</tr>
+<tr>
+<td><strong>已发送</strong> (Sent)</td>
+<td>SIP 服务器或对方已接受该消息。显示在会话中您的最后一条消息下方。这<strong>不</strong>表示消息已到达手机：“已被服务器接受。这不能确认消息已到达收件人的手机。”没有“已送达”标记。</td>
+</tr>
+<tr>
+<td><strong>未发送 · 原因</strong> (Not sent)</td>
+<td>消息未被接受。原因是服务器的原始回应（“404 Not Found”、“408 Request Timeout”、“480 Temporarily Unavailable”），本地问题显示“无连接”，消息仍在发送时 MacroSIP 被关闭则显示“已中断”。气泡旁和列表行中会出现红色标记。</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">点按原因旁的<strong>重试</strong> (Retry)（或气泡菜单中的同名项），即可通过同一账户再次发送同一文字；它会以当前时间排到会话末尾。</p>
+<p dir="auto">如果账户已停用或被删除，仍可阅读会话，但输入框不可用（“… 已关闭”、“此会话的账户已被移除”），已停用账户的来信也不会被接收。</p>
+<h2 dir="auto">通知、Dock 标记和声音</h2>
+<ul dir="auto">
+<li>**通知。**每条收到的消息都会发出一条 macOS 通知：标题是发送者，下方是账户名和正文。点按它会把 MacroSIP 带到前台并打开该会话。通知按会话分组，在您阅读或删除会话后移除。当该会话在最前的主窗口中打开时，以及 MacroSIP 的勿扰模式开启时（<a href="incoming-calls.html">来电</a>），不会发出通知；macOS 的专注模式自行起作用。通知没有提示音。</li>
+<li>**Dock 标记。**Dock 图标显示一个红色数字：未读消息加上未查看的未接来电（<a href="menu-bar.html">菜单栏</a>）。菜单栏图标只统计未接来电。</li>
+<li><strong>声音。在设置 › 音频 › 声音事件中打开新消息</strong> (New message)（默认关闭；仅在消息开启时才有此行），收到消息时扬声器会发出两声短促的高音。勿扰模式开启时不播放，且最多每 2 秒一次。见 <a href="audio.html">音频</a>。</li>
+</ul>
+<p dir="auto">勿扰模式开启时，消息仍会保存并计数，只是没有通知和声音。</p>
+<h2 dir="auto">在联系人和通话记录中发送消息</h2>
+<p dir="auto">消息开启后，<strong>联系人</strong>中某个联系人的右键菜单和<strong>通话记录</strong>中某条记录的右键菜单都有<strong>发送消息</strong> (Send Message)。它会打开“消息”标签页：若与该号码已有会话就打开它，否则打开以该联系人为收件人的新消息。从通话记录发起时，使用该条记录自己的账户。见 <a href="contacts-and-call-log.html">联系人与通话记录</a>。</p>
+<h2 dir="auto">限制</h2>
+<ul dir="auto">
+<li>一条消息最多 <strong>2800 字节</strong>的 UTF-8 文字。西里尔字母和大多数非拉丁字母每个占两字节，即大约 1400 个此类字符。超出时输入框显示“消息过长，无法发送”，发送按钮不可用。</li>
+<li>不支持：群聊、附件和图片、正在输入提示、端到端加密，以及长短信的分段合并（一条长短信可能以几条独立消息的形式到达）。消息中的链接不可点按。</li>
+</ul>
+<p dir="auto">如果消息显示<strong>已发送</strong>但手机没有收到，见 <a href="troubleshooting.html">故障排除</a>。设置项列在 <a href="settings.html">设置</a> 中。</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

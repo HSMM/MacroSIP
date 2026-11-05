@@ -13,7 +13,7 @@
 <body>
 <header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/index.html" hreflang="en">English</a><a href="../ru/index.html" hreflang="ru" aria-current=true>Русский</a><a href="../zh/index.html" hreflang="zh-Hans">中文</a></div></header>
 <div class="layout">
-<nav aria-label="Содержание"><details><summary>Содержание</summary><div class="links"><ul><li><a href="index.html" aria-current=page>Главная</a></li></ul><h2>Руководство пользователя</h2><ul><li><a href="installation.html">Установка</a></li><li><a href="accounts.html">Аккаунты</a></li><li><a href="calls.html">Звонки</a></li><li><a href="incoming-calls.html">Входящие звонки</a></li><li><a href="contacts-and-call-log.html">Контакты и журнал</a></li><li><a href="directory.html">Справочник</a></li><li><a href="quick-keys.html">Быстрые клавиши</a></li><li><a href="audio.html">Звук</a></li><li><a href="settings.html">Настройки</a></li><li><a href="menu-bar.html">Строка меню</a></li><li><a href="troubleshooting.html">Решение проблем</a></li></ul><h2>Для разработчиков</h2><ul><li><a href="architecture.html">Устройство</a></li><li><a href="building.html">Сборка</a></li><li><a href="testing.html">Тесты</a></li><li><a href="releasing.html">Релизы</a></li><li><a href="contributing.html">Участие</a></li></ul></div></details></nav>
+<nav aria-label="Содержание"><details><summary>Содержание</summary><div class="links"><ul><li><a href="index.html" aria-current=page>Главная</a></li></ul><h2>Руководство пользователя</h2><ul><li><a href="installation.html">Установка</a></li><li><a href="accounts.html">Аккаунты</a></li><li><a href="calls.html">Звонки</a></li><li><a href="incoming-calls.html">Входящие звонки</a></li><li><a href="contacts-and-call-log.html">Контакты и журнал</a></li><li><a href="messages.html">Сообщения</a></li><li><a href="directory.html">Справочник</a></li><li><a href="quick-keys.html">Быстрые клавиши</a></li><li><a href="audio.html">Звук</a></li><li><a href="settings.html">Настройки</a></li><li><a href="menu-bar.html">Строка меню</a></li><li><a href="troubleshooting.html">Решение проблем</a></li></ul><h2>Для разработчиков</h2><ul><li><a href="architecture.html">Устройство</a></li><li><a href="building.html">Сборка</a></li><li><a href="testing.html">Тесты</a></li><li><a href="releasing.html">Релизы</a></li><li><a href="contributing.html">Участие</a></li></ul></div></details></nav>
 <main>
 <h1 dir="auto">MacroSIP</h1>
 <p dir="auto">MacroSIP — SIP-софтфон для macOS 14 и новее. Он одновременно регистрирует несколько SIP-аккаунтов, ведёт до четырёх звонков с удержанием, переводом, локальной конференцией и записью и умещается в одно небольшое окно плюс значок в строке меню. Интерфейс написан на Swift и SwiftUI, SIP-движок — <a href="https://github.com/pjsip/pjproject">PJSIP</a> 2.17; ни Electron, ни Qt не используются.</p>
@@ -24,6 +24,7 @@
 <li><a href="calls.html">Звонки</a></li>
 <li><a href="incoming-calls.html">Входящие-звонки</a></li>
 <li><a href="contacts-and-call-log.html">Контакты-и-журнал</a></li>
+<li><a href="messages.html">Сообщения</a></li>
 <li><a href="directory.html">Справочник</a></li>
 <li><a href="quick-keys.html">Быстрые-клавиши</a></li>
 <li><a href="audio.html">Звук</a></li>
@@ -40,8 +41,16 @@
 <li><a href="contributing.html">Участие</a></li>
 </ul>
 <h2 dir="auto">Версии</h2>
-<p dir="auto">Версии имеют вид <code class="notranslate">YY.MINOR.PATCH</code>, поэтому линейка 2026 года — <strong>26</strong>. Текущий выпуск — <strong>26.1.0</strong> (3 ноября 2026); он добавляет глобальные горячие клавиши, импорт из MicroSIP и режим отладки с архивом для диагностики. Первый публичный выпуск — <strong>26.0.0</strong> (14 октября 2026). <strong>26.0.1</strong> (в тот же день) оставляет в интерфейсе только английский и русский.</p>
-<p dir="auto">Позже появятся нотаризация, видео, чат и кнопки Bluetooth-гарнитур. Полный план — в <a href="https://github.com/HSMM/MacroSIP/blob/main/docs/ROADMAP.md">docs/ROADMAP.md</a>.</p>
+<p dir="auto">Версии имеют вид <code class="notranslate">YY.MINOR.PATCH</code>, поэтому линейка 2026 года — <strong>26</strong>. Текущий выпуск — <strong>26.3.0</strong> (5 ноября 2026); он добавляет текстовые сообщения по SIP <code class="notranslate">MESSAGE</code> и делает так, что мелодия, выбранная в Настройках › Звук, действительно звонит. Выпуски на сегодня:</p>
+<ul dir="auto">
+<li><strong>26.3.0</strong> (5 ноября 2026): <a href="messages.html">Сообщения</a> (выключены, пока не включить в Настройках › Основные), используется выбранная мелодия, описания в настройках простыми словами.</li>
+<li><strong>26.2.0</strong> (4 ноября 2026): серверы по частному адресу не используют STUN, стереозаписи держат оба канала синхронно, обновления проверяются и при запуске.</li>
+<li><strong>26.1.1</strong> (4 ноября 2026): аккаунт за NAT снова регистрируется, когда сервер не вернул свой Contact, и входящие звонки продолжают приходить.</li>
+<li><strong>26.1.0</strong> (3 ноября 2026): глобальные горячие клавиши, импорт из MicroSIP, режим отладки с архивом для диагностики.</li>
+<li><strong>26.0.1</strong> (14 октября 2026): интерфейс только на английском и русском.</li>
+<li><strong>26.0.0</strong> (14 октября 2026): первый публичный выпуск.</li>
+</ul>
+<p dir="auto">Позже появятся нотаризация и видео. Полный план — в <a href="https://github.com/HSMM/MacroSIP/blob/main/docs/ROADMAP.md">docs/ROADMAP.md</a>.</p>
 <h2 dir="auto">Руководство пользователя</h2>
 <ul dir="auto">
 <li><a href="installation.html">Установка</a> — требования, Homebrew или DMG, первый запуск, обновления, файл журнала.</li>
@@ -49,11 +58,12 @@
 <li><a href="calls.html">Звонки</a> — набор номера, панель звонка, удержание, выключение звука, DTMF, перевод, несколько звонков, конференция, громкость, качество, запись, глобальные горячие клавиши.</li>
 <li><a href="incoming-calls.html">Входящие-звонки</a> — плавающее окно и уведомление, автоответ, «Не беспокоить», правила отклонения, индикатор голосовой почты.</li>
 <li><a href="contacts-and-call-log.html">Контакты-и-журнал</a> — карточка контакта, избранное, статусы, записи журнала и воспроизведение.</li>
+<li><a href="messages.html">Сообщения</a> — текстовые сообщения по SIP, SMS от Asterisk, статусы, уведомления, ограничения.</li>
 <li><a href="directory.html">Справочник</a> — источники LDAP, URL (CSV или JSON), Контакты Google и Контакты macOS, поиск и импорт.</li>
 <li><a href="quick-keys.html">Быстрые-клавиши</a> — клавиши быстрого набора и BLF, перехват, ⌘1–⌘9.</li>
 <li><a href="audio.html">Звук</a> — устройства, кнопки гарнитуры, мелодия звонка, музыка на удержании, звуковые события, проверка звука, эхоподавление, кодеки, сетевые настройки, влияющие на звук.</li>
 <li><a href="settings.html">Настройки</a> — все вкладки и все строки по порядку.</li>
-<li><a href="menu-bar.html">Строка-меню</a> — значок в строке меню, его меню, бейдж в Dock.</li>
+<li><a href="menu-bar.html">Строка-меню</a> — значок в строке меню, его меню, бейдж в Dock для пропущенных звонков и сообщений.</li>
 <li><a href="troubleshooting.html">Решение-проблем</a> — первый запуск, микрофон, 403 и 401, TLS, односторонний звук, журналы, режим отладки и архив для диагностики, где хранятся данные, как сообщить о проблеме.</li>
 </ul>
 <h2 dir="auto">Для разработчиков</h2>

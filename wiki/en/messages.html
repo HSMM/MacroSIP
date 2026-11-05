@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Messages · MacroSIP documentation</title>
+<meta name="description" content="MacroSIP documentation">
+<link rel="stylesheet" href="../wiki.css">
+<link rel="alternate" hreflang="en" href="../en/messages.html">
+<link rel="alternate" hreflang="ru" href="../ru/messages.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/messages.html">
+</head>
+<body>
+<header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/messages.html" hreflang="en" aria-current=true>English</a><a href="../ru/messages.html" hreflang="ru">Русский</a><a href="../zh/messages.html" hreflang="zh-Hans">中文</a></div></header>
+<div class="layout">
+<nav aria-label="Contents"><details><summary>Contents</summary><div class="links"><ul><li><a href="index.html">Home</a></li></ul><h2>User guide</h2><ul><li><a href="installation.html">Installation</a></li><li><a href="accounts.html">Accounts</a></li><li><a href="calls.html">Calls</a></li><li><a href="incoming-calls.html">Incoming calls</a></li><li><a href="contacts-and-call-log.html">Contacts and call log</a></li><li><a href="messages.html" aria-current=page>Messages</a></li><li><a href="directory.html">Directory</a></li><li><a href="quick-keys.html">Quick keys</a></li><li><a href="audio.html">Audio</a></li><li><a href="settings.html">Settings</a></li><li><a href="menu-bar.html">Menu bar</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul><h2>For developers</h2><ul><li><a href="architecture.html">Architecture</a></li><li><a href="building.html">Building</a></li><li><a href="testing.html">Testing</a></li><li><a href="releasing.html">Releasing</a></li><li><a href="contributing.html">Contributing</a></li></ul></div></details></nav>
+<main>
+<h1 dir="auto">Messages</h1>
+<p dir="auto">MacroSIP can send and receive text messages over SIP (the SIP <code class="notranslate">MESSAGE</code> method). A message is plain text (UTF-8, so Cyrillic and any other language work) and goes through one of your accounts to the SIP server or directly to the other party. SMS that an Asterisk server forwards with <code class="notranslate">chan_dongle</code> arrive as ordinary messages, and your replies go back the same way.</p>
+<p dir="auto">Messages are <strong>off by default</strong>. Until you switch them on there is no Messages tab and no Send Message item, and incoming messages are ignored.</p>
+<h2 dir="auto">Switching messages on</h2>
+<p dir="auto">Open Settings › General (⌘,) and turn on <strong>Text messages (SIP MESSAGE)</strong> in the <strong>Messages</strong> group. The footer says what it does: "Shows the Messages tab, delivers incoming messages and adds Send Message to the Contacts and Call Log menus." See <a href="settings.html">Settings</a>.</p>
+<p dir="auto">With the switch off:</p>
+<ul dir="auto">
+<li>the main window has three tabs (Dialpad, Contacts, Call Log) and no Messages tab;</li>
+<li>there is no <strong>Send Message</strong> item, no notification, no Dock badge for messages and no message sound;</li>
+<li>an incoming message is dropped and is not stored.</li>
+</ul>
+<p dir="auto">Switching it off does not delete anything: the conversations stay on the Mac and come back at once when you switch it on again.</p>
+<h2 dir="auto">The Messages tab</h2>
+<p dir="auto">The fourth tab of the main window lists your conversations, the newest activity first. A conversation is one other party on one account, so the same number reached through two accounts is two conversations; the account name is shown next to the name.</p>
+<p dir="auto">Each row shows the name (a contact, otherwise the name sent with the message, otherwise the number), the account, the start of the last message ("You: …" when it is yours), the time and a blue count of unread messages. A red count on the tab adds up the unread messages of all conversations; it falls as you read them.</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Action</th>
+<th>How</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Open a conversation</td>
+<td>Click it, or select it and press Return.</td>
+</tr>
+<tr>
+<td>Back to the list</td>
+<td>The back arrow, or Escape. A draft you typed stays.</td>
+</tr>
+<tr>
+<td>Call the other party</td>
+<td>The green handset in the conversation header, or <strong>Call</strong> in the row's menu.</td>
+</tr>
+<tr>
+<td>Add a number to Contacts</td>
+<td><strong>Add to Contacts</strong> in the row's menu (only for a number that is not a contact yet).</td>
+</tr>
+<tr>
+<td>Copy the number</td>
+<td><strong>Copy Number</strong> in the row's menu.</td>
+</tr>
+<tr>
+<td>Delete a conversation</td>
+<td><strong>Delete Conversation…</strong> in the row's menu, or ⌘⌫; MacroSIP asks first. The messages are removed from this Mac only.</td>
+</tr>
+<tr>
+<td>Copy or delete one message</td>
+<td>Right-click the bubble: <strong>Copy Text</strong>, <strong>Delete Message</strong>. Deleting needs no confirmation.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">In a conversation your messages are on the right in the accent colour and the other party's on the left in grey. Return sends, Shift-Return or Option-Return starts a new line. A conversation counts as read while it is open in the main window and that window is in front.</p>
+<p dir="auto">With no messages yet the tab says "No messages" and "Messages you receive appear here. Click New Message to write one."</p>
+<h2 dir="auto">Writing a new message</h2>
+<p dir="auto">Click <strong>New Message</strong> at the top of the list (it is unavailable while no account is switched on).</p>
+<ol dir="auto">
+<li>Type the number, a SIP user such as <code class="notranslate">102</code>, a <code class="notranslate">sip:</code> or <code class="notranslate">tel:</code> address or a name in <strong>To:</strong>. Suggestions from your contacts and directories appear as for the number field (<a href="directory.html">Directory</a>); pick one with the mouse or the arrow keys and Return. If the number field already held a number, it is copied into To.</li>
+<li>Check the line under it: "From …, the account chosen above". The message goes through the account chosen in the account row of the main window; change it there.</li>
+<li>Write the text and press Return or the round send button.</li>
+</ol>
+<p dir="auto">If a conversation with that number on that account already exists, MacroSIP opens it and keeps what you typed.</p>
+<h2 dir="auto">Statuses</h2>
+<p dir="auto">Under each outgoing message you see what happened to it.</p>
+<markdown-accessiblity-table><div class="tablewrap"><table role="table">
+<thead>
+<tr>
+<th>Shown</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Sending…</strong></td>
+<td>Waiting for the answer.</td>
+</tr>
+<tr>
+<td><strong>Sent</strong></td>
+<td>The SIP server or the other party accepted the message. This is shown under your last message in the conversation. It is <strong>not</strong> a confirmation that the message reached a phone: "Accepted by the server. This does not confirm that the message reached the recipient's phone." There are no "Delivered" ticks.</td>
+</tr>
+<tr>
+<td><strong>Not sent · reason</strong></td>
+<td>The message was not accepted. The reason is the answer of the server as it came ("404 Not Found", "408 Request Timeout", "480 Temporarily Unavailable") or "No connection" for a local problem, or "Interrupted" when MacroSIP was closed while the message was still being sent. A red mark appears beside the bubble and in the list row.</td>
+</tr>
+</tbody>
+</table></div></markdown-accessiblity-table>
+<p dir="auto">Press <strong>Retry</strong> next to the reason (or in the bubble's menu) to send the same text again through the same account; it goes to the end of the conversation with the current time.</p>
+<p dir="auto">If the account is switched off or was removed, you can still read the conversation, but the text field is unavailable ("… is switched off", "The account of this conversation was removed") and incoming messages for a switched-off account are not received.</p>
+<h2 dir="auto">Notifications, Dock badge and sound</h2>
+<ul dir="auto">
+<li><strong>Notification.</strong> Each incoming message posts a macOS notification with the sender as the title, the account name below it and the text. Clicking it brings MacroSIP forward and opens the conversation. Notifications are grouped by conversation and removed when you read or delete it. None is posted while that conversation is open in the front main window or while Do Not Disturb is on in MacroSIP (<a href="incoming-calls.html">Incoming calls</a>); macOS Focus modes work on their own. There is no notification sound.</li>
+<li><strong>Dock badge.</strong> The Dock icon shows one red number: unread messages plus unseen missed calls (<a href="menu-bar.html">Menu bar</a>). The menu bar icon counts missed calls only.</li>
+<li><strong>Sound.</strong> Turn on <strong>New message</strong> in Settings › Audio › Sound events (off by default; the row exists only while messages are on) to hear two short high beeps on the speaker when a message arrives. Not while Do Not Disturb is on, and at most once every 2 seconds. See <a href="audio.html">Audio</a>.</li>
+</ul>
+<p dir="auto">With Do Not Disturb on, messages are still stored and counted, only without a notification or sound.</p>
+<h2 dir="auto">Send Message from Contacts and Call Log</h2>
+<p dir="auto">With messages on, the context menu of a contact in <strong>Contacts</strong> and of an entry in <strong>Call Log</strong> has <strong>Send Message</strong>. It opens the Messages tab: the existing conversation with that number if there is one, otherwise a new message with the contact in the To field. From the Call Log the entry's own account is used. See <a href="contacts-and-call-log.html">Contacts and call log</a>.</p>
+<h2 dir="auto">Limits</h2>
+<ul dir="auto">
+<li>A message can be up to <strong>2800 bytes</strong> of UTF-8 text. Cyrillic and most non-Latin letters take two bytes each, so that is roughly 1400 such characters. Beyond the limit the field shows "Too long to send" and the send button is disabled.</li>
+<li>Not supported: group chat, attachments and pictures, typing indicators, end-to-end encryption and joining of long SMS parts (a long SMS may arrive as several separate messages). Links in messages are not clickable.</li>
+</ul>
+<p dir="auto">If a message shows <strong>Sent</strong> but the phone did not receive it, see <a href="troubleshooting.html">Troubleshooting</a>. Settings are listed in <a href="settings.html">Settings</a>.</p>
+<footer><a href="https://github.com/HSMM/MacroSIP">github.com/HSMM/MacroSIP</a> · © HSMM</footer>
+</main>
+</div>
+<script>if(matchMedia('(min-width:821px)').matches)document.querySelector('nav details').open=true</script>
+</body>
+</html>

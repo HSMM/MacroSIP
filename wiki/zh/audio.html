@@ -13,7 +13,7 @@
 <body>
 <header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/audio.html" hreflang="en">English</a><a href="../ru/audio.html" hreflang="ru">Русский</a><a href="../zh/audio.html" hreflang="zh-Hans" aria-current=true>中文</a></div></header>
 <div class="layout">
-<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html">通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="directory.html">目录</a></li><li><a href="quick-keys.html">快捷键</a></li><li><a href="audio.html" aria-current=page>音频</a></li><li><a href="settings.html">设置</a></li><li><a href="menu-bar.html">菜单栏</a></li><li><a href="troubleshooting.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="architecture.html">架构</a></li><li><a href="building.html">构建</a></li><li><a href="testing.html">测试</a></li><li><a href="releasing.html">发布</a></li><li><a href="contributing.html">参与贡献</a></li></ul></div></details></nav>
+<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html">通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="messages.html">消息</a></li><li><a href="directory.html">目录</a></li><li><a href="quick-keys.html">快捷键</a></li><li><a href="audio.html" aria-current=page>音频</a></li><li><a href="settings.html">设置</a></li><li><a href="menu-bar.html">菜单栏</a></li><li><a href="troubleshooting.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="architecture.html">架构</a></li><li><a href="building.html">构建</a></li><li><a href="testing.html">测试</a></li><li><a href="releasing.html">发布</a></li><li><a href="contributing.html">参与贡献</a></li></ul></div></details></nav>
 <main>
 <h1 dir="auto">音频</h1>
 <p dir="auto">本页的所有内容都位于设置 › 音频 (Audio)、设置 › 编解码器 (Codecs) 和设置 › 网络 (Network) 中。更改立即生效；少数网络值需要重新启动引擎，并会有相应提示。</p>
@@ -36,7 +36,7 @@
 </tr>
 <tr>
 <td><strong>铃声设备</strong> (Ringtone device)</td>
-<td>仅用于铃声的输出：“即使通话使用耳机，也通过扬声器响铃。”</td>
+<td>仅用于铃声的输出：“即使通话使用耳机，也通过扬声器播放铃声。”</td>
 </tr>
 <tr>
 <td><strong>连接耳机时自动切换</strong> (Switch to a headset when it is connected)</td>
@@ -86,11 +86,18 @@
 <p dir="auto">如果耳机有指示灯，它们会跟随通话：通话已接听或正在拨出时为摘机，有来电响铃时为响铃，麦克风关闭时为静音。长按一次不能同时完成接听和挂断。</p>
 <p dir="auto">限制：按键通过免提配置文件 (HFP) 而非 HID 工作的蓝牙耳机由 macOS 自行处理，不受支持；它们从不出现在此行中。键盘的媒体键和 3.5 mm 接口的耳机没有电话控制，会被忽略。只在消费者控制设备内提供控制键的耳机可能被 macOS 拒绝；此时日志显示“headset buttons: cannot open …”（见 <a href="troubleshooting.html">故障排除</a>）。</p>
 <h2 dir="auto">铃声</h2>
-<p dir="auto"><strong>声音</strong> (Sound)：<strong>经典</strong> (Classic)、<strong>数字</strong> (Digital)、<strong>柔和</strong> (Soft)（内置）或<strong>自定文件…</strong> (Custom file…)（WAV、AIFF、M4A、MP3）；弹出式菜单随后显示“自定：office-bell.m4a”。<strong>播放</strong> (Play) 预听。<strong>音量</strong> (Volume) 是 0 到 100 % 的滑块，实时应用，预听时也使用。呼叫等待在听筒中使用短促提示音而非铃声；见 <a href="calls.html">通话</a>。</p>
+<p dir="auto">设置 › 音频 › 铃声中的<strong>声音</strong> (Sound) 决定来电时响什么：</p>
+<ul dir="auto">
+<li><strong>经典</strong> (Classic)、<strong>数字</strong> (Digital) 和 <strong>柔和</strong> (Soft) 是三段不同的内置旋律。</li>
+<li><strong>自定文件…</strong> (Custom file…) 接受 WAV、AIFF、M4A 或 MP3 文件（“自定文件…”接受 WAV、AIFF、M4A 和 MP3。）；弹出式菜单随后显示“自定：office-bell.m4a”。MacroSIP 只转换一次文件并重复使用结果，因此长文件不会拖慢下一次通话。</li>
+<li><strong>播放</strong> (Play) 在铃声设备上以下方所设音量预听真正的选择。</li>
+<li>无法读取的文件会保留之前的选择，该组会说明原因：“无法使用铃声文件：…”。</li>
+</ul>
+<p dir="auto"><strong>音量</strong> (Volume) 是 0 到 100 % 的滑块，实时应用，预听时也使用。铃声从<strong>铃声设备</strong>（见上文“设备”）播出。呼叫等待在听筒中使用短促提示音而非铃声；见 <a href="calls.html">通话</a>。如果响的铃声不是您选的那一个，见 <a href="troubleshooting.html">故障排除</a>。</p>
 <h2 dir="auto">保持音乐</h2>
-<p dir="auto">设置 › 音频 › 保持音乐中的<strong>来源</strong> (Source) 是您保持通话时对方听到的内容：<strong>内置</strong> (Built-in)（一段循环播放的短旋律，默认）、<strong>自定文件…</strong>（WAV、AIFF、M4A、MP3 以及 macOS 能读取的任何其他格式；弹出式菜单随后显示“自定：office-hold.m4a”）或<strong>关闭</strong> (Off)（静音）。“对方在保持期间会听到此内容。”更改立即生效，对已处于保持状态的通话也是如此。无法读取的文件会保留之前的来源；组页脚和横幅显示“无法使用此文件：…”。音乐只送往保持中的通话：您自己听不到，也不会写入录音。另见 <a href="calls.html">通话</a>；如果对方听到的是别的内容，见 <a href="troubleshooting.html">故障排除</a>。</p>
+<p dir="auto">设置 › 音频 › 保持音乐中的<strong>来源</strong> (Source) 是您保持通话时对方听到的内容：<strong>内置</strong> (Built-in)（一段循环播放的短旋律，默认）、<strong>自定文件…</strong>（WAV、AIFF、M4A、MP3 以及 macOS 能读取的任何其他格式；弹出式菜单随后显示“自定：office-hold.m4a”）或<strong>关闭</strong> (Off)（静音）。“对方在通话保持期间会听到此内容。”更改立即生效，对已处于保持状态的通话也是如此。无法读取的文件会保留之前的来源；组页脚和横幅显示“无法使用此文件：…”。音乐只送往保持中的通话：您自己听不到，也不会写入录音。另见 <a href="calls.html">通话</a>；如果对方听到的是别的内容，见 <a href="troubleshooting.html">故障排除</a>。</p>
 <h2 dir="auto">声音事件</h2>
-<p dir="auto">设置 › 音频 › 声音事件 (Sound events) 中的四个开关，全部默认关闭。“扬声器上的短促蜂鸣声；对方永远听不到。”蜂鸣声在为通话选择的扬声器上播放，绝不会进入通话或录音。</p>
+<p dir="auto">设置 › 音频 › 声音事件 (Sound events) 中的四个开关（消息开启时还有第五个，<strong>新消息</strong>），全部默认关闭。“扬声器上的短促蜂鸣声；对方听不到。”蜂鸣声在为通话选择的扬声器上播放，绝不会进入通话或录音。</p>
 <markdown-accessiblity-table><div class="tablewrap"><table role="table">
 <thead>
 <tr>
@@ -115,12 +122,16 @@
 <td><strong>注册错误与网络断开</strong> (Registration error and lost network)</td>
 <td>注册失败或网络路径消失时的两声低音蜂鸣，每 10 秒最多一次。</td>
 </tr>
+<tr>
+<td><strong>新消息</strong> (New message)</td>
+<td>收到文字消息时的两声短促高音蜂鸣；勿扰模式下不播放，每 2 秒最多一次。此行仅在消息开启时才有（<a href="messages.html">消息</a>）。</td>
+</tr>
 </tbody>
 </table></div></markdown-accessiblity-table>
 <h2 dir="auto">音频测试</h2>
-<p dir="auto">设置 › 音频 › 音频测试 (Audio test) 只有一行，<strong>扬声器与麦克风</strong> (Speaker and microphone)：“测试在扬声器上播放两个音 2 秒；电平表显示麦克风。”<strong>测试</strong> (Test) 在“设备”中选择的扬声器上播放两个音（660 和 880 Hz）（<strong>系统默认</strong>即通话输出）；再按一次重新开始。如果所选扬声器已被拔出，测试音改在系统默认设备上播放。按钮旁的电平表是实时麦克风电平，与“麦克风”行中的相同。测试音绝不会进入通话或录音。</p>
+<p dir="auto">设置 › 音频 › 音频测试 (Audio test) 只有一行，<strong>扬声器与麦克风</strong> (Speaker and microphone)：“在扬声器上播放两个音 2 秒；电平表显示麦克风电平。”<strong>测试</strong> (Test) 在“设备”中选择的扬声器上播放两个音（660 和 880 Hz）（<strong>系统默认</strong>即通话输出）；再按一次重新开始。如果所选扬声器已被拔出，测试音改在系统默认设备上播放。按钮旁的电平表是实时麦克风电平，与“麦克风”行中的相同。测试音绝不会进入通话或录音。</p>
 <h2 dir="auto">回声消除与语音处理</h2>
-<p dir="auto"><strong>回声消除</strong> (Echo cancellation) 默认开启：“仅在使用自带回声消除的耳机时关闭。”</p>
+<p dir="auto"><strong>回声消除</strong> (Echo cancellation) 默认开启：“仅当您的耳机自身消除回声时才关闭。”</p>
 <p dir="auto">使用默认输入和输出设备时，音频经过系统的语音处理单元，它增加了噪声抑制和自动增益控制；没有相应的开关。手动选择非默认设备时，改用引擎内置的回声消除器。</p>
 <h2 dir="auto">编解码器</h2>
 <p dir="auto">设置 › 编解码器按优先顺序列出编解码器；此顺序即 SDP 中提供的顺序。拖移行或使用<strong>上移</strong> (Move up) / <strong>下移</strong> (Move down)；未勾选的编解码器绝不会被提供；至少要保留一个启用。<strong>恢复默认</strong> (Restore Defaults) 恢复顺序并只开启 Opus、G.722 和 PCMU。</p>
@@ -187,8 +198,8 @@
 <p dir="auto">“宽带编解码器（Opus、G.722、G.722.1、Speex 16 和 32 kHz）仅在 PBX 支持时才能工作。”没有 G.729。如果您的 PBX 只提供 G.711 A-law，请开启 PCMA。</p>
 <h3 dir="auto">Opus 开关</h3>
 <ul dir="auto">
-<li><strong>丢包修复 (FEC)</strong> (Packet-loss correction (FEC))，开：“添加少量数据以便修复丢失的数据包；在 Wi-Fi 和移动网络上请保持开启。”</li>
-<li><strong>静音抑制 (DTX)</strong> (Silence suppression (DTX))，关：“在停顿期间不发送任何内容以节省带宽，但可能截掉词首；仅在带宽紧张时开启。”</li>
+<li><strong>丢包修复 (FEC)</strong> (Packet-loss correction (FEC))，开：“用少量额外数据修复丢失的数据包；在 Wi-Fi 和移动网络上请保持开启。”</li>
+<li><strong>静音抑制 (DTX)</strong> (Silence suppression (DTX))，关：“在停顿期间节省带宽，但可能截掉词首；仅在连接较慢时使用。”</li>
 </ul>
 <p dir="auto">Opus 未勾选时两者都被禁用；它们立即应用到新的和重新协商的流。</p>
 <h2 dir="auto">影响音频的网络设置</h2>
@@ -209,12 +220,12 @@
 <tr>
 <td><strong>使用 ICE</strong> (Use ICE)</td>
 <td>开</td>
-<td>“找到一条穿过 NAT 的可用媒体路径。使用上方的 STUN 服务器。”</td>
+<td>“帮助音频穿过 NAT。使用上方的 STUN 服务器。”</td>
 </tr>
 <tr>
 <td><strong>使用 rport</strong> (Use rport)</td>
 <td>开</td>
-<td>“请求服务器回复到它所看到的地址和端口。在 NAT 后有帮助。”</td>
+<td>“在 NAT 后有帮助：服务器回复到您发起呼叫的地址。”</td>
 </tr>
 <tr>
 <td><strong>保活间隔</strong> (Keep-alive interval)</td>
@@ -224,7 +235,7 @@
 <tr>
 <td><strong>端口范围</strong> (Port range)（RTP）</td>
 <td>起始 4000，1000 个端口</td>
-<td>“音频使用此范围。每路通话需要两个端口；1024–65535。”请在防火墙上开放或转发此范围。在面板提供的引擎重新启动后生效。</td>
+<td>“通话音频的端口，1024–65535。每路通话需要两个。”请在防火墙上开放或转发此范围。在面板提供的引擎重新启动后生效。</td>
 </tr>
 <tr>
 <td><strong>本地 SIP 端口</strong> (Local SIP port)</td>
@@ -233,7 +244,7 @@
 </tr>
 </tbody>
 </table></div></markdown-accessiblity-table>
-<p dir="auto">传输（UDP/TCP/TLS）和 SRTP 按账户设置；见 <a href="accounts.html">账户</a>。</p>
+<p dir="auto">传输（UDP/TCP/TLS）和 SRTP 按账户设置；见 <a href="accounts.html">账户</a>。服务器使用私有 IP 地址的账户完全不使用 STUN（见 <a href="accounts.html">账户</a>）。</p>
 <h2 dir="auto">单向音频的故障排除</h2>
 <p dir="auto">单向音频几乎总是意味着 SIP 信令正常，但 RTP 数据包无法穿过 NAT 或防火墙返回。</p>
 <ol dir="auto">

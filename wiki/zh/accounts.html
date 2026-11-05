@@ -13,7 +13,7 @@
 <body>
 <header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/accounts.html" hreflang="en">English</a><a href="../ru/accounts.html" hreflang="ru">Русский</a><a href="../zh/accounts.html" hreflang="zh-Hans" aria-current=true>中文</a></div></header>
 <div class="layout">
-<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html" aria-current=page>账户</a></li><li><a href="calls.html">通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="directory.html">目录</a></li><li><a href="quick-keys.html">快捷键</a></li><li><a href="audio.html">音频</a></li><li><a href="settings.html">设置</a></li><li><a href="menu-bar.html">菜单栏</a></li><li><a href="troubleshooting.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="architecture.html">架构</a></li><li><a href="building.html">构建</a></li><li><a href="testing.html">测试</a></li><li><a href="releasing.html">发布</a></li><li><a href="contributing.html">参与贡献</a></li></ul></div></details></nav>
+<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html" aria-current=page>账户</a></li><li><a href="calls.html">通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="messages.html">消息</a></li><li><a href="directory.html">目录</a></li><li><a href="quick-keys.html">快捷键</a></li><li><a href="audio.html">音频</a></li><li><a href="settings.html">设置</a></li><li><a href="menu-bar.html">菜单栏</a></li><li><a href="troubleshooting.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="architecture.html">架构</a></li><li><a href="building.html">构建</a></li><li><a href="testing.html">测试</a></li><li><a href="releasing.html">发布</a></li><li><a href="contributing.html">参与贡献</a></li></ul></div></details></nav>
 <main>
 <h1 dir="auto">账户</h1>
 <p dir="auto">一个账户 (Account) 就是一个 SIP 身份：用户、服务器、凭据和传输方式。多个账户可以同时启用并注册；其中一个是<strong>默认外拨账户</strong> (default outgoing account)。</p>
@@ -131,6 +131,7 @@
 </tbody>
 </table></div></markdown-accessiblity-table>
 <p dir="auto">STUN、ICE、本地 SIP 端口和保活不是按账户设置的；它们位于设置 › 网络（见 <a href="settings.html">设置</a>）。</p>
+<p dir="auto">**私有服务器不使用 STUN。**服务器使用私有 IP 地址（10.x、172.16–31.x、192.168.x 或 100.64–127.x，例如局域网内或通过 VPN 访问的办公室 PBX）的账户，不使用设置 › 网络中的 STUN 服务器。首次注册改为携带 Mac 自己的地址，而不是 STUN 会找到的公网地址，因为网络内部的服务器无法通过那个公网地址访问。服务器不必再更正地址，来电也能从不改写该地址的服务器送达。无需任何设置：自 26.2 起自动生效。</p>
 <h2 dir="auto">“测试”按钮</h2>
 <p dir="auto">填写 SIP 服务器、用户名和密码后，<strong>测试</strong> (Test) 按钮即可用。它用一个临时账户注册，并在原位显示结果：</p>
 <markdown-accessiblity-table><div class="tablewrap"><table role="table">

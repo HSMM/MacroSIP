@@ -9,12 +9,34 @@
             <sparkle:version>56</sparkle:version>
             <sparkle:shortVersionString>26.3.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<p dir="auto">With ad hoc signing macOS asks for microphone access again after each update; allow it once more.</p>
-<h2 dir="auto">What's Changed</h2>
+            <description><![CDATA[<h2 dir="auto">What's new</h2>
 <ul dir="auto">
-<li>Text messages over SIP MESSAGE (26.3) by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/HSMM/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/HSMM">@HSMM</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="6225239037" data-permission-text="Title is private" data-url="https://github.com/HSMM/MacroSIP/issues/6" data-hovercard-type="pull_request" data-hovercard-url="/HSMM/MacroSIP/pull/6/hovercard" href="https://github.com/HSMM/MacroSIP/pull/6">#6</a></li>
+<li>
+<p dir="auto"><strong>Text messages over SIP</strong> (<a href="https://github.com/HSMM/MacroSIP/issues/5" data-hovercard-type="issue" data-hovercard-url="/HSMM/MacroSIP/issues/5/hovercard">#5</a>). A fourth tab, Messages, lists your conversations and opens each one in place: send and receive <code class="notranslate">MESSAGE</code> requests with <code class="notranslate">text/plain</code> UTF-8 text, Cyrillic included, up to 2800 bytes per message. SMS forwarded by Asterisk <code class="notranslate">chan_dongle</code> arrive as ordinary messages from the phone number that sent them, and a reply goes back through the same account. Conversations are kept between launches (<code class="notranslate">messages.json</code>); unread counts show on the tab and on the Dock icon; every incoming message posts a macOS notification that opens the conversation (none while Do Not Disturb is on), and Settings › Audio › Sound events has an optional "New message" sound. Each outgoing message shows its state: Sending…, Sent, or Not sent with the SIP reason and a Retry link. <strong>Sent means that the SIP server or peer accepted the message (a 2xx answer), not that a phone received it.</strong> "Send Message" is in the context menus of Contacts and the Call Log. Not in this version: group chat, attachments, typing indicators, end-to-end encryption, SMS concatenation.</p>
+<p dir="auto">Messages are off until you switch them on in Settings › General (<a href="https://github.com/HSMM/MacroSIP/issues/8" data-hovercard-type="issue" data-hovercard-url="/HSMM/MacroSIP/issues/8/hovercard">#8</a>); with the switch off nothing about messages appears in the app.</p>
+</li>
 </ul>
-<p dir="auto"><strong>Full Changelog</strong>: <a class="commit-link" href="https://github.com/HSMM/MacroSIP/compare/26.2.0...26.3.0"><tt>26.2.0...26.3.0</tt></a></p>]]></description>
+<h2 dir="auto">What's fixed</h2>
+<ul dir="auto">
+<li><strong>The ringtone you choose is the one that rings</strong> (<a href="https://github.com/HSMM/MacroSIP/issues/7" data-hovercard-type="issue" data-hovercard-url="/HSMM/MacroSIP/issues/7/hovercard">#7</a>). Classic, Digital and Soft are three different melodies; a custom AIFF, M4A or MP3 file is converted once and used from then on; a file that cannot be read keeps the previous choice and says why; the preview button plays the real choice at the chosen volume.</li>
+</ul>
+<p dir="auto">Not yet checked on a real network: messages through a live Asterisk/<code class="notranslate">chan_dongle</code> server, MESSAGE over TCP/TLS, and the 401/407 re-send with credentials (all covered by stub tests only). The three melodies were checked by frequency analysis, not by ear.</p>
+<p dir="auto">With ad hoc signing macOS asks for microphone access again after each update; allow it once more.</p>
+<p dir="auto"><strong>Full Changelog</strong>: <a class="commit-link" href="https://github.com/HSMM/MacroSIP/compare/26.2.0...26.3.0"><tt>26.2.0...26.3.0</tt></a></p>
+<hr>
+<h2 dir="auto">Что нового</h2>
+<ul dir="auto">
+<li>
+<p dir="auto"><strong>Текстовые сообщения по SIP</strong> (<a href="https://github.com/HSMM/MacroSIP/issues/5" data-hovercard-type="issue" data-hovercard-url="/HSMM/MacroSIP/issues/5/hovercard">#5</a>). Четвёртая вкладка «Сообщения» показывает переписки и открывает каждую на том же месте: отправка и приём запросов <code class="notranslate">MESSAGE</code> с текстом <code class="notranslate">text/plain</code> в UTF-8, включая кириллицу, до 2800 байт на сообщение. SMS, которые Asterisk пересылает через <code class="notranslate">chan_dongle</code>, приходят как обычные сообщения с номера отправителя, и ответ уходит через тот же аккаунт. Переписки сохраняются между запусками (<code class="notranslate">messages.json</code>); число непрочитанных видно на вкладке и на значке в Dock; каждое входящее сообщение показывает уведомление macOS, которое открывает переписку (при «Не беспокоить» уведомлений нет), а в Настройки › Аудио › Звуки событий есть необязательный звук «Новое сообщение». У каждого исходящего сообщения виден статус: «Отправляется…», «Отправлено» или «Не отправлено» с причиной SIP и ссылкой «Повторить». <strong>«Отправлено» означает, что SIP-сервер или абонент принял сообщение (ответ 2xx), а не что оно дошло до телефона.</strong> «Написать сообщение» есть в контекстных меню Контактов и Журнала. В этой версии нет: групповых чатов, вложений, индикатора набора, сквозного шифрования, склейки SMS.</p>
+<p dir="auto">Сообщения выключены, пока вы не включите их в Настройки › Основные (<a href="https://github.com/HSMM/MacroSIP/issues/8" data-hovercard-type="issue" data-hovercard-url="/HSMM/MacroSIP/issues/8/hovercard">#8</a>); при выключенном переключателе в приложении о сообщениях ничего не видно.</p>
+</li>
+</ul>
+<h2 dir="auto">Что исправлено</h2>
+<ul dir="auto">
+<li><strong>Звонит та мелодия, которую вы выбрали</strong> (<a href="https://github.com/HSMM/MacroSIP/issues/7" data-hovercard-type="issue" data-hovercard-url="/HSMM/MacroSIP/issues/7/hovercard">#7</a>). «Классическая», «Цифровая» и «Мягкая» — три разные мелодии; свой файл AIFF, M4A или MP3 преобразуется один раз и дальше используется; файл, который не удалось прочитать, оставляет прежний выбор и объясняет причину; кнопка прослушивания играет именно выбранное на заданной громкости.</li>
+</ul>
+<p dir="auto">На реальной сети ещё не проверено: сообщения через живой Asterisk/<code class="notranslate">chan_dongle</code>, MESSAGE по TCP/TLS и повторная отправка с учётными данными после 401/407 (всё покрыто только тестами со стабами). Три мелодии проверены частотным анализом, а не на слух.</p>
+<p dir="auto">При ad hoc подписи macOS после каждого обновления заново спрашивает доступ к микрофону, разрешите его ещё раз.</p>]]></description>
             <enclosure url="https://github.com/HSMM/MacroSIP/releases/download/26.3.0/MacroSIP-26.3.0.dmg" length="18907378" type="application/octet-stream" sparkle:edSignature="nPOKSn8Qy1X0E9cPy1sJqcOK10hXiEiAi9kmeBaLbceeYoMSUXTCSZ6Bbx9F/TVVYigKgyWRwHnVYtAA6CHLAg=="/>
         </item>
         <item>

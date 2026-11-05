@@ -13,7 +13,7 @@
 <body>
 <header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/index.html" hreflang="en">English</a><a href="../ru/index.html" hreflang="ru">Русский</a><a href="../zh/index.html" hreflang="zh-Hans" aria-current=true>中文</a></div></header>
 <div class="layout">
-<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html" aria-current=page>首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html">通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="directory.html">目录</a></li><li><a href="quick-keys.html">快捷键</a></li><li><a href="audio.html">音频</a></li><li><a href="settings.html">设置</a></li><li><a href="menu-bar.html">菜单栏</a></li><li><a href="troubleshooting.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="architecture.html">架构</a></li><li><a href="building.html">构建</a></li><li><a href="testing.html">测试</a></li><li><a href="releasing.html">发布</a></li><li><a href="contributing.html">参与贡献</a></li></ul></div></details></nav>
+<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html" aria-current=page>首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html">通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="messages.html">消息</a></li><li><a href="directory.html">目录</a></li><li><a href="quick-keys.html">快捷键</a></li><li><a href="audio.html">音频</a></li><li><a href="settings.html">设置</a></li><li><a href="menu-bar.html">菜单栏</a></li><li><a href="troubleshooting.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="architecture.html">架构</a></li><li><a href="building.html">构建</a></li><li><a href="testing.html">测试</a></li><li><a href="releasing.html">发布</a></li><li><a href="contributing.html">参与贡献</a></li></ul></div></details></nav>
 <main>
 <h1 dir="auto">MacroSIP</h1>
 <p dir="auto">MacroSIP 是一款面向 macOS 14 及更新版本的 SIP 软电话。它可以同时注册多个 SIP 账户，最多处理四路通话，支持保持、转接、本地会议和录音，并且只占用一个小窗口加一个菜单栏图标。界面使用原生 Swift 和 SwiftUI 编写，SIP 引擎是 <a href="https://github.com/pjsip/pjproject">PJSIP</a> 2.17；没有 Electron，也没有 Qt。</p>
@@ -24,6 +24,7 @@
 <li><a href="calls.html">通话</a></li>
 <li><a href="incoming-calls.html">来电</a></li>
 <li><a href="contacts-and-call-log.html">联系人与通话记录</a></li>
+<li><a href="messages.html">消息</a></li>
 <li><a href="directory.html">目录</a></li>
 <li><a href="quick-keys.html">快捷键</a></li>
 <li><a href="audio.html">音频</a></li>
@@ -40,8 +41,16 @@
 <li><a href="contributing.html">参与贡献</a></li>
 </ul>
 <h2 dir="auto">版本</h2>
-<p dir="auto">版本号形如 <code class="notranslate">YY.MINOR.PATCH</code>，因此 2026 年的版本线是 <strong>26</strong>。当前版本是 <strong>26.1.0</strong>（2026 年 11 月 3 日）；它加入了全局热键、从 MicroSIP 导入，以及带诊断归档的调试模式。首个公开发布版是 <strong>26.0.0</strong>（2026 年 10 月 14 日）。<strong>26.0.1</strong>（同日）将界面语言精简为英语和俄语。</p>
-<p dir="auto">后续版本将带来公证、视频、聊天以及蓝牙耳机按键。完整计划见 <a href="https://github.com/HSMM/MacroSIP/blob/main/docs/ROADMAP.md">docs/ROADMAP.md</a>。</p>
+<p dir="auto">版本号形如 <code class="notranslate">YY.MINOR.PATCH</code>，因此 2026 年的版本线是 <strong>26</strong>。当前版本是 <strong>26.3.0</strong>（2026 年 11 月 5 日）；它加入了基于 SIP <code class="notranslate">MESSAGE</code> 的文字消息，并让设置 › 音频中选的铃声真正生效。迄今的版本：</p>
+<ul dir="auto">
+<li><strong>26.3.0</strong>（2026 年 11 月 5 日）：<a href="messages.html">消息</a>（在设置 › 通用中开启前保持关闭）、所选铃声生效、设置说明改用通俗语言。</li>
+<li><strong>26.2.0</strong>（2026 年 11 月 4 日）：私有地址的服务器不再使用 STUN，立体声录音的两个声道保持对齐，启动时也会检查更新。</li>
+<li><strong>26.1.1</strong>（2026 年 11 月 4 日）：NAT 后的账户在服务器应答中缺少 Contact 时会重新注册，来电因此不会中断。</li>
+<li><strong>26.1.0</strong>（2026 年 11 月 3 日）：全局热键、从 MicroSIP 导入、带诊断归档的调试模式。</li>
+<li><strong>26.0.1</strong>（2026 年 10 月 14 日）：界面语言精简为英语和俄语。</li>
+<li><strong>26.0.0</strong>（2026 年 10 月 14 日）：首个公开发布版。</li>
+</ul>
+<p dir="auto">后续版本将带来公证和视频。完整计划见 <a href="https://github.com/HSMM/MacroSIP/blob/main/docs/ROADMAP.md">docs/ROADMAP.md</a>。</p>
 <h2 dir="auto">用户指南</h2>
 <ul dir="auto">
 <li><a href="installation.html">安装</a> — 系统要求、Homebrew 或 DMG、首次启动、更新、日志文件。</li>
@@ -49,11 +58,12 @@
 <li><a href="calls.html">通话</a> — 拨号、通话面板、保持、静音、DTMF、转接、多路通话、会议、音量、通话质量、录音、全局热键。</li>
 <li><a href="incoming-calls.html">来电</a> — 浮动窗口与通知、自动接听、勿扰模式、拒接规则、语音信箱指示。</li>
 <li><a href="contacts-and-call-log.html">联系人与通话记录</a> — 联系人名片、个人收藏、在线状态、通话记录条目与回放。</li>
+<li><a href="messages.html">消息</a> — 基于 SIP 的文字消息、Asterisk 短信、状态、通知、限制。</li>
 <li><a href="directory.html">目录</a> — LDAP、URL（CSV 或 JSON）、Google 通讯录和 macOS 通讯录来源，搜索与导入。</li>
 <li><a href="quick-keys.html">快捷键</a> — 快速拨号键与 BLF 键、代接、⌘1–⌘9。</li>
 <li><a href="audio.html">音频</a> — 设备、耳机按键、铃声、保持音乐、声音事件、音频测试、回声消除、编解码器、影响音频的网络设置。</li>
 <li><a href="settings.html">设置</a> — 按顺序介绍每个面板和每一行。</li>
-<li><a href="menu-bar.html">菜单栏</a> — 状态项、它的菜单、Dock 标记。</li>
+<li><a href="menu-bar.html">菜单栏</a> — 状态项、它的菜单、未接来电和消息的 Dock 标记。</li>
 <li><a href="troubleshooting.html">故障排除</a> — 首次启动、麦克风、403 和 401、TLS、单向音频、日志、调试模式与诊断归档、数据存放位置、如何报告问题。</li>
 </ul>
 <h2 dir="auto">开发者</h2>

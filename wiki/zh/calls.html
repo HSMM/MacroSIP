@@ -13,7 +13,7 @@
 <body>
 <header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/calls.html" hreflang="en">English</a><a href="../ru/calls.html" hreflang="ru">Русский</a><a href="../zh/calls.html" hreflang="zh-Hans" aria-current=true>中文</a></div></header>
 <div class="layout">
-<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html" aria-current=page>通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="directory.html">目录</a></li><li><a href="quick-keys.html">快捷键</a></li><li><a href="audio.html">音频</a></li><li><a href="settings.html">设置</a></li><li><a href="menu-bar.html">菜单栏</a></li><li><a href="troubleshooting.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="architecture.html">架构</a></li><li><a href="building.html">构建</a></li><li><a href="testing.html">测试</a></li><li><a href="releasing.html">发布</a></li><li><a href="contributing.html">参与贡献</a></li></ul></div></details></nav>
+<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html" aria-current=page>通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="messages.html">消息</a></li><li><a href="directory.html">目录</a></li><li><a href="quick-keys.html">快捷键</a></li><li><a href="audio.html">音频</a></li><li><a href="settings.html">设置</a></li><li><a href="menu-bar.html">菜单栏</a></li><li><a href="troubleshooting.html">故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="architecture.html">架构</a></li><li><a href="building.html">构建</a></li><li><a href="testing.html">测试</a></li><li><a href="releasing.html">发布</a></li><li><a href="contributing.html">参与贡献</a></li></ul></div></details></nav>
 <main>
 <h1 dir="auto">通话</h1>
 <p dir="auto">MacroSIP 最多可同时处理四路通话。恰好有一路通话处于<strong>活动</strong> (active) 状态（您能听到并说话）；其余通话处于保持状态。主窗口始终保持 340 × 520 pt：通话期间，“拨号键盘”标签页变为通话面板，其他标签页则显示一行摘要栏，包含来电者姓名、计时器和一个结束按钮。</p>
@@ -112,9 +112,9 @@
 <ul dir="auto">
 <li>通话面板中的<strong>录音</strong>录制活动通话；状态行显示红色的“REC 00:08”标签。该按钮始终可用。</li>
 <li>设置 › 录音 › <strong>自动录制所有通话</strong> (Record all calls automatically) 录制每一路通话。</li>
-<li><strong>声道</strong> (Channels)：<strong>单声道</strong> (Mono) 将双方混合到一个声道；<strong>立体声</strong> (Stereo) 将您放在左声道，对方（会议中的每位参与者）放在右声道。</li>
-<li>设置 › 录音 › 提示音 › <strong>录音时播放提示音</strong> (Play a notice tone while recording)（默认关闭）添加一个双方都能听到并写入录音的短促蜂鸣声：录音开始一秒后播放一次，之后<strong>每</strong> (Every) 15 秒（5–60）播放一次。“每 15 秒一次的短促蜂鸣声提醒双方通话正在被录音。”开启后会应用到正在进行的录音；被录音的通话处于保持状态时不录音也不播放蜂鸣声。</li>
-<li>文件为 M4A (AAC)，命名如 <code class="notranslate">2026-10-10 14.52 Alesia Kazlouskaya (in).m4a</code>，保存在 <code class="notranslate">~/Music/MacroSIP Recordings</code> 或您选择的文件夹中。转换失败时保留 WAV 并以横幅提示。</li>
+<li><strong>声道</strong> (Channels)：<strong>单声道</strong> (Mono) 将双方混合到一个声道；<strong>立体声</strong> (Stereo) 将您放在左声道，对方（会议中的每位参与者）放在右声道。自 26.2 起，两个声道由同一段音频一起写入，因此您这一侧和对方那一侧在整个通话中保持对齐，保持与恢复之后、以及某一方沉默了一阵之后也是如此。</li>
+<li>设置 › 录音 › 提示音 › <strong>录音时播放提示音</strong> (Play a notice tone while recording)（默认关闭）添加一个双方都能听到并写入录音的短促蜂鸣声：录音开始一秒后播放一次，之后<strong>每</strong> (Every) 15 秒（5–60）播放一次。“每 15 秒一次的短促蜂鸣声提醒双方通话正在被录音。”开启后会应用到正在进行的录音；被录音的通话处于保持状态时不录音（文件中不会加入静音），也不播放蜂鸣声。</li>
+<li>文件为 M4A (AAC)，命名如 <code class="notranslate">2026-10-10 14.52 姓名或号码 (in).m4a</code>，保存在 <code class="notranslate">~/Music/MacroSIP Recordings</code> 或您选择的文件夹中。转换失败时保留 WAV 并以横幅提示。</li>
 <li>带录音的通话记录条目显示播放按钮和内嵌播放器；右键菜单增加<strong>播放录音</strong> (Play recording) 和<strong>在访达中显示</strong> (Show in Finder)（<a href="contacts-and-call-log.html">联系人与通话记录</a>）。</li>
 </ul>
 <p dir="auto">耳机按键（通过 USB 耳机接听、挂断、保持、静音和重拨）在 <a href="audio.html">音频</a> 中介绍。视频通话计划在后续版本中实现。</p>

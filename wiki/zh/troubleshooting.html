@@ -13,7 +13,7 @@
 <body>
 <header><a class="brand" href="index.html">MacroSIP</a><div class="langs"><a href="../en/troubleshooting.html" hreflang="en">English</a><a href="../ru/troubleshooting.html" hreflang="ru">Русский</a><a href="../zh/troubleshooting.html" hreflang="zh-Hans" aria-current=true>中文</a></div></header>
 <div class="layout">
-<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html">通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="directory.html">目录</a></li><li><a href="quick-keys.html">快捷键</a></li><li><a href="audio.html">音频</a></li><li><a href="settings.html">设置</a></li><li><a href="menu-bar.html">菜单栏</a></li><li><a href="troubleshooting.html" aria-current=page>故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="architecture.html">架构</a></li><li><a href="building.html">构建</a></li><li><a href="testing.html">测试</a></li><li><a href="releasing.html">发布</a></li><li><a href="contributing.html">参与贡献</a></li></ul></div></details></nav>
+<nav aria-label="目录"><details><summary>目录</summary><div class="links"><ul><li><a href="index.html">首页</a></li></ul><h2>用户指南</h2><ul><li><a href="installation.html">安装</a></li><li><a href="accounts.html">账户</a></li><li><a href="calls.html">通话</a></li><li><a href="incoming-calls.html">来电</a></li><li><a href="contacts-and-call-log.html">联系人与通话记录</a></li><li><a href="messages.html">消息</a></li><li><a href="directory.html">目录</a></li><li><a href="quick-keys.html">快捷键</a></li><li><a href="audio.html">音频</a></li><li><a href="settings.html">设置</a></li><li><a href="menu-bar.html">菜单栏</a></li><li><a href="troubleshooting.html" aria-current=page>故障排除</a></li></ul><h2>开发者</h2><ul><li><a href="architecture.html">架构</a></li><li><a href="building.html">构建</a></li><li><a href="testing.html">测试</a></li><li><a href="releasing.html">发布</a></li><li><a href="contributing.html">参与贡献</a></li></ul></div></details></nav>
 <main>
 <h1 dir="auto">故障排除</h1>
 <h2 dir="auto">首次启动被阻止</h2>
@@ -58,6 +58,17 @@
 <p dir="auto">MacroSIP 读取 USB 耳机的 HID 电话控制（摘挂机、闪断、保持、静音、重拨）。请检查设置 › 音频中的<strong>耳机按键</strong> (Headset buttons) 已开启，并且该行显示了您的设备名称（“已连接：Jabra Evolve2 65”）；“没有带通话控制键的耳机”表示没有已连接的设备提供电话控制。设备被识别时，日志文件中有“headset buttons:  connected, …”一行；macOS 拒绝打开设备时有“headset buttons: cannot open …”，这可能与“输入监控”权限有关（系统设置 › 隐私与安全性）。按键通过免提配置文件工作的蓝牙耳机由 macOS 处理，不受支持。同一面板中的耳机自动切换是独立的功能，不需要按键。</p>
 <h2 dir="auto">对方听不到保持音乐</h2>
 <p dir="auto">检查设置 › 音频 › 保持音乐中的<strong>来源</strong> (Source)：<strong>关闭</strong> (Off) 发送静音。许多 PBX 会用自己的音乐替换电话在保持时发送的内容，因此对方听到的是服务器的音乐而非 MacroSIP 的；这是服务器端的设置。引擎无法读取的文件会保留之前的来源，组页脚会说明原因（“无法使用此文件：…”）。您自己永远听不到保持音乐。</p>
+<h2 dir="auto">铃声不是我选的那一个</h2>
+<ol dir="auto">
+<li>打开设置 › 音频 › 铃声，点按<strong>播放</strong> (Play)。预听播放的是真正的选择，音量为所设音量，所以您听到的就是来电时响的声音。<strong>经典</strong>、<strong>数字</strong>和<strong>柔和</strong>是三段不同的旋律。</li>
+<li>如果弹出式菜单显示的是您自己的文件（“自定：office-bell.m4a”），响的却是原来的声音，请看该组下方是否有“无法使用铃声文件：…”。无法读取的文件（已损坏、受保护，或 macOS 无法打开的格式）会保留之前的选择。请使用 WAV、AIFF、M4A 或 MP3 文件。</li>
+<li>完全没有声音：检查<strong>音量</strong> (Volume)（0 即静音）和<strong>铃声设备</strong> (Ringtone device)；它只是铃声的输出，可能指向耳机或另一个扬声器。</li>
+<li>26.3 之前，所选旋律只用于预听，来电总是用默认的铃声。请更新到 26.3.0 或更新版本（<a href="installation.html">安装</a>）。</li>
+</ol>
+<p dir="auto">见 <a href="audio.html">音频</a>。</p>
+<h2 dir="auto">消息显示“已发送”，但手机没有收到</h2>
+<p dir="auto"><strong>已发送</strong> (Sent) 只表示 SIP 服务器（或对方）接受了消息，并不表示手机已收到：送达手机取决于服务器及其后面的环节（通过 Asterisk <code class="notranslate">chan_dongle</code> 发短信时：调制解调器、SIM 卡和运营商）。请查看服务器的日志。未被接受的消息会显示<strong>未发送</strong>、原因和<strong>重试</strong> (Retry)。见 <a href="messages.html">消息</a>。</p>
+<p dir="auto">如果根本没有“消息”标签页，说明消息功能是关闭的：请在设置 › 通用中打开<strong>文字消息 (SIP MESSAGE)</strong>。</p>
 <h2 dir="auto">来电者姓名错误或缺失</h2>
 <p dir="auto">姓名依次来自 SIP 显示名称、与其任一号码匹配的联系人，然后是最多查询一秒的目录来源。请将号码添加到联系人，或添加目录来源（<a href="directory.html">目录</a>）。</p>
 <h2 dir="auto">目录与 LDAP 错误</h2>
