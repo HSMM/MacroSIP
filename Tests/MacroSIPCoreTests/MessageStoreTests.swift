@@ -191,4 +191,130 @@ import Testing
             #expect(s.conversations().map(\.id) == [c.id])
         }
     }
+
+    // MARK: peers, formats, hosts
+
+    @Test func sameNumberInDifferentFormatsIsOneConversation() throws {
+        try withTempDir { dir in
+            let s = MessageStore(directory: dir)
+            let a = try s.conversation(account: acct, remoteNumber: "375291234567", remoteURI: "sip:375291234567@pbx.example.com", displayName: nil, accountDomain: "pbx.example.com")
+            let b = try s.conversation(account: acct, remoteNumber: "+375 29 123-45-67", remoteURI: "", displayName: nil, accountDomain: "pbx.example.com")
+            let c = try s.conversation(account: acct, remoteNumber: "291234567", remoteURI: "", displayName: nil, accountDomain: "pbx.example.com")
+            let d = try s.conversation(account: acct, remoteNumber: "4567", remoteURI: "", displayName: nil, accountDomain: "pbx.example.com")
+            #expect(a.id == b.id && b.id == c.id)       // a country prefix may be missing from the shorter side (9 digits)
+            #expect(d.id != a.id && s.conversations().count == 2)   // an extension is not a suffix match
+        }
+    }
+
+    @Test func hostSeparatesPeers() throws {
+        try withTempDir { dir in
+            let s = MessageStore(directory: dir)
+            let domain = "pbx.example.com"
+            let bob = try s.conversation(account: acct, remoteNumber: "bob", remoteURI: "sip:bob@pbx.example.com", displayName: nil, accountDomain: domain)
+            let partner = try s.conversation(account: acct, remoteNumber: "bob", remoteURI: "sip:bob@partner.org", displayName: nil, accountDomain: domain)
+            let again = try s.conversation(account: acct, remoteNumber: "Bob", remoteURI: "sip:Bob@PBX.example.com:5061;transport=tls", displayName: nil, accountDomain: domain)
+            #expect(bob.id != partner.id && again.id == bob.id)
+            #expect(partner.remoteHost == "partner.org" && partner.shownNumber == "bob@partner.org")
+            // a number through the account has no host; the same number at a foreign host is another peer
+            let own = try s.conversation(account: acct, remoteNumber: "102", remoteURI: "sip:102@pbx.example.com", displayName: nil, accountDomain: domain)
+            let ownBare = try s.conversation(account: acct, remoteNumber: "102", remoteURI: "", displayName: nil, accountDomain: domain)
+            let foreign = try s.conversation(account: acct, remoteNumber: "102", remoteURI: "sip:102@other.net", displayName: nil, accountDomain: domain)
+            #expect(own.id == ownBare.id && own.remoteHost == nil && foreign.id != own.id && foreign.remoteHost == "other.net")
+            #expect(s.conversations().count == 4)
+        }
+    }
+
+    @Test func addressMatching() {
+        let a = ConversationAddress("sip:+375291234567@pbx.example.com;transport=tls", accountDomain: "PBX.example.com")
+        #expect(a.host == nil && a.user == "+375291234567")
+        #expect(ConversationAddress("tel:+375 29 123-45-67", accountDomain: "x").user == "+375291234567")
+        #expect(ConversationAddress("alice@A.com", accountDomain: "a.com").host == "a.com")
+        #expect(ConversationAddress("102", accountDomain: "x").host == nil)
+        let c = Conversation(accountID: acct, remoteNumber: "alice", remoteHost: "a.com")
+        #expect(c.matches(account: acct, address: ConversationAddress("sip:ALICE@a.com")))
+        #expect(!c.matches(account: acct, address: ConversationAddress("sip:alice@b.com")))
+        #expect(!c.matches(account: AccountID(), address: ConversationAddress("sip:alice@a.com")))
+    }
+
+    // MARK: unread, replace, tolerance, cache
+
+    @Test func removingAndPruningNeverLeaveMoreUnreadThanIncoming() throws {
+        try withTempDir { dir in
+            let s = MessageStore(directory: dir, limit: { 3 })
+            let c = try s.conversation(account: acct, remoteNumber: "1", remoteURI: "", displayName: nil)
+            let m1 = try s.append(note(c.id, at: t0))
+            try s.append(note(c.id, at: t0.addingTimeInterval(1)))
+            try s.append(note(c.id, .outgoing, at: t0.addingTimeInterval(2)))
+            #expect(s.unreadTotal == 2)
+            try s.remove(message: m1.id)
+            #expect(s.unreadTotal == 1)
+            let o = try s.conversation(account: acct, remoteNumber: "2", remoteURI: "", displayName: nil)
+            try s.append(note(o.id, at: t0.addingTimeInterval(10)))      // fourth message: the oldest of `c` is dropped
+            try s.append(note(o.id, at: t0.addingTimeInterval(11)))
+            try s.append(note(o.id, at: t0.addingTimeInterval(12)))      // `c` loses everything
+            #expect(s.conversations().map(\.id) == [o.id] && s.unreadTotal == 3)
+            try s.append(note(o.id, .outgoing, at: t0.addingTimeInterval(13)))
+            #expect(s.unreadTotal <= s.allMessages().filter { $0.direction == .incoming }.count)
+        }
+    }
+
+    @Test func replaceMovesAMessageToTheEndInOneWrite() throws {
+        try withTempDir { dir in
+            let s = MessageStore(directory: dir)
+            let c = try s.conversation(account: acct, remoteNumber: "1", remoteURI: "", displayName: nil)
+            let failed = try s.append(note(c.id, .outgoing, text: "again", at: t0, state: .failed))
+            try s.append(note(c.id, at: t0.addingTimeInterval(5)))
+            let retry = note(c.id, .outgoing, text: "again", at: t0.addingTimeInterval(60), state: .sending)
+            try s.replace(message: failed.id, with: retry)
+            #expect(s.messages(in: c.id).map(\.id).last == retry.id && s.messages(in: c.id).count == 2)
+            #expect(s.conversations()[0].lastActivityAt == retry.at)
+        }
+    }
+
+    @Test func firstMessageAndConversationInOneWrite() throws {
+        try withTempDir { dir in
+            let s = MessageStore(directory: dir)
+            let (conv, message) = try s.conversation(account: acct, remoteNumber: "7", remoteURI: "", displayName: nil) {
+                Message(conversationID: $0, direction: .outgoing, text: "hello", at: t0, state: .sending)
+            }
+            #expect(s.conversations().map(\.id) == [conv.id] && s.messages(in: conv.id) == [message])
+            let (again, _) = try s.conversation(account: acct, remoteNumber: "7", remoteURI: "", displayName: nil) {
+                Message(conversationID: $0, direction: .outgoing, text: "second", at: t0.addingTimeInterval(1))
+            }
+            #expect(again.id == conv.id && s.messages(in: conv.id).count == 2)
+            #expect(s.lastMessages()[conv.id]?.text == "second")
+        }
+    }
+
+    @Test func unreadableRecordsAreSkippedAndTheRestIsKept() throws {
+        try withTempDir { dir in
+            let acctID = UUID(), conv = UUID(), good = UUID()
+            let json = """
+            {"conversations":[{"id":"\(conv)","accountID":{"raw":"\(acctID)"},"remoteNumber":"102","lastActivityAt":"2023-11-14T22:13:20Z"},
+                              {"id":"not-a-uuid","remoteNumber":5}],
+             "messages":[{"id":"\(good)","conversationID":"\(conv)","direction":"incoming","text":"ok","at":"2023-11-14T22:13:20Z","state":"sent"},
+                         {"id":"\(UUID())","conversationID":"\(conv)","direction":"sideways","text":"bad","at":"2023-11-14T22:13:20Z","state":"sent"},
+                         42]}
+            """
+            try Data(json.utf8).write(to: dir.appendingPathComponent("messages.json"))
+            let s = MessageStore(directory: dir)
+            #expect(s.conversations().map(\.id) == [conv] && s.allMessages().map(\.id) == [good])
+            let files = try FileManager.default.contentsOfDirectory(atPath: dir.path)
+            #expect(files.contains { $0.hasPrefix("messages.damaged-") } && !files.contains { $0.hasPrefix("messages.broken-") })
+            #expect(MessageStore(directory: dir).allMessages().map(\.id) == [good])      // rewritten without them
+        }
+    }
+
+    @Test func aFailedWriteLeavesTheStoreAsItWas() throws {
+        try withTempDir { dir in
+            let s = MessageStore(directory: dir)
+            let c = try s.conversation(account: acct, remoteNumber: "1", remoteURI: "", displayName: nil)
+            try s.append(note(c.id, at: t0))
+            // The directory becomes a file: saving fails.
+            try FileManager.default.removeItem(at: dir)
+            try Data("x".utf8).write(to: dir)
+            #expect(throws: (any Error).self) { try s.append(note(c.id, at: t0.addingTimeInterval(1))) }
+            #expect(s.allMessages().count == 1)
+        }
+    }
 }
