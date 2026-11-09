@@ -1173,10 +1173,10 @@ Only the basics are visible; everything else sits in a collapsible "Advanced" se
 |---|---|---|
 | 1 | Title | "Edit Account", 13 pt bold. |
 | 2 | Basics group | Account name, SIP server, Username, Password, Enabled. |
-| 3 | Advanced (disclosure, label 13 pt semibold, collapsed by default) | Groups: Profile (Display name); Server (Auth username, Domain, Outgoing proxy); Connection (Transport, Media encryption (SRTP), Registration expiry, Verify server certificate with TLS); switches (Register with server, Default for outgoing calls, Publish my presence). |
+| 3 | Advanced (disclosure, label 13 pt semibold, collapsed by default) | Groups: Profile (Display name); Server (Auth username, Domain, Outgoing proxy); Connection (Transport, IP protocol, Media encryption (SRTP), Registration expiry, Verify server certificate with TLS); switches (Register with server, Default for outgoing calls, Publish my presence). |
 | 4 | Button row | Delete Account…, Test, status text, Cancel, Save. |
 
-**Advanced section:** closed for a new account and for an account whose advanced fields are all at their defaults (no display name, no auth username, domain equals the server, no proxy, UDP, SRTP disabled, expiry 300 s, Register on, not the default among several accounts, presence publishing off, certificate verification on). It opens by itself, so the user can see why an account behaves as it does, when any of them differs. The user's own open or close is remembered until the app quits and applies to the next editor. The sheet is 430 pt high while it is closed and 640 pt (470 pt in the main window) when open; the content scrolls. Validation and Test work whether it is open or not.
+**Advanced section:** closed for a new account and for an account whose advanced fields are all at their defaults (no display name, no auth username, domain equals the server, no proxy, UDP, IP protocol Auto, SRTP disabled, expiry 300 s, Register on, not the default among several accounts, presence publishing off, certificate verification on). It opens by itself, so the user can see why an account behaves as it does, when any of them differs. The user's own open or close is remembered until the app quits and applies to the next editor. The sheet is 430 pt high while it is closed and 640 pt (470 pt in the main window) when open; the content scrolls. Validation and Test work whether it is open or not.
 
 ### Elements
 
@@ -1193,6 +1193,7 @@ Rows of the basics group are listed first; the others are inside Advanced.
 | Domain (secondary "If empty, the SIP server is used.") | text field, placeholder shows "pbx.example.com" | Used to build SIP URIs. | No | empty |
 | Outgoing proxy | text field, placeholder "Optional, e.g. sip:proxy.example.com;lr" | Route set for requests. | No | empty |
 | Transport | segmented control: UDP, TCP, TLS | One value. | Yes | TLS in the mockup (default for new accounts: see Open items) |
+| IP protocol (secondary "Auto picks IPv4 or IPv6 from the server address.") | popup, 130 pt | Auto, IPv4 only, IPv6 only (26.3.1). Auto: an IPv4 or IPv6 address picks its own protocol, a host name follows the order macOS returns. IPv4 only with an IPv6 server address (or the other way round) shows "The server's address is an IPv6 address. Choose Auto or IPv6 only." (or the IPv4 form) in the Connection group's footer, opens Advanced and keeps Save and Test off. The server here is the outgoing proxy when one is set. | Yes | Auto |
 | Media encryption (SRTP) | popup | Disabled, Optional, Mandatory (glossary modes). | Yes | Mandatory in the mockup |
 | Registration expiry | number field, 56 pt, stepper, unit "seconds" | Expiry in seconds. | Yes | 300 |
 | Voicemail number (secondary "Dialled from the menu bar and the status bar.") | text field, placeholder "*97" | Number or SIP URI the app dials for the voicemail items (menu bar, status bar badge). Group "Voicemail" in Advanced. | No | empty |
@@ -1752,6 +1753,10 @@ Strings marked "(proposed)" are not in the mockups; they are needed by the spec 
 | | UDP, TCP, TLS | `account.transport.udp`, `.tcp`, `.tls` | |
 | | Media encryption (SRTP) | `account.field.srtp` | |
 | | Disabled, Optional, Mandatory | `account.srtp.disabled`, `.optional`, `.mandatory` | Glossary modes. |
+| | IP protocol | `account.field.ipProtocol` | 26.3.1. |
+| | Auto picks IPv4 or IPv6 from the server address. | `account.field.ipProtocol.help` | |
+| | Auto, IPv4 only, IPv6 only | `account.ipProtocol.auto`, `.ipv4`, `.ipv6` | |
+| | The server's address is an IPv6 address. Choose Auto or IPv6 only. | `account.error.ipv6Server` | Validation; `account.error.ipv4Server` is the IPv4 form. |
 | | Registration expiry | `account.field.expiry` | |
 | | Register with server | `account.field.register` | |
 | | Off keeps the account for outgoing calls only. | `account.field.register.help` | |

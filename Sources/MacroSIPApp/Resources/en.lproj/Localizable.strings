@@ -336,6 +336,13 @@
 "account.field.publishPresence.help" = "Lets contacts who watch you see Available, Away or Do Not Disturb.";
 "account.field.verifyCertificate" = "Verify server certificate";
 "account.field.verifyCertificate.help" = "Turn off only for a server with a self-signed certificate.";
+"account.field.ipProtocol" = "IP protocol";
+"account.field.ipProtocol.help" = "Auto picks IPv4 or IPv6 from the server address.";
+"account.ipProtocol.auto" = "Auto";
+"account.ipProtocol.ipv4" = "IPv4 only";
+"account.ipProtocol.ipv6" = "IPv6 only";
+"account.error.ipv6Server" = "The server's address is an IPv6 address. Choose Auto or IPv6 only.";
+"account.error.ipv4Server" = "The server's address is an IPv4 address. Choose Auto or IPv4 only.";
 "unit.khz" = "%@ kHz";
 "unit.kbps" = "%@ kbit/s";
 "unit.percent" = "%@ %%";

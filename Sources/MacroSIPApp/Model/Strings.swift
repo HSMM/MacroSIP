@@ -486,6 +486,19 @@ enum L {
     static var accountVerifyCertificateHelp: String {
         loc("account.field.verifyCertificate.help", "Turn off only for a server with a self-signed certificate.")
     }
+    static var accountIPProtocol: String { loc("account.field.ipProtocol", "IP protocol") }
+    static var accountIPProtocolHelp: String {
+        loc("account.field.ipProtocol.help", "Auto picks IPv4 or IPv6 from the server address.")
+    }
+    static var ipProtocolAuto: String { loc("account.ipProtocol.auto", "Auto") }
+    static var ipProtocolIPv4: String { loc("account.ipProtocol.ipv4", "IPv4 only") }
+    static var ipProtocolIPv6: String { loc("account.ipProtocol.ipv6", "IPv6 only") }
+    static var accountErrorIPv6Server: String {
+        loc("account.error.ipv6Server", "The server's address is an IPv6 address. Choose Auto or IPv6 only.")
+    }
+    static var accountErrorIPv4Server: String {
+        loc("account.error.ipv4Server", "The server's address is an IPv4 address. Choose Auto or IPv4 only.")
+    }
 
     // MARK: messages (SIP MESSAGE, screen 14)
     static var messagesNew: String { loc("messages.new", "New Message") }

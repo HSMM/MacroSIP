@@ -17,6 +17,7 @@ struct AccountEditorSheet: View {
     @Local private var domain = ""
     @Local private var proxy = ""
     @Local private var transport: TransportKind = .udp
+    @Local private var ipProtocol: IPProtocol = .auto
     @Local private var srtp: SRTPMode = .disabled
     @Local private var expiry = 300
     @Local private var enabled = true
@@ -48,10 +49,23 @@ struct AccountEditorSheet: View {
 
     private var serverValid: Bool { Self.isValidHost(server.trimmingCharacters(in: .whitespaces)) }
     private var expiryValid: Bool { (60...3600).contains(expiry) }
-    private var canTest: Bool { serverValid && !username.trimmingCharacters(in: .whitespaces).isEmpty && !password.isEmpty }
+    /// IPv4 only with an IPv6 server address, or the other way round (`IPFamilyPolicy.conflict`): the engine
+    /// would refuse the account, so Save and Test are off and the Connection group says why.
+    private var ipConflict: IPFamily? { serverValid ? IPFamilyPolicy.conflict(in: makeConfig()) : nil }
+    private var canTest: Bool {
+        serverValid && !username.trimmingCharacters(in: .whitespaces).isEmpty && !password.isEmpty && ipConflict == nil
+    }
     private var canSave: Bool {
         serverValid && !username.trimmingCharacters(in: .whitespaces).isEmpty && Self.passwordSufficient(password, registers: register)
-            && !name.trimmingCharacters(in: .whitespaces).isEmpty && expiryValid && !saving
+            && !name.trimmingCharacters(in: .whitespaces).isEmpty && expiryValid && ipConflict == nil && !saving
+    }
+    private var connectionError: String? {
+        if !expiryValid { return L.accountErrorExpiry }
+        switch ipConflict {
+        case .ipv6?: return L.accountErrorIPv6Server
+        case .ipv4?: return L.accountErrorIPv4Server
+        case nil: return nil
+        }
     }
 
     /// An account that registers needs a password; one that does not may have none.
@@ -105,6 +119,9 @@ struct AccountEditorSheet: View {
         .onChange(of: expiryValid) { _, valid in
             if !valid { advancedOpen = true }       // Save is off because of a field in the Advanced section: show it
         }
+        .onChange(of: ipConflict) { _, conflict in
+            if conflict != nil { advancedOpen = true }
+        }
         .alert(L.accountDeleteTitle(existing?.displayName ?? name), isPresented: $confirmDelete) {
             Button(L.commonCancel, role: .cancel) {}
             Button(L.commonDelete, role: .destructive) {
@@ -133,11 +150,20 @@ struct AccountEditorSheet: View {
                 TextField(L.accountProxyPlaceholder, text: $proxy).textFieldStyle(.roundedBorder).frame(width: 210)
             }
         }
-        FormGroup(header: L.accountGroupConnection, footer: expiryValid ? nil : L.accountErrorExpiry) {
+        FormGroup(header: L.accountGroupConnection, footer: connectionError) {
             row(L.accountTransport) {
                 SegmentedTabs(items: TransportKind.allCases.map { .init(value: $0, title: $0.rawValue.uppercased()) },
                               selection: $transport)
                     .frame(width: 170)
+            }
+            FormDivider()
+            row(L.accountIPProtocol, help: L.accountIPProtocolHelp) {
+                Picker("", selection: $ipProtocol) {
+                    Text(L.ipProtocolAuto).tag(IPProtocol.auto)
+                    Text(L.ipProtocolIPv4).tag(IPProtocol.ipv4)
+                    Text(L.ipProtocolIPv6).tag(IPProtocol.ipv6)
+                }
+                .labelsHidden().frame(width: 130)
             }
             FormDivider()
             row(L.accountSRTP) {
@@ -199,7 +225,8 @@ struct AccountEditorSheet: View {
     static func advancedDiffersFromDefault(_ a: AccountConfig, callerName: String, accountCount: Int) -> Bool {
         let d = AccountConfig(displayName: "", username: "", domain: "")
         return !callerName.isEmpty || a.authID != nil || a.registrar != nil || a.outboundProxy != nil
-            || a.transport != d.transport || a.srtp != d.srtp || a.registrationInterval != d.registrationInterval
+            || a.transport != d.transport || a.ipProtocol != d.ipProtocol || a.srtp != d.srtp
+            || a.registrationInterval != d.registrationInterval
             || a.registerWithServer != d.registerWithServer || a.publishPresence != d.publishPresence
             || (a.transport == .tls && a.verifyTLSCertificate != d.verifyTLSCertificate)
             || (a.isDefaultOutgoing && accountCount > 1)
@@ -304,6 +331,7 @@ struct AccountEditorSheet: View {
             password = model.vault.password(for: a.id) ?? ""
             proxy = a.outboundProxy ?? ""
             transport = a.transport
+            ipProtocol = a.ipProtocol
             srtp = a.srtp
             expiry = a.registrationInterval
             enabled = a.enabled || model.accountNeedsPassword(a.id)      // imported: typing the password and saving switches it on
@@ -332,6 +360,7 @@ struct AccountEditorSheet: View {
         let au = authUsername.trimmingCharacters(in: .whitespaces)
         cfg.authID = au.isEmpty ? nil : au
         cfg.transport = transport
+        cfg.ipProtocol = ipProtocol
         cfg.srtp = srtp
         cfg.enabled = enabled
         cfg.registerWithServer = register

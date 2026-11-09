@@ -55,7 +55,8 @@ extension AppModel {
         lines.append("Accounts (\(accounts.count)); passwords are in the Keychain and not listed")
         for a in accounts {
             let state = registration[a.id].map { String(describing: $0) } ?? "unknown"
-            var parts = ["\(a.username)@\(a.domain)", "transport=\(a.transport.rawValue)", "srtp=\(a.srtp.rawValue)",
+            var parts = ["\(a.username)@\(a.domain)", "transport=\(a.transport.rawValue)", "ip=\(a.ipProtocol.rawValue)",
+                         "srtp=\(a.srtp.rawValue)",
                          "enabled=\(a.enabled)", "register=\(a.registerWithServer)", "interval=\(a.registrationInterval)s",
                          "presence=\(a.publishPresence)", "default=\(a.isDefaultOutgoing)", "tlsVerify=\(a.verifyTLSCertificate)"]
             if let r = a.registrar { parts.append("registrar=\(r)") }

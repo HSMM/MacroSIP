@@ -336,6 +336,13 @@
 "account.field.publishPresence.help" = "Контакты, которые следят за вами, увидят «Доступен», «Отошёл» или «Не беспокоить».";
 "account.field.verifyCertificate" = "Проверять сертификат сервера";
 "account.field.verifyCertificate.help" = "Отключайте, только если у сервера самоподписанный сертификат.";
+"account.field.ipProtocol" = "Протокол IP";
+"account.field.ipProtocol.help" = "«Авто» выбирает IPv4 или IPv6 по адресу сервера.";
+"account.ipProtocol.auto" = "Авто";
+"account.ipProtocol.ipv4" = "Только IPv4";
+"account.ipProtocol.ipv6" = "Только IPv6";
+"account.error.ipv6Server" = "Адрес сервера — IPv6. Выберите «Авто» или «Только IPv6».";
+"account.error.ipv4Server" = "Адрес сервера — IPv4. Выберите «Авто» или «Только IPv4».";
 "unit.khz" = "%@ кГц";
 "unit.kbps" = "%@ кбит/с";
 "unit.percent" = "%@ %%";
