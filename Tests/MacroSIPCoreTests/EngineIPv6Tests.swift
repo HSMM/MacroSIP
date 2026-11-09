@@ -1287,11 +1287,14 @@ extension EngineTests {
         #expect(stub.bindingRegisters.allSatisfy { $0.family == .ipv6 }, "\(stub.registers.map(\.family))")
         #expect(calls.withLock { $0 } == 1)                       // one lookup for both accounts
 
-        // Cached: an update that changes the server back to the same host asks nobody.
+        // Cached: an update that changes the server (now through an outbound proxy on the same host)
+        // decides from the cache, asks nobody and keeps IPv6.
         var moved = a
-        moved.registrar = "localhost:\(stub.port)"
+        moved.outboundProxy = "sip:localhost:\(stub.port);lr"
         try await engine.updateAccount(moved, password: nil)
         #expect(calls.withLock { $0 } == 1)
+        #expect(await engine.accountFamilyForTests(a.id) == .ipv6)
+        #expect(await waitUntil { await engine.registrationState(of: a.id).isRegistered })
 
         let round = ContinuousClock.now
         await engine.simulateNetworkChange()                      // the cache is dropped; lookups again
@@ -1640,6 +1643,15 @@ extension EngineTests {
             let a = try? await engine.mediaStats(out), b = try? await engine.mediaStats(inc.id)
             return (a?.rxPackets ?? 0) > 10 && (b?.rxPackets ?? 0) > 10
         })
+        // ICE itself completed on both legs, with the ::1 pair nominated (RTP alone would also flow to
+        // the default candidate after a failed negotiation).
+        let incID = inc.id
+        #expect(await waitUntil {
+            let a = await engine.iceSelectedPairForTests(out), b = await engine.iceSelectedPairForTests(incID)
+            return a != nil && b != nil
+        })
+        let pair = await engine.iceSelectedPairForTests(out)
+        #expect(pair?.local == "::1" && pair?.remote == "::1", "\(String(describing: pair))")
         #expect(await engine.localRTPAddress(of: out) == "::1")
         try await engine.hangup(out)
         #expect(await waitUntil { await engine.calls().isEmpty })

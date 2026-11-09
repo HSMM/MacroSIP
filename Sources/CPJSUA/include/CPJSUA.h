@@ -328,6 +328,11 @@ int cpjsua_call_local_rtp_port(pjsua_call_id call_id);
  *  "192.0.2.10", no brackets, no port) into `buf`; returns its length, 0 if none. */
 int cpjsua_call_local_rtp_addr(pjsua_call_id call_id, char *buf, unsigned len);
 
+/** ICE of the call's first audio stream: 1 when ICE is in use and its negotiation completed (session
+ *  running), with the addresses of component 1's nominated pair in `local` and `remote` (no
+ *  brackets, no port); 0 otherwise. */
+int cpjsua_call_ice_pair(pjsua_call_id call_id, char *local, char *remote, unsigned len);
+
 /* ----------------------------------------------------- packet source --- */
 
 /** Where a received message came from (rdata->pkt_info, rdata->tp_info). */

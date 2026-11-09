@@ -329,6 +329,15 @@ extension Engine {
 
     func transportIDsForTests() -> TransportIDs { transports }
 
+    /// The nominated ICE pair of a call (component 1), nil while ICE is not used or not negotiated.
+    func iceSelectedPairForTests(_ id: CallID) -> (local: String, remote: String)? {
+        guard let slot = try? liveSlot(id) else { return nil }
+        var local = [CChar](repeating: 0, count: 64), remote = [CChar](repeating: 0, count: 64)
+        guard cpjsua_call_ice_pair(slot, &local, &remote, UInt32(local.count)) != 0 else { return nil }
+        func text(_ b: [CChar]) -> String { String(decoding: b.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self) }
+        return (text(local), text(remote))
+    }
+
     func accountFamilyForTests(_ id: AccountID) -> IPFamily? { accounts[id]?.family }
 
     func setFamilyResolverForTests(_ resolve: @escaping @Sendable (String) -> [IPFamily]) {

@@ -1140,6 +1140,33 @@ int cpjsua_call_local_rtp_port(pjsua_call_id call_id)
     return pj_sockaddr_get_port(&tpinfo.sock_info.rtp_addr_name);
 }
 
+int cpjsua_call_ice_pair(pjsua_call_id call_id, char *local, char *remote, unsigned len)
+{
+    pjsua_call_info ci;
+    pjmedia_transport_info tpinfo;
+    pjmedia_ice_transport_info *ice;
+    int aud;
+
+    if (!local || !remote || len == 0)
+        return 0;
+    local[0] = remote[0] = '\0';
+    if (pjsua_call_get_info(call_id, &ci) != PJ_SUCCESS)
+        return 0;
+    aud = first_audio_index(&ci);
+    if (aud < 0)
+        return 0;
+    pjmedia_transport_info_init(&tpinfo);
+    if (pjsua_call_get_med_transport_info(call_id, (unsigned)aud, &tpinfo) != PJ_SUCCESS)
+        return 0;
+    ice = (pjmedia_ice_transport_info *)
+          pjmedia_transport_info_get_spc_info(&tpinfo, PJMEDIA_TRANSPORT_TYPE_ICE);
+    if (!ice || !ice->active || ice->sess_state != PJ_ICE_STRANS_STATE_RUNNING)
+        return 0;
+    pj_sockaddr_print(&ice->comp[0].lcand_addr, local, len, 0);
+    pj_sockaddr_print(&ice->comp[0].rcand_addr, remote, len, 0);
+    return 1;
+}
+
 int cpjsua_call_local_rtp_addr(pjsua_call_id call_id, char *buf, unsigned len)
 {
     pjsua_call_info ci;
