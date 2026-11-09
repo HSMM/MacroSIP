@@ -9,7 +9,7 @@
 ![macOS 14+](https://img.shields.io/badge/macOS-14%2B-lightgrey)
 ![Universal: Apple Silicon and Intel](https://img.shields.io/badge/arch-universal-lightgrey)
 ![PJSIP 2.17](https://img.shields.io/badge/PJSIP-2.17-green)
-![Release 26.3.0](https://img.shields.io/badge/release-26.3.0-brightgreen)
+![Release 26.3.1](https://img.shields.io/badge/release-26.3.1-brightgreen)
 
 A MicroSIP-style SIP softphone for macOS on Apple Silicon and Intel. Native Swift and
 SwiftUI interface, [PJSIP](https://github.com/pjsip/pjproject) 2.17 engine,
@@ -19,7 +19,7 @@ presence, quick keys, global hotkeys, English and Russian interface.
 
 Guide: https://hsmm.github.io/MacroSIP/wiki/
 
-Status: `26.3.0` released 2026-11-05. What comes next: [docs/ROADMAP.md](docs/ROADMAP.md).
+Status: `26.3.1` released 2026-11-09. What comes next: [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Screenshots
 
@@ -221,7 +221,7 @@ scripts/selftest-call.sh    # end-to-end call against a local pjsua: RTP both wa
 
 The details are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#releasing).
 
-1. Tag `26.3.0` (release candidates: `26.3.0-rc.1`) and push the tag; the app takes its version from the tag. For a final release also bump `Product.fallbackVersion`.
+1. Tag `26.3.1` (release candidates: `26.3.1-rc.1`) and push the tag; the app takes its version from the tag. For a final release also bump `Product.fallbackVersion`.
 2. `.github/workflows/release.yml` builds the DMG, creates the GitHub Release and adds it to the
    update feed (`appcast.xml` on the `gh-pages` branch, signed with the Actions secret
    `SPARKLE_PRIVATE_KEY`; ADR 0013). Tag each release on a new commit, a final release after its

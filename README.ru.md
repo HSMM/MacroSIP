@@ -9,7 +9,7 @@
 ![macOS 14+](https://img.shields.io/badge/macOS-14%2B-lightgrey)
 ![Universal: Apple Silicon and Intel](https://img.shields.io/badge/arch-universal-lightgrey)
 ![PJSIP 2.17](https://img.shields.io/badge/PJSIP-2.17-green)
-![Release 26.3.0](https://img.shields.io/badge/release-26.3.0-brightgreen)
+![Release 26.3.1](https://img.shields.io/badge/release-26.3.1-brightgreen)
 
 SIP-софтфон для macOS на Apple Silicon и Intel в духе MicroSIP. Нативный интерфейс на
 Swift и SwiftUI, движок [PJSIP](https://github.com/pjsip/pjproject) 2.17, без
@@ -19,7 +19,7 @@ Electron и Qt. Одно небольшое окно, значок в строк
 
 Руководство: https://hsmm.github.io/MacroSIP/wiki/ru/index.html
 
-Статус: выпущена версия `26.3.0` (5 ноября 2026). Что дальше: [docs/ROADMAP.md](docs/ROADMAP.md).
+Статус: выпущена версия `26.3.1` (9 ноября 2026). Что дальше: [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Скриншоты
 
@@ -223,7 +223,7 @@ scripts/selftest-call.sh    # сквозной звонок на локальн�
 
 Подробности в [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#releasing).
 
-1. Поставить тег `26.3.0` (кандидаты: `26.3.0-rc.1`) и отправить его; версию приложение берёт из тега. Для финального релиза также обновить `Product.fallbackVersion`.
+1. Поставить тег `26.3.1` (кандидаты: `26.3.1-rc.1`) и отправить его; версию приложение берёт из тега. Для финального релиза также обновить `Product.fallbackVersion`.
 2. `.github/workflows/release.yml` собирает DMG, создаёт GitHub Release и добавляет его в ленту
    обновлений (`appcast.xml` в ветке `gh-pages`, подпись секретом Actions `SPARKLE_PRIVATE_KEY`;
    ADR 0013). Каждый релиз ставится на новый коммит, финальный после кандидата тоже.
