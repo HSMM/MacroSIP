@@ -52,7 +52,8 @@ extension Engine {
     /// IP family (docs/ENGINE.md "IPv6"): another server is configured over its own family at once (no
     /// binding of this account there to remove); a changed IP protocol for the same server becomes a
     /// desired family that `reconcileFamilies` moves the account to; anything else keeps the family,
-    /// including one Auto fell back to.
+    /// including one Auto fell back to. A family without a transport for the account's kind throws
+    /// `.transportUnavailable`.
     public func updateAccount(_ cfg: AccountConfig, password: String?) throws {
         try requireStarted()
         guard var entry = accounts[cfg.id] else { throw EngineError.unknownAccount(cfg.id) }
@@ -69,6 +70,9 @@ extension Engine {
             entry.familyFallbackTried = false
             entry.fallbackWaitsForLookup = false
             let decided = try decideFamily(cfg, provisional: serverChanged ? nil : entry.family)
+            guard transports.id(for: cfg, family: decided.family) != nil else {
+                throw EngineError.transportUnavailable(cfg.transport, ipv6: decided.family == .ipv6)
+            }
             lookupStarted = decided.lookupStarted
             if serverChanged && !accountHasCalls(entry.index) {
                 family = decided.family
@@ -85,6 +89,8 @@ extension Engine {
         // New settings start a new series of attempts.
         cancelRegistrationRetry(cfg.id)
         bridge.resetRetryAttempts(cfg.id)
+        // The registrar holds a binding on this server (a move must un-REGISTER it).
+        let hadBinding = !serverChanged && hasBinding(entry)
         entry.wantsRegistration = cfg.registers
         accounts[cfg.id]?.wantsRegistration = cfg.registers
         bridge.setWantsRegistration(entry.index, cfg.registers)
@@ -101,6 +107,8 @@ extension Engine {
             try PJ.check(pjsua_acc_modify(entry.index, p), "pjsua_acc_modify")
         }
         cpjsua_acc_set_sdp_nat_rewrite(entry.index, settings.sdpNATRewrite ? 1 : 0)   // not copied by modify
+        // New credentials (among others) make pjsua drop the registration session without un-REGISTER.
+        let sessionDropped = dropPendingIfSessionGone(entry)
         if familyChanged { cpjsua_acc_end_mwi_after_move(entry.index) }
         if cfg.isDefaultOutgoing {
             PJ.warn(pjsua_acc_set_default(entry.index), "set default account")
@@ -128,9 +136,13 @@ extension Engine {
         if familyChanged { resubscribePresence(accountIndex: entry.index) }
         refreshPresenceSubscriptions(accountIndex: entry.index)
         guard cfg.registers else { return }
-        if lookupStarted {
+        if hadBinding && sessionDropped {
+            // The binding is still at the registrar: renew it where the account is, so a move can
+            // un-REGISTER it before it registers on the other family.
+            try applyRegistration(cfg.id, true)
+        } else if lookupStarted {
             accounts[cfg.id]?.registerDeadline = .now + Engine.lookupWait
-            bridge.setRegistration(cfg.id, .registering)
+            if !hasBinding(entry) { bridge.setRegistration(cfg.id, .registering) }
         } else if entry.desired != nil && !accountHasCalls(entry.index) {
             // The reconciler un-REGISTERs the binding on this family and registers on the other one.
             reconcileFamilies()

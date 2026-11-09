@@ -45,11 +45,12 @@ loses the choice between the verifying and the non-verifying TLS listener (miles
   record a desired family for the account's current settings (a generation number), and the
   reconciler moves the account when nothing can be hurt by it: no network-change round running,
   **no call on the account in any state** (the call's dialog would keep a peer of the old family on a
-  transport of the new one), no REGISTER of it in flight. A move un-REGISTERs the old binding and
-  waits for the answer (5 s at most: a lingering Contact forks calls or makes a `max_contacts=1`
-  server refuse the new one with 403), then moves the account to the other transport, makes its
-  subscriptions anew there and registers; the account shows "registering" throughout, and a failed
-  step is tried again on the next tick. Moving from several places at once had raced with rounds,
+  transport of the new one), no REGISTER of it in flight. A move un-REGISTERs the old binding (as
+  PJSIP knows it, not as the UI shows it) and waits for the answer (5 s at most: a lingering Contact
+  forks calls or makes a `max_contacts=1` server refuse the new one with 403), then moves the account
+  to the other transport, makes its subscriptions anew there and registers; the account shows
+  "registering" throughout. A call that starts meanwhile, or a failed step, leaves the account
+  registered where it is; a family without a transport is refused, not wanted. Moving from several places at once had raced with rounds,
   REGISTERs in flight and late answers.
 - **IPv6 address changes** count only for accounts that use IPv6. A new temporary address while the
   old one is still assigned is a non-primary change (it waits for a ringing outgoing call); losing

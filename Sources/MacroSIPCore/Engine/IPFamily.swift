@@ -157,6 +157,9 @@ final class FamilyLookups: Sendable {
         }
     }
 
+    /// The lookups' generation: `invalidate()` starts a new one.
+    var epoch: UInt64 { state.withLock { $0.epoch } }
+
     func invalidate() {
         state.withLock { st in
             st.cache = [:]
@@ -166,9 +169,9 @@ final class FamilyLookups: Sendable {
     }
 
     /// Starts a lookup of `host` on a global queue unless one is running; `done` gets its answer ([]
-    /// when it failed), unless an `invalidate()` came in between.
+    /// when it failed) and the epoch it was started in, unless an `invalidate()` came in between.
     func start(_ host: String, resolve: @escaping @Sendable (String) -> [IPFamily],
-               done: @escaping @Sendable (String, [IPFamily]) -> Void) {
+               done: @escaping @Sendable (String, [IPFamily], UInt64) -> Void) {
         let epoch: UInt64? = state.withLock { st in
             guard !host.isEmpty, !st.inFlight.contains(host) else { return nil }
             st.inFlight.insert(host)
@@ -183,7 +186,7 @@ final class FamilyLookups: Sendable {
                 if !families.isEmpty { st.cache[host] = (families, .now) }
                 return true
             }
-            if current { done(host, families) }
+            if current { done(host, families, epoch) }
         }
     }
 }

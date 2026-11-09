@@ -1640,6 +1640,32 @@ unsigned cpjsua_transport_slots(void)
     return (unsigned)PJ_ARRAY_SIZE(pjsua_var.tpdata);
 }
 
+int cpjsua_acc_has_binding(pjsua_acc_id acc_id)
+{
+    int bound = 0;
+    if (acc_id < 0 || acc_id >= (int)PJ_ARRAY_SIZE(pjsua_var.acc))
+        return 0;
+    PJSUA_LOCK();
+    if (pjsua_var.acc[acc_id].valid && pjsua_var.acc[acc_id].regc &&
+        pjsua_var.acc[acc_id].reg_last_code / 100 == 2)
+    {
+        bound = 1;
+    }
+    PJSUA_UNLOCK();
+    return bound;
+}
+
+int cpjsua_acc_has_regc(pjsua_acc_id acc_id)
+{
+    int has;
+    if (acc_id < 0 || acc_id >= (int)PJ_ARRAY_SIZE(pjsua_var.acc))
+        return 0;
+    PJSUA_LOCK();
+    has = pjsua_var.acc[acc_id].valid && pjsua_var.acc[acc_id].regc != NULL;
+    PJSUA_UNLOCK();
+    return has;
+}
+
 int cpjsua_acc_reg_busy(pjsua_acc_id acc_id)
 {
     pjsip_regc_info info;

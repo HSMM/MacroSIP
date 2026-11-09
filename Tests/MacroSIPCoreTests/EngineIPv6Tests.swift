@@ -1300,6 +1300,223 @@ extension EngineTests {
         await engine.stop()
     }
 
+    /// An account that is registered and switched from a fixed protocol to Auto: the host is not
+    /// cached, so the family waits for the lookup. The account stays `.registered` meanwhile (nothing
+    /// changed for the registrar yet), and when the lookup says IPv6 the move un-REGISTERs the IPv4
+    /// binding first, which the registration session still holds. The same with a password change at
+    /// the same time, which makes pjsua drop that session: the account registers again over IPv4 at
+    /// once, and the move removes that binding before it registers over IPv6.
+    @Test(arguments: [false, true])
+    func switchToAutoRemovesTheOldBinding(newPassword: Bool) async throws {
+        let stub = try IPv6Stub(dualStack: true)
+        defer { stub.stop() }
+        let answer = OSAllocatedUnfairLock(initialState: [IPFamily.ipv6, .ipv4])
+        let slow = OSAllocatedUnfairLock(initialState: 0.0)
+        let engine = await makeEngine(bindAddress: nil)
+        let log = TimedEventLog()
+        let consumer = log.consume(engine)
+        defer { consumer.cancel() }
+        await engine.setTestTimings(transactionTimeoutMs: 2000)
+        await engine.setFamilyResolverForTests { _ in
+            Thread.sleep(forTimeInterval: slow.withLock { $0 })
+            return answer.withLock { $0 }
+        }
+        try await engine.start(network: Self.network)
+        var account = AccountConfig(displayName: "L", username: "1011", domain: "localhost:\(stub.port)", mwi: false,
+                                    ipProtocol: .ipv4)
+        try await engine.addAccount(account, password: "pw")
+        #expect(await waitUntil { await self.registered(engine, account.id, over: .ipv4) })
+
+        slow.withLock { $0 = 0.5 }
+        account.ipProtocol = .auto
+        let since = Date()
+        try await engine.updateAccount(account, password: newPassword ? "pw2" : nil)
+        if !newPassword {
+            #expect(await engine.registrationState(of: account.id).isRegistered)     // not "registering"
+        }
+        #expect(await waitUntil(timeout: 6) { await self.registered(engine, account.id, over: .ipv6) })
+        var moveSince = since
+        if newPassword {
+            let renewed = stub.registers.first { !$0.unregister && $0.family == .ipv4 && $0.at >= since }
+            #expect(renewed != nil, "the IPv4 binding is renewed with the new password first")
+            moveSince = renewed?.at ?? since
+        }
+        expectMove(stub, log, account.id, from: .ipv4, to: .ipv6, since: moveSince)
+        await engine.stop()
+    }
+
+    /// The same switch to Auto, when the lookup keeps the family: nothing goes to the registrar (the
+    /// binding is there) and the account shows `.registered` throughout.
+    @Test func switchToAutoOnTheSameFamilySendsNothing() async throws {
+        let stub = try IPv6Stub(dualStack: true)
+        defer { stub.stop() }
+        let engine = await makeEngine(bindAddress: nil)
+        let log = TimedEventLog()
+        let consumer = log.consume(engine)
+        defer { consumer.cancel() }
+        await engine.setFamilyResolverForTests { _ in
+            Thread.sleep(forTimeInterval: 0.3)
+            return [.ipv4, .ipv6]
+        }
+        try await engine.start(network: Self.network)
+        var account = AccountConfig(displayName: "L", username: "1014", domain: "localhost:\(stub.port)", mwi: false,
+                                    ipProtocol: .ipv4)
+        try await engine.addAccount(account, password: "pw")
+        #expect(await waitUntil { await self.registered(engine, account.id, over: .ipv4) })
+        account.ipProtocol = .auto
+        let since = Date()
+        try await engine.updateAccount(account, password: nil)
+        try await Task.sleep(for: .milliseconds(1500))
+        #expect(stub.registers.filter { $0.at >= since }.isEmpty, "\(stub.registers.filter { $0.at >= since }.map { "\($0.family) \($0.unregister)" })")
+        #expect(log.registrations(account.id).filter { $0.0 >= since }.allSatisfy { if case .registered = $0.1 { return true }; return false })
+        #expect(await self.registered(engine, account.id, over: .ipv4))
+        await engine.stop()
+    }
+
+    /// A family without a transport for the account's kind is refused by `updateAccount`, as before the
+    /// reconciler: here the IPv6 UDP port is taken by another socket.
+    @Test func ipv6OnlyWithoutAnIPv6TransportIsRefused() async throws {
+        let stub = try IPv6Stub(dualStack: true)
+        defer { stub.stop() }
+        let blocker = socket(AF_INET6, SOCK_DGRAM, 0)
+        var one: Int32 = 1
+        setsockopt(blocker, IPPROTO_IPV6, IPV6_V6ONLY, &one, socklen_t(MemoryLayout<Int32>.size))
+        var addr = sockaddr_in6()
+        addr.sin6_len = UInt8(MemoryLayout<sockaddr_in6>.size)
+        addr.sin6_family = sa_family_t(AF_INET6)
+        addr.sin6_addr = in6addr_any
+        var len = socklen_t(MemoryLayout<sockaddr_in6>.size)
+        _ = withUnsafeMutablePointer(to: &addr) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(blocker, $0, len) == 0 && getsockname(blocker, $0, &len) == 0 }
+        }
+        defer { close(blocker) }
+        var net = Self.network
+        net.localPort = UInt16(bigEndian: addr.sin6_port)
+        let engine = await makeEngine(bindAddress: nil)
+        try await engine.start(network: net)
+        #expect(await engine.transportIDsForTests().udp6 == nil)
+        var account = AccountConfig(displayName: "L", username: "1012", domain: "localhost:\(stub.port)", mwi: false,
+                                    ipProtocol: .ipv4)
+        try await engine.addAccount(account, password: "pw")
+        #expect(await waitUntil { await engine.registrationState(of: account.id).isRegistered })
+        account.ipProtocol = .ipv6
+        await #expect(throws: EngineError.transportUnavailable(.udp, ipv6: true)) {
+            try await engine.updateAccount(account, password: nil)
+        }
+        try await Task.sleep(for: .milliseconds(1500))
+        #expect(await engine.registrationState(of: account.id).isRegistered)
+        #expect(stub.registers.allSatisfy { !$0.unregister })
+        await engine.stop()
+    }
+
+    /// A REGISTER requested while another is in flight waits for it (PJSIP_EBUSY); when an update drops
+    /// that busy session (new credentials), nothing is left waiting: the account still moves to its new
+    /// family.
+    @Test func updateDroppingABusySessionDoesNotBlockTheMove() async throws {
+        let stub = try IPv6Stub(dualStack: true)
+        defer { stub.stop() }
+        stub.silentFamilies = [.ipv4]
+        let engine = await makeEngine(bindAddress: nil)
+        await engine.setTestTimings(transactionTimeoutMs: 2000)
+        try await engine.start(network: Self.network)
+        var account = AccountConfig(displayName: "L", username: "1013", domain: "localhost:\(stub.port)", mwi: false,
+                                    ipProtocol: .ipv4)
+        try await engine.addAccount(account, password: "pw")            // REGISTER in flight, no answer
+        #expect(await waitUntil { stub.registers.contains { $0.family == .ipv4 } })
+        try await engine.setRegistered(account.id, true)                 // EBUSY: waits for it
+        account.ipProtocol = .ipv6
+        try await engine.updateAccount(account, password: "other")      // pjsua drops the busy session
+        #expect(await waitUntil(timeout: 6) { await self.registered(engine, account.id, over: .ipv6) })
+        await engine.stop()
+    }
+
+    /// A call that starts while a move waits for its un-REGISTER answer stops the move: the account
+    /// registers again over its family, and moves once the call has ended.
+    @Test func callDuringTheMoveWaitKeepsTheFamily() async throws {
+        let stub = try IPv6Stub(dualStack: true)
+        defer { stub.stop() }
+        let answer = OSAllocatedUnfairLock(initialState: [IPFamily.ipv4, .ipv6])
+        let (engine, account, log, consumer) = try await startAutoLocalhost(stub, answer: answer)
+        defer { consumer.cancel() }
+        #expect(await waitUntil { await engine.registrationState(of: account.id).isRegistered })
+        stub.unregisterDelay = 1.0
+        var six = account
+        six.ipProtocol = .ipv6
+        try await engine.updateAccount(six, password: nil)
+        #expect(await waitUntil { stub.registers.contains { $0.unregister && $0.family == .ipv4 } })
+        let call = try await engine.makeCall(to: DialString(uri: "sip:300@localhost:\(stub.port)", display: "300"), from: account.id)
+        #expect(await waitUntil { await engine.calls().first { $0.id == call }?.state == .connected })
+        try await Task.sleep(for: .milliseconds(1500))                // the un-REGISTER was answered meanwhile
+        #expect(await engine.accountFamilyForTests(account.id) == .ipv4)
+        #expect(await waitUntil { await self.registered(engine, account.id, over: .ipv4) })
+        #expect(await engine.calls().first { $0.id == call }?.state == .connected)
+
+        stub.unregisterDelay = 0
+        let since = Date()
+        try await engine.hangup(call)
+        #expect(await waitUntil { await engine.calls().isEmpty })
+        #expect(await waitUntil(timeout: 4) { await self.registered(engine, account.id, over: .ipv6) })
+        expectMove(stub, log, account.id, from: .ipv4, to: .ipv6, since: since)
+        await engine.stop()
+    }
+
+    /// A lookup answer from before a network change is not acted on, also when it reaches the engine
+    /// after the change.
+    @Test func lookupAnswerFromBeforeANetworkChangeIsDropped() async throws {
+        let stub = try IPv6Stub(dualStack: true)
+        defer { stub.stop() }
+        let answer = OSAllocatedUnfairLock(initialState: [IPFamily.ipv4, .ipv6])
+        let (engine, account, _, consumer) = try await startAutoLocalhost(stub, answer: answer)
+        defer { consumer.cancel() }
+        #expect(await waitUntil { await engine.registrationState(of: account.id).isRegistered })
+        let before = await engine.familyLookups.epoch
+        await engine.simulateNetworkChange()
+        #expect(await waitUntil { await engine.ipChangeStateForTests().running == nil })
+        await engine.familiesResolved("localhost", [.ipv6, .ipv4], epoch: before)
+        try await Task.sleep(for: .milliseconds(700))
+        #expect(await engine.accountFamilyForTests(account.id) == .ipv4)
+        await engine.stop()
+    }
+
+    /// IPv6 coming or going while a move waits for its un-REGISTER answer lets the move finish (its
+    /// desire is kept until the new lookup answers): one un-REGISTER over IPv4, and no REGISTER over IPv4
+    /// in between, although the new lookup answers only after the move.
+    @Test func ipv6ChangeDuringAMoveLetsItFinish() async throws {
+        let stub = try IPv6Stub(dualStack: true)
+        defer { stub.stop() }
+        let answer = OSAllocatedUnfairLock(initialState: [IPFamily.ipv4, .ipv6])
+        let slow = OSAllocatedUnfairLock(initialState: 0.0)
+        let (engine, account, log, consumer) = try await startAutoLocalhost(stub, answer: answer)
+        defer { consumer.cancel() }
+        await engine.setFamilyResolverForTests { _ in
+            Thread.sleep(forTimeInterval: slow.withLock { $0 })
+            return answer.withLock { $0 }
+        }
+        await engine.setIPv6AddressAssignedForTests { $0 == "2001:db8::10" }
+        func path(_ v6: String) -> NetworkPath {
+            NetworkPath(satisfied: true, interface: "en0", address: "192.168.1.20", address6: v6, gateway: "192.168.1.1")
+        }
+        await engine.applyPathForTests(path(""))
+        #expect(await waitUntil { await engine.ipChangeStateForTests().running == nil })
+        #expect(await waitUntil { await self.registered(engine, account.id, over: .ipv4) })
+        stub.unregisterDelay = 1.0
+        answer.withLock { $0 = [.ipv6, .ipv4] }
+        let since = Date()
+        await engine.applyPathForTests(path("2001:db8::10"))           // IPv6 appeared: IPv6 first now
+        #expect(await waitUntil { stub.registers.contains { $0.unregister && $0.family == .ipv4 && $0.at >= since } })
+        slow.withLock { $0 = 1.5 }
+        await engine.applyPathForTests(NetworkPath(satisfied: true, interface: "en0", address: "192.168.1.20",
+                                                   gateway: "192.168.1.1", ipv6Route: false))   // gone, during the move
+        #expect(await waitUntil(timeout: 6) { await self.registered(engine, account.id, over: .ipv6) })
+        try await Task.sleep(for: .milliseconds(1200))                  // the second lookup has answered
+        #expect(await self.registered(engine, account.id, over: .ipv6))
+        let after = stub.registers.filter { $0.at >= since }
+        #expect(after.filter { $0.unregister }.count == 1, "\(after.map { "\($0.family) \($0.unregister)" })")
+        #expect(!after.contains { !$0.unregister && $0.family == .ipv4 }, "\(after.map { "\($0.family) \($0.unregister)" })")
+        expectMove(stub, log, account.id, from: .ipv4, to: .ipv6, since: since, lag: 0.9)
+        await engine.stop()
+    }
+
     /// IPv6 address changes (pure rules through injected paths): IPv6 appearing or a new address
     /// without IPv6 accounts starts no round; with an IPv6 account a new temporary address whose
     /// predecessor is still assigned is a non-primary change (it waits for a ringing outgoing call),

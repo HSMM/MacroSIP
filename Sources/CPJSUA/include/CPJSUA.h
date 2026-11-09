@@ -475,6 +475,14 @@ void cpjsua_acc_prepare_ip_change(pjsua_acc_id acc_id, int register_it);
  *  not a configurable macro): the engine creates at most this many transports. */
 unsigned cpjsua_transport_slots(void);
 
+/** 1 when the registrar holds a binding of the account as PJSIP knows it: a registration session
+ *  exists and its last REGISTER was answered 2xx (pjsua destroys the session after a failure and
+ *  after a successful un-REGISTER). */
+int cpjsua_acc_has_binding(pjsua_acc_id acc_id);
+
+/** 1 while the account has a registration session (pjsua_acc_modify drops it for some changes). */
+int cpjsua_acc_has_regc(pjsua_acc_id acc_id);
+
 /** 1 while the account's registration session has a REGISTER (or un-REGISTER) transaction in flight. */
 int cpjsua_acc_reg_busy(pjsua_acc_id acc_id);
 

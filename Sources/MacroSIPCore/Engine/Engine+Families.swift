@@ -58,15 +58,16 @@ extension Engine {
     /// A lookup of `host` off the engine queue (one in flight per host); the answer comes back through
     /// `familiesResolved`.
     func startLookup(_ host: String) {
-        familyLookups.start(host, resolve: resolveFamilies) { [weak self] host, families in
-            Task { await self?.familiesResolved(host, families) }
+        familyLookups.start(host, resolve: resolveFamilies) { [weak self] host, families, epoch in
+            Task { await self?.familiesResolved(host, families, epoch: epoch) }
         }
     }
 
     /// A lookup answered: accounts of that host that wait for it record what it means (a desired family,
     /// or the fallback it allows), and the reconciler runs. A failed lookup ([]) changes no family.
-    func familiesResolved(_ host: String, _ families: [IPFamily]) {
-        guard isStarted, PJ.registerThread() else { return }
+    func familiesResolved(_ host: String, _ families: [IPFamily], epoch: UInt64) {
+        // An answer from before a network change, delivered after it, no longer holds.
+        guard isStarted, PJ.registerThread(), epoch == familyLookups.epoch else { return }
         let srv = srvInEffect
         for id in Array(accounts.keys) {
             guard var entry = accounts[id], IPFamilyPolicy.firstHop(of: entry.config).host == host else { continue }
@@ -91,7 +92,8 @@ extension Engine {
     /// A network change (a round, or IPv6 coming or going): earlier answers no longer hold. Lookups are
     /// dropped and made again, and every Auto account follows the system's order again: a family Auto
     /// fell back to is forgotten, also in the DNS SRV case (back to IPv4 first). `abortMoves`: a round
-    /// re-registers every account, so a move whose un-REGISTER was sent starts again after it.
+    /// re-registers every account, so a move whose un-REGISTER was sent starts again after it; without
+    /// a round such a move finishes with its desire (a later answer may move the account back).
     func familiesNetworkChanged(abortMoves: Bool) {
         familyLookups.invalidate()
         let srv = srvInEffect
@@ -106,10 +108,11 @@ extension Engine {
             let wasSticky = entry.familySticky
             entry.familySticky = false
             let hop = IPFamilyPolicy.firstHop(of: entry.config)
+            let moving = entry.moveUnregisterSent != nil
             if IPFamilyPolicy.followsResolver(entry.config, srv: srv) {
-                entry.desired = nil                     // the new lookup decides
+                if !moving { entry.desired = nil }      // the new lookup decides
                 startLookup(hop.host)
-            } else if wasSticky {
+            } else if wasSticky, !moving {
                 // The SRV case: the order is IPv4 first, whatever Auto fell back to.
                 let decided = IPFamilyPolicy.decide(entry.config, available: transports.families(for: entry.config),
                                                     srv: srv) { _ in [] }
@@ -173,7 +176,8 @@ extension Engine {
                 continue
             }
             if let deadline = entry.registerDeadline, now < deadline { continue }
-            if let desired = entry.desired, desired.generation == entry.generation, desired.family != entry.family {
+            if let desired = entry.desired, desired.generation == entry.generation, desired.family != entry.family,
+               transports.id(for: entry.config, family: desired.family) != nil {
                 if !accountHasCalls(entry.index), !registrationBusy(entry) {
                     startMove(id)
                     continue
@@ -182,9 +186,10 @@ extension Engine {
                 accounts[id]?.desired = nil
             }
             if entry.registerDeadline != nil {
-                // No (usable) answer in time, or the move has to wait: register where the account is.
+                // No (usable) answer in time, or the move has to wait: register where the account is,
+                // unless it is registered there already (or a REGISTER is on its way, e.g. a round's).
                 accounts[id]?.registerDeadline = nil
-                if entry.wantsRegistration { register(id) }
+                if entry.wantsRegistration, !hasBinding(entry), !registrationBusy(entry) { register(id) }
             }
         }
     }
@@ -198,7 +203,7 @@ extension Engine {
         guard let entry = accounts[id], let desired = entry.desired else { return }
         cancelRegistrationRetry(id)
         accounts[id]?.registerDeadline = nil
-        guard hasBinding(id) else {
+        guard hasBinding(entry) else {
             finishMove(id)
             return
         }
@@ -228,14 +233,20 @@ extension Engine {
     /// registration session is destroyed with `pjsua_acc_modify` (a late answer of it is dropped), the
     /// live config gets `allow_sdp_nat_rewrite` (pjsua_acc_modify does not copy it), the MWI and
     /// presence subscriptions are made anew on the new transport (their dialogs keep the old one), and
-    /// the account registers. A failure keeps the desire: the next tick tries again. A move that is no
-    /// longer wanted registers the account where it is.
+    /// the account registers. A move that is no longer wanted, or that a call started meanwhile now
+    /// stops (the desire waits for the calls), registers the account where it is; so does a failure,
+    /// which drops the desire until the next trigger.
     private func finishMove(_ id: AccountID) {
         guard var entry = accounts[id] else { return }
         entry.moveUnregisterSent = nil
         entry.moveUnregisterAnswered = false
         guard let desired = entry.desired, desired.generation == entry.generation, desired.family != entry.family else {
             entry.desired = nil
+            accounts[id] = entry
+            if entry.wantsRegistration { register(id) }
+            return
+        }
+        if accountHasCalls(entry.index) {
             accounts[id] = entry
             if entry.wantsRegistration { register(id) }
             return
@@ -248,10 +259,14 @@ extension Engine {
             }
             cpjsua_acc_set_sdp_nat_rewrite(entry.index, settings.sdpNATRewrite ? 1 : 0)
         } catch {
-            PJ.warn(error, "account \(entry.config.uri): move to \(desired.family)")
+            emit(.log(level: 2, "engine: account \(entry.config.uri): cannot move to \(desired.family) (\(error)); "
+                     + "stays on \(entry.family)"))
+            entry.desired = nil
             accounts[id] = entry
+            if entry.wantsRegistration { register(id) }
             return
         }
+        dropPendingIfSessionGone(entry)
         cpjsua_acc_end_mwi_after_move(entry.index)
         emit(.log(level: 3, "engine: account \(entry.config.uri): server now reached over \(desired.family) "
                  + "(was \(entry.family), \(desired.reason))"))
@@ -273,10 +288,20 @@ extension Engine {
 
     // MARK: - helpers
 
-    /// The registrar holds a binding of the account (last REGISTER answered 2xx).
-    func hasBinding(_ id: AccountID) -> Bool {
-        if case .registered = bridge.registration(of: id) { return true }
-        return false
+    /// The registrar holds a binding of the account, as PJSIP knows it: a registration session whose
+    /// last REGISTER was answered 2xx (not the UI state, which shows intents too).
+    func hasBinding(_ entry: AccountEntry) -> Bool {
+        cpjsua_acc_has_binding(entry.index) != 0
+    }
+
+    /// After `pjsua_acc_modify`: when it dropped the registration session, a request that waited for that
+    /// session's REGISTER (PJSIP_EBUSY) would wait forever (the late answer is dropped); it is cleared.
+    /// True when the session is gone.
+    @discardableResult
+    func dropPendingIfSessionGone(_ entry: AccountEntry) -> Bool {
+        guard cpjsua_acc_has_regc(entry.index) == 0 else { return false }
+        _ = bridge.takePendingRegistration(entry.config.id)
+        return true
     }
 
     /// The account has a call in any state (ringing, connecting, connected, held).
