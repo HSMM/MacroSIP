@@ -93,6 +93,7 @@ Messages: the conversation list, and a conversation open:
 
 - Several SIP accounts registered at once; UDP, TCP and TLS with certificate verification; SRTP; STUN and ICE; outgoing-only accounts; each account switched on or off in the account pop-up; search and a status summary when there are many. Passwords are kept in the Keychain.
 - An account on a server addressed by a private IP address (10.x, 172.16-31.x, 192.168.x, 100.64-127.x, on the LAN or over a VPN) does not use STUN, so the first REGISTER carries the Mac's own address.
+- IPv6 next to IPv4: SIP over UDP, TCP and TLS and the audio over IPv6, for a server given by an IPv6 address or by a host name with IPv6 (AAAA) records. Per account, IP protocol Auto (an IP address picks its own protocol, a host name follows the order macOS returns), IPv4 only or IPv6 only. Over IPv6 there is no STUN and no ICE (plain RTP).
 - After a network drop, an IP change or sleep the accounts register again at once, with backoff while the network is down; a running call survives an IP change. The status bar and the call window show "No network" and "Reconnecting…".
 - Network pane: RTP port range, rport, DNS SRV with a custom nameserver.
 - Codecs: Opus (with FEC and DTX), G.722, G.711 and, off until you turn them on, G.722.1, GSM, iLBC and Speex.
