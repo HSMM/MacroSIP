@@ -210,10 +210,9 @@ enum AccountMapping {
             allowContactRewrite: true,
             allowViaRewrite: true,
             keepAliveSeconds: max(0, network.keepAliveSeconds),
-            // Not over IPv6: pjsua binds the IPv6 ICE component to "0", which macOS getaddrinfo turns
-            // into ::ffff:0.0.0.0, so that socket fails (EADDRNOTAVAIL) and the offer would carry IPv4
-            // candidates only, then fail on an IPv6 answer (PJ_EAFNOTSUP). Plain RTP works over IPv6.
-            iceEnabled: network.useICE && family == .ipv4,
+            // Over IPv6 too: our PJSIP patch binds the IPv6 ICE component to "::" (pjsua's "0" became
+            // ::ffff:0.0.0.0 on macOS and could not be bound; scripts/pjsip-patches).
+            iceEnabled: network.useICE,
             sipSTUN: stun,
             mediaSTUN: stun,
             sdpNATRewrite: !stun,

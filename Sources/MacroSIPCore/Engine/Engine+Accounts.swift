@@ -158,9 +158,6 @@ extension Engine {
     private func logFamily(_ cfg: AccountConfig, _ family: IPFamily) {
         let how = cfg.ipProtocol == .auto ? "auto" : "\(cfg.ipProtocol.rawValue) only"
         emit(.log(level: 4, "engine: account \(cfg.uri): \(family) (\(how), server \(IPFamilyPolicy.firstHop(of: cfg).host))"))
-        if family == .ipv6 && network.useICE {
-            emit(.log(level: 3, "engine: account \(cfg.uri): ICE is not used over IPv6; calls use plain RTP"))
-        }
     }
 
     /// Decides the family of an Auto account with a host name again (network change, REGISTER retry).

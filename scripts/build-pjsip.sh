@@ -5,14 +5,15 @@
 #
 #   Targets: macOS arm64 (native) and x86_64 (cross-compiled on Apple Silicon),
 #            static libraries, deployment target macOS 14.0 for both slices.
-#   Inputs : pinned source tarballs (SHA-256 verified), third_party/pjsip/config_site.h
+#   Inputs : pinned source tarballs (SHA-256 verified), third_party/pjsip/config_site.h,
+#            scripts/pjsip-patches/*.patch (applied to pjproject in name order; must apply cleanly)
 #   Output : third_party/deps/universal/{include,lib}   libssl.a, libcrypto.a, libopus.a
 #            third_party/pjsip/{include,lib,bin/pjsua,LINKFLAGS,CFLAGS}   universal PJSIP
 #   Per-arch intermediate results: third_party/deps/<arch>/, third_party/pjsip/arch/<arch>/
 #
 # Idempotent and cache-friendly: every component (OpenSSL, Opus, PJSIP per architecture,
 # then the universal merge) records a stamp with its recipe (versions, checksums, flags,
-# config_site.h hash). A component whose stamp matches is skipped; a changed recipe
+# config_site.h and patch hashes). A component whose stamp matches is skipped; a changed recipe
 # rebuilds that component and everything that depends on it. Tarballs are downloaded only
 # when a component needs them and are SHA-256 verified before use. Each build starts from a
 # freshly extracted source tree, so stale objects never leak into a new build.
@@ -50,6 +51,7 @@ BUILD_DIR="${TP}/build"
 DEPS="${TP}/deps"
 OUT="${TP}/pjsip"
 CONFIG_SITE="${OUT}/config_site.h"
+PATCH_DIR="${SCRIPT_DIR}/pjsip-patches"
 LOG_DIR="${TP}/build-logs"
 
 CLEAN=0
@@ -207,13 +209,18 @@ with_per_arch() {
 
 sha_of() { shasum -a 256 "$1" | awk '{print $1}'; }
 
+# Our patches to pjproject (scripts/pjsip-patches/*.patch, -p1 from the source root), in name order.
+pjsip_patches() { local p; for p in "${PATCH_DIR}"/*.patch; do [[ -f "${p}" ]] && printf '%s\n' "${p}"; done; return 0; }
+# One line per patch: name and SHA-256, so a changed patch changes the PJSIP recipe.
+patches_recipe() { local p; while IFS= read -r p; do printf 'patch %s %s\n' "$(basename "${p}")" "$(sha_of "${p}")"; done < <(pjsip_patches); }
+
 START_TS=$(date +%s)
 
 # ------------------------------------------------------------ prerequisites ---
 step "Checking prerequisites"
 [[ "$(uname -s)" == "Darwin" ]] || die "macOS only"
 [[ "$(uname -m)" == "arm64" ]] || die "Apple Silicon (arm64) host required (x86_64 is cross-compiled)"
-for tool in clang make curl perl lipo otool shasum; do
+for tool in clang make curl perl lipo otool shasum patch; do
   command -v "${tool}" >/dev/null || die "${tool} not found (install Xcode Command Line Tools)"
 done
 [[ -f "${CONFIG_SITE}" ]] || die "missing ${CONFIG_SITE}"
@@ -301,6 +308,7 @@ build_pjsip() {
   local stamp="${dest}/.stamp"
   local recipe
   recipe="pjproject ${PJ_VERSION} ${PJ_SHA256} ${arch} macos-${MIN_MACOS} config_site $(sha_of "${CONFIG_SITE}")
+$(patches_recipe)
 ${PJ_CONFIGURE_FLAGS[*]}
 $(cat "${deps}/.stamp-openssl")
 $(cat "${deps}/.stamp-opus")"
@@ -314,6 +322,17 @@ $(cat "${deps}/.stamp-opus")"
   [[ -x "${src}/configure" ]] || die "unexpected tarball layout (no ${src}/configure)"
   cp "${CONFIG_SITE}" "${src}/pjlib/include/pj/config_site.h"
   info "config_site.h -> pjlib/include/pj/config_site.h"
+  local patch
+  while IFS= read -r patch; do
+    # --forward: a patch that is already in the source (or does not fit it) fails instead of
+    # being reversed; any failed hunk stops the build.
+    patch -p1 --forward --batch --silent -d "${src}" < "${patch}" \
+      || die "patch $(basename "${patch}") does not apply to pjproject ${PJ_VERSION}"
+    if [[ -n "$(find "${src}" -name '*.rej' -print -quit)" ]]; then
+      die "patch $(basename "${patch}") left rejected hunks in ${src}"
+    fi
+    info "patched: $(basename "${patch}")"
+  done < <(pjsip_patches)
   host="$(arch_host "${arch}")"
 
   (

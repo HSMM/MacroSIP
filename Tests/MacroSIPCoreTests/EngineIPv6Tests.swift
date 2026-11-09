@@ -951,31 +951,39 @@ extension EngineTests {
         await engine.stop()
     }
 
-    /// ICE is not used over IPv6 (docs/ENGINE.md "IPv6": PJSIP 2.17 cannot open the IPv6 ICE socket on
-    /// macOS, and an offer with IPv4 candidates only fails on an IPv6 answer). With ICE on, an IPv6
-    /// account offers plain IPv6 media without candidates and the call connects; an IPv4 account on
-    /// the same engine still offers ICE candidates.
-    @Test func iceIsNotUsedOverIPv6() async throws {
+    /// With ICE on (PJSIP patched: scripts/pjsip-patches/0001-ipv6-ice-bind-any.patch), an IPv6 call
+    /// gathers IPv6 host candidates: the offer is `c=IN IP6` with an IPv6 default candidate, lists IPv6
+    /// `typ host` candidates (and IPv4 ones from pjsua's second component), and the call to a peer
+    /// without ICE connects with RTP over IPv6. Without the patch the IPv6 ICE socket could not be
+    /// bound ("::ffff:0.0.0.0") and the offer had IPv4 candidates only. pjnath leaves out ::1 (and
+    /// link-local addresses other than the default one), so the IPv6 candidate is the Mac's default
+    /// IPv6 address: link-local or global, never loopback.
+    @Test func iceGathersIPv6CandidatesOverIPv6() async throws {
         let stub = try IPv6Stub()
         defer { stub.stop() }
-        let engine = await makeEngine(bindAddress: "::1")
+        let engine = await makeEngine(bindAddress: nil)
         var net = Self.network
         net.useICE = true
         try await engine.start(network: net)
         let account = localIPv6Account("ice")
         try await engine.addAccount(account, password: "")
         let live = try #require(await engine.liveAccountSettingsForTests(account.id))
-        #expect(!live.iceEnabled && live.mediaIPv6Only)
+        #expect(live.iceEnabled && live.mediaIPv6Only)
         let call = try await engine.makeCall(to: DialString(uri: "sip:300@[::1]:\(stub.port)", display: "300"), from: account.id)
-        #expect(await waitUntil { await engine.calls().first { $0.id == call }?.state == .connected })
+        #expect(await waitUntil(timeout: 8) { await engine.calls().first { $0.id == call }?.state == .connected })
         let offer = try #require(stub.requests.first { $0.method == "INVITE" }).body
-        #expect(sdpConnection(offer) == "IN IP6 ::1", "\(offer)")
-        #expect(!offer.contains("a=candidate:"), "\(offer)")
+        let connection = sdpConnection(offer)
+        #expect(connection.hasPrefix("IN IP6 "), "\(offer)")
+        let hosts = offer.components(separatedBy: "\r\n").filter { $0.hasPrefix("a=candidate:") }.compactMap { line -> String? in
+            let f = line.split(separator: " ")
+            return f.count > 7 && f[7] == "host" ? String(f[4]) : nil
+        }
+        #expect(hosts.contains { $0.contains(":") }, "IPv6 host candidates: \(hosts)")
+        #expect(hosts.contains(String(connection.dropFirst("IN IP6 ".count))), "default \(connection), hosts \(hosts)")
+        #expect(await waitUntil { ((try? await engine.mediaStats(call))?.txPackets ?? 0) > 10 })
+        #expect(await engine.localRTPAddress(of: call).contains(":"))
         try await engine.hangup(call)
         #expect(await waitUntil { await engine.calls().isEmpty })
-        let mapped = try AccountMapping.settings(for: AccountConfig(displayName: "", username: "1", domain: "pbx.example.com"),
-                                                 password: "", network: net, transports: TransportIDs(udp: 0), family: .ipv4)
-        #expect(mapped.iceEnabled)
         await engine.stop()
     }
 }

@@ -38,11 +38,15 @@ loses the choice between the verifying and the non-verifying TLS listener (miles
   keep pjsua's default. Every offer is answered in its own family.
 - **No STUN over IPv6.** IPv6 accounts use neither SIP nor media STUN, and the SDP takes the address
   the registrar saw (`allow_sdp_nat_rewrite`), as for private IPv4 servers since 26.2.
-- **No ICE over IPv6, for now.** The plan was IPv6 ICE candidates. PJSIP 2.17 binds the IPv6 ICE
-  component to the string "0", which macOS `getaddrinfo` turns into `::ffff:0.0.0.0`; that socket
-  cannot be bound, the offer carries IPv4 candidates only and a call fails on an IPv6 answer. IPv6
-  accounts therefore have ICE off and use plain RTP. Enabling it needs a PJSIP patch (bind "::"),
-  which is a separate decision because it means patching and rebuilding PJSIP.
+- **ICE over IPv6, with our first PJSIP patch.** PJSIP 2.17 binds the IPv6 ICE component to the
+  string "0", which macOS `getaddrinfo` turns into `::ffff:0.0.0.0`; that socket cannot be bound, the
+  offer carried IPv4 candidates only and a call failed on an IPv6 answer. Instead of turning ICE off
+  for IPv6 accounts, `scripts/build-pjsip.sh` applies `scripts/pjsip-patches/0001-ipv6-ice-bind-any.patch`
+  ("::" instead of "0" in pjsua_media.c). This amends ADR 0002/0012: pjproject is no longer built
+  from the pristine tarball alone. Patches live in `scripts/pjsip-patches/`, one problem per file
+  with a header saying why, applied in name order with `patch -p1 --forward`; a patch that does not
+  apply stops the build; their hashes are part of the build stamp and of CI's cache key; every
+  pjproject upgrade reviews them (drop when fixed upstream).
 - **Out of scope:** NAT64 and 464XLAT for IPv4 servers on IPv6-only networks, STUN and TURN over
   IPv6, servers on link-local addresses (`fe80::…%en0`).
 
@@ -52,6 +56,7 @@ An account at `[2001:db8::1]` or at an AAAA-only host name registers and calls o
 may move to IPv6 after the update when macOS orders the IPv6 address first (as `localhost` does);
 "IPv4 only" keeps the old behaviour. The engine opens four more listening sockets. With a host name
 whose order changes between networks, the account may change family at a network change; a call in
-progress on the old family may not survive that. IPv6 accounts lose ICE until PJSIP is patched.
+progress on the old family may not survive that. We now carry a PJSIP patch, which every pjproject
+upgrade has to re-check.
 Everything is verified on loopback only (`[::1]` with in-process stubs); behaviour on a real IPv6
 PBX and network is left to users and listed as not verified (docs/ENGINE.md "IPv6").

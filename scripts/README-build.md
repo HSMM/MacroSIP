@@ -28,7 +28,7 @@ Pinned sources (version, URL and SHA-256 at the top of the script):
 
 | Component | Version | Notes |
 |---|---|---|
-| pjproject | 2.17 | `config_site.h` from `third_party/pjsip/`, same for both architectures |
+| pjproject | 2.17 | `config_site.h` from `third_party/pjsip/`, same for both architectures; patches from `scripts/pjsip-patches/` |
 | OpenSSL | 3.5.9 (LTS) | `no-shared no-module no-tests`, only `build_libs` + `install_dev` |
 | Opus | 1.6.1 | `--disable-shared --disable-doc --disable-extra-programs` |
 
@@ -36,6 +36,23 @@ Every slice is built with `-arch <arch> -mmacosx-version-min=14.0`, and the scri
 architecture and the `minos` of every archive and of `pjsua`. arm64 is a native build; x86_64
 passes `--host=x86_64-apple-darwin` to Opus and pjproject and the `darwin64-x86_64-cc` target to
 OpenSSL.
+
+## Patches
+
+`scripts/pjsip-patches/*.patch` are applied to the extracted pjproject tree in name order
+(`patch -p1 --forward`, after `config_site.h` is copied in, before configure). A patch that does
+not apply, or leaves a `.rej` file, stops the build with an error; it never builds unpatched.
+Each patch starts with a plain-text header saying what it fixes and why. Their names and SHA-256
+are part of the PJSIP recipe, so adding or changing a patch rebuilds PJSIP; CI's cache key covers
+the folder too. When upgrading pjproject, check every patch: drop it if upstream fixed the
+problem, refresh it otherwise.
+
+| Patch | Why |
+|---|---|
+| `0001-ipv6-ice-bind-any.patch` | pjsua binds the IPv6 ICE STUN/TURN components to the string "0", which macOS `getaddrinfo` turns into `::ffff:0.0.0.0`; that cannot be bound to an IPv6-only socket, so IPv6 calls with ICE got IPv4 candidates only. The patch uses "::" (ADR 0014). |
+
+To check a build: `lipo -thin arm64 third_party/pjsip/lib/libpjsua.a -output /tmp/x.a`, extract
+`pjsua_media.o` with `ar -x`, and `otool -v -s __TEXT __cstring pjsua_media.o` lists `::`.
 
 ## Layout
 
@@ -58,7 +75,7 @@ All outputs are git-ignored except `third_party/pjsip/config_site.h`.
 ## Rebuild and caching
 
 Each component (OpenSSL, Opus, PJSIP per architecture, then the universal merge) writes a stamp
-holding its recipe: versions, checksums, flags, the SHA-256 of `config_site.h` and the stamps of
+holding its recipe: versions, checksums, flags, the SHA-256 of `config_site.h` and of each patch, and the stamps of
 what it was built against. A run skips every component whose stamp matches and rebuilds the rest
 from a freshly extracted source tree. So after changing `config_site.h` just rerun the script:
 it rebuilds PJSIP for both architectures (~2 min) and keeps OpenSSL and Opus. Then run
@@ -69,8 +86,8 @@ To upgrade a component: change its version and checksum in the script, rerun. Ta
 from upstream (`openssl-<v>.tar.gz.sha256` on the OpenSSL release, `SHA256SUMS.txt` on
 downloads.xiph.org) and compare it with `shasum -a 256` of the download.
 
-CI caches `third_party/pjsip` and `third_party/deps` with a key over the script and
-`config_site.h`; on a hit the script finds all stamps current and does nothing.
+CI caches `third_party/pjsip` and `third_party/deps` with a key over the script,
+`config_site.h` and `scripts/pjsip-patches/`; on a hit the script finds all stamps current and does nothing.
 
 ## Pitfalls
 

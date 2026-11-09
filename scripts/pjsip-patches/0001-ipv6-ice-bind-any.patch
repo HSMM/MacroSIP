@@ -1,0 +1,33 @@
+Bind the IPv6 ICE components to "::" instead of "0".
+
+pjsua builds the bound address of an IPv6 ICE STUN or TURN transport from the
+string "0" (IN6_ADDR_ANY). pj_sockaddr_init(AF_INET6, "0") is not an IPv6
+literal, so pjlib falls back to getaddrinfo, which on macOS returns the
+IPv4-mapped ::ffff:0.0.0.0. Binding that to an IPv6 socket with IPV6_V6ONLY set
+(as pjlib does) fails with EADDRNOTAVAIL ("Failed creating STUN transport #1
+... Can't assign requested address"): an IPv6 call with ICE then has IPv4
+candidates only and fails on an IPv6 answer. "::" is the IPv6 any address and
+parses with inet_pton on every platform.
+
+MacroSIP: applied by scripts/build-pjsip.sh (ADR 0014).
+
+--- a/pjsip/src/pjsua-lib/pjsua_media.c
++++ b/pjsip/src/pjsua-lib/pjsua_media.c
+@@ -1230,7 +1230,7 @@
+         }
+ 
+         for (i = 0; i < ice_cfg.stun_tp_cnt; ++i) {
+-            pj_str_t IN6_ADDR_ANY = {"0", 1};
++            pj_str_t IN6_ADDR_ANY = {"::", 2};
+ 
+             /* Configure STUN server */
+             if (pjsua_media_acc_is_using_stun(call_med->call->acc_id) &&
+@@ -1317,7 +1317,7 @@
+             ice_cfg.turn_tp[0].port = 3479;
+ 
+         for (i = 0; i < ice_cfg.turn_tp_cnt; i++) {
+-            pj_str_t IN6_ADDR_ANY = {"0", 1};
++            pj_str_t IN6_ADDR_ANY = {"::", 2};
+ 
+             /* Configure TURN connection settings and credential */
+             ice_cfg.turn_tp[i].server    = ice_cfg.turn_tp[0].server;

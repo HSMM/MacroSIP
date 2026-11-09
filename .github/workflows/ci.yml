@@ -42,7 +42,7 @@ jobs:
           path: |
             third_party/pjsip
             third_party/deps
-          key: pjsip-universal-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/build-pjsip.sh', 'third_party/pjsip/config_site.h') }}
+          key: pjsip-universal-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/build-pjsip.sh', 'third_party/pjsip/config_site.h', 'scripts/pjsip-patches/**') }}
 
       - name: Build PJSIP, OpenSSL and Opus (arm64 + x86_64, universal)
         run: |
