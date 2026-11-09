@@ -114,6 +114,9 @@ final class EngineBridge: Sendable {
         var pendingRegistration: [AccountID: Bool] = [:]
         /// Failed REGISTER attempts since the last success (temporary failures only).
         var retryAttempts: [AccountID: Int] = [:]
+        /// Accounts being moved to the other IP family: the result of the un-REGISTER of the old
+        /// binding sent just before the move is not a registration state of the account.
+        var ignoringUnregister: Set<Int32> = []
         /// Accounts with a repair of a missing binding going on, or given up (see `BindingRepair`).
         var bindingRepair: [AccountID: BindingRepair] = [:]
         /// Calls pjsua re-INVITEd in the current network change (by call serial).
@@ -224,6 +227,14 @@ final class EngineBridge: Sendable {
 
     func setRegistrarSource(_ index: Int32, _ source: SignallingSource?) {
         state.withLock { $0.registrarSources[index] = source }
+    }
+
+    func setIgnoringUnregister(_ index: Int32, _ on: Bool) {
+        state.withLock { if on { $0.ignoringUnregister.insert(index) } else { $0.ignoringUnregister.remove(index) } }
+    }
+
+    func isIgnoringUnregister(_ index: Int32) -> Bool {
+        state.withLock { $0.ignoringUnregister.contains(index) }
     }
 
     /// The INVITE came from the server that accepted the account's REGISTER, or from its
@@ -973,15 +984,21 @@ private func pjOnRegStarted2(_ accID: pjsua_acc_id, _ info: UnsafeMutablePointer
 private func pjOnRegState2(_ accID: pjsua_acc_id, _ info: UnsafeMutablePointer<pjsua_reg_info>?) {
     let bridge = EngineBridge.shared
     guard let account = bridge.account(for: accID) else { return }
+    // The un-REGISTER of the old binding before a move to the other IP family (Engine.moveAccount).
+    if let info, info.pointee.renew == 0, bridge.isIgnoringUnregister(accID) { return }
     let id = account.id
     var new: RegistrationState
     var source: SignallingSource?
     var transientError: String?
+    /// No response at all (timeout, transport or connection error, no address of the account's
+    /// family): Auto accounts may try the other IP family at once.
+    var noAnswer = false
     var ourContactListed = true
     if let info, let param = info.pointee.cbparam {
         let p = param.pointee
         ourContactListed = cpjsua_regc_lists_our_contact(param, accID) != 0
         source = SignallingSource.read(p.rdata)
+        noAnswer = p.rdata == nil
         new = RegistrationMapping.state(
             renew: info.pointee.renew != 0, status: p.status, code: Int(p.code),
             reason: PJ.string(p.reason), expiration: p.expiration,
@@ -1059,7 +1076,8 @@ private func pjOnRegState2(_ accID: pjsua_acc_id, _ info: UnsafeMutablePointer<p
         }
     }
     if let retry {
-        bridge.hop { await $0.scheduleRegistrationRetry(id, attempt: retry.attempt, after: retry.delay) }
+        let noAnswer = noAnswer
+        bridge.hop { await $0.registrationRetryNeeded(id, attempt: retry.attempt, after: retry.delay, noAnswer: noAnswer) }
     }
 }
 

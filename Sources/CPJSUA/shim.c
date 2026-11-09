@@ -1635,6 +1635,65 @@ void cpjsua_acc_prepare_ip_change(pjsua_acc_id acc_id, int register_it)
     PJSUA_UNLOCK();
 }
 
+unsigned cpjsua_transport_slots(void)
+{
+    return (unsigned)PJ_ARRAY_SIZE(pjsua_var.tpdata);
+}
+
+void cpjsua_acc_set_sdp_nat_rewrite(pjsua_acc_id acc_id, int on)
+{
+    if (acc_id < 0 || acc_id >= (int)PJ_ARRAY_SIZE(pjsua_var.acc))
+        return;
+    PJSUA_LOCK();
+    if (pjsua_var.acc[acc_id].valid)
+        pjsua_var.acc[acc_id].cfg.allow_sdp_nat_rewrite = on ? PJ_TRUE : PJ_FALSE;
+    PJSUA_UNLOCK();
+}
+
+void cpjsua_acc_end_mwi_after_move(pjsua_acc_id acc_id)
+{
+    if (acc_id < 0 || acc_id >= (int)PJ_ARRAY_SIZE(pjsua_var.acc))
+        return;
+    PJSUA_LOCK();
+    /* pjsua_start_mwi() unsubscribes and detaches the subscription when the account has no
+     * registration session (pjsua_pres.c); regc_cb starts a new one after the next REGISTER. */
+    if (pjsua_var.acc[acc_id].valid && pjsua_var.acc[acc_id].regc == NULL && pjsua_var.acc[acc_id].mwi_sub)
+        pjsua_start_mwi(acc_id, PJ_FALSE);
+    PJSUA_UNLOCK();
+}
+
+pj_status_t cpjsua_buddy_resubscribe(pjsua_buddy_id buddy_id)
+{
+    pjsua_buddy *buddy;
+    pjsip_evsub *sub;
+    pjsip_dialog *dlg;
+    pjsip_tx_data *tdata;
+
+    if (!pjsua_buddy_is_valid(buddy_id))
+        return PJ_EINVAL;
+    PJSUA_LOCK();
+    buddy = &pjsua_var.buddy[buddy_id];
+    sub = buddy->sub;
+    dlg = buddy->dlg;
+    if (!sub || !dlg || !buddy->monitor) {
+        PJSUA_UNLOCK();
+        return PJ_SUCCESS;
+    }
+    pjsip_dlg_inc_lock(dlg);
+    /* Detached: pjsua's callbacks ignore a subscription without the buddy as mod data. */
+    buddy->sub = NULL;
+    buddy->dlg = NULL;
+    pjsip_evsub_set_mod_data(sub, pjsua_var.mod.id, NULL);
+    if (pjsip_evsub_get_state(sub) != PJSIP_EVSUB_STATE_TERMINATED &&
+        pjsip_pres_initiate(sub, 0, &tdata) == PJ_SUCCESS)
+    {
+        pjsip_pres_send_request(sub, tdata);
+    }
+    pjsip_dlg_dec_lock(dlg);
+    PJSUA_UNLOCK();
+    return pjsua_buddy_update_pres(buddy_id);
+}
+
 pj_status_t cpjsua_call_reinvite_ip_change(pjsua_call_id call_id)
 {
     pjsua_call_info ci;

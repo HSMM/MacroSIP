@@ -262,26 +262,43 @@ extension Engine {
             emit(.log(level: 3, "engine: network path without a default route; keeping address "
                      + (kept.isEmpty ? "unknown" : kept.joined(separator: " "))))
         }
-        // Per family, the same: an IPv6-only network has no IPv4 route and most networks no IPv6 one.
+        // IPv4: an IPv6-only network has no IPv4 route; keep the address we had. IPv6: keep it only
+        // while it is still assigned (the lookup failed for a moment); otherwise IPv6 is gone.
         if path.address.isEmpty { path.address = previous?.address ?? "" }
-        if path.address6.isEmpty { path.address6 = previous?.address6 ?? "" }
+        if path.address6.isEmpty, let kept = previous?.address6, !kept.isEmpty, ipv6AddressAssigned(kept) {
+            path.address6 = kept
+        }
         handledPath = path
         guard !sleeping, !first else { return }
         if previous.map({ path.routeDiffers(from: $0) }) ?? true || old == .offline || wake {
             refreshSystemNameservers()
         }
-        // A new IPv6 address (a new temporary address, about once a day) matters to accounts bound to
-        // IPv6, and IPv6 appearing may change what an Auto host name resolves to first; otherwise it
-        // is no reason for a round (which would end a ringing outgoing call: pjsua's 410).
-        let ipv6Matters = accounts.values.contains { $0.family == .ipv6 } || (previous?.address6.isEmpty ?? true)
-        let primary = previous.map { path.primaryDiffers(from: $0, ipv6: ipv6Matters) } ?? true
+        // IPv6 (docs/ENGINE.md "IPv6"): a new IPv6 address matters to accounts bound to IPv6. It is a
+        // primary change (run at once, even while an outgoing call rings) only when the address they
+        // used is gone; a new temporary address whose predecessor is still assigned (it stays for
+        // days) waits like any non-primary change. Without IPv6 accounts it starts no round at all:
+        // Auto host names are decided again without disturbing anyone's calls.
+        let ipv6Accounts = accounts.values.contains { $0.family == .ipv6 }
+        let oldV6 = previous?.address6 ?? ""
+        let v6Changed = previous != nil && path.address6 != oldV6
+        let v6Gone = v6Changed && !oldV6.isEmpty && !ipv6AddressAssigned(oldV6)
+        let primary = (previous.map { path.primaryDiffers(from: $0, ipv6: false) } ?? true) || (ipv6Accounts && v6Gone)
         if wake {
             requestIPChange(IPChangeRequest(reason: "wake", registerFailed: true, primary: primary))
         } else if old == .offline {
             requestIPChange(IPChangeRequest(reason: "network back", registerFailed: false, primary: primary))
-        } else if let previous, path.routeDiffers(from: previous, ipv6: ipv6Matters) {
+        } else if let previous, path.routeDiffers(from: previous, ipv6: false) || (v6Changed && ipv6Accounts) {
             emit(.log(level: 3, "engine: network route changed: \(previous.summary) -> \(path.summary)"))
             requestIPChange(IPChangeRequest(reason: "route changed", registerFailed: false, primary: primary))
+        } else if v6Changed {
+            emit(.log(level: 3, "engine: IPv6 address \(oldV6.isEmpty ? "none" : oldV6) -> "
+                     + "\(path.address6.isEmpty ? "none" : path.address6); no account uses IPv6, no round"))
+            // IPv6 appearing or going away may change what an Auto host name resolves to first; a new
+            // temporary address does not. A family Auto fell back to stays (no change of reachability).
+            if oldV6.isEmpty != path.address6.isEmpty {
+                refreshAccountFamilies(Array(accounts.keys), reason: "IPv6 \(path.address6.isEmpty ? "lost" : "appeared")",
+                                       register: true)
+            }
         }
     }
 
@@ -371,8 +388,11 @@ extension Engine {
 
         // A host name may now resolve to the other family first (an IPv6-only network, IPv6 lost):
         // move such accounts before pjsua re-registers them (an account whose registration was
-        // destroyed by the move is registered afresh: cpjsua_acc_prepare_ip_change below).
-        refreshAccountFamilies(reason: "network change")
+        // destroyed by the move is registered afresh: cpjsua_acc_prepare_ip_change below). The
+        // family Auto fell back to stays only until a network change. Accounts with calls keep
+        // their family until the calls end.
+        clearFamilyFallbacks()
+        refreshAccountFamilies(Array(accounts.keys), reason: "network change", register: false)
         var pending: Set<Int32> = []
         for (id, entry) in accounts {
             let state = bridge.registration(of: id)
@@ -679,6 +699,7 @@ extension Engine {
         for key in Array(reinviteAttempts.keys) where !live.contains(key) { reinviteAttempts[key] = nil }
         for key in Array(reinviteSince.keys) where !live.contains(key) { reinviteSince[key] = nil }
         expireStaleReinvites(now)
+        runDeferredMoves()
         if let postponed = postponedIPChange, ipChange == nil, !outgoingCallRinging()
             || now - postponed.since >= Engine.postponeLimit {
             postponedIPChange = nil
@@ -743,13 +764,64 @@ extension Engine {
         }
         emit(.log(level: RegistrationBackoff.logLevel(attempt: attempt + 1),
                   "engine: account \(entry.config.uri): REGISTER retry \(attempt + 1)"))
-        refreshAccountFamily(id, reason: "REGISTER retry")
+        accounts[id]?.familyFallbackTried = false
+        refreshAccountFamilies([id], reason: "REGISTER retry", register: false)
         do {
             try applyRegistration(id, true, retrying: true)
         } catch {
             if let next = bridge.registrationFailedTemporarily(id, lastError: "\(error)") {
                 scheduleRegistrationRetry(id, attempt: next.attempt, after: next.delay)
             }
+        }
+    }
+
+    /// A REGISTER failed temporarily (`.reconnecting` is out). When it got no answer at all, an Auto
+    /// account may try the other family at once (`tryOtherFamily`); otherwise the backoff retry.
+    func registrationRetryNeeded(_ id: AccountID, attempt: Int, after delay: TimeInterval, noAnswer: Bool) {
+        if noAnswer, tryOtherFamily(id) { return }
+        scheduleRegistrationRetry(id, attempt: attempt, after: delay)
+    }
+
+    /// Auto keeps the system's order for the first attempt; when a REGISTER over that family got no
+    /// answer at all (no response: a timeout, a refused or broken connection, no address of the
+    /// family), the account moves to the other family and registers at once, if the host name has an
+    /// address of it (or DNS SRV is in effect: the SRV targets are unknown here, the other family is
+    /// the only chance). Once per series of failures; the family then stays until the next network
+    /// change (`familySticky`). Not for literals, IPv4 only / IPv6 only, accounts with calls, during a
+    /// round, offline or asleep.
+    private func tryOtherFamily(_ id: AccountID) -> Bool {
+        guard isStarted, PJ.registerThread(), var entry = accounts[id], entry.wantsRegistration,
+              !entry.familyFallbackTried, !sleeping, networkStatus == .online, ipChange == nil,
+              entry.config.ipProtocol == .auto else { return false }
+        let hop = IPFamilyPolicy.firstHop(of: entry.config)
+        guard !hop.host.isEmpty, IPFamilyPolicy.literalFamily(hop.host) == nil else { return false }
+        let other: IPFamily = entry.family == .ipv4 ? .ipv6 : .ipv4
+        guard transports.id(for: entry.config, family: other) != nil, !accountHasCalls(entry.index) else { return false }
+        if !(srvInEffect && hop.port == nil) {
+            guard lookupFamilies([hop.host])[hop.host]?.contains(other) == true else { return false }
+        }
+        let from = entry.family
+        entry.familyFallbackTried = true
+        accounts[id] = entry
+        emit(.log(level: 3, "engine: account \(entry.config.uri): no answer over \(from); trying \(other)"))
+        guard moveAccount(id, to: other, reason: "no answer over \(from)", register: false) else { return false }
+        accounts[id]?.familySticky = true
+        cancelRegistrationRetry(id)
+        do {
+            try applyRegistration(id, true, retrying: true)
+        } catch {
+            if let next = bridge.registrationFailedTemporarily(id, lastError: "\(error)") {
+                scheduleRegistrationRetry(id, attempt: next.attempt, after: next.delay)
+            }
+        }
+        return true
+    }
+
+    /// A network change: Auto accounts follow the resolver again.
+    func clearFamilyFallbacks() {
+        for id in Array(accounts.keys) {
+            accounts[id]?.familySticky = false
+            accounts[id]?.familyFallbackTried = false
         }
     }
 

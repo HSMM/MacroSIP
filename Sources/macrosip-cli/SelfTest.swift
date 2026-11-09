@@ -48,7 +48,10 @@ enum SelfTest {
                 network: NetworkSettings(stunServer: nil, localPort: 0, keepAliveSeconds: 15,
                                          useICE: false, echoCancellation: false),
                 codecPriorities: Engine.defaultCodecOrder)
-            step("engine started (null audio), SIP UDP \(bind ?? "*"):\(await engine.localPort(of: .udp))")
+            // The port of the bind address's family (IPv4 without one, the family the steps below use).
+            let family = bind.flatMap { IPFamilyPolicy.literalFamily($0) } ?? .ipv4
+            let host = bind.map { family == .ipv6 ? "[\($0)]" : $0 } ?? "*"
+            step("engine started (null audio), SIP UDP \(host):\(await engine.localPort(of: .udp, family: family))")
             try await networkAtStart(recorder, step: step)
 
             let account = AccountConfig(displayName: "selftest", username: "selftest", domain: "127.0.0.1",

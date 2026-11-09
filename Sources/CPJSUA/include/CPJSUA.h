@@ -469,6 +469,26 @@ pj_status_t cpjsua_handle_ip_change(int restart_listener, unsigned restart_delay
  *  calls). Accounts with a registration session are always re-registered by pjsua. */
 void cpjsua_acc_prepare_ip_change(pjsua_acc_id acc_id, int register_it);
 
+/* ------------------------------------------------- moving an account between IP families --- */
+
+/** Slots in pjsua's transport table (pjsua_var.tpdata, a fixed array of 8 in pjsua_internal.h,
+ *  not a configurable macro): the engine creates at most this many transports. */
+unsigned cpjsua_transport_slots(void);
+
+/** pjsua_acc_modify never copies allow_sdp_nat_rewrite (only pjsua_acc_add does): set it on the
+ *  live account config. */
+void cpjsua_acc_set_sdp_nat_rewrite(pjsua_acc_id acc_id, int on);
+
+/** After a move to another transport (the registration session is gone): end the MWI subscription,
+ *  whose dialog keeps the old transport selector; pjsua subscribes again once the account has
+ *  registered (regc_cb). No-op while the account still has a registration session. */
+void cpjsua_acc_end_mwi_after_move(pjsua_acc_id acc_id);
+
+/** Presence subscription of a buddy anew: the current one (its dialog keeps the transport selector
+ *  of the account at subscribe time) is detached and unsubscribed, and a new one is created with the
+ *  account's current selector. No-op for a buddy without an active subscription. */
+pj_status_t cpjsua_buddy_resubscribe(pjsua_buddy_id buddy_id);
+
 /** Re-INVITE a confirmed call after a network change: new media transport, Contact and
  *  Via (cpjsua_ip_change_reinvite_flags), local hold kept. */
 pj_status_t cpjsua_call_reinvite_ip_change(pjsua_call_id call_id);

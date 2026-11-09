@@ -54,6 +54,13 @@ public actor Engine {
         /// The IP family the account is bound to (`IPFamilyPolicy`); decided again on network
         /// changes and REGISTER retries when it follows the resolver.
         var family: IPFamily = .ipv4
+        /// Auto moved the account to the other family after a REGISTER got no answer; the family
+        /// that works stays until the next network change (no re-decision before retries).
+        var familySticky = false
+        /// The other family was tried at once in this series of failed REGISTERs.
+        var familyFallbackTried = false
+        /// A move to another family that waits for the account's calls to end.
+        var pendingMove: (family: IPFamily, reason: String)?
         /// Last status given to `publishPresence` (re-applied when the account changes).
         var presence: PresenceStatus = .available
         /// Registration requested (cfg.registers or setRegistered): retried after temporary
@@ -76,6 +83,12 @@ public actor Engine {
     /// The families of a host name in the system resolver's order (`IPFamilyResolver.system`; tests
     /// inject their own so they do not depend on real DNS).
     var resolveFamilies: @Sendable (String) -> [IPFamily] = { IPFamilyResolver.system($0) }
+    /// How long the engine waits for family lookups (they run concurrently off the engine queue; a
+    /// host not resolved in time keeps the account's family, or gives IPv4 for a new account).
+    var familyLookupTimeout: Duration = .seconds(2)
+    /// Whether an IPv6 address is still assigned to an interface (`NetworkPath.isAssignedLocally`;
+    /// tests inject their own).
+    var ipv6AddressAssigned: @Sendable (String) -> Bool = { NetworkPath.isAssignedLocally($0) }
     var requestedWiring: [Wire: Bool] = [:]
     /// Level (0...2) last requested for each connection that is requested on (per-call speaker
     /// and microphone volume live on the call<->sound device connections).
@@ -472,6 +485,9 @@ public actor Engine {
             emit(.log(level: 1, "engine: \(text)"))
         }
         let families = transportFamilies
+        // pjsua keeps transports in a fixed table (pjsua_var.tpdata, 8 slots, not configurable):
+        // 4 per family fill it exactly with both families. A further transport needs a PJSIP patch.
+        assert(families.count * 4 <= Int(cpjsua_transport_slots()), "pjsua has \(cpjsua_transport_slots()) transport slots")
         for family in families {
             try createTransports(family, network: network, caFile: caFile, required: family == families.first)
         }

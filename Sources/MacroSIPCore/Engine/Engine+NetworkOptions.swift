@@ -35,6 +35,7 @@ extension Engine {
                         p.pointee.disable_reg_on_modify = 1
                         try PJ.check(pjsua_acc_modify(entry.index, p), "pjsua_acc_modify")
                     }
+                    cpjsua_acc_set_sdp_nat_rewrite(entry.index, s.sdpNATRewrite ? 1 : 0)   // not copied by modify
                 } catch {
                     PJ.warn(error, "network settings for account \(id.raw)")
                 }

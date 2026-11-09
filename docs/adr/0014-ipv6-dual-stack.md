@@ -24,12 +24,30 @@ loses the choice between the verifying and the non-verifying TLS listener (miles
   IPv4 only, IPv6 only (`AccountConfig.ipProtocol`; older files decode as Auto).
 - **Auto** looks at the first hop (outbound proxy, else registrar): an IP literal picks its own
   family; a host name follows the first address the system resolver returns (`getaddrinfo` with
-  `AF_UNSPEC`, the call PJSIP itself makes when it sends), "as the system decides". With DNS SRV in
-  effect and no explicit port the name cannot be asked that way, so Auto uses IPv4 there; a host
-  name that does not resolve (offline) also gives IPv4. The decision is made again at every network
-  change and before every REGISTER retry, and an account whose family changed is moved to the other
-  transport before it registers. The lookup runs synchronously on the engine queue, as PJSIP's own
-  lookup does when it sends without its DNS resolver.
+  `AF_UNSPEC` and pj_getaddrinfo's hints), "as the system decides". That matches the order PJSIP
+  tries when it resolves without its DNS resolver; with DNS SRV on PJSIP uses its own queries, and an
+  account that does not register sends its INVITEs to the dialled host, so it is the system's order,
+  not always PJSIP's. With DNS SRV in effect and no explicit port the name cannot be asked that way,
+  so Auto starts with IPv4 there; a host name that does not resolve (offline) also gives IPv4. Lookups
+  run concurrently off the engine queue, each host once, with one bounded wait (2 s); a host not
+  resolved in time keeps the account's family.
+- **Auto falls back.** The system order is only the first attempt: a REGISTER that gets no answer at
+  all (timeout, refused or broken connection, no address of the bound family) moves the account to
+  the other family at once when the host has an address of it (or DNS SRV makes the other family the
+  only chance), and that family then stays until the next network change. A server that answers
+  (401, 403, its own 503) is not a reason to switch. Without this, a dual-stack name whose server
+  does not answer over the first family (Asterisk listening on 0.0.0.0 only, an IPv6 firewall)
+  would retry forever where 26.3.0 registered over IPv4.
+- **Decided again** at every network change, when IPv6 comes or goes, and before REGISTER retries
+  (not after a fallback). An account whose family changed is moved: its old binding is
+  un-REGISTERed first (a lingering Contact forks calls or makes a `max_contacts=1` server refuse the
+  new one), its subscriptions are made anew on the new transport, and it registers there. **Never
+  while the account has a call**: the call's dialog would keep a peer of the old family on a
+  transport of the new one; the move waits for the calls to end.
+- **IPv6 address changes** count only for accounts that use IPv6. A new temporary address while the
+  old one is still assigned is a non-primary change (it waits for a ringing outgoing call); losing
+  the address is primary. Without IPv6 accounts IPv6 coming, going or rotating starts no round, so
+  IPv4 calls are not disturbed.
 - **Contradictions are refused.** IPv4 only with an IPv6 literal server, or IPv6 only with an IPv4
   literal, can never work: the editor says so and keeps Save off, and the engine throws
   `invalidArgument`.
@@ -52,11 +70,14 @@ loses the choice between the verifying and the non-verifying TLS listener (miles
 
 ## Consequences
 An account at `[2001:db8::1]` or at an AAAA-only host name registers and calls over IPv6, with
-`c=IN IP6` and IPv6 RTP; existing IPv4 accounts behave as before. A host name with A and AAAA records
-may move to IPv6 after the update when macOS orders the IPv6 address first (as `localhost` does);
-"IPv4 only" keeps the old behaviour. The engine opens four more listening sockets. With a host name
-whose order changes between networks, the account may change family at a network change; a call in
-progress on the old family may not survive that. We now carry a PJSIP patch, which every pjproject
+`c=IN IP6` and IPv6 RTP. Accounts whose server is an IPv4 address, and accounts set to IPv4 only,
+behave as before. An Auto account whose server is a host name with A and AAAA records may move to
+IPv6 after the update when macOS orders the IPv6 address first (as `localhost` does); if the server
+does not answer over IPv6 it falls back to IPv4 at once, and "IPv4 only" keeps the old behaviour
+outright. IPv4 accounts' calls are never touched by IPv6 address changes. The engine opens four more
+listening sockets, which fills pjsua's fixed table of eight transports. With a host name whose order
+changes between networks, an Auto account may change family at a network change, but only when it
+has no call. We now carry a PJSIP patch, which every pjproject
 upgrade has to re-check.
 Everything is verified on loopback only (`[::1]` with in-process stubs); behaviour on a real IPv6
 PBX and network is left to users and listed as not verified (docs/ENGINE.md "IPv6").

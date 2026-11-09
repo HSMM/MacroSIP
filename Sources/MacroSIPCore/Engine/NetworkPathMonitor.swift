@@ -135,6 +135,28 @@ struct NetworkPath: Sendable, Equatable {
         return isUsableIPv6Source(text) ? text : nil
     }
 
+    /// The IPv6 address is assigned to an interface of this Mac (getifaddrs). A deprecated temporary
+    /// address stays assigned for days after a new one takes over.
+    static func isAssignedLocally(_ text: String) -> Bool {
+        var wanted = in6_addr()
+        guard inet_pton(AF_INET6, text, &wanted) == 1 else { return false }
+        var list: UnsafeMutablePointer<ifaddrs>?
+        guard getifaddrs(&list) == 0 else { return false }
+        defer { freeifaddrs(list) }
+        var entry = list
+        while let e = entry {
+            if let sa = e.pointee.ifa_addr, sa.pointee.sa_family == sa_family_t(AF_INET6) {
+                let found = sa.withMemoryRebound(to: sockaddr_in6.self, capacity: 1) { a -> Bool in
+                    var addr = a.pointee.sin6_addr
+                    return withUnsafeBytes(of: &addr) { x in withUnsafeBytes(of: &wanted) { y in x.elementsEqual(y) } }
+                }
+                if found { return true }
+            }
+            entry = e.pointee.ifa_next
+        }
+        return false
+    }
+
     /// A global IPv6 address: not unspecified, loopback or link-local (fe80::/10).
     static func isUsableIPv6Source(_ text: String) -> Bool {
         var a = in6_addr()

@@ -32,8 +32,15 @@ final class Interactive {
             print("start failed: \(error)")
             exit(1)
         }
-        print("macrosip-cli ready. SIP UDP port \(await engine.localPort(of: .udp)), " +
-              "TCP \(await engine.localPort(of: .tcp)), TLS \(await engine.localPort(of: .tls)). Type 'help'.")
+        // Each family the engine has transports for (a bind address has one: its own).
+        var ports: [String] = []
+        for family in IPFamily.allCases {
+            let udp = await engine.localPort(of: .udp, family: family)
+            guard udp > 0 else { continue }
+            ports.append("\(family): SIP UDP port \(udp), TCP \(await engine.localPort(of: .tcp, family: family)), "
+                         + "TLS \(await engine.localPort(of: .tls, family: family))")
+        }
+        print("macrosip-cli ready. \(ports.joined(separator: "; ")). Type 'help'.")
         for await line in Interactive.stdinLines() {
             let words = line.split(separator: " ", omittingEmptySubsequences: true).map(String.init)
             guard let cmd = words.first else { continue }

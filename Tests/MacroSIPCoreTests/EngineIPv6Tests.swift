@@ -11,9 +11,10 @@ import Testing
 
 /// A SIP stub on [::1]: one UDP socket and one TCP listener, and with `dualStack` a UDP socket on
 /// 127.0.0.1 with the same port number, so an account at "localhost:<port>" reaches it over either
-/// family. Answers REGISTER with 200 (Contacts listed), INVITE with 200 and an `IN IP6 ::1` answer,
-/// everything else with 200; requests that arrive on a family in `silentFamilies` are recorded and
-/// left unanswered. Records every request with the family and transport it came over. Can send
+/// family. Answers REGISTER with 200 (Contacts listed; 403 on a family in `forbiddenFamilies`),
+/// INVITE with 200 and an answer in the offer's family (`IN IP6 ::1` or `IN IP4 127.0.0.1`; only 180
+/// with `ringOnly`), everything else with 200; requests that arrive on a family in `silentFamilies` are
+/// recorded and left unanswered. Records every request with the family and transport it came over. Can send
 /// INVITE and MESSAGE to the engine from its UDP sockets; their responses are recorded, a 2xx to
 /// INVITE is ACKed and the call hung up with BYE.
 final class IPv6Stub: Sendable {
@@ -25,6 +26,10 @@ final class IPv6Stub: Sendable {
         var contact: String             // first Contact value
         var cseq: String
         var body: String
+        /// REGISTER with Expires 0 (or every Contact with expires=0): an un-REGISTER.
+        var unregister = false
+        /// The Event header ("message-summary", "presence").
+        var event = ""
     }
 
     struct Response: Sendable {
@@ -42,6 +47,10 @@ final class IPv6Stub: Sendable {
     private let rtp6: Int32
     private let stopped = OSAllocatedUnfairLock(initialState: false)
     private let silent = OSAllocatedUnfairLock(initialState: Set<IPFamily>())
+    private let forbidden = OSAllocatedUnfairLock(initialState: Set<IPFamily>())
+    private let ringing = OSAllocatedUnfairLock(initialState: false)
+    /// Headers of the INVITE left ringing (`ringOnly`), for the 487 after a CANCEL.
+    private let ringingInvite = OSAllocatedUnfairLock<([String], String)?>(initialState: nil)
     private let received = OSAllocatedUnfairLock(initialState: [Request]())
     private let answers = OSAllocatedUnfairLock(initialState: [Response]())
 
@@ -56,6 +65,16 @@ final class IPv6Stub: Sendable {
         get { silent.withLock { $0 } }
         set { silent.withLock { $0 = newValue } }
     }
+    var forbiddenFamilies: Set<IPFamily> {
+        get { forbidden.withLock { $0 } }
+        set { forbidden.withLock { $0 = newValue } }
+    }
+    var ringOnly: Bool {
+        get { ringing.withLock { $0 } }
+        set { ringing.withLock { $0 = newValue } }
+    }
+    /// REGISTERs that add a binding (not un-REGISTERs), in order.
+    var bindingRegisters: [Request] { registers.filter { !$0.unregister } }
 
     init(dualStack: Bool = false) throws {
         var attempt = 0
@@ -223,7 +242,7 @@ final class IPv6Stub: Sendable {
         let lines = head.components(separatedBy: "\r\n")
         guard let first = lines.first else { return }
         var echoed: [String] = [], toLine = "", cseq = "", topVia = "", contacts: [String] = [], callID = ""
-        var fromLine = "", expiresZero = false
+        var fromLine = "", expiresZero = false, expiresHeaderZero = false, event = ""
         for line in lines.dropFirst() {
             guard let colon = line.firstIndex(of: ":") else { continue }
             let name = line[..<colon].trimmingCharacters(in: .whitespaces).lowercased()
@@ -237,7 +256,8 @@ final class IPv6Stub: Sendable {
             case "cseq": echoed.append(line); cseq = value
             case "to", "t": toLine = line
             case "contact", "m": contacts.append(value)
-            case "expires": if value == "0" { expiresZero = true }
+            case "expires": if value == "0" { expiresZero = true; expiresHeaderZero = true }
+            case "event", "o": event = value
             default: break
             }
         }
@@ -247,13 +267,20 @@ final class IPv6Stub: Sendable {
             return
         }
         let method = String(first.prefix { $0 != " " })
+        let unregister = method == "REGISTER" && !contacts.isEmpty && contacts.allSatisfy { c in
+            let lower = c.lowercased()
+            return lower.contains("expires=0") || (!lower.contains("expires=") && expiresHeaderZero)
+        }
         let request = Request(method: method, family: family, transport: transport, via: topVia,
-                              contact: contacts.first ?? "", cseq: cseq, body: body)
+                              contact: contacts.first ?? "", cseq: cseq, body: body,
+                              unregister: unregister || (method == "REGISTER" && contacts.isEmpty && expiresHeaderZero),
+                              event: event)
         received.withLock { $0.append(request) }
         guard method != "ACK", !silentFamilies.contains(family) else { return }
-        if !toLine.lowercased().contains("tag=") { toLine += ";tag=v6-stub-\(UInt32.random(in: 1...UInt32.max))" }
-        func reply(_ status: String, extra: [String] = [], body: String = "") {
-            var msg = "SIP/2.0 \(status)\r\n" + echoed.joined(separator: "\r\n") + "\r\n" + toLine + "\r\n"
+        let inDialog = toLine.lowercased().contains("tag=")
+        if !inDialog { toLine += ";tag=v6-stub-\(UInt32.random(in: 1...UInt32.max))" }
+        func reply(_ status: String, extra: [String] = [], body: String = "", echo: [String]? = nil, to: String? = nil) {
+            var msg = "SIP/2.0 \(status)\r\n" + (echo ?? echoed).joined(separator: "\r\n") + "\r\n" + (to ?? toLine) + "\r\n"
             for h in extra { msg += h + "\r\n" }
             if !body.isEmpty { msg += "Content-Type: application/sdp\r\n" }
             msg += "Content-Length: \(body.utf8.count)\r\n\r\n" + body
@@ -261,13 +288,28 @@ final class IPv6Stub: Sendable {
         }
         switch method {
         case "REGISTER":
+            if forbiddenFamilies.contains(family) { reply("403 Forbidden"); return }
             let listed = expiresZero ? [] : contacts.map { "Contact: \($0);expires=299" }
             reply("200 OK", extra: listed + ["Expires: \(expiresZero ? 0 : 300)"])
         case "INVITE":
-            let sdp = "v=0\r\no=stub 1 \(Int.random(in: 2...1_000_000)) IN IP6 ::1\r\ns=stub\r\nc=IN IP6 ::1\r\nt=0 0\r\n"
+            if ringOnly && !inDialog {
+                reply("100 Trying")
+                reply("180 Ringing")
+                let pending = (echoed, toLine)
+                ringingInvite.withLock { $0 = pending }
+                return
+            }
+            let conn = sdpConnection(body).hasPrefix("IN IP4") ? "IN IP4 127.0.0.1" : "IN IP6 ::1"
+            let sdp = "v=0\r\no=stub 1 \(Int.random(in: 2...1_000_000)) \(conn)\r\ns=stub\r\nc=\(conn)\r\nt=0 0\r\n"
                 + "m=audio \(rtpPort) RTP/AVP 0\r\na=rtpmap:0 PCMU/8000\r\na=sendrecv\r\n"
             let host = family == .ipv6 ? "[::1]" : "127.0.0.1"
             reply("200 OK", extra: ["Contact: <sip:stub@\(host):\(port)\(transport == "TCP" ? ";transport=tcp" : "")>"], body: sdp)
+        case "CANCEL":
+            reply("200 OK")
+            if let (echo, to) = ringingInvite.withLock({ $0 }) {
+                ringingInvite.withLock { $0 = nil }
+                reply("487 Request Terminated", echo: echo.map { $0.replacingOccurrences(of: "CANCEL", with: "INVITE") }, to: to)
+            }
         default:
             reply("200 OK")
         }
@@ -665,21 +707,29 @@ extension EngineTests {
         await engine.stop()
     }
 
-    /// IPv4 only with an IPv6 server address (and the other way round) is refused, not retried forever.
+    /// IPv4 only with an IPv6 server address (and the other way round) is refused with
+    /// `.invalidArgument`, not retried forever.
     @Test func contradictoryIPProtocolIsRefused() async throws {
         let engine = await makeEngine(bindAddress: nil)
         try await engine.start(network: Self.network)
+        func isInvalidArgument(_ error: EngineError?) -> Bool {
+            if case .invalidArgument? = error { return true }
+            return false
+        }
         let a = AccountConfig(displayName: "X", username: "1", domain: "[::1]", enabled: false, ipProtocol: .ipv4)
-        await #expect(throws: EngineError.self) { try await engine.addAccount(a, password: "") }
+        let e1 = await #expect(throws: EngineError.self) { try await engine.addAccount(a, password: "") }
+        #expect(isInvalidArgument(e1), "\(String(describing: e1))")
         var b = a
         b.domain = "127.0.0.1"
         b.ipProtocol = .ipv6
-        await #expect(throws: EngineError.self) { try await engine.addAccount(b, password: "") }
+        let e2 = await #expect(throws: EngineError.self) { try await engine.addAccount(b, password: "") }
+        #expect(isInvalidArgument(e2), "\(String(describing: e2))")
         b.ipProtocol = .auto
         try await engine.addAccount(b, password: "")
         b.domain = "[::1]"
         b.ipProtocol = .ipv4
-        await #expect(throws: EngineError.self) { try await engine.updateAccount(b, password: nil) }
+        let e3 = await #expect(throws: EngineError.self) { try await engine.updateAccount(b, password: nil) }
+        #expect(isInvalidArgument(e3), "\(String(describing: e3))")
         await engine.stop()
     }
 
@@ -855,68 +905,278 @@ extension EngineTests {
         }
     }
 
-    /// The family of an Auto host name is decided again on a network change and before a REGISTER retry;
-    /// when it changed the account is moved to the other transport and registers there.
-    @Test func familyIsDecidedAgainOnNetworkChangeAndRetry() async throws {
-        let stub = try IPv6Stub(dualStack: true)
-        defer { stub.stop() }
-        let answer = OSAllocatedUnfairLock(initialState: [IPFamily.ipv4, .ipv6])
+    /// An Auto account whose host name resolves to both families, registered over UDP. (`answer`: what
+    /// the injected resolver returns.)
+    func startAutoLocalhost(_ stub: IPv6Stub, answer: OSAllocatedUnfairLock<[IPFamily]>, transport: TransportKind = .udp,
+                            mwi: Bool = false, publish: Bool = false) async throws -> (Engine, AccountConfig, EventLog, Task<Void, Never>) {
         let engine = await makeEngine(bindAddress: nil)
+        let log = EventLog()
+        let consumer = log.consume(engine)
         await engine.setTestTimings(transactionTimeoutMs: 2000)
         await engine.setFamilyResolverForTests { _ in answer.withLock { $0 } }
         try await engine.start(network: Self.network)
-        let ids = await engine.transportIDsForTests()
-        let account = AccountConfig(displayName: "L", username: "1009", domain: "localhost",
-                                    registrar: "localhost:\(stub.port)", mwi: false)
+        let port = transport == .tcp ? stub.tcpPort : stub.port
+        // The domain carries the port, so MWI SUBSCRIBEs (to the account's own URI) reach the stub too.
+        let account = AccountConfig(displayName: "L", username: "1009", domain: "localhost:\(port)",
+                                    transport: transport, publishPresence: publish, mwi: mwi)
         try await engine.addAccount(account, password: "pw")
-        #expect(await waitUntil { await engine.registrationState(of: account.id).isRegistered })
-        #expect(stub.registers.last?.family == .ipv4)
+        return (engine, account, log, consumer)
+    }
 
-        // Network change: the resolver now puts IPv6 first.
+    func logLines(_ log: EventLog, containing text: String) -> [String] {
+        log.all.compactMap { if case let .log(_, t) = $0, t.contains(text) { return t }; return nil }
+    }
+
+    /// The family of an Auto host name is decided again on a network change; when it changed, the old
+    /// binding is removed (un-REGISTER over the old family) before the account registers over the new
+    /// one, and `allow_sdp_nat_rewrite` follows the family (pjsua_acc_modify does not copy it).
+    @Test func familyIsDecidedAgainOnNetworkChange() async throws {
+        let stub = try IPv6Stub(dualStack: true)
+        defer { stub.stop() }
+        let answer = OSAllocatedUnfairLock(initialState: [IPFamily.ipv4, .ipv6])
+        let (engine, account, _, consumer) = try await startAutoLocalhost(stub, answer: answer)
+        defer { consumer.cancel() }
+        let ids = await engine.transportIDsForTests()
+        #expect(await waitUntil { await engine.registrationState(of: account.id).isRegistered })
+        #expect(stub.bindingRegisters.last?.family == .ipv4)
+        #expect(await engine.liveAccountSettingsForTests(account.id)?.sdpNATRewrite == false)
+
         answer.withLock { $0 = [.ipv6, .ipv4] }
+        let mark = stub.registers.count
         await engine.simulateNetworkChange()
-        #expect(await waitUntil { stub.registers.last?.family == .ipv6 })
+        #expect(await waitUntil { stub.bindingRegisters.last?.family == .ipv6 })
         #expect(await waitUntil { await engine.registrationState(of: account.id).isRegistered })
-        #expect(await engine.liveAccountSettingsForTests(account.id)?.transportID == ids.udp6)
+        let after = Array(stub.registers.dropFirst(mark))
+        let unregister = after.firstIndex { $0.unregister && $0.family == .ipv4 }
+        let register6 = after.firstIndex { !$0.unregister && $0.family == .ipv6 }
+        #expect(unregister != nil && register6 != nil && unregister! < register6!, "\(after.map { "\($0.family) \($0.unregister)" })")
+        let live = try #require(await engine.liveAccountSettingsForTests(account.id))
+        #expect(live.transportID == ids.udp6 && live.sdpNATRewrite && live.mediaIPv6Only)
 
-        // IPv6 stops answering; the retry after the timeout finds IPv4 first again.
-        stub.silentFamilies = [.ipv6]
-        let count = stub.registers.count
-        try await engine.setRegistered(account.id, true)
-        #expect(await waitUntil(timeout: 6) {
-            if case .reconnecting = await engine.registrationState(of: account.id) { return true }
-            return false
-        })
         answer.withLock { $0 = [.ipv4, .ipv6] }
-        #expect(await waitUntil(timeout: 8) { await engine.registrationState(of: account.id).isRegistered })
-        #expect(stub.registers.dropFirst(count).last?.family == .ipv4)
-        #expect(await engine.liveAccountSettingsForTests(account.id)?.transportID == ids.udp)
+        await engine.simulateNetworkChange()
+        #expect(await waitUntil { stub.bindingRegisters.last?.family == .ipv4 })
+        #expect(await waitUntil { await engine.registrationState(of: account.id).isRegistered })
+        #expect(await engine.liveAccountSettingsForTests(account.id)?.sdpNATRewrite == false)
         await engine.stop()
     }
 
-    /// A new IPv6 source address (a new temporary address) starts a round only when it matters: IPv6
-    /// appearing does, a later new address does not while no account uses IPv6, and does once one does.
-    @Test func newIPv6AddressStartsRoundOnlyForIPv6Accounts() async throws {
+    /// Changing the IP protocol in the editor (updateAccount) moves the account too: old binding removed,
+    /// `allow_sdp_nat_rewrite` set for the new family.
+    @Test func ipProtocolChangeMovesTheAccount() async throws {
+        let stub = try IPv6Stub(dualStack: true)
+        defer { stub.stop() }
+        let answer = OSAllocatedUnfairLock(initialState: [IPFamily.ipv4, .ipv6])
+        let (engine, account, _, consumer) = try await startAutoLocalhost(stub, answer: answer)
+        defer { consumer.cancel() }
+        #expect(await waitUntil { await engine.registrationState(of: account.id).isRegistered })
+        var six = account
+        six.ipProtocol = .ipv6
+        let mark = stub.registers.count
+        try await engine.updateAccount(six, password: nil)
+        #expect(await waitUntil { stub.bindingRegisters.last?.family == .ipv6 })
+        #expect(await waitUntil { await engine.registrationState(of: account.id).isRegistered })
+        #expect(stub.registers.dropFirst(mark).contains { $0.unregister && $0.family == .ipv4 })
+        #expect(await engine.liveAccountSettingsForTests(account.id)?.sdpNATRewrite == true)
+        await engine.stop()
+    }
+
+    /// Auto follows the system order for the first REGISTER; when that gets no answer at all (here: the
+    /// IPv6 side of the server is silent), it moves to the other family at once and registers there.
+    /// The working family then stays (sticky) until the next network change: a later retry stays on it.
+    @Test func autoFallsBackToTheOtherFamilyWithoutAnswer() async throws {
+        let stub = try IPv6Stub(dualStack: true)
+        defer { stub.stop() }
+        stub.silentFamilies = [.ipv6]
+        let answer = OSAllocatedUnfairLock(initialState: [IPFamily.ipv6, .ipv4])
+        let (engine, account, log, consumer) = try await startAutoLocalhost(stub, answer: answer)
+        defer { consumer.cancel() }
+        #expect(await waitUntil(timeout: 6) { await engine.registrationState(of: account.id).isRegistered })
+        #expect(stub.bindingRegisters.map(\.family).prefix(1) == [.ipv6])
+        #expect(stub.bindingRegisters.last?.family == .ipv4)
+        #expect(await engine.accountFamilyForTests(account.id) == .ipv4)
+        #expect(!logLines(log, containing: "no answer over IPv6; trying IPv4").isEmpty)
+
+        // Sticky: IPv4 goes silent too; the backoff retry stays on IPv4 (the resolver still says IPv6
+        // first), and only its failure moves the account back to IPv6, which answers again.
+        stub.silentFamilies = [.ipv4]
+        let mark = stub.bindingRegisters.count
+        try await engine.setRegistered(account.id, true)
+        #expect(await waitUntil(timeout: 10) { await engine.registrationState(of: account.id).isRegistered
+            && stub.bindingRegisters.count > mark + 2 })
+        let families = stub.bindingRegisters.dropFirst(mark).map(\.family)
+        #expect(Array(families.prefix(3)) == [.ipv4, .ipv4, .ipv6], "\(families)")
+        await engine.stop()
+    }
+
+    /// A TCP connection that is refused counts as no answer: the account moves to IPv6 at once.
+    @Test func autoFallsBackWhenTheConnectionIsRefused() async throws {
+        let stub = try IPv6Stub()                                      // TCP on [::1] only
+        defer { stub.stop() }
+        let answer = OSAllocatedUnfairLock(initialState: [IPFamily.ipv4, .ipv6])
+        let (engine, account, _, consumer) = try await startAutoLocalhost(stub, answer: answer, transport: .tcp)
+        defer { consumer.cancel() }
+        #expect(await waitUntil(timeout: 4) { await engine.registrationState(of: account.id).isRegistered })
+        #expect(stub.registers.last?.family == .ipv6 && stub.registers.last?.transport == "TCP")
+        #expect(await engine.accountFamilyForTests(account.id) == .ipv6)
+        await engine.stop()
+    }
+
+    /// A server that answers (403) is not a reason to try the other family.
+    @Test func autoKeepsTheFamilyWhenTheServerAnswers() async throws {
+        let stub = try IPv6Stub(dualStack: true)
+        defer { stub.stop() }
+        stub.forbiddenFamilies = [.ipv6]
+        let answer = OSAllocatedUnfairLock(initialState: [IPFamily.ipv6, .ipv4])
+        let (engine, account, _, consumer) = try await startAutoLocalhost(stub, answer: answer)
+        defer { consumer.cancel() }
+        #expect(await waitUntil {
+            if case .failed(403, _) = await engine.registrationState(of: account.id) { return true }
+            return false
+        })
+        try await Task.sleep(for: .milliseconds(500))
+        #expect(stub.registers.allSatisfy { $0.family == .ipv6 })
+        #expect(await engine.accountFamilyForTests(account.id) == .ipv6)
+        await engine.stop()
+    }
+
+    /// An account is never moved to the other family while it has a call (the dialog would keep
+    /// the old family's peer and lose its transport): the round keeps it, the move waits for the
+    /// call to end, then the account moves and registers.
+    @Test func familyMoveWaitsForTheAccountsCalls() async throws {
+        let stub = try IPv6Stub(dualStack: true)
+        defer { stub.stop() }
+        let answer = OSAllocatedUnfairLock(initialState: [IPFamily.ipv4, .ipv6])
+        let (engine, account, log, consumer) = try await startAutoLocalhost(stub, answer: answer)
+        defer { consumer.cancel() }
+        #expect(await waitUntil { await engine.registrationState(of: account.id).isRegistered })
+        let call = try await engine.makeCall(to: DialString(uri: "sip:300@localhost:\(stub.port)", display: "300"), from: account.id)
+        #expect(await waitUntil { await engine.calls().first { $0.id == call }?.state == .connected })
+
+        answer.withLock { $0 = [.ipv6, .ipv4] }
+        await engine.simulateNetworkChange()
+        #expect(await waitUntil { await engine.ipChangeStateForTests().running == nil })
+        try await Task.sleep(for: .milliseconds(500))
+        #expect(await engine.accountFamilyForTests(account.id) == .ipv4)
+        #expect(stub.bindingRegisters.allSatisfy { $0.family == .ipv4 })
+        #expect(await engine.calls().first { $0.id == call }?.state == .connected)
+        #expect(!logLines(log, containing: "waits for its calls").isEmpty)
+
+        try await engine.hangup(call)
+        #expect(await waitUntil { await engine.calls().isEmpty })
+        #expect(await waitUntil(timeout: 4) { stub.bindingRegisters.last?.family == .ipv6 })
+        #expect(await waitUntil { await engine.registrationState(of: account.id).isRegistered })
+        #expect(await engine.accountFamilyForTests(account.id) == .ipv6)
+        await engine.stop()
+    }
+
+    /// After a move, the voicemail (MWI) and presence subscriptions are made anew over the new family
+    /// (their dialogs keep the transport they were created with).
+    @Test func subscriptionsFollowAFamilyMove() async throws {
+        let stub = try IPv6Stub(dualStack: true)
+        defer { stub.stop() }
+        let answer = OSAllocatedUnfairLock(initialState: [IPFamily.ipv4, .ipv6])
+        let (engine, account, _, consumer) = try await startAutoLocalhost(stub, answer: answer, mwi: true)
+        defer { consumer.cancel() }
+        #expect(await waitUntil { await engine.registrationState(of: account.id).isRegistered })
+        try await engine.subscribePresence(uri: "sip:200@localhost:\(stub.port)")
+        func subscribes(_ event: String, _ family: IPFamily) -> Int {
+            stub.requests.filter { $0.method == "SUBSCRIBE" && $0.event.hasPrefix(event) && $0.family == family }.count
+        }
+        #expect(await waitUntil { subscribes("message-summary", .ipv4) > 0 && subscribes("presence", .ipv4) > 0 },
+                "\(stub.requests.map { "\($0.method) \($0.event) \($0.family)" })")
+
+        answer.withLock { $0 = [.ipv6, .ipv4] }
+        await engine.simulateNetworkChange()
+        #expect(await waitUntil { await engine.accountFamilyForTests(account.id) == .ipv6 })
+        #expect(await waitUntil { subscribes("message-summary", .ipv6) > 0 }, "\(stub.requests.map { "\($0.method) \($0.event) \($0.family)" })")
+        #expect(await waitUntil { subscribes("presence", .ipv6) > 0 }, "\(stub.requests.map { "\($0.method) \($0.event) \($0.family)" })")
+        await engine.stop()
+    }
+
+    /// Family lookups during a round are made once per host name, concurrently and off the engine
+    /// queue's critical path: a slow resolver delays the round by the lookup limit at most, and an
+    /// account whose lookup did not finish keeps its family. `addAccount` waits no longer either.
+    @Test func familyLookupsAreDedupedAndBounded() async throws {
+        let calls = OSAllocatedUnfairLock(initialState: [String: Int]())
+        let slow = OSAllocatedUnfairLock(initialState: false)
         let engine = await makeEngine(bindAddress: nil)
+        await engine.setFamilyLookupTimeoutForTests(.milliseconds(300))
+        await engine.setFamilyResolverForTests { host in
+            calls.withLock { $0[host, default: 0] += 1 }
+            if slow.withLock({ $0 }) { Thread.sleep(forTimeInterval: 1.5); return [.ipv6, .ipv4] }
+            return [.ipv4, .ipv6]
+        }
+        try await engine.start(network: Self.network)
+        let a = AccountConfig(displayName: "A", username: "1", domain: "localhost", registerWithServer: false, mwi: false)
+        let b = AccountConfig(displayName: "B", username: "2", domain: "localhost", registerWithServer: false, mwi: false)
+        try await engine.addAccount(a, password: "")
+        try await engine.addAccount(b, password: "")
+        #expect(await engine.accountFamilyForTests(a.id) == .ipv4)
+
+        slow.withLock { $0 = true }
+        calls.withLock { $0 = [:] }
+        let started = ContinuousClock.now
+        await engine.simulateNetworkChange()
+        #expect(ContinuousClock.now - started < .seconds(1.2))
+        #expect(calls.withLock { $0["localhost"] } == 1)
+        #expect(await engine.accountFamilyForTests(a.id) == .ipv4)
+        #expect(await engine.accountFamilyForTests(b.id) == .ipv4)
+
+        let c = AccountConfig(displayName: "C", username: "3", domain: "localhost", registerWithServer: false, mwi: false)
+        let added = ContinuousClock.now
+        try await engine.addAccount(c, password: "")
+        #expect(ContinuousClock.now - added < .seconds(1.2))
+        #expect(await engine.accountFamilyForTests(c.id) == .ipv4)              // not resolved in time: IPv4
+        await engine.stop()
+    }
+
+    /// IPv6 address changes (pure rules through injected paths): IPv6 appearing or a new address
+    /// without IPv6 accounts starts no round (the family of Auto accounts is decided again without
+    /// one); with an IPv6 account a new temporary address whose predecessor is still assigned is a
+    /// non-primary change (it waits for a ringing outgoing call), while losing the address is primary.
+    @Test func ipv6AddressChangesStartRoundsOnlyWhenTheyMatter() async throws {
+        let stub = try IPv6Stub()
+        defer { stub.stop() }
+        let assigned = OSAllocatedUnfairLock(initialState: Set<String>())
+        let engine = await makeEngine(bindAddress: nil)
+        await engine.setIPv6AddressAssignedForTests { address in assigned.withLock { $0.contains(address) } }
         try await engine.start(network: Self.network)
         func path(_ v6: String) -> NetworkPath {
             NetworkPath(satisfied: true, interface: "en0", address: "192.168.1.20", address6: v6, gateway: "192.168.1.1")
         }
         func settle() async { _ = await waitUntil { await engine.ipChangeStateForTests().running == nil } }
+        func rounds() async -> UInt64 { await engine.ipChangeStateForTests().rounds }
         await engine.applyPathForTests(path(""))                           // a new primary route
         await settle()
-        var rounds = await engine.ipChangeStateForTests().rounds
-        await engine.applyPathForTests(path("2001:db8::10"))               // IPv6 appeared
+        var count = await rounds()
+        assigned.withLock { $0 = ["2001:db8::10"] }
+        await engine.applyPathForTests(path("2001:db8::10"))               // IPv6 appeared, no IPv6 account
         await settle()
-        #expect(await engine.ipChangeStateForTests().rounds == rounds + 1)
-        rounds += 1
-        await engine.applyPathForTests(path("2001:db8::11"))               // rotated; no IPv6 account
+        #expect(await rounds() == count)
+        assigned.withLock { $0 = ["2001:db8::10", "2001:db8::11"] }
+        await engine.applyPathForTests(path("2001:db8::11"))               // rotated, no IPv6 account
         await settle()
-        #expect(await engine.ipChangeStateForTests().rounds == rounds)
-        try await engine.addAccount(localIPv6Account("6"), password: "")
-        await engine.applyPathForTests(path("2001:db8::12"))
+        #expect(await rounds() == count)
+
+        let account = localIPv6Account("6")
+        try await engine.addAccount(account, password: "")
+        stub.ringOnly = true
+        let call = try await engine.makeCall(to: DialString(uri: "sip:300@[::1]:\(stub.port)", display: "300"), from: account.id)
+        #expect(await waitUntil { await engine.calls().first { $0.id == call }?.state == .early })
+        assigned.withLock { $0 = ["2001:db8::11", "2001:db8::12"] }
+        await engine.applyPathForTests(path("2001:db8::12"))               // rotated, ::11 still assigned
+        #expect(await engine.ipChangeStateForTests().postponed)
+        #expect(await rounds() == count)
+        #expect(await engine.calls().first { $0.id == call }?.state == .early)
+
+        assigned.withLock { $0 = [] }
+        await engine.applyPathForTests(path(""))                           // IPv6 lost: primary, at once
+        #expect(await waitUntil { await rounds() == count + 1 })
+        count += 1
         await settle()
-        #expect(await engine.ipChangeStateForTests().rounds == rounds + 1)
+        try? await engine.hangup(call)
+        #expect(await waitUntil(timeout: 5) { await engine.calls().isEmpty })
         await engine.stop()
     }
 
