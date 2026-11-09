@@ -75,10 +75,12 @@ pj_status_t cpjsua_transport_create2(pjsip_transport_type_e type,
                                      pjsua_transport_id *out_id);
 
 /** TLS listener (also used for outgoing TLS connections of accounts bound to it).
+ *  `type` is PJSIP_TRANSPORT_TLS or PJSIP_TRANSPORT_TLS6.
  *  verify_server != 0: the server certificate must chain to a CA in `ca_file` (PEM) and
  *  match the destination host name (PJSIP sets SNI and checks CN/SAN per connection).
  *  verify_client is always off; no client certificate is presented. */
-pj_status_t cpjsua_tls_transport_create(unsigned port,
+pj_status_t cpjsua_tls_transport_create(pjsip_transport_type_e type,
+                                        unsigned port,
                                         const char *address,
                                         int verify_server,
                                         const char *ca_file,
@@ -321,6 +323,10 @@ int cpjsua_has_resolver(void);
 
 /** Local RTP port of the call's first audio stream, 0 if none (tests, diagnostics). */
 int cpjsua_call_local_rtp_port(pjsua_call_id call_id);
+
+/** Local RTP address of the call's first audio stream as published in SDP ("::1",
+ *  "192.0.2.10", no brackets, no port) into `buf`; returns its length, 0 if none. */
+int cpjsua_call_local_rtp_addr(pjsua_call_id call_id, char *buf, unsigned len);
 
 /* ----------------------------------------------------- packet source --- */
 

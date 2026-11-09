@@ -254,25 +254,32 @@ extension Engine {
         guard new == .online else { return }
         let previous = handledPath
         var path = path
-        if path.address.isEmpty {
-            // Satisfied but no default route (the 192.0.2.1 lookup failed: a host without a
-            // default route, or a moment during a change): keep the address we had and treat
-            // it as unchanged rather than as a new primary route.
-            let kept = previous?.address ?? ""
-            emit(.log(level: 3, "engine: network path without a default route; keeping address \(kept.isEmpty ? "unknown" : kept)"))
-            path.address = kept
+        if path.address.isEmpty && path.address6.isEmpty {
+            // Satisfied but no default route (the 192.0.2.1 and 2001:db8::1 lookups failed: a host
+            // without a default route, or a moment during a change): keep the addresses we had and
+            // treat them as unchanged rather than as a new primary route.
+            let kept = [previous?.address ?? "", previous?.address6 ?? ""].filter { !$0.isEmpty }
+            emit(.log(level: 3, "engine: network path without a default route; keeping address "
+                     + (kept.isEmpty ? "unknown" : kept.joined(separator: " "))))
         }
+        // Per family, the same: an IPv6-only network has no IPv4 route and most networks no IPv6 one.
+        if path.address.isEmpty { path.address = previous?.address ?? "" }
+        if path.address6.isEmpty { path.address6 = previous?.address6 ?? "" }
         handledPath = path
         guard !sleeping, !first else { return }
         if previous.map({ path.routeDiffers(from: $0) }) ?? true || old == .offline || wake {
             refreshSystemNameservers()
         }
-        let primary = previous.map { path.primaryDiffers(from: $0) } ?? true
+        // A new IPv6 address (a new temporary address, about once a day) matters to accounts bound to
+        // IPv6, and IPv6 appearing may change what an Auto host name resolves to first; otherwise it
+        // is no reason for a round (which would end a ringing outgoing call: pjsua's 410).
+        let ipv6Matters = accounts.values.contains { $0.family == .ipv6 } || (previous?.address6.isEmpty ?? true)
+        let primary = previous.map { path.primaryDiffers(from: $0, ipv6: ipv6Matters) } ?? true
         if wake {
             requestIPChange(IPChangeRequest(reason: "wake", registerFailed: true, primary: primary))
         } else if old == .offline {
             requestIPChange(IPChangeRequest(reason: "network back", registerFailed: false, primary: primary))
-        } else if let previous, path.routeDiffers(from: previous) {
+        } else if let previous, path.routeDiffers(from: previous, ipv6: ipv6Matters) {
             emit(.log(level: 3, "engine: network route changed: \(previous.summary) -> \(path.summary)"))
             requestIPChange(IPChangeRequest(reason: "route changed", registerFailed: false, primary: primary))
         }
@@ -362,6 +369,10 @@ extension Engine {
             bridge.updateCall(snap, mode: .updateOnly, mutate: { $0.reinviteWanted = round })
         }
 
+        // A host name may now resolve to the other family first (an IPv6-only network, IPv6 lost):
+        // move such accounts before pjsua re-registers them (an account whose registration was
+        // destroyed by the move is registered afresh: cpjsua_acc_prepare_ip_change below).
+        refreshAccountFamilies(reason: "network change")
         var pending: Set<Int32> = []
         for (id, entry) in accounts {
             let state = bridge.registration(of: id)
@@ -732,6 +743,7 @@ extension Engine {
         }
         emit(.log(level: RegistrationBackoff.logLevel(attempt: attempt + 1),
                   "engine: account \(entry.config.uri): REGISTER retry \(attempt + 1)"))
+        refreshAccountFamily(id, reason: "REGISTER retry")
         do {
             try applyRegistration(id, true, retrying: true)
         } catch {

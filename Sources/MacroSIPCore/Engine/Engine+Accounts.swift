@@ -9,15 +9,17 @@ extension Engine {
         guard accounts[cfg.id] == nil else {
             throw EngineError.invalidArgument("account \(cfg.id.raw) is already added")
         }
-        let settings = try accountSettings(cfg, password: password)
+        let family = try decideFamily(cfg)
+        let settings = try accountSettings(cfg, password: password, family: family)
         var index = PJ.invalidID
         try AccountMapping.withPJConfig(settings) { p in
             // Never register inside pjsua_acc_add: the callbacks need the index mapping first.
             p.pointee.register_on_acc_add = 0
             try PJ.check(pjsua_acc_add(p, cfg.isDefaultOutgoing ? 1 : 0, &index), "pjsua_acc_add")
         }
-        accounts[cfg.id] = AccountEntry(index: index, config: cfg, password: password,
+        accounts[cfg.id] = AccountEntry(index: index, config: cfg, password: password, family: family,
                                         wantsRegistration: cfg.registers)
+        logFamily(cfg, family)
         bridge.setAccount(index, cfg.id, registrationInterval: cfg.registrationInterval,
                           proxy: SignallingSource.proxy(cfg.outboundProxy, transport: cfg.transport))
         bridge.setWantsRegistration(index, cfg.registers)
@@ -44,7 +46,8 @@ extension Engine {
         try requireStarted()
         guard var entry = accounts[cfg.id] else { throw EngineError.unknownAccount(cfg.id) }
         let pw = password ?? entry.password
-        let settings = try accountSettings(cfg, password: pw)
+        let family = try decideFamily(cfg)
+        let settings = try accountSettings(cfg, password: pw, family: family)
         // New settings start a new series of attempts.
         cancelRegistrationRetry(cfg.id)
         bridge.resetRetryAttempts(cfg.id)
@@ -68,8 +71,11 @@ extension Engine {
         }
         let serverChanged = entry.config.registrarURI != cfg.registrarURI
             || entry.config.outboundProxy != cfg.outboundProxy || entry.config.transport != cfg.transport
+            || entry.family != family
+        if entry.family != family || entry.config.ipProtocol != cfg.ipProtocol { logFamily(cfg, family) }
         entry.config = cfg
         entry.password = pw
+        entry.family = family
         accounts[cfg.id] = entry
         bridge.setAccount(entry.index, cfg.id, registrationInterval: cfg.registrationInterval,
                           proxy: SignallingSource.proxy(cfg.outboundProxy, transport: cfg.transport))
@@ -124,14 +130,94 @@ extension Engine {
 
     // MARK: internals
 
-    func accountSettings(_ cfg: AccountConfig, password: String) throws -> PJAccountSettings {
+    func accountSettings(_ cfg: AccountConfig, password: String, family: IPFamily) throws -> PJAccountSettings {
         let settings = try AccountMapping.settings(for: cfg, password: password, network: network,
-                                                   transports: transports, bindAddress: bindAddress)
+                                                   transports: transports, bindAddress: bindAddress, family: family)
         // pjsua_acc_add does not validate reg_uri; a bad one would only fail later.
         try verifyURI(settings.idURI, "account URI")
         try verifyURI(settings.regURI, "registrar")
         for proxy in settings.proxies { try verifyURI(proxy, "outbound proxy") }
         return settings
+    }
+
+    /// DNS SRV is in effect: pjsua has a resolver and looks up SRV records of hosts without a port.
+    var srvInEffect: Bool { !dnsServers.isEmpty }
+
+    /// The account's IP family (`IPFamilyPolicy`). Throws `.invalidArgument` when IPv4 only or IPv6 only
+    /// contradicts the server's IP literal: such an account could never register.
+    func decideFamily(_ cfg: AccountConfig) throws -> IPFamily {
+        if let literal = IPFamilyPolicy.conflict(in: cfg) {
+            let host = IPFamilyPolicy.firstHop(of: cfg).host
+            throw EngineError.invalidArgument("server \(host) is an \(literal) address but the account is set to "
+                                              + "\(literal == .ipv6 ? "IPv4" : "IPv6") only")
+        }
+        return IPFamilyPolicy.decide(cfg, available: transports.families(for: cfg), srv: srvInEffect,
+                                     resolve: resolveFamilies)
+    }
+
+    private func logFamily(_ cfg: AccountConfig, _ family: IPFamily) {
+        let how = cfg.ipProtocol == .auto ? "auto" : "\(cfg.ipProtocol.rawValue) only"
+        emit(.log(level: 4, "engine: account \(cfg.uri): \(family) (\(how), server \(IPFamilyPolicy.firstHop(of: cfg).host))"))
+        if family == .ipv6 && network.useICE {
+            emit(.log(level: 3, "engine: account \(cfg.uri): ICE is not used over IPv6; calls use plain RTP"))
+        }
+    }
+
+    /// Decides the family of an Auto account with a host name again (network change, REGISTER retry).
+    /// When it changed, the account moves to the other family's transport (pjsua_acc_modify without a
+    /// REGISTER; the caller registers) and its registrar must accept a REGISTER again before its
+    /// INVITEs are trusted. Returns true when the family changed.
+    @discardableResult
+    func refreshAccountFamily(_ id: AccountID, reason: String) -> Bool {
+        guard isStarted, PJ.registerThread(), var entry = accounts[id],
+              IPFamilyPolicy.followsResolver(entry.config, srv: srvInEffect),
+              let family = try? decideFamily(entry.config), family != entry.family else { return false }
+        do {
+            let settings = try accountSettings(entry.config, password: entry.password, family: family)
+            try AccountMapping.withPJConfig(settings) { p in
+                p.pointee.disable_reg_on_modify = 1
+                try PJ.check(pjsua_acc_modify(entry.index, p), "pjsua_acc_modify")
+            }
+        } catch {
+            PJ.warn(error, "account \(entry.config.uri): move to \(family)")
+            return false
+        }
+        emit(.log(level: 3, "engine: account \(entry.config.uri): server now reached over \(family) "
+                 + "(was \(entry.family), \(reason))"))
+        entry.family = family
+        accounts[id] = entry
+        bridge.setRegistrarSource(entry.index, nil)
+        return true
+    }
+
+    /// `refreshAccountFamily` for every account.
+    func refreshAccountFamilies(reason: String) {
+        for id in Array(accounts.keys) { refreshAccountFamily(id, reason: reason) }
+    }
+
+    // MARK: test hooks
+
+    func transportIDsForTests() -> TransportIDs { transports }
+
+    func accountFamilyForTests(_ id: AccountID) -> IPFamily? { accounts[id]?.family }
+
+    func setFamilyResolverForTests(_ resolve: @escaping @Sendable (String) -> [IPFamily]) {
+        resolveFamilies = resolve
+    }
+
+    /// The account's pjsua_acc_config as pjsua holds it now (pjsua_acc_get_config).
+    func liveAccountSettingsForTests(_ id: AccountID) -> PJAccountSettings? {
+        guard isStarted, PJ.registerThread(), let entry = accounts[id],
+              let pool = pjsua_pool_create("acc-read", 1024, 1024) else { return nil }
+        defer { pj_pool_release(pool) }
+        let cfg = UnsafeMutablePointer<pjsua_acc_config>.allocate(capacity: 1)
+        cfg.initialize(to: pjsua_acc_config())
+        defer {
+            cfg.deinitialize(count: 1)
+            cfg.deallocate()
+        }
+        guard pjsua_acc_get_config(entry.index, pool, cfg) == PJ.success else { return nil }
+        return AccountMapping.readBack(cfg)
     }
 
     private func verifyURI(_ uri: String, _ what: String) throws {

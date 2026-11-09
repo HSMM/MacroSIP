@@ -354,9 +354,10 @@ struct Engine262ValueTests {
     /// STUN is off only when every signalling hop is private: registrar and proxy, or registrar
     /// and domain without a proxy. In pjsua_acc_config: `sip_stun_use` and `media_stun_use`
     /// DISABLED and `allow_sdp_nat_rewrite` on for such an account, pjsua's defaults otherwise; a
-    /// UDP account of a private server with IPv4 hops is not bound to the UDP transport while a
-    /// STUN server is set (IPv6 hops stay bound: no IPv6 transport exists). allow_contact_rewrite
-    /// and allow_via_rewrite stay on either way.
+    /// UDP account of a private IPv4 server is not bound to the UDP transport while a STUN server
+    /// is set. An IPv6 server (also an IPv4-mapped literal) is bound to the IPv6 twin of its
+    /// transport, with STUN off (since 26.3.1). allow_contact_rewrite and allow_via_rewrite stay
+    /// on either way.
     @Test func privateServerAccountsDoNotUseSTUN() throws {
         func account(_ domain: String, registrar: String? = nil, proxy: String? = nil,
                      transport: TransportKind = .udp) -> AccountConfig {
@@ -370,8 +371,8 @@ struct Engine262ValueTests {
             account("pbx.office.lan", registrar: "10.10.0.53", proxy: "sip:10.10.0.1;lr"),   // all via the proxy
             account("192.168.1.10", proxy: "192.168.1.1:5060"),
             account("100.101.102.103"),                                      // a tailnet
-            account("[fd00::5]"),                                            // IPv6: stays bound
-            account("[::ffff:10.1.2.3]"),                                    // so does a mapped IPv4
+            account("[fd00::5]"),                                            // IPv6: bound to UDP6
+            account("[::ffff:10.1.2.3]"),                                    // so is a mapped IPv4
         ]
         let stunAccounts = [
             account("pbx.example.com"),
@@ -382,16 +383,19 @@ struct Engine262ValueTests {
             account("pbx.office.lan", registrar: "10.10.0.53"),              // calls go to a host name
             account("localhost"),                                            // names are not resolved
         ]
-        let transports = TransportIDs(udp: 0, tcp: 1, tls: 2, tlsNoVerify: 3)
+        let transports = TransportIDs(udp: 0, tcp: 1, tls: 2, tlsNoVerify: 3, udp6: 4, tcp6: 5, tls6: 6, tls6NoVerify: 7)
         let noSTUN = NetworkSettings(stunServer: nil)
         for (accounts, stun) in [(privateAccounts, false), (stunAccounts, true)] {
             for a in accounts {
                 #expect(PrivateServer.allHopsPrivate(a) == !stun, "\(a.registrarURI) \(a.outboundProxy ?? "-")")
                 let ipv6 = a.domain.hasPrefix("[")
-                if !stun { #expect(PrivateServer.allHopsIPv4(a) == !ipv6, "\(a.registrarURI)") }
-                let bound: Int32 = a.transport == .tcp ? 1 : 0
+                // The family as the engine decides it; host names here are IPv4 (no lookup in a value test).
+                let family = IPFamilyPolicy.decide(a, available: [.ipv4, .ipv6], srv: false) { _ in [.ipv4] }
+                #expect(family == (ipv6 ? .ipv6 : .ipv4), "\(a.registrarURI)")
+                let bound: Int32 = (a.transport == .tcp ? 1 : 0) + (ipv6 ? 4 : 0)
                 for network in [NetworkSettings.default, noSTUN] {
-                    let s = try AccountMapping.settings(for: a, password: "pw", network: network, transports: transports)
+                    let s = try AccountMapping.settings(for: a, password: "pw", network: network, transports: transports,
+                                                        family: family)
                     let back = AccountMapping.withPJConfig(s) { AccountMapping.readBack($0) }
                     let unbound = !stun && !ipv6 && a.transport == .udp && network.stunServer != nil
                     for (label, x) in [("settings", s), ("pjsua_acc_config", back)] {
@@ -553,10 +557,11 @@ extension EngineTests {
 
     /// A server in a private network gets no STUN. The STUN stub maps every socket to
     /// 203.0.113.5, so the UDP transport is published with that address. An account that reaches
-    /// the registrar by name ("localhost") keeps STUN: 203.0.113.5 in Via, Contact and SDP, and
-    /// its RTP sockets ask the stub. The account at 127.0.0.1 sends Via and Contact with
-    /// 127.0.0.1, registers, and its call neither asks STUN nor offers the mapped address: the
-    /// SDP has the Contact's address, not the default route's.
+    /// the registrar by name ("localhost", IPv4 only: on Auto the name would usually resolve to
+    /// ::1 first and the account would use IPv6, which has no STUN at all) keeps STUN:
+    /// 203.0.113.5 in Via, Contact and SDP, and its RTP sockets ask the stub. The account at
+    /// 127.0.0.1 sends Via and Contact with 127.0.0.1, registers, and its call neither asks STUN
+    /// nor offers the mapped address: the SDP has the Contact's address, not the default route's.
     @Test func privateServerAccountDoesNotUseSTUN() async throws {
         let stun = try STUNStub(mapped: "203.0.113.5")
         defer { stun.stop() }
@@ -575,7 +580,7 @@ extension EngineTests {
         func mediaSTUNRequests() -> Int { stun.sources.filter { (rtp.start..<(rtp.start + rtp.count)).contains(Int($0)) }.count }
 
         let named = AccountConfig(displayName: "N", username: "2002", domain: "localhost",
-                                  registrar: "localhost:\(sip.port)", enabled: true)
+                                  registrar: "localhost:\(sip.port)", enabled: true, ipProtocol: .ipv4)
         try await engine.addAccount(named, password: "pw")
         #expect(await waitUntil { await engine.registrationState(of: named.id).isRegistered })
         let n = try #require(sip.registers.first { $0.contact.contains("sip:2002@") })
@@ -608,25 +613,27 @@ extension EngineTests {
         await engine.stop()
     }
 
-    /// An IPv6 private server keeps its account bound to the UDP transport while STUN is on:
-    /// unbound, pjsua would want an IPv6 transport for it (none exists) and refuse the account.
-    /// Bound, it is added and its failing REGISTER is retried like any temporary failure.
+    /// An IPv6 private server with STUN on (26.2: the account stayed bound to the IPv4 UDP transport
+    /// and was retried forever) is bound to the UDP6 transport since 26.3.1, uses no STUN and
+    /// registers over IPv6. The engine runs on all interfaces, as in the app.
     @Test func privateIPv6ServerAccountIsAdded() async throws {
         let stun = try STUNStub(mapped: "203.0.113.5")
         defer { stun.stop() }
-        let engine = await makeEngine()
+        let sip = try IPv6Stub()
+        defer { sip.stop() }
+        let engine = await makeEngine(bindAddress: nil)
         var net = Self.network
         net.stunServer = "127.0.0.1:\(stun.port)"
         try await engine.start(network: net)
         let account = AccountConfig(displayName: "6", username: "2006", domain: "[::1]",
-                                    registrar: "[::1]:5999", enabled: true)
+                                    registrar: "[::1]:\(sip.port)", enabled: true, mwi: false)
         try await engine.addAccount(account, password: "pw")
-        let retried = await waitUntil {
-            if case .reconnecting = await engine.registrationState(of: account.id) { return true }
-            return false
-        }
-        let state = await engine.registrationState(of: account.id)
-        #expect(retried, "state: \(state)")
+        #expect(await waitUntil { await engine.registrationState(of: account.id).isRegistered })
+        let register = try #require(sip.registers.first)
+        #expect(register.family == .ipv6 && register.via.hasPrefix("SIP/2.0/UDP ["), "\(register.via)")
+        let live = try #require(await engine.liveAccountSettingsForTests(account.id))
+        #expect(live.transportID == (await engine.transportIDsForTests()).udp6)
+        #expect(!live.sipSTUN && !live.mediaSTUN)
         try await engine.removeAccount(account.id)
         await engine.stop()
     }

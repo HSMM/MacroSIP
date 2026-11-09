@@ -5,6 +5,7 @@ Shared vocabulary for MacroSIP. Code identifiers follow these names.
 - **Account** — one SIP identity (user, domain, registrar, credentials, transport). Several accounts may be enabled and registered at once. One account is the **default outgoing account**.
 - **Registration** — the account's REGISTER state with the server: `unregistered`, `registering`, `registered`, `failed(reason)`.
 - **Transport** — how SIP signalling travels: UDP, TCP or TLS. **SRTP** encrypts media and is independent of the signalling transport; modes are `disabled`, `optional`, `mandatory`.
+- **IP protocol** — per account, whether signalling and media use IPv4 or IPv6: `auto` (an IP address picks its own family, a host name follows the order the system resolver returns), `ipv4` (IPv4 only), `ipv6` (IPv6 only). The family the engine decided is the account's **IP family**; each transport exists for both families (UDP6, TCP6, TLS6 are the IPv6 twins).
 - **Call** — one SIP dialog with a remote party. States: `incoming`, `outgoing` (ringing on the far end), `early`, `connected`, `held`, `disconnected`. Exactly one connected call is **active** (sending and receiving audio); others are held.
 - **Remote party** — the display name and SIP URI of the other side of a call.
 - **Dial string** — what the user typed; it is resolved to a SIP URI using the outgoing account's domain.
@@ -27,6 +28,6 @@ Shared vocabulary for MacroSIP. Code identifiers follow these names.
 - **Call quality (MOS)** — the real-time estimate of a call's audio quality from RTCP statistics (loss, jitter, round-trip time); MOS is the mean opinion score, 1 to 5. A low value shows the "poor connection" notice.
 - **Headset follow** — the automatic switch of the audio devices to a headset when it is connected, and back when it is removed.
 - **Reconnecting** — the state of an account or call while the app restores registration after a network drop, an IP change or sleep. Accounts show "retry in N s"; calls keep their timer and show "Reconnecting… N s".
-- **Advanced (account editor)** — the collapsible section of the account editor with the rarely changed fields: display name, auth username, domain, proxy, transport, SRTP, registration expiry, certificate verification and the register, default and presence switches.
+- **Advanced (account editor)** — the collapsible section of the account editor with the rarely changed fields: display name, auth username, domain, proxy, transport, IP protocol, SRTP, registration expiry, certificate verification and the register, default and presence switches.
 - **Product** — one build, `MacroSIP`, bundle id `com.hsmm.macrosip` (ADR 0003).
 - **Engine** — the Swift layer in `MacroSIPCore` that owns the single pjsua instance and exposes accounts, calls and events to the UI.

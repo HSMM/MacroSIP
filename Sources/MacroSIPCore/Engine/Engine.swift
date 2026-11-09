@@ -51,6 +51,9 @@ public actor Engine {
         var index: pjsua_acc_id
         var config: AccountConfig
         var password: String
+        /// The IP family the account is bound to (`IPFamilyPolicy`); decided again on network
+        /// changes and REGISTER retries when it follows the resolver.
+        var family: IPFamily = .ipv4
         /// Last status given to `publishPresence` (re-applied when the account changes).
         var presence: PresenceStatus = .available
         /// Registration requested (cfg.registers or setRegistered): retried after temporary
@@ -70,6 +73,9 @@ public actor Engine {
     var dnsServers: [DNSServer] = []
     var transports = TransportIDs()
     var accounts: [AccountID: AccountEntry] = [:]
+    /// The families of a host name in the system resolver's order (`IPFamilyResolver.system`; tests
+    /// inject their own so they do not depend on real DNS).
+    var resolveFamilies: @Sendable (String) -> [IPFamily] = { IPFamilyResolver.system($0) }
     var requestedWiring: [Wire: Bool] = [:]
     /// Level (0...2) last requested for each connection that is requested on (per-call speaker
     /// and microphone volume live on the call<->sound device connections).
@@ -224,8 +230,10 @@ public actor Engine {
     ///   - nullAudio: use PJSIP's null sound device (tests, self-test: no microphone prompt).
     ///     Device selections are remembered but not applied.
     ///   - bindAddress: bind SIP and RTP to this local address and advertise it in Contact/SDP
-    ///     (e.g. "127.0.0.1" for calls on this machine). nil = all interfaces, PJSIP picks
-    ///     the default-route address (which may be a VPN tunnel).
+    ///     (e.g. "127.0.0.1" or "::1" for calls on this machine; brackets are dropped). Only the
+    ///     transports of its family exist then, and accounts of the other family are refused
+    ///     (`transportUnavailable`). nil = all interfaces and both families, PJSIP picks the
+    ///     default-route address (which may be a VPN tunnel).
     ///   - caBundleURL: where `start` writes the macOS system root certificates (PEM) that
     ///     the TLS transport verifies servers against. nil = Application Support/MacroSIP/ca-roots.pem.
     ///   - monitorNetwork: watch the network path (NWPathMonitor). false: the network counts as
@@ -236,7 +244,7 @@ public actor Engine {
         self.monitorNetwork = monitorNetwork
         self.logLevel = max(0, min(6, logLevel))
         self.nullAudio = nullAudio
-        let addr = bindAddress?.trimmingCharacters(in: .whitespaces)
+        let addr = bindAddress?.trimmingCharacters(in: CharacterSet(charactersIn: "[] \t"))
         self.bindAddress = (addr?.isEmpty ?? true) ? nil : addr
         self.caBundleURL = caBundleURL ?? TLSRoots.defaultURL
         self.queue = DispatchSerialQueue(label: "macrosip.engine", qos: .userInitiated)
@@ -437,21 +445,21 @@ public actor Engine {
         pjsip_cfg().pointee.endpt.disable_tcp_switch = 1
     }
 
-    /// UDP is required; TCP and TLS failures are logged and only disable accounts of that kind.
-    /// TLS exists twice: verifying (system roots + host name) and, for accounts that opted
-    /// out with `verifyTLSCertificate == false`, non-verifying.
+    /// The families the engine creates transports for: the bind address's (a non-literal counts as
+    /// IPv4, as pjsua resolves it for an IPv4 socket), or both without one.
+    var transportFamilies: [IPFamily] {
+        guard let bindAddress else { return [.ipv4, .ipv6] }
+        return [IPFamilyPolicy.literalFamily(bindAddress) ?? .ipv4]
+    }
+
+    /// Per family: UDP, TCP and TLS twice (verifying: system roots + host name; and, for accounts
+    /// that opted out with `verifyTLSCertificate == false`, non-verifying). UDP of the first family
+    /// (IPv4, or the bind address's) is required; every other failure is logged and only disables
+    /// accounts of that kind and family. IPv6 transports are never fatal: a Mac may have no IPv6 at
+    /// all. pjlib sets IPV6_V6ONLY on IPv6 sockets (PJ_SOCK_HAS_IPV6_V6ONLY), so [::]:port and
+    /// 0.0.0.0:port coexist and both families use the configured local port.
     private func createTransports(_ network: NetworkSettings) throws {
-        var udp = PJ.invalidID
-        try PJ.check(cpjsua_transport_create2(PJSIP_TRANSPORT_UDP, UInt32(network.localPort), bindAddress, &udp),
-                     "UDP transport on port \(network.localPort)")
-        transports.udp = udp
-
-        var tcp = PJ.invalidID
-        let tcpStatus = cpjsua_transport_create2(PJSIP_TRANSPORT_TCP, UInt32(network.localPort), bindAddress, &tcp)
-        PJ.warn(tcpStatus, "TCP transport on port \(network.localPort)")
-        if tcpStatus == PJ.success { transports.tcp = tcp }
-
-        // A missing bundle leaves the verifying transport without CAs: it then rejects every
+        // A missing bundle leaves the verifying transports without CAs: they then reject every
         // server (fails closed) instead of silently trusting them.
         var caFile: String?
         do {
@@ -463,20 +471,62 @@ public actor Engine {
             bridge.engineLogger.error("\(text, privacy: .public)")
             emit(.log(level: 1, "engine: \(text)"))
         }
-        var tls = PJ.invalidID
-        let tlsStatus = cpjsua_tls_transport_create(0, bindAddress, 1, caFile, &tls)
-        PJ.warn(tlsStatus, "TLS transport (verifying)")
-        if tlsStatus == PJ.success { transports.tls = tls }
-
-        var tlsNoVerify = PJ.invalidID
-        let noVerifyStatus = cpjsua_tls_transport_create(0, bindAddress, 0, nil, &tlsNoVerify)
-        PJ.warn(noVerifyStatus, "TLS transport (no certificate verification)")
-        if noVerifyStatus == PJ.success { transports.tlsNoVerify = tlsNoVerify }
+        let families = transportFamilies
+        for family in families {
+            try createTransports(family, network: network, caFile: caFile, required: family == families.first)
+        }
     }
 
-    /// Local SIP port of a transport, 0 if unknown (diagnostics, CLI).
+    private func createTransports(_ family: IPFamily, network: NetworkSettings, caFile: String?, required: Bool) throws {
+        let v6 = family == .ipv6
+        let name = v6 ? " over IPv6" : ""
+        var udp = PJ.invalidID
+        let udpStatus = cpjsua_transport_create2(v6 ? PJSIP_TRANSPORT_UDP6 : PJSIP_TRANSPORT_UDP,
+                                                 UInt32(network.localPort), bindAddress, &udp)
+        if required {
+            try PJ.check(udpStatus, "UDP\(name) transport on port \(network.localPort)")
+        } else {
+            PJ.warn(udpStatus, "UDP\(name) transport on port \(network.localPort)")
+        }
+        let udpID: Int32? = udpStatus == PJ.success ? udp : nil
+
+        var tcp = PJ.invalidID
+        let tcpStatus = cpjsua_transport_create2(v6 ? PJSIP_TRANSPORT_TCP6 : PJSIP_TRANSPORT_TCP,
+                                                 UInt32(network.localPort), bindAddress, &tcp)
+        PJ.warn(tcpStatus, "TCP\(name) transport on port \(network.localPort)")
+        let tcpID: Int32? = tcpStatus == PJ.success ? tcp : nil
+
+        let tlsType = v6 ? PJSIP_TRANSPORT_TLS6 : PJSIP_TRANSPORT_TLS
+        var tls = PJ.invalidID
+        let tlsStatus = cpjsua_tls_transport_create(tlsType, 0, bindAddress, 1, caFile, &tls)
+        PJ.warn(tlsStatus, "TLS\(name) transport (verifying)")
+        let tlsID: Int32? = tlsStatus == PJ.success ? tls : nil
+
+        var tlsNoVerify = PJ.invalidID
+        let noVerifyStatus = cpjsua_tls_transport_create(tlsType, 0, bindAddress, 0, nil, &tlsNoVerify)
+        PJ.warn(noVerifyStatus, "TLS\(name) transport (no certificate verification)")
+        let noVerifyID: Int32? = noVerifyStatus == PJ.success ? tlsNoVerify : nil
+
+        switch family {
+        case .ipv4:
+            (transports.udp, transports.tcp, transports.tls, transports.tlsNoVerify) = (udpID, tcpID, tlsID, noVerifyID)
+        case .ipv6:
+            (transports.udp6, transports.tcp6, transports.tls6, transports.tls6NoVerify) = (udpID, tcpID, tlsID, noVerifyID)
+        }
+        let made = [("UDP", udpID), ("TCP", tcpID), ("TLS", tlsID)].compactMap { kind, id in
+            id.map { "\(kind) \(cpjsua_transport_port($0))" }
+        }
+        emit(.log(level: 4, "engine: \(family) transports: " + (made.isEmpty ? "none" : made.joined(separator: ", "))))
+    }
+
+    /// Local SIP port of an IPv4 transport, 0 if unknown (diagnostics, CLI).
     public func localPort(of kind: TransportKind) -> Int {
-        guard isStarted, let id = transports.id(for: kind) else { return 0 }
+        localPort(of: kind, family: .ipv4)
+    }
+
+    /// Local SIP port of a transport of `family`, 0 if it does not exist.
+    public func localPort(of kind: TransportKind, family: IPFamily) -> Int {
+        guard isStarted, let id = transports.id(for: kind, family: family) else { return 0 }
         PJ.registerThread()
         return Int(cpjsua_transport_port(id))
     }

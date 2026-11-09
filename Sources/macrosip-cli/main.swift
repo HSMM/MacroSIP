@@ -15,7 +15,8 @@
 // and the transfer checks are driven there; --target2-cli is the one of --target2 (transfers).
 // Without both CLI ports the incoming-call and transfer steps are skipped.
 // --bind binds SIP/RTP to ADDR and advertises it (the self-test uses 127.0.0.1 so a VPN
-// default route cannot swallow localhost traffic; "any" = all interfaces, the interactive default).
+// default route cannot swallow localhost traffic; "any" = all interfaces and both IP families, the
+// interactive default). An IPv6 ADDR ("::1") creates the IPv6 transports only, an IPv4 one the IPv4 ones.
 //
 // Interactive commands: type `help`.
 

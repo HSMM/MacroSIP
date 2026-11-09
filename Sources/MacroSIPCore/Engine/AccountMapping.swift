@@ -15,28 +15,36 @@ struct PJAccountSettings: Equatable, Sendable {
     var proxies: [String]
     var srtp: SRTPMode
     var srtpSecureSignaling: Int
-    /// The account's transport; PJSUA_INVALID_ID for a UDP account of a private server while
-    /// STUN is on, so its Contact and Via do not carry the STUN address (`settings`).
+    /// The account's transport, of the account's family (`IPFamilyPolicy`); PJSUA_INVALID_ID for a
+    /// UDP account of a private IPv4 server while STUN is on, so its Contact and Via do not carry the
+    /// STUN address (`settings`).
     var transportID: Int32
     var allowContactRewrite: Bool
     var allowViaRewrite: Bool
     var keepAliveSeconds: Int
     var iceEnabled: Bool
     /// STUN for the account's signalling and media (`sip_stun_use`, `media_stun_use`): false
-    /// for a server in a private network (`PrivateServer`); true keeps pjsua's defaults.
+    /// for a server in a private network (`PrivateServer`) and for every IPv6 account (STUN and
+    /// TURN over IPv6 are out of scope); true keeps pjsua's defaults.
     var sipSTUN: Bool = true
     var mediaSTUN: Bool = true
     /// `allow_sdp_nat_rewrite`: without STUN pjsua offers the default route's address in SDP,
     /// which over a split-tunnel VPN is not the one the server sees; with it the SDP takes the
     /// address the registrar reported in Via (received), as Contact does. On for private servers.
     var sdpNATRewrite: Bool = false
+    /// `ipv6_media_use = PJSUA_IPV6_ENABLED_USE_IPV6_ONLY` (IPv6 accounts): the offer is IPv6 even
+    /// when only a link-local or loopback IPv6 address exists, which pjsua's PREFER_IPV6 would skip
+    /// for IPv4. false keeps pjsua's default (PREFER_IPV4; an `IN IP6` offer is still answered with
+    /// IPv6). Either way an offer is answered in its own family.
+    var mediaIPv6Only: Bool = false
     /// RTP base port and range (NetworkSettings.rtpPortStart/rtpPortCount); the first port is
     /// picked at random inside the range so two PJSIP phones on one host (or a restarted
     /// engine) do not fight over 4000, 4002, ...
     var rtpPort: Int
     var rtpPortRange: Int
     var randomizeRTPPort: Bool
-    /// Bind RTP to and advertise this address (nil = all interfaces, default route address).
+    /// Bind RTP to and advertise this address (nil = all interfaces, default route address). Only
+    /// an address of the account's family.
     var bindAddress: String?
     /// PUBLISH our presence (PIDF/RPID) to the registrar's domain (AccountConfig.publishPresence).
     var publishEnabled: Bool
@@ -53,29 +61,46 @@ struct PJAccountSettings: Equatable, Sendable {
     var ipChangeReinviteFlags: UInt32 = 0
 }
 
-/// SIP transports created at engine start. TLS exists twice: a listener that verifies the
-/// server certificate (default) and one that does not (accounts with
-/// `verifyTLSCertificate == false`). PJSIP never reuses a connection across listeners.
+/// SIP transports created at engine start, per family (docs/ENGINE.md "IPv6"). TLS exists twice:
+/// a listener that verifies the server certificate (default) and one that does not (accounts with
+/// `verifyTLSCertificate == false`). PJSIP never reuses a connection across listeners. Accounts are
+/// bound to the transport of their family; nil = that transport could not be created (or the bind
+/// address is of the other family).
 struct TransportIDs: Equatable, Sendable {
     var udp: Int32?
     var tcp: Int32?
     var tls: Int32?
     var tlsNoVerify: Int32?
+    var udp6: Int32?
+    var tcp6: Int32?
+    var tls6: Int32?
+    var tls6NoVerify: Int32?
 
-    func id(for account: AccountConfig) -> Int32? {
-        switch account.transport {
-        case .udp: return udp
-        case .tcp: return tcp
-        case .tls: return account.verifyTLSCertificate ? tls : tlsNoVerify
+    func id(for account: AccountConfig, family: IPFamily = .ipv4) -> Int32? {
+        switch (account.transport, family) {
+        case (.udp, .ipv4): return udp
+        case (.tcp, .ipv4): return tcp
+        case (.tls, .ipv4): return account.verifyTLSCertificate ? tls : tlsNoVerify
+        case (.udp, .ipv6): return udp6
+        case (.tcp, .ipv6): return tcp6
+        case (.tls, .ipv6): return account.verifyTLSCertificate ? tls6 : tls6NoVerify
         }
     }
 
-    func id(for kind: TransportKind) -> Int32? {
-        switch kind {
-        case .udp: return udp
-        case .tcp: return tcp
-        case .tls: return tls
+    func id(for kind: TransportKind, family: IPFamily = .ipv4) -> Int32? {
+        switch (kind, family) {
+        case (.udp, .ipv4): return udp
+        case (.tcp, .ipv4): return tcp
+        case (.tls, .ipv4): return tls
+        case (.udp, .ipv6): return udp6
+        case (.tcp, .ipv6): return tcp6
+        case (.tls, .ipv6): return tls6
         }
+    }
+
+    /// Families that have the account's transport.
+    func families(for account: AccountConfig) -> Set<IPFamily> {
+        Set(IPFamily.allCases.filter { id(for: account, family: $0) != nil })
     }
 }
 
@@ -84,24 +109,14 @@ struct TransportIDs: Equatable, Sendable {
 /// reached inside the same network or through a VPN, where that public address is wrong: PJSIP
 /// learns the real one only from the first answer and registers again, and a server that does
 /// not rewrite Contact would send incoming calls to the public address. Host names are not
-/// resolved here (that would block, and the answer may change with the network); they keep STUN.
+/// resolved here (the answer may change with the network); they keep STUN. This is about IPv4
+/// accounts: an IPv6 account (`IPFamilyPolicy`) uses no STUN at all.
 enum PrivateServer {
     /// Every signalling hop of the account is a private or local IP literal: the registrar and
     /// the outbound proxy when one is set, otherwise the domain (INVITE, SUBSCRIBE and PUBLISH
     /// go there directly). One public address or host name among them keeps STUN.
     static func allHopsPrivate(_ account: AccountConfig) -> Bool {
         hops(account).allSatisfy(isPrivate(uri:))
-    }
-
-    /// Every hop is a dotted IPv4 literal. pjsua asks for an IPv6 transport for any host with a
-    /// colon (`pjsua_acc_get_uac_addr`; ::ffff:a.b.c.d too) and the engine creates none, so an
-    /// account with such a hop must stay bound to its transport (`AccountMapping.settings`).
-    static func allHopsIPv4(_ account: AccountConfig) -> Bool {
-        hops(account).allSatisfy { uri in
-            var v4 = in_addr()
-            guard let host = SignallingSource.proxy(uri, transport: .udp)?.address else { return false }
-            return inet_pton(AF_INET, host, &v4) == 1
-        }
     }
 
     private static func hops(_ account: AccountConfig) -> [String] {
@@ -145,18 +160,24 @@ enum PrivateServer {
 }
 
 enum AccountMapping {
+    /// `family` is the account's IP family as `IPFamilyPolicy` decided it: the account is bound to
+    /// that family's transport (pjsua_init_tpselector: a TRANSPORT selector for UDP, a LISTENER one
+    /// for TCP/TLS, so the family is fixed by the binding; `ipv6_sip_use` only matters unbound).
     static func settings(
         for account: AccountConfig,
         password: String,
         network: NetworkSettings,
         transports: TransportIDs,
-        bindAddress: String? = nil
+        bindAddress: String? = nil,
+        family: IPFamily = .ipv4
     ) throws -> PJAccountSettings {
-        guard let transportID = transports.id(for: account) else {
-            throw EngineError.transportUnavailable(account.transport)
+        guard let transportID = transports.id(for: account, family: family) else {
+            throw EngineError.transportUnavailable(account.transport, ipv6: family == .ipv6)
         }
         let proxy = account.outboundProxy?.trimmingCharacters(in: .whitespaces) ?? ""
-        let stun = !PrivateServer.allHopsPrivate(account)
+        // IPv6: no STUN (pjsua maps IPv4 only; an IPv6 address needs no mapping without NAT66),
+        // so the SDP takes the address the registrar reported, as for private servers.
+        let stun = family == .ipv4 && !PrivateServer.allHopsPrivate(account)
         // sip_stun_use alone does not change Contact and Via: for an account bound to its UDP
         // transport pjsua takes them from the transport's published address, which STUN made
         // the public one (pjsip_tpmgr_find_local_addr2 ignores local_if under a transport
@@ -164,11 +185,14 @@ enum AccountMapping {
         // (get_net_interface) with the transport's port; requests still leave through the one
         // UDP transport, and large ones stay on UDP (disable_tcp_switch). TCP and TLS listeners
         // are never published with a STUN address, and without a STUN server there is nothing
-        // to undo: those accounts stay bound. So do IPv6 hops: unbound, pjsua would want an
-        // IPv6 transport for them and refuse the account.
+        // to undo: those accounts stay bound. IPv6 accounts stay bound to their IPv6 transport:
+        // only the IPv4 UDP transport is published with a STUN address.
         let stunServer = network.stunServer?.trimmingCharacters(in: .whitespaces) ?? ""
-        let unbound = !stun && !stunServer.isEmpty && account.transport == .udp
-            && PrivateServer.allHopsIPv4(account)
+        let unbound = !stun && !stunServer.isEmpty && account.transport == .udp && family == .ipv4
+        // RTP binds to the engine's bind address only when it is of the account's family (pjsua
+        // would fail to bind an IPv6 address to an IPv4 socket and the other way round). A bind
+        // address that is not a literal counts as IPv4, as for the transports.
+        let rtpBind = bindAddress.flatMap { (IPFamilyPolicy.literalFamily($0) ?? .ipv4) == family ? $0 : nil }
         return PJAccountSettings(
             idURI: account.uri,
             regURI: account.registrarURI,
@@ -186,14 +210,18 @@ enum AccountMapping {
             allowContactRewrite: true,
             allowViaRewrite: true,
             keepAliveSeconds: max(0, network.keepAliveSeconds),
-            iceEnabled: network.useICE,
+            // Not over IPv6: pjsua binds the IPv6 ICE component to "0", which macOS getaddrinfo turns
+            // into ::ffff:0.0.0.0, so that socket fails (EADDRNOTAVAIL) and the offer would carry IPv4
+            // candidates only, then fail on an IPv6 answer (PJ_EAFNOTSUP). Plain RTP works over IPv6.
+            iceEnabled: network.useICE && family == .ipv4,
             sipSTUN: stun,
             mediaSTUN: stun,
             sdpNATRewrite: !stun,
+            mediaIPv6Only: family == .ipv6,
             rtpPort: network.effectiveRTPRange.start,
             rtpPortRange: rtpPortRange(count: network.effectiveRTPRange.count),
             randomizeRTPPort: true,
-            bindAddress: bindAddress,
+            bindAddress: rtpBind,
             publishEnabled: account.publishPresence,
             publishQueueRequest: true,
             mwiEnabled: account.mwi,
@@ -287,6 +315,7 @@ enum AccountMapping {
         if !s.sipSTUN { cfg.pointee.sip_stun_use = PJSUA_STUN_USE_DISABLED }
         if !s.mediaSTUN { cfg.pointee.media_stun_use = PJSUA_STUN_USE_DISABLED }
         cfg.pointee.allow_sdp_nat_rewrite = s.sdpNATRewrite ? 1 : 0
+        if s.mediaIPv6Only { cfg.pointee.ipv6_media_use = PJSUA_IPV6_ENABLED_USE_IPV6_ONLY }
 
         cfg.pointee.rtp_cfg.port = UInt32(s.rtpPort)
         cfg.pointee.rtp_cfg.port_range = UInt32(s.rtpPortRange)
@@ -335,6 +364,7 @@ enum AccountMapping {
             sipSTUN: c.sip_stun_use != PJSUA_STUN_USE_DISABLED,
             mediaSTUN: c.media_stun_use != PJSUA_STUN_USE_DISABLED,
             sdpNATRewrite: c.allow_sdp_nat_rewrite != 0,
+            mediaIPv6Only: c.ipv6_media_use == PJSUA_IPV6_ENABLED_USE_IPV6_ONLY,
             rtpPort: Int(c.rtp_cfg.port),
             rtpPortRange: Int(c.rtp_cfg.port_range),
             randomizeRTPPort: c.rtp_cfg.randomize_port != 0,

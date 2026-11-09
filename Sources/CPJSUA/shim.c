@@ -126,7 +126,8 @@ pj_status_t cpjsua_transport_create2(pjsip_transport_type_e type,
     return status;
 }
 
-pj_status_t cpjsua_tls_transport_create(unsigned port,
+pj_status_t cpjsua_tls_transport_create(pjsip_transport_type_e type,
+                                        unsigned port,
                                         const char *address,
                                         int verify_server,
                                         const char *ca_file,
@@ -136,6 +137,8 @@ pj_status_t cpjsua_tls_transport_create(unsigned port,
     pjsua_transport_id tid = PJSUA_INVALID_ID;
     pj_status_t status;
 
+    if (type != PJSIP_TRANSPORT_TLS && type != PJSIP_TRANSPORT_TLS6)
+        return PJ_EINVAL;
     pjsua_transport_config_default(&cfg);
     cfg.port = port;
     if (address && *address) {
@@ -147,7 +150,7 @@ pj_status_t cpjsua_tls_transport_create(unsigned port,
     cfg.tls_setting.require_client_cert = PJ_FALSE;
     if (ca_file && *ca_file)
         cfg.tls_setting.ca_list_file = cpjsua_str(ca_file);
-    status = pjsua_transport_create(PJSIP_TRANSPORT_TLS, &cfg, &tid);
+    status = pjsua_transport_create(type, &cfg, &tid);
     if (out_id)
         *out_id = tid;
     return status;
@@ -1135,6 +1138,29 @@ int cpjsua_call_local_rtp_port(pjsua_call_id call_id)
         pj_sockaddr_get_port(&tpinfo.sock_info.rtp_addr_name) == 0)
         return 0;
     return pj_sockaddr_get_port(&tpinfo.sock_info.rtp_addr_name);
+}
+
+int cpjsua_call_local_rtp_addr(pjsua_call_id call_id, char *buf, unsigned len)
+{
+    pjsua_call_info ci;
+    pjmedia_transport_info tpinfo;
+    int aud;
+
+    if (!buf || len == 0)
+        return 0;
+    buf[0] = '\0';
+    if (pjsua_call_get_info(call_id, &ci) != PJ_SUCCESS)
+        return 0;
+    aud = first_audio_index(&ci);
+    if (aud < 0)
+        return 0;
+    pjmedia_transport_info_init(&tpinfo);
+    if (pjsua_call_get_med_transport_info(call_id, (unsigned)aud, &tpinfo) != PJ_SUCCESS)
+        return 0;
+    if (!pj_sockaddr_has_addr(&tpinfo.sock_info.rtp_addr_name))
+        return 0;
+    pj_sockaddr_print(&tpinfo.sock_info.rtp_addr_name, buf, len, 0);
+    return (int)pj_ansi_strlen(buf);
 }
 
 /* ====================================================== packet source === */

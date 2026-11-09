@@ -267,7 +267,9 @@ public enum EngineError: Error, Equatable, Sendable, CustomStringConvertible {
     case unknownAccount(AccountID)
     case noSuchCall(CallID)
     case tooManyCalls(limit: Int)
-    case transportUnavailable(TransportKind)
+    /// No transport of this kind (and family: `ipv6`) exists, e.g. the IPv6 transports with an IPv4
+    /// bind address, or a TLS listener that could not be created.
+    case transportUnavailable(TransportKind, ipv6: Bool = false)
     case invalidArgument(String)
     case unsupported(String)
 
@@ -279,7 +281,8 @@ public enum EngineError: Error, Equatable, Sendable, CustomStringConvertible {
         case let .unknownAccount(id): return "Unknown account \(id.raw)"
         case let .noSuchCall(id): return "No such call \(id)"
         case let .tooManyCalls(limit): return "Too many calls (limit \(limit))"
-        case let .transportUnavailable(kind): return "\(kind.rawValue.uppercased()) transport is not available"
+        case let .transportUnavailable(kind, ipv6):
+            return "\(kind.rawValue.uppercased())\(ipv6 ? " over IPv6" : "") transport is not available"
         case let .invalidArgument(what): return "Invalid argument: \(what)"
         case let .unsupported(what): return "Not supported: \(what)"
         }

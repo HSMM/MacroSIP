@@ -13,6 +13,18 @@ public enum SRTPMode: String, Codable, Sendable, CaseIterable {
     case disabled, optional, mandatory
 }
 
+/// Which IP family the account's signalling and media use (account editor › Advanced › IP protocol).
+/// `.auto`: an IPv4 or IPv6 literal server picks its own family; a host name follows the order the
+/// system resolver returns (docs/ENGINE.md "IPv6"). Unknown values decode as `.auto`.
+public enum IPProtocol: String, Codable, Sendable, CaseIterable {
+    case auto, ipv4, ipv6
+
+    public init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = IPProtocol(rawValue: raw) ?? .auto
+    }
+}
+
 /// Everything about a SIP account except the password, which lives in Keychain under `id`.
 public struct AccountConfig: Codable, Identifiable, Equatable, Sendable {
     public var id: AccountID
@@ -39,6 +51,8 @@ public struct AccountConfig: Codable, Identifiable, Equatable, Sendable {
     public var mwi: Bool
     /// Number (or SIP URI) the app dials to listen to voicemail; nil = not configured.
     public var voicemailNumber: String?
+    /// IP family of signalling and media; `.auto` decides from the server address.
+    public var ipProtocol: IPProtocol
 
     public init(
         id: AccountID = AccountID(),
@@ -57,7 +71,8 @@ public struct AccountConfig: Codable, Identifiable, Equatable, Sendable {
         publishPresence: Bool = false,
         verifyTLSCertificate: Bool = true,
         mwi: Bool = true,
-        voicemailNumber: String? = nil
+        voicemailNumber: String? = nil,
+        ipProtocol: IPProtocol = .auto
     ) {
         self.id = id
         self.displayName = displayName
@@ -76,6 +91,7 @@ public struct AccountConfig: Codable, Identifiable, Equatable, Sendable {
         self.verifyTLSCertificate = verifyTLSCertificate
         self.mwi = mwi
         self.voicemailNumber = voicemailNumber
+        self.ipProtocol = ipProtocol
     }
 
     /// The engine sends REGISTER for this account.
@@ -107,11 +123,12 @@ extension AccountConfig {
     private enum CodingKeys: String, CodingKey {
         case id, displayName, username, domain, registrar, outboundProxy, authID, transport, srtp
         case enabled, registerWithServer, isDefaultOutgoing, registrationInterval, publishPresence, verifyTLSCertificate
-        case mwi, voicemailNumber
+        case mwi, voicemailNumber, ipProtocol
     }
 
-    /// Decodes JSON written before `verifyTLSCertificate`, `registerWithServer`, `mwi` and
-    /// `voicemailNumber` existed (missing: verify on, MWI on, no voicemail number).
+    /// Decodes JSON written before `verifyTLSCertificate`, `registerWithServer`, `mwi`,
+    /// `voicemailNumber` and `ipProtocol` existed (missing: verify on, MWI on, no voicemail number,
+    /// IP protocol Auto).
     /// Before `registerWithServer`, `enabled == false` meant "do not register"; that becomes an
     /// enabled, outgoing-only account so nothing silently turns into a disabled one.
     public init(from decoder: Decoder) throws {
@@ -136,7 +153,8 @@ extension AccountConfig {
             publishPresence: try c.decode(Bool.self, forKey: .publishPresence),
             verifyTLSCertificate: try c.decodeIfPresent(Bool.self, forKey: .verifyTLSCertificate) ?? true,
             mwi: (try? c.decodeIfPresent(Bool.self, forKey: .mwi)) ?? true,
-            voicemailNumber: try? c.decodeIfPresent(String.self, forKey: .voicemailNumber)
+            voicemailNumber: try? c.decodeIfPresent(String.self, forKey: .voicemailNumber),
+            ipProtocol: (try? c.decodeIfPresent(IPProtocol.self, forKey: .ipProtocol)) ?? .auto
         )
     }
 }

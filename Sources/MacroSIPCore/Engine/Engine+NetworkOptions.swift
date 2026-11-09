@@ -30,7 +30,7 @@ extension Engine {
         if live.keepAliveSeconds != previous.keepAliveSeconds || live.useICE != previous.useICE {
             for (id, entry) in accounts {
                 do {
-                    let s = try accountSettings(entry.config, password: entry.password)
+                    let s = try accountSettings(entry.config, password: entry.password, family: entry.family)
                     try AccountMapping.withPJConfig(s) { p in
                         p.pointee.disable_reg_on_modify = 1
                         try PJ.check(pjsua_acc_modify(entry.index, p), "pjsua_acc_modify")
@@ -78,6 +78,14 @@ extension Engine {
     public func localRTPPort(of id: CallID) -> Int {
         guard let slot = try? liveSlot(id) else { return 0 }
         return Int(cpjsua_call_local_rtp_port(slot))
+    }
+
+    /// Local RTP address of the call as offered in SDP ("::1", "192.0.2.10"), "" if unknown (diagnostics).
+    public func localRTPAddress(of id: CallID) -> String {
+        guard let slot = try? liveSlot(id) else { return "" }
+        var buf = [CChar](repeating: 0, count: 64)
+        guard cpjsua_call_local_rtp_addr(slot, &buf, UInt32(buf.count)) > 0 else { return "" }
+        return String(decoding: buf.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self)
     }
 
     /// Whether SIP host names go through the DNS resolver (SRV), and its servers (tests).
