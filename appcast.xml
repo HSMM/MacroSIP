@@ -3,6 +3,49 @@
     <channel>
         <title>MacroSIP</title>
         <item>
+            <title>26.3.1</title>
+            <pubDate>Mon, 09 Nov 2026 16:54:54 +0000</pubDate>
+            <link>https://github.com/HSMM/MacroSIP</link>
+            <sparkle:version>69</sparkle:version>
+            <sparkle:shortVersionString>26.3.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<h2 dir="auto">What's new</h2>
+<ul dir="auto">
+<li>
+<p dir="auto"><strong>IPv6 next to IPv4</strong> (<a href="https://github.com/HSMM/MacroSIP/issues/11" data-hovercard-type="issue" data-hovercard-url="/HSMM/MacroSIP/issues/11/hovercard">#11</a>). MacroSIP now registers and calls over IPv6: SIP over UDP, TCP and TLS, and the audio too (<code class="notranslate">c=IN IP6</code>, RTP over IPv6). It works for a server given by an IPv6 address (<code class="notranslate">[2001:db8::1]</code>) or by a host name with IPv6 (AAAA) records. An account at an IPv6 address no longer shows "Reconnecting…" forever.</p>
+<p dir="auto">Account › Advanced has a new setting, <strong>IP protocol</strong>:</p>
+<ul dir="auto">
+<li><strong>Auto</strong> (default): an IP address picks its own protocol; for a host name MacroSIP follows the order macOS returns. If the server does not answer at all, the account tries the other protocol at once and stays on it until the network changes.</li>
+<li><strong>IPv4 only</strong> and <strong>IPv6 only</strong> fix the protocol. A choice that contradicts the server address is refused with an explanation.</li>
+</ul>
+<p dir="auto">The protocol never changes during a call. When an account moves between IPv4 and IPv6, it removes its old registration first, so a call is not delivered twice. Accounts over IPv6 use no STUN; ICE works over IPv6 as well.</p>
+<p dir="auto"><strong>After the update:</strong> an account in Auto whose server name has both IPv4 and IPv6 addresses may switch to IPv6 when your network has working IPv6. If the PBX does not answer SIP over IPv6, MacroSIP goes back to IPv4 by itself; to keep the old behaviour outright, choose IPv4 only. Accounts whose server is an IPv4 address behave as before.</p>
+<p dir="auto">Not in this version: NAT64 for IPv4 servers on IPv6-only networks, STUN and TURN over IPv6, servers on link-local addresses (<code class="notranslate">fe80::…</code>).</p>
+</li>
+</ul>
+<p dir="auto">Not yet checked on a real network: a real IPv6 PBX over UDP, TCP and TLS; the fallback to IPv4 when a firewall drops IPv6; DNS SRV targets with IPv6 addresses only; Asterisk and Kamailio after an account moves between protocols; temporary IPv6 address rotation and network changes during a call; ICE between two hosts with global IPv6 addresses. All of it is covered by loopback tests with stub servers only. After a move, other phones' subscriptions to your presence stay on the old protocol until they expire.</p>
+<p dir="auto">With ad hoc signing macOS asks for microphone access again after each update; allow it once more.</p>
+<p dir="auto"><strong>Full Changelog</strong>: <a class="commit-link" href="https://github.com/HSMM/MacroSIP/compare/26.3.0...26.3.1"><tt>26.3.0...26.3.1</tt></a></p>
+<hr>
+<h2 dir="auto">Что нового</h2>
+<ul dir="auto">
+<li>
+<p dir="auto"><strong>IPv6 наряду с IPv4</strong> (<a href="https://github.com/HSMM/MacroSIP/issues/11" data-hovercard-type="issue" data-hovercard-url="/HSMM/MacroSIP/issues/11/hovercard">#11</a>). MacroSIP теперь регистрируется и звонит по IPv6: SIP по UDP, TCP и TLS, и звук тоже (<code class="notranslate">c=IN IP6</code>, RTP по IPv6). Работает для сервера, заданного IPv6-адресом (<code class="notranslate">[2001:db8::1]</code>) или именем хоста с IPv6-записями (AAAA). Аккаунт с IPv6-адресом сервера больше не висит в «Переподключение…».</p>
+<p dir="auto">В Аккаунт › Дополнительно появилась настройка <strong>«Протокол IP»</strong>:</p>
+<ul dir="auto">
+<li><strong>«Авто»</strong> (по умолчанию): IP-адрес сам задаёт протокол; для имени хоста MacroSIP берёт порядок, который выдаёт macOS. Если сервер совсем не отвечает, аккаунт сразу пробует другой протокол и остаётся на нём до смены сети.</li>
+<li><strong>«Только IPv4»</strong> и <strong>«Только IPv6»</strong> фиксируют протокол. Выбор, который противоречит адресу сервера, отклоняется с объяснением.</li>
+</ul>
+<p dir="auto">Во время звонка протокол не меняется. Когда аккаунт переходит между IPv4 и IPv6, он сначала снимает старую регистрацию, чтобы звонок не пришёл дважды. Аккаунты по IPv6 не используют STUN; ICE работает и по IPv6.</p>
+<p dir="auto"><strong>После обновления:</strong> аккаунт в режиме «Авто», у имени сервера которого есть и IPv4-, и IPv6-адреса, может перейти на IPv6, если в вашей сети есть рабочий IPv6. Если АТС не отвечает по SIP через IPv6, MacroSIP сам вернётся на IPv4; чтобы оставить прежнее поведение наверняка, выберите «Только IPv4». Аккаунты, у которых сервер задан IPv4-адресом, работают как раньше.</p>
+<p dir="auto">В этой версии нет: NAT64 для IPv4-серверов в сетях только с IPv6, STUN и TURN по IPv6, серверов на link-local адресах (<code class="notranslate">fe80::…</code>).</p>
+</li>
+</ul>
+<p dir="auto">На реальной сети ещё не проверено: настоящая АТС по IPv6 через UDP, TCP и TLS; возврат на IPv4, когда фаервол отбрасывает IPv6; цели DNS SRV только с IPv6-адресами; Asterisk и Kamailio после перехода аккаунта между протоколами; смена временного IPv6-адреса и смена сети во время звонка; ICE между двумя хостами с глобальными IPv6-адресами. Всё это покрыто только тестами на loopback со стабами серверов. После перехода подписки других телефонов на ваше присутствие остаются на старом протоколе, пока не истекут.</p>
+<p dir="auto">При ad hoc подписи macOS после каждого обновления заново спрашивает доступ к микрофону, разрешите его ещё раз.</p>]]></description>
+            <enclosure url="https://github.com/HSMM/MacroSIP/releases/download/26.3.1/MacroSIP-26.3.1.dmg" length="19326960" type="application/octet-stream" sparkle:edSignature="PgE2mPj0GfL6EGnMDGoZfgkirfHx8T47O7C3C1NXndgGwn2wfiv6HV/MkpkipHoumqY36AQb1h+KUboYUakMDQ=="/>
+        </item>
+        <item>
             <title>26.3.0</title>
             <pubDate>Thu, 05 Nov 2026 18:37:06 +0000</pubDate>
             <link>https://github.com/HSMM/MacroSIP</link>
