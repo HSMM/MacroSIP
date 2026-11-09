@@ -19,33 +19,6 @@ MacroSIP: applied by scripts/build-pjsip.sh (ADR 0014).
 
 --- a/pjsip/src/pjsua-lib/pjsua_media.c
 +++ b/pjsip/src/pjsua-lib/pjsua_media.c
-@@ -33,16 +33,16 @@
- 
- static void stop_media_stream(pjsua_call *call, unsigned med_idx);
- 
--char *pjsua_get_basename(const char* path, unsigned len)
--{
--    char* p = ((char*)path) + len;
--
--    if (len == 0)
--        return p;
--
--    for (--p; p != path && *p != '/' && *p != '\\'; ) --p;
--
--    return (p == path) ? p : p + 1;
-+char *pjsua_get_basename(const char* path, unsigned len)
-+{
-+    char* p = ((char*)path) + len;
-+
-+    if (len == 0)
-+        return p;
-+
-+    for (--p; p != path && *p != '/' && *p != '\\'; ) --p;
-+
-+    return (p == path) ? p : p + 1;
- }
- 
- static void pjsua_media_config_dup(pj_pool_t *pool,
 @@ -1230,7 +1230,11 @@
          }
  
@@ -97,22 +70,3 @@ MacroSIP: applied by scripts/build-pjsip.sh (ADR 0014).
                               (pj_uint16_t)cfg->port);
              ice_cfg.turn_tp[i].cfg.port_range = (pj_uint16_t)cfg->port_range;
              if (cfg->port != 0 && ice_cfg.turn_tp[i].cfg.port_range == 0)
-@@ -1977,12 +1991,12 @@
-         goto on_return;
-     }
- 
--    /* Check if media is deinitializing */
--    if (call_med->call->async_call.med_ch_deinit || !call_med->tp) {
--        status = PJ_ECANCELLED;
--        goto on_return;
--    }
--
-+    /* Check if media is deinitializing */
-+    if (call_med->call->async_call.med_ch_deinit || !call_med->tp) {
-+        status = PJ_ECANCELLED;
-+        goto on_return;
-+    }
-+
-     pjmedia_transport_simulate_lost(call_med->tp, PJMEDIA_DIR_ENCODING,
-                                     pjsua_var.media_cfg.tx_drop_pct);
- 
