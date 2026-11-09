@@ -59,8 +59,9 @@ loses the choice between the verifying and the non-verifying TLS listener (miles
 - **ICE over IPv6, with our first PJSIP patch.** PJSIP 2.17 binds the IPv6 ICE component to the
   string "0", which macOS `getaddrinfo` turns into `::ffff:0.0.0.0`; that socket cannot be bound, the
   offer carried IPv4 candidates only and a call failed on an IPv6 answer. Instead of turning ICE off
-  for IPv6 accounts, `scripts/build-pjsip.sh` applies `scripts/pjsip-patches/0001-ipv6-ice-bind-any.patch`
-  ("::" instead of "0" in pjsua_media.c). This amends ADR 0002/0012: pjproject is no longer built
+  for IPv6 accounts, `scripts/build-pjsip.sh` applies `scripts/pjsip-patches/0001-ipv6-ice-bind-any.patch`:
+  pjsua_media.c binds the IPv6 components like the IPv4 ones (the account's IPv6 bound address,
+  else "::") and keeps the candidate of a component bound to loopback on purpose. This amends ADR 0002/0012: pjproject is no longer built
   from the pristine tarball alone. Patches live in `scripts/pjsip-patches/`, one problem per file
   with a header saying why, applied in name order with `patch -p1 --forward`; a patch that does not
   apply stops the build; their hashes are part of the build stamp and of CI's cache key; every

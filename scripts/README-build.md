@@ -49,7 +49,7 @@ problem, refresh it otherwise.
 
 | Patch | Why |
 |---|---|
-| `0001-ipv6-ice-bind-any.patch` | pjsua binds the IPv6 ICE STUN/TURN components to the string "0", which macOS `getaddrinfo` turns into `::ffff:0.0.0.0`; that cannot be bound to an IPv6-only socket, so IPv6 calls with ICE got IPv4 candidates only. The patch uses "::" (ADR 0014). |
+| `0001-ipv6-ice-bind-any.patch` | pjsua binds the IPv6 ICE STUN/TURN components to the string "0" and ignores the account's bound address; macOS `getaddrinfo` turns "0" into `::ffff:0.0.0.0`, which cannot be bound to an IPv6-only socket, so IPv6 calls with ICE got IPv4 candidates only. The patch binds them like the IPv4 ones (the account's IPv6 bound address, else "::") and keeps the host candidate of a component bound to loopback on purpose (`loop_addr`), which pjnath leaves out otherwise (ADR 0014). |
 
 To check a build: `lipo -thin arm64 third_party/pjsip/lib/libpjsua.a -output /tmp/x.a`, extract
 `pjsua_media.o` with `ar -x`, and `otool -v -s __TEXT __cstring pjsua_media.o` lists `::`.

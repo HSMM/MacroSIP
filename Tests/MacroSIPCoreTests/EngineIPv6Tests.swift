@@ -1211,6 +1211,53 @@ extension EngineTests {
         await engine.stop()
     }
 
+    /// ICE honours an IPv6 bind address (scripts/pjsip-patches/0001: the IPv6 ICE component binds to the
+    /// account's IPv6 bound address, as the IPv4 one does, and keeps a loopback candidate when that is
+    /// where it is bound). With `bindAddress` "::1" the offer's only IPv6 candidate is ::1, and a call
+    /// between two ICE legs on loopback negotiates ICE over IPv6 and carries RTP.
+    @Test func iceOverIPv6HonoursTheBindAddress() async throws {
+        let stub = try IPv6Stub()
+        defer { stub.stop() }
+        let engine = await makeEngine(bindAddress: "::1")
+        let log = EventLog()
+        let consumer = log.consume(engine)
+        defer { consumer.cancel() }
+        var net = Self.network
+        net.useICE = true
+        try await engine.start(network: net)
+        let account = localIPv6Account("ice")
+        try await engine.addAccount(account, password: "")
+        let probe = try await engine.makeCall(to: DialString(uri: "sip:300@[::1]:\(stub.port)", display: "300"), from: account.id)
+        #expect(await waitUntil(timeout: 8) { stub.requests.contains { $0.method == "INVITE" } })
+        let offer = try #require(stub.requests.first { $0.method == "INVITE" }).body
+        let v6 = offer.components(separatedBy: "\r\n").filter { $0.hasPrefix("a=candidate:") }.compactMap { line -> String? in
+            let f = line.split(separator: " ")
+            return f.count > 7 && f[4].contains(":") ? String(f[4]) : nil
+        }
+        #expect(!v6.isEmpty && v6.allSatisfy { $0 == "::1" }, "IPv6 candidates \(v6)")
+        #expect(sdpConnection(offer) == "IN IP6 ::1", "\(offer)")
+        try? await engine.hangup(probe)
+        #expect(await waitUntil { await engine.calls().isEmpty })
+
+        let port6 = await engine.localPort(of: .udp, family: .ipv6)
+        let mark = log.all.count
+        let out = try await engine.makeCall(to: DialString(uri: "sip:ice@[::1]:\(port6)", display: "ice"), from: account.id)
+        func incoming() -> CallInfo? {
+            log.all.dropFirst(mark).lazy.compactMap { if case let .incomingCall(c) = $0 { return c }; return nil }.first
+        }
+        #expect(await waitUntil { incoming() != nil })
+        let inc = try #require(incoming())
+        try await engine.answer(inc.id)
+        #expect(await waitUntil(timeout: 8) {
+            let a = try? await engine.mediaStats(out), b = try? await engine.mediaStats(inc.id)
+            return (a?.rxPackets ?? 0) > 10 && (b?.rxPackets ?? 0) > 10
+        })
+        #expect(await engine.localRTPAddress(of: out) == "::1")
+        try await engine.hangup(out)
+        #expect(await waitUntil { await engine.calls().isEmpty })
+        await engine.stop()
+    }
+
     /// With ICE on (PJSIP patched: scripts/pjsip-patches/0001-ipv6-ice-bind-any.patch), an IPv6 call
     /// gathers IPv6 host candidates: the offer is `c=IN IP6` with an IPv6 default candidate, lists IPv6
     /// `typ host` candidates (and IPv4 ones from pjsua's second component), and the call to a peer
