@@ -29,21 +29,28 @@ loses the choice between the verifying and the non-verifying TLS listener (miles
   account that does not register sends its INVITEs to the dialled host, so it is the system's order,
   not always PJSIP's. With DNS SRV in effect and no explicit port the name cannot be asked that way,
   so Auto starts with IPv4 there; a host name that does not resolve (offline) also gives IPv4. Lookups
-  run concurrently off the engine queue, each host once, with one bounded wait (2 s); a host not
-  resolved in time keeps the account's family.
+  never block the engine: they run off its queue, one per host at a time, with a short cache; a new
+  account's first REGISTER waits for its lookup (2 s at most), and a lookup that fails or is late
+  never moves an existing account.
 - **Auto falls back.** The system order is only the first attempt: a REGISTER that gets no answer at
-  all (timeout, refused or broken connection, no address of the bound family) moves the account to
+  all (timeout, refused or broken connection, no address of the bound family) makes the account want
   the other family at once when the host has an address of it (or DNS SRV makes the other family the
-  only chance), and that family then stays until the next network change. A server that answers
+  only chance), also when it happens during a network-change round (the move follows the round), and
+  that family then stays until the next network change, through retries and unchanged updates. A server that answers
   (401, 403, its own 503) is not a reason to switch. Without this, a dual-stack name whose server
   does not answer over the first family (Asterisk listening on 0.0.0.0 only, an IPv6 firewall)
   would retry forever where 26.3.0 registered over IPv4.
-- **Decided again** at every network change, when IPv6 comes or goes, and before REGISTER retries
-  (not after a fallback). An account whose family changed is moved: its old binding is
-  un-REGISTERed first (a lingering Contact forks calls or makes a `max_contacts=1` server refuse the
-  new one), its subscriptions are made anew on the new transport, and it registers there. **Never
-  while the account has a call**: the call's dialog would keep a peer of the old family on a
-  transport of the new one; the move waits for the calls to end.
+- **Decided again** at every network change, when IPv6 comes or goes, and when a lookup answers
+  (not after a fallback). **One reconciler does every move**: the triggers only
+  record a desired family for the account's current settings (a generation number), and the
+  reconciler moves the account when nothing can be hurt by it: no network-change round running,
+  **no call on the account in any state** (the call's dialog would keep a peer of the old family on a
+  transport of the new one), no REGISTER of it in flight. A move un-REGISTERs the old binding and
+  waits for the answer (5 s at most: a lingering Contact forks calls or makes a `max_contacts=1`
+  server refuse the new one with 403), then moves the account to the other transport, makes its
+  subscriptions anew there and registers; the account shows "registering" throughout, and a failed
+  step is tried again on the next tick. Moving from several places at once had raced with rounds,
+  REGISTERs in flight and late answers.
 - **IPv6 address changes** count only for accounts that use IPv6. A new temporary address while the
   old one is still assigned is a non-primary change (it waits for a ringing outgoing call); losing
   the address is primary. Without IPv6 accounts IPv6 coming, going or rotating starts no round, so

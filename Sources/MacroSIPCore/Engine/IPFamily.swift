@@ -1,5 +1,6 @@
 import Darwin
 import Foundation
+import os
 
 /// IP family of an account's signalling and media (docs/ENGINE.md "IPv6", ADR 0014).
 public enum IPFamily: String, Sendable, CaseIterable, CustomStringConvertible {
@@ -129,5 +130,60 @@ enum IPFamilyResolver {
             entry = e.pointee.ai_next
         }
         return families
+    }
+}
+
+/// Address-family lookups of host names, off the engine queue: at most one in flight per host (later
+/// requests for it wait for that one), answers cached for `ttl` (failures are not cached). After
+/// `invalidate()` (a network change) the cache is empty and lookups started before are dropped.
+final class FamilyLookups: Sendable {
+    private struct State {
+        var cache: [String: (families: [IPFamily], at: ContinuousClock.Instant)] = [:]
+        var inFlight: Set<String> = []
+        var epoch: UInt64 = 0
+    }
+
+    private let state = OSAllocatedUnfairLock(initialState: State())
+    let ttl: Duration
+
+    init(ttl: Duration = .seconds(30)) {
+        self.ttl = ttl
+    }
+
+    func cached(_ host: String) -> [IPFamily]? {
+        state.withLock { st in
+            guard let entry = st.cache[host], ContinuousClock.now - entry.at < ttl else { return nil }
+            return entry.families
+        }
+    }
+
+    func invalidate() {
+        state.withLock { st in
+            st.cache = [:]
+            st.inFlight = []
+            st.epoch &+= 1
+        }
+    }
+
+    /// Starts a lookup of `host` on a global queue unless one is running; `done` gets its answer ([]
+    /// when it failed), unless an `invalidate()` came in between.
+    func start(_ host: String, resolve: @escaping @Sendable (String) -> [IPFamily],
+               done: @escaping @Sendable (String, [IPFamily]) -> Void) {
+        let epoch: UInt64? = state.withLock { st in
+            guard !host.isEmpty, !st.inFlight.contains(host) else { return nil }
+            st.inFlight.insert(host)
+            return st.epoch
+        }
+        guard let epoch else { return }
+        DispatchQueue.global(qos: .userInitiated).async { [self] in
+            let families = resolve(host)
+            let current = state.withLock { st -> Bool in
+                guard st.epoch == epoch else { return false }
+                st.inFlight.remove(host)
+                if !families.isEmpty { st.cache[host] = (families, .now) }
+                return true
+            }
+            if current { done(host, families) }
+        }
     }
 }

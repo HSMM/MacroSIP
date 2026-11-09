@@ -19,17 +19,20 @@ struct NetworkPath: Sendable, Equatable {
     /// Source address of the default IPv6 route (a global address: link-local and loopback do not
     /// count), "" when there is none.
     var address6: String
+    /// The path can route IPv6 (`NWPath.supportsIPv6`).
+    var ipv6Route: Bool
     /// Default gateway, "" when unknown.
     var gateway: String
     /// Short text for the log.
     var summary: String
 
     init(satisfied: Bool, interface: String, address: String, address6: String = "", gateway: String,
-         summary: String? = nil) {
+         ipv6Route: Bool = true, summary: String? = nil) {
         self.satisfied = satisfied
         self.interface = interface
         self.address = address
         self.address6 = address6
+        self.ipv6Route = ipv6Route
         self.gateway = gateway
         self.summary = summary ?? NetworkPath.describe(interface: interface, address: address, address6: address6,
                                                        gateway: gateway)
@@ -47,10 +50,11 @@ struct NetworkPath: Sendable, Equatable {
         }
         let name = primary?.name ?? ""
         let address = path.status == .satisfied ? (NetworkPath.defaultRouteSource() ?? "") : ""
-        let address6 = path.status == .satisfied ? (NetworkPath.defaultRouteSource6() ?? "") : ""
+        let ipv6Route = path.status == .satisfied && path.supportsIPv6
+        let address6 = ipv6Route ? (NetworkPath.defaultRouteSource6() ?? "") : ""
         let gateway = path.gateways.first.map { "\($0)" } ?? ""
         self.init(satisfied: path.status == .satisfied, interface: name, address: address, address6: address6,
-                  gateway: gateway,
+                  gateway: gateway, ipv6Route: ipv6Route,
                   summary: NetworkPath.describe(interface: name.isEmpty ? "" : "\(name)/\(type)",
                                                 address: address, address6: address6, gateway: gateway))
     }

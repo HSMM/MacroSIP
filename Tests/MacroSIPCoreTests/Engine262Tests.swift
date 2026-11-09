@@ -8,13 +8,14 @@ import Testing
 
 // MARK: - DNS stub
 
-/// A DNS server on 127.0.0.1 (one UDP socket, random port) that answers SRV and A queries
+/// A DNS server on 127.0.0.1 (one UDP socket, random port) that answers SRV, A and AAAA queries
 /// from a fixed table and NXDOMAIN for everything else. Records every question as
 /// "SRV _sip._udp.example.test" / "A pbx.example.test".
 final class DNSStub: Sendable {
     enum Record: Sendable {
         case srv(target: String, port: UInt16)
         case a(String)
+        case aaaa(String)
     }
 
     let port: UInt16
@@ -103,6 +104,11 @@ final class DNSStub: Sendable {
             case let .a(address) where qtype == 1:
                 let octets = address.split(separator: ".").compactMap { UInt8($0) }
                 rr += DNSStub.u16(1) + DNSStub.u16(1) + [0, 0, 0, 60] + DNSStub.u16(4) + octets
+            case let .aaaa(address) where qtype == 28:
+                var v6 = in6_addr()
+                guard inet_pton(AF_INET6, address, &v6) == 1 else { continue }
+                let octets = withUnsafeBytes(of: &v6) { Array($0) }
+                rr += DNSStub.u16(28) + DNSStub.u16(1) + [0, 0, 0, 60] + DNSStub.u16(16) + octets
             default:
                 continue
             }

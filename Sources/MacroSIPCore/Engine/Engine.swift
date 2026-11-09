@@ -51,16 +51,27 @@ public actor Engine {
         var index: pjsua_acc_id
         var config: AccountConfig
         var password: String
-        /// The IP family the account is bound to (`IPFamilyPolicy`); decided again on network
-        /// changes and REGISTER retries when it follows the resolver.
+        /// The IP family the account is bound to (docs/ENGINE.md "IPv6"). Only `reconcileFamilies`
+        /// moves an account to the other family; everything else records `desired`.
         var family: IPFamily = .ipv4
-        /// Auto moved the account to the other family after a REGISTER got no answer; the family
-        /// that works stays until the next network change (no re-decision before retries).
+        /// Bumped by `updateAccount` and by every move: a desire, or a REGISTER result, of an older
+        /// generation belongs to settings that are gone.
+        var generation: UInt64 = 0
+        /// The family the account should move to, and why.
+        var desired: FamilyDesire?
+        /// Auto moved the account after a REGISTER got no answer: the resolver's order is not
+        /// followed again until the next network change.
         var familySticky = false
-        /// The other family was tried at once in this series of failed REGISTERs.
+        /// The other family was wanted at once in this series of failed REGISTERs.
         var familyFallbackTried = false
-        /// A move to another family that waits for the account's calls to end.
-        var pendingMove: (family: IPFamily, reason: String)?
+        /// That fallback waits for a lookup of the host (does it have an address of the other family?).
+        var fallbackWaitsForLookup = false
+        /// The first REGISTER (after add, or after a change of server) waits for the host's lookup:
+        /// until its answer (the deadline becomes now) or this deadline, whichever comes first.
+        var registerDeadline: ContinuousClock.Instant?
+        /// A move's un-REGISTER of the old binding: when it was sent, and whether its answer came.
+        var moveUnregisterSent: ContinuousClock.Instant?
+        var moveUnregisterAnswered = false
         /// Last status given to `publishPresence` (re-applied when the account changes).
         var presence: PresenceStatus = .available
         /// Registration requested (cfg.registers or setRegistered): retried after temporary
@@ -83,9 +94,8 @@ public actor Engine {
     /// The families of a host name in the system resolver's order (`IPFamilyResolver.system`; tests
     /// inject their own so they do not depend on real DNS).
     var resolveFamilies: @Sendable (String) -> [IPFamily] = { IPFamilyResolver.system($0) }
-    /// How long the engine waits for family lookups (they run concurrently off the engine queue; a
-    /// host not resolved in time keeps the account's family, or gives IPv4 for a new account).
-    var familyLookupTimeout: Duration = .seconds(2)
+    /// Lookups of host names off the engine queue: one in flight per host, answers cached briefly.
+    let familyLookups = FamilyLookups()
     /// Whether an IPv6 address is still assigned to an interface (`NetworkPath.isAssignedLocally`;
     /// tests inject their own).
     var ipv6AddressAssigned: @Sendable (String) -> Bool = { NetworkPath.isAssignedLocally($0) }

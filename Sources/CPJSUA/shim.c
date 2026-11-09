@@ -1640,6 +1640,22 @@ unsigned cpjsua_transport_slots(void)
     return (unsigned)PJ_ARRAY_SIZE(pjsua_var.tpdata);
 }
 
+int cpjsua_acc_reg_busy(pjsua_acc_id acc_id)
+{
+    pjsip_regc_info info;
+    int busy = 0;
+    if (acc_id < 0 || acc_id >= (int)PJ_ARRAY_SIZE(pjsua_var.acc))
+        return 0;
+    PJSUA_LOCK();
+    if (pjsua_var.acc[acc_id].valid && pjsua_var.acc[acc_id].regc &&
+        pjsip_regc_get_info(pjsua_var.acc[acc_id].regc, &info) == PJ_SUCCESS)
+    {
+        busy = info.is_busy ? 1 : 0;
+    }
+    PJSUA_UNLOCK();
+    return busy;
+}
+
 void cpjsua_acc_set_sdp_nat_rewrite(pjsua_acc_id acc_id, int on)
 {
     if (acc_id < 0 || acc_id >= (int)PJ_ARRAY_SIZE(pjsua_var.acc))

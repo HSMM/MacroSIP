@@ -90,6 +90,9 @@ final class EngineBridge: Sendable {
         /// `registers`, setRegistered). A REGISTER that pjsua sends on its own for an
         /// account that should not be registered is undone (see pjOnRegState2).
         var wantsRegistration = false
+        /// The engine's `AccountEntry.generation`: a REGISTER result carries it to the engine, which
+        /// drops a result of settings that changed meanwhile.
+        var generation: UInt64 = 0
     }
 
     struct WatchedBuddy: Sendable {
@@ -114,9 +117,6 @@ final class EngineBridge: Sendable {
         var pendingRegistration: [AccountID: Bool] = [:]
         /// Failed REGISTER attempts since the last success (temporary failures only).
         var retryAttempts: [AccountID: Int] = [:]
-        /// Accounts being moved to the other IP family: the result of the un-REGISTER of the old
-        /// binding sent just before the move is not a registration state of the account.
-        var ignoringUnregister: Set<Int32> = []
         /// Accounts with a repair of a missing binding going on, or given up (see `BindingRepair`).
         var bindingRepair: [AccountID: BindingRepair] = [:]
         /// Calls pjsua re-INVITEd in the current network change (by call serial).
@@ -213,12 +213,17 @@ final class EngineBridge: Sendable {
 
     // MARK: accounts
 
-    func setAccount(_ index: Int32, _ id: AccountID, registrationInterval: Int, proxy: SignallingSource? = nil) {
+    func setAccount(_ index: Int32, _ id: AccountID, registrationInterval: Int, proxy: SignallingSource? = nil,
+                    generation: UInt64 = 0) {
         state.withLock { st in
             let wants = st.accounts[index]?.id == id ? st.accounts[index]?.wantsRegistration ?? false : false
             st.accounts[index] = AccountSlot(id: id, registrationInterval: registrationInterval, proxy: proxy,
-                                             wantsRegistration: wants)
+                                             wantsRegistration: wants, generation: generation)
         }
+    }
+
+    func setAccountGeneration(_ index: Int32, _ generation: UInt64) {
+        state.withLock { $0.accounts[index]?.generation = generation }
     }
 
     func setWantsRegistration(_ index: Int32, _ on: Bool) {
@@ -227,14 +232,6 @@ final class EngineBridge: Sendable {
 
     func setRegistrarSource(_ index: Int32, _ source: SignallingSource?) {
         state.withLock { $0.registrarSources[index] = source }
-    }
-
-    func setIgnoringUnregister(_ index: Int32, _ on: Bool) {
-        state.withLock { if on { $0.ignoringUnregister.insert(index) } else { $0.ignoringUnregister.remove(index) } }
-    }
-
-    func isIgnoringUnregister(_ index: Int32) -> Bool {
-        state.withLock { $0.ignoringUnregister.contains(index) }
     }
 
     /// The INVITE came from the server that accepted the account's REGISTER, or from its
@@ -984,9 +981,17 @@ private func pjOnRegStarted2(_ accID: pjsua_acc_id, _ info: UnsafeMutablePointer
 private func pjOnRegState2(_ accID: pjsua_acc_id, _ info: UnsafeMutablePointer<pjsua_reg_info>?) {
     let bridge = EngineBridge.shared
     guard let account = bridge.account(for: accID) else { return }
-    // The un-REGISTER of the old binding before a move to the other IP family (Engine.moveAccount).
-    if let info, info.pointee.renew == 0, bridge.isIgnoringUnregister(accID) { return }
     let id = account.id
+    // An un-REGISTER of an account that should stay registered (the old binding of a move to the other
+    // IP family, or the un-REGISTER before sleep, whose state the engine set itself) is not a state of
+    // the account: whatever arrives late, it never shows `.unregistered` while the engine registers it.
+    if let info, info.pointee.renew == 0, account.wantsRegistration {
+        bridge.setRegistrarSource(accID, nil)
+        bridge.bindingRepairInterrupted(id)
+        let pendingOn = bridge.takePendingRegistration(id) == true
+        bridge.hop { await $0.unregisterAnswered(id, pendingOn: pendingOn) }
+        return
+    }
     var new: RegistrationState
     var source: SignallingSource?
     var transientError: String?
@@ -1077,7 +1082,11 @@ private func pjOnRegState2(_ accID: pjsua_acc_id, _ info: UnsafeMutablePointer<p
     }
     if let retry {
         let noAnswer = noAnswer
-        bridge.hop { await $0.registrationRetryNeeded(id, attempt: retry.attempt, after: retry.delay, noAnswer: noAnswer) }
+        let generation = account.generation
+        bridge.hop {
+            await $0.registrationRetryNeeded(id, attempt: retry.attempt, after: retry.delay, noAnswer: noAnswer,
+                                             generation: generation)
+        }
     }
 }
 

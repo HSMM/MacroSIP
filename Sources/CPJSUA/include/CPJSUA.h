@@ -475,6 +475,9 @@ void cpjsua_acc_prepare_ip_change(pjsua_acc_id acc_id, int register_it);
  *  not a configurable macro): the engine creates at most this many transports. */
 unsigned cpjsua_transport_slots(void);
 
+/** 1 while the account's registration session has a REGISTER (or un-REGISTER) transaction in flight. */
+int cpjsua_acc_reg_busy(pjsua_acc_id acc_id);
+
 /** pjsua_acc_modify never copies allow_sdp_nat_rewrite (only pjsua_acc_add does): set it on the
  *  live account config. */
 void cpjsua_acc_set_sdp_nat_rewrite(pjsua_acc_id acc_id, int on);
